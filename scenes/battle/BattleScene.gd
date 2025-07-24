@@ -1,5 +1,8 @@
-# Soubor: scenes/battle/BattleScene.gd
-# POPIS: Kompletní finální verze s opravou pádu hry při smrti hráče.
+# ===================================================================
+# Soubor: res://scenes/battle/BattleScene.gd (Kompletní a finální oprava)
+# POPIS: Opravuje pohyb AI pod vlivem statusu "Slow" a správně
+# spravuje statusy na konci kola pro všechny jednotky.
+# ===================================================================
 extends Node2D
 
 const UnitScene = preload("res://scenes/battle/Unit.tscn")
@@ -57,9 +60,6 @@ func _on_win_button_pressed():
 	print("DEBUG: Okamžitá výhra aktivována.")
 	end_battle_as_victory()
 
-# --- OPRAVA ZDE ---
-# Funkce nyní přijímá argument `_unit_node`, i když ho nepoužívá.
-# Tím se shoduje se signálem `died` a hra nespadne.
 func _on_player_died(_unit_node: Node2D):
 	_current_turn_state = TurnState.BATTLE_OVER
 	GameManager.battle_finished(false)
@@ -77,36 +77,34 @@ func spawn_player_unit():
 		if is_instance_valid(_player_unit_node):
 			_player_unit_node.unit_selected.connect(_on_unit_selected_on_grid)
 			_player_unit_node.stats_changed.connect(_on_unit_stats_changed)
-			# Propojíme signál smrti s novou, opravenou funkcí
 			_player_unit_node.died.connect(_on_player_died)
-
-# ... zbytek souboru zůstává stejný ...
-# (Následující kód je zde pro kompletnost, ale neměnil se.)
 
 func start_player_turn():
 	_current_turn_state = TurnState.PLAYER_TURN
 	end_turn_button.disabled = false
 	PlayerData.reset_energy()
 	
-	var extra_draw = 0
 	if is_instance_valid(_player_unit_node):
 		_player_unit_node.reset_for_new_turn()
-		extra_draw = _player_unit_node.process_turn_start_statuses()
-		
+		var extra_draw = _player_unit_node.process_turn_start_statuses()
+		PlayerData.draw_new_hand(starting_hand_size + extra_draw)
+	
 	for unit in _enemy_units:
 		if is_instance_valid(unit):
 			unit.reset_for_new_turn()
+			unit.process_turn_start_statuses()
 			
 	set_enemy_intents()
-	
-	var cards_to_draw = starting_hand_size + extra_draw
-	PlayerData.draw_new_hand(cards_to_draw)
-	
 	_update_hand_ui()
 
 func start_enemy_turn():
 	_current_turn_state = TurnState.ENEMY_TURN
 	end_turn_button.disabled = true
+	
+	# Zpracujeme efekty konce kola pro hráče
+	if is_instance_valid(_player_unit_node):
+		_player_unit_node.process_turn_end_statuses()
+
 	_reset_player_selection()
 	PlayerData.discard_hand()
 	player_hand_ui_instance.clear_hand()
@@ -138,7 +136,6 @@ func try_play_card(card: CardData, initial_target: Node2D):
 
 	var card_played_successfully = false
 	for effect_data in card.effects:
-		# Pro AoE karty považujeme zahrání za úspěšné vždy
 		if effect_data.target_type == CardEffectData.TargetType.ANY_GRID_CELL:
 			card_played_successfully = true
 		
@@ -170,15 +167,20 @@ func _on_unit_selected_on_grid(unit_node: Node2D):
 		_player_action_state = PlayerActionState.UNIT_SELECTED
 		_selected_unit = unit_node
 		_selected_unit.set_selected_visual(true)
-		battle_grid_instance.show_movable_range(unit_node.grid_position, unit_node.unit_data.movement_range)
+		var current_move_range = unit_node.get_current_movement_range()
+		battle_grid_instance.show_movable_range(unit_node.grid_position, current_move_range)
 	else:
 		print("Tuto jednotku nelze vybrat nebo se již v tomto kole pohnula.")
 
 func _execute_move(unit_to_move: Node2D, target_cell: Vector2i):
 	unit_to_move.use_move_action()
-	var original_pos = unit_to_move.grid_position
 	battle_grid_instance.remove_object_by_instance(unit_to_move)
 	battle_grid_instance.place_object_on_cell(unit_to_move, target_cell, true)
+	
+	var terrain_on_cell = battle_grid_instance.terrain_layer.get(target_cell)
+	if terrain_on_cell:
+		unit_to_move.process_terrain_effects(terrain_on_cell)
+	
 	_reset_player_selection()
 
 func _apply_single_effect(effect: CardEffectData, target: Node2D):
@@ -212,7 +214,6 @@ func process_enemy_actions():
 	for enemy_unit in _enemy_units:
 		if not is_instance_valid(enemy_unit): continue
 		
-		enemy_unit.process_turn_start_statuses()
 		enemy_unit.hide_intent()
 
 		var action = ai_controller.get_next_action(enemy_unit, [_player_unit_node], battle_grid_instance)
@@ -224,15 +225,26 @@ func process_enemy_actions():
 					enemy_unit.use_move_action()
 					var path = action.move_path
 					if path.size() > 1:
-						var move_dist = min(path.size() - 1, enemy_unit.unit_data.movement_range)
-						var target_pos = path[move_dist]
-						battle_grid_instance.remove_object_by_instance(enemy_unit)
-						battle_grid_instance.place_object_on_cell(enemy_unit, target_pos, true)
-						await get_tree().create_timer(0.4).timeout
-						var attack_action = ai_controller.get_next_action(enemy_unit, [_player_unit_node], battle_grid_instance)
-						if attack_action.type == AIController.AIAction.ActionType.ATTACK:
-							enemy_unit.attack(attack_action.target_unit)
-	
+						# ZDE JE OPRAVA PRO AI: Používáme správnou funkci pro výpočet dosahu
+						var move_dist = min(path.size() - 1, enemy_unit.get_current_movement_range())
+						if move_dist > 0:
+							var target_pos = path[move_dist]
+							battle_grid_instance.remove_object_by_instance(enemy_unit)
+							battle_grid_instance.place_object_on_cell(enemy_unit, target_pos, true)
+							
+							var terrain_on_cell = battle_grid_instance.terrain_layer.get(target_pos)
+							if terrain_on_cell:
+								enemy_unit.process_terrain_effects(terrain_on_cell)
+							
+							await get_tree().create_timer(0.4).timeout
+							
+							var attack_action = ai_controller.get_next_action(enemy_unit, [_player_unit_node], battle_grid_instance)
+							if attack_action.type == AIController.AIAction.ActionType.ATTACK:
+								enemy_unit.attack(attack_action.target_unit)
+
+		# Zpracujeme efekty konce kola pro aktuálního nepřítele
+		enemy_unit.process_turn_end_statuses()
+
 	await get_tree().create_timer(0.5).timeout
 	start_player_turn()
 
@@ -259,7 +271,6 @@ func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node2D
 	var targets: Array[Node2D] = []
 	var clicked_grid_cell = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
 
-	# Nová logika pro AoE karty cílící na zem
 	if effect.target_type == CardEffectData.TargetType.ANY_GRID_CELL:
 		var affected_cells = battle_grid_instance.get_cells_for_aoe(
 			clicked_grid_cell,
@@ -391,12 +402,9 @@ func end_battle_as_victory():
 	GameManager.battle_finished(true)
 
 func _on_card_hover_started(card_data: CardData):
-	# TUTO FUNKCI ÚPLNĚ VYPRÁZDNÍME, UŽ JI NEPOTŘEBUJEME
 	pass
 
 func _on_card_hover_ended():
-	# ZDE POUZE ZAJISTÍME, ABY ZMIZELO ZVÝRAZNĚNÍ, KDYŽ SJEDEME Z KARTY
-	# POKUD ZROVNA NĚJAKOU NECÍLÍME
 	if _player_action_state != PlayerActionState.CARD_SELECTED:
 		battle_grid_instance.hide_aoe_highlight()
 
@@ -405,8 +413,8 @@ func _update_card_target_preview():
 
 	var mouse_grid_pos = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
 
-	if not battle_grid_instance._is_valid_grid_position(mouse_grid_pos):
-		battle_grid_instance.hide_aoe_highlight() # Pokud ne, skryjeme preview
+	if not battle_grid_instance.is_valid_grid_position(mouse_grid_pos):
+		battle_grid_instance.hide_aoe_highlight()
 		return
 	var aoe_cells: Array[Vector2i] = []
 
@@ -416,54 +424,58 @@ func _update_card_target_preview():
 
 		match effect.area_of_effect_type:
 			CardEffectData.AreaOfEffectType.ROW:
-				for x in range(battle_grid_instance.grid_columns):
-					aoe_cells.append(Vector2i(x, mouse_grid_pos.y))
-
+				for x in range(battle_grid_instance.grid_columns): aoe_cells.append(Vector2i(x, mouse_grid_pos.y))
 			CardEffectData.AreaOfEffectType.COLUMN:
-				for y in range(battle_grid_instance.grid_rows):
-					aoe_cells.append(Vector2i(mouse_grid_pos.x, y))
-
+				for y in range(battle_grid_instance.grid_rows): aoe_cells.append(Vector2i(mouse_grid_pos.x, y))
 			CardEffectData.AreaOfEffectType.SQUARE_X_BY_Y:
 				var width = effect.aoe_param_x
 				var height = effect.aoe_param_y
 				for y in range(mouse_grid_pos.y, mouse_grid_pos.y + height):
 					for x in range(mouse_grid_pos.x, mouse_grid_pos.x + width):
 						var cell = Vector2i(x, y)
-						if battle_grid_instance._is_valid_grid_position(cell):
-							aoe_cells.append(cell)
-
+						if battle_grid_instance.is_valid_grid_position(cell): aoe_cells.append(cell)
 			CardEffectData.AreaOfEffectType.ALL_ON_GRID:
 				for enemy in _enemy_units:
-					if is_instance_valid(enemy):
-						aoe_cells.append(enemy.grid_position)
+					if is_instance_valid(enemy): aoe_cells.append(enemy.grid_position)
 
 	if not aoe_cells.is_empty():
 		battle_grid_instance.show_aoe_highlight(aoe_cells)
 	else:
-		# Pokud karta nemá AoE, skryjeme staré zvýraznění
 		battle_grid_instance.hide_aoe_highlight()
 
 func _place_terrain_features():
-	var rock_data = preload("res://data/terrain/rock.tres")
-	var obstacles_to_place = 3 # Kolik překážek chceme
-	var placed_obstacles = 0
+	var terrains_to_spawn = [
+		{
+			"data": preload("res://data/terrain/rock.tres"),
+			"count": 3
+		},
+		{
+			"data": preload("res://data/terrain/mud.tres"),
+			"count": 2
+		}
+	]
+	
 	var occupied_cells = []
 
-	# Sebereme pozice všech jednotek, abychom na ně neumístili kámen
-	occupied_cells.append(_player_unit_node.grid_position)
+	if is_instance_valid(_player_unit_node):
+		occupied_cells.append(_player_unit_node.grid_position)
 	for enemy in _enemy_units:
-		occupied_cells.append(enemy.grid_position)
+		if is_instance_valid(enemy):
+			occupied_cells.append(enemy.grid_position)
 
-	var attempts = 0 # Pojistka proti zacyklení
-	while placed_obstacles < obstacles_to_place and attempts < 100:
-		attempts += 1
-		# Vygenerujeme náhodnou pozici
-		var rand_x = randi_range(1, battle_grid_instance.grid_columns - 2) # Vynecháme kraje
-		var rand_y = randi_range(0, battle_grid_instance.grid_rows - 1)
-		var random_pos = Vector2i(rand_x, rand_y)
+	for terrain_info in terrains_to_spawn:
+		var terrain_data = terrain_info.data
+		var count_to_place = terrain_info.count
+		var placed_count = 0
+		var attempts = 0
+		
+		while placed_count < count_to_place and attempts < 100:
+			attempts += 1
+			var rand_x = randi_range(1, battle_grid_instance.grid_columns - 2)
+			var rand_y = randi_range(0, battle_grid_instance.grid_rows - 1)
+			var random_pos = Vector2i(rand_x, rand_y)
 
-		# Zkontrolujeme, zda už na pozici něco není
-		if not occupied_cells.has(random_pos):
-			battle_grid_instance.place_terrain(random_pos, rock_data)
-			occupied_cells.append(random_pos) # Přidáme novou překážku do obsazených polí
-			placed_obstacles += 1
+			if not occupied_cells.has(random_pos):
+				battle_grid_instance.place_terrain(random_pos, terrain_data)
+				occupied_cells.append(random_pos)
+				placed_count += 1

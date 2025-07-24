@@ -153,5 +153,6 @@ func place_terrain(grid_position: Vector2i, terrain_data: TerrainData):
 	if terrain_data.sprite:
 		var terrain_sprite = Sprite2D.new()
 		terrain_sprite.texture = terrain_data.sprite
+		terrain_sprite.scale = cell_size / terrain_sprite.texture.get_size()
 		terrain_sprite.position = Vector2(grid_position) * cell_size + cell_size / 2
 		_terrain_container.add_child(terrain_sprite)

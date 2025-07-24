@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TerrainData" load_steps=3 format=3 uid="uid://c2ytdal6k37l8"]
+
+[ext_resource type="Script" uid="uid://bdck0xpv16hbr" path="res://data/terrain/TerrainData.gd" id="1_5fo6p"]
+[ext_resource type="Texture2D" uid="uid://dtgj32q2hjoj8" path="res://art/sprites/map/battlegrid/bahno.png" id="2_6m5g2"]
+
+[resource]
+script = ExtResource("1_5fo6p")
+terrain_id = "mud"
+terrain_name = "Bahno"
+description = "Popis, co tento terén dělá."
+sprite = ExtResource("2_6m5g2")
+is_walkable = true
+blocks_line_of_sight = false
+effect_type = 1
+effect_string_value = "Slow"
+effect_numeric_value = -2
+effect_duration = 2
+metadata/_custom_type_script = "uid://bdck0xpv16hbr"

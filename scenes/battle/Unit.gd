@@ -1,6 +1,6 @@
 # ===================================================================
-# Soubor: res://scenes/battle/Unit.gd (FINÁLNÍ OPRAVA)
-# POPIS: Zcela nový a robustní systém pro správu pohybu.
+# Soubor: res://scenes/battle/Unit.gd (Kompletní a opravená verze)
+# POPIS: Zahrnuje správnou implementaci terénních efektů a statusů.
 # ===================================================================
 extends Node2D
 
@@ -53,20 +53,24 @@ func can_move() -> bool:
 func use_move_action():
 	if extra_moves > 0:
 		extra_moves -= 1
-		print("%s spotřeboval/a bonusový pohyb. Zbývá: %d" % [unit_data.unit_name, extra_moves])
 	elif not has_used_base_move:
 		has_used_base_move = true
-		print("%s spotřeboval/a základní pohyb." % unit_data.unit_name)
 
 func gain_extra_move():
 	extra_moves += 1
-	print("%s získal/a extra pohybovou akci. Celkem bonusových: %d" % [unit_data.unit_name, extra_moves])
 
-func apply_status(status_id: String, value: int):
-	if active_statuses.has(status_id):
-		active_statuses[status_id].value += value
-	else:
-		active_statuses[status_id] = {"id": status_id, "value": value}
+func apply_status(status_id: String, value: int, duration: int = 1):
+	"""
+	Aplikuje status na jednotku.
+	Uloží jeho hodnotu (value) i dobu trvání (duration).
+	"""
+	# Pokud status už existuje, pro jednoduchost ho jen obnovíme
+	active_statuses[status_id] = {
+		"id": status_id,
+		"value": value,
+		"duration": duration
+	}
+	print("DEBUG: Jednotka %s získala status '%s' s hodnotou %d na %d kola." % [unit_data.unit_name, status_id, value, duration])
 	_update_stats_and_emit_signal()
 
 func process_turn_start_statuses() -> int:
@@ -82,6 +86,7 @@ func process_turn_start_statuses() -> int:
 			"draw_plus_one":
 				extra_draw += status_data.value
 				statuses_to_remove.append(status_id)
+			# "Slow" zde záměrně není, jeho efekt se aplikuje pasivně
 				
 	for status_id in statuses_to_remove:
 		active_statuses.erase(status_id)
@@ -91,14 +96,53 @@ func process_turn_start_statuses() -> int:
 		
 	return extra_draw
 
+func process_turn_end_statuses():
+	"""
+	Zpracuje statusy na konci kola. Sníží dobu trvání a odstraní ty, co vypršely.
+	"""
+	if active_statuses.is_empty():
+		return
+
+	var statuses_to_remove = []
+	for status_id in active_statuses.keys():
+		# Snížíme dobu trvání o 1
+		active_statuses[status_id].duration -= 1
+		# Pokud klesne na 0, označíme status k odstranění
+		if active_statuses[status_id].duration <= 0:
+			statuses_to_remove.append(status_id)
+			print("DEBUG: Status '%s' na jednotce %s vypršel." % [status_id, unit_data.unit_name])
+	
+	if statuses_to_remove.is_empty():
+		return
+
+	for status_id in statuses_to_remove:
+		active_statuses.erase(status_id)
+		
+	_update_stats_and_emit_signal()
+
+func get_current_movement_range() -> int:
+	var current_range = unit_data.movement_range
+	if active_statuses.has("Slow"):
+		current_range += active_statuses["Slow"].value
+	return max(0, current_range)
+
+func process_terrain_effects(terrain_data: TerrainData):
+	if not terrain_data or terrain_data.effect_type == TerrainData.TerrainEffect.NONE:
+		return
+
+	if terrain_data.effect_type == TerrainData.TerrainEffect.APPLY_STATUS_ON_ENTER:
+		var status_id = terrain_data.effect_string_value
+		var value = terrain_data.effect_numeric_value
+		var duration = terrain_data.effect_duration # Získáváme dobu trvání z .tres souboru
+		if status_id != "":
+			# Předáváme všechny tři parametry
+			apply_status(status_id, value, duration)
+
 func heal(amount: int):
 	current_health = min(current_health + amount, unit_data.max_health)
 	_update_stats_and_emit_signal()
 
 func _die():
-	if unit_data.faction == UnitData.Faction.PLAYER:
-		print("Hráč zemřel! Konec hry.")
-	
 	emit_signal("died", self)
 	var tween = create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.5)
@@ -118,25 +162,31 @@ func take_damage(amount: int):
 	if current_health <= 0:
 		_die()
 		
-# Ostatní funkce beze změny
 func get_unit_data() -> UnitData: return unit_data
+
 func _update_stats_and_emit_signal(): emit_signal("stats_changed", self)
+
 func _on_input_event(_viewport, event, _shape_idx):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		emit_signal("unit_selected", self)
+
 func set_selected_visual(selected: bool):
 	is_selected = selected
 	_sprite_node.modulate = Color(1.3, 1.3, 1.0) if selected else Color.WHITE
+
 func add_block(amount: int):
 	current_block += amount
 	_update_stats_and_emit_signal()
+
 func show_intent(attack_damage: int = 0):
 	var label = _intent_ui.get_node_or_null("Label")
 	if label:
 		label.text = str(attack_damage) if attack_damage > 0 else ""
 		_intent_ui.visible = attack_damage > 0
+
 func hide_intent():
 	_intent_ui.visible = false
+
 func attack(target: Node2D):
 	if not is_instance_valid(target) or not target.has_method("take_damage"): return
 	target.take_damage(unit_data.attack_damage)
