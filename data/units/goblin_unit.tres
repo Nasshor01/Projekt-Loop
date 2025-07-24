@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=3 format=3 uid="uid://bg8u7pptesl13"]
+
+[ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_kb0s8"]
+[ext_resource type="Texture2D" uid="uid://cgys7e3dsi2cf" path="res://art/sprites/units/Goblin.png" id="2_04b5y"]
+
+[resource]
+script = ExtResource("1_kb0s8")
+unit_id = "goblin"
+unit_name = "Goblin"
+description = "Nemylosrdný zabijácký goblin"
+faction = 1
+max_health = 15
+attack_damage = 3
+movement_range = 3
+attack_range = 1
+sprite_texture = ExtResource("2_04b5y")
+metadata/_custom_type_script = "uid://celcfyrl033bg"

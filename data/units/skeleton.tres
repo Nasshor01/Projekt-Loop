@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=3 format=3 uid="uid://ds5yll3ypahx0"]
+
+[ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_0bo4j"]
+[ext_resource type="Texture2D" uid="uid://j6ujjllu207g" path="res://art/sprites/units/Skeleton.png" id="2_hk6eh"]
+
+[resource]
+script = ExtResource("1_0bo4j")
+unit_id = "skeleton"
+unit_name = "Skeleton warior"
+description = "Popis jednotky."
+faction = 1
+max_health = 5
+attack_damage = 3
+movement_range = 3
+attack_range = 1
+sprite_texture = ExtResource("2_hk6eh")
+metadata/_custom_type_script = "uid://celcfyrl033bg"

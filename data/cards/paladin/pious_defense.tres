@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://bh6efbo2040g5"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_2hlmt"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_rhscd"]
+
+[sub_resource type="Resource" id="Resource_2hlmt"]
+script = ExtResource("1_2hlmt")
+effect_type = 2
+value = 7
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_rhscd")
+card_id = "pious_defense"
+card_name = "Zbožná obrana"
+card_description = "Získej 7 bloku."
+cost = 1
+range_type = 1
+range_value = 1
+tags = Array[int]([8])
+rarity = 0
+effects = Array[ExtResource("1_2hlmt")]([SubResource("Resource_2hlmt")])
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

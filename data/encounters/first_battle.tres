@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=5 format=3 uid="uid://d118t8olbc47a"]
+
+[ext_resource type="Script" uid="uid://tp0lo3xqiiqb" path="res://data/encounters/EncounterEntry.gd" id="1_1xnec"]
+[ext_resource type="Resource" uid="uid://bg8u7pptesl13" path="res://data/units/goblin_unit.tres" id="2_lp01v"]
+[ext_resource type="Script" uid="uid://dq86v2djx6q1m" path="res://data/encounters/EncounterData.gd" id="2_p4wxv"]
+
+[sub_resource type="Resource" id="Resource_htifd"]
+script = ExtResource("1_1xnec")
+unit_data = ExtResource("2_lp01v")
+grid_position = Vector2i(6, 2)
+metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
+
+[resource]
+script = ExtResource("2_p4wxv")
+enemies = Array[ExtResource("1_1xnec")]([SubResource("Resource_htifd")])
+metadata/_custom_type_script = "uid://dq86v2djx6q1m"

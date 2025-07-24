@@ -1,0 +1,89 @@
+[gd_scene load_steps=8 format=3 uid="uid://bo6s0363e2rge"]
+
+[ext_resource type="Script" uid="uid://cyruiah668yvv" path="res://scripts/CardUI.gd" id="1_ob8v0"]
+[ext_resource type="Texture2D" uid="uid://ca88ayvdesmrj" path="res://art/icons/ExampleCard01_(Common).png" id="2_lk56f"]
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="2_pmyly"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="3_yi8ee"]
+[ext_resource type="FontFile" uid="uid://c4topxnn115am" path="res://art/fonts/monogram-extended.ttf" id="4_w6ddo"]
+
+[sub_resource type="Resource" id="Resource_fsx4a"]
+script = ExtResource("2_pmyly")
+effect_type = 0
+value = 5
+string_value = ""
+target_type = 1
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[sub_resource type="Resource" id="Resource_r3b4p"]
+script = ExtResource("3_yi8ee")
+card_id = "basic_attack"
+card_name = "Základní Útok"
+card_description = "Způsobí 5 poškození vybranému nepříteli."
+cost = 1
+range_type = 2
+range_value = 1
+tags = Array[int]([])
+rarity = 5
+effects = Array[ExtResource("2_pmyly")]([SubResource("Resource_fsx4a")])
+metadata/_custom_type_script = "uid://uk53klqs1ti4"
+
+[node name="CardUi" type="Control"]
+custom_minimum_size = Vector2(192, 240)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 64.0
+offset_bottom = 80.0
+script = ExtResource("1_ob8v0")
+card_data = SubResource("Resource_r3b4p")
+
+[node name="CardTemplateImage" type="TextureRect" parent="."]
+custom_minimum_size = Vector2(192, 240)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture = ExtResource("2_lk56f")
+
+[node name="ArtworkTextureRect" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 45.0
+offset_right = 147.0
+offset_bottom = 111.0
+
+[node name="NameLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 33.0
+offset_top = 120.0
+offset_right = 159.0
+offset_bottom = 138.0
+theme_override_fonts/font = ExtResource("4_w6ddo")
+text = "Název karty"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="CostLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 22.0
+offset_top = 17.0
+offset_right = 46.0
+offset_bottom = 43.0
+theme_override_fonts/font = ExtResource("4_w6ddo")
+theme_override_font_sizes/font_size = 32
+text = "XX"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DescriptionLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 39.0
+offset_top = 144.0
+offset_right = 153.0
+offset_bottom = 201.0
+theme_override_fonts/font = ExtResource("4_w6ddo")
+text = "Popis karty"
+horizontal_alignment = 1
+vertical_alignment = 1

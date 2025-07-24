@@ -1,0 +1,367 @@
+# Soubor: scenes/battle/BattleScene.gd
+# POPIS: Kompletní finální verze s opravou pádu hry při smrti hráče.
+extends Node2D
+
+const UnitScene = preload("res://scenes/battle/Unit.tscn")
+const AIController = preload("res://scripts/EnemyAIController.gd")
+
+@export var encounter_data: EncounterData
+
+@onready var player_info_panel = $PlayerInfoPanel
+@onready var enemy_info_panel = $EnemyInfoPanel
+@onready var draw_pile_button: TextureButton = %DrawPileButton
+@onready var discard_pile_button: TextureButton = %DiscardPileButton
+@onready var card_pile_viewer: PanelContainer = %CardPileViewer
+@onready var battle_grid_instance: Node2D = $BattleGrid
+@onready var player_hand_ui_instance: Control = $PlayerHandUI
+@onready var end_turn_button: Button = $EndTurnButton
+@onready var victory_label: Label = $VictoryLabel
+@onready var energy_label: Label = $EnergyLabel
+@onready var win_button: Button = $WinButton
+
+enum PlayerActionState { IDLE, CARD_SELECTED, UNIT_SELECTED }
+var _player_action_state: PlayerActionState = PlayerActionState.IDLE
+enum TurnState { PLAYER_TURN, ENEMY_TURN, PROCESSING, BATTLE_OVER }
+var _current_turn_state: TurnState = TurnState.PROCESSING
+
+@export var starting_hand_size: int = 5
+
+var _selected_card_ui: Control = null
+var _selected_card_data: CardData = null
+var _player_unit_node: Node2D = null
+var _selected_unit: Node2D = null
+var _enemy_units: Array[Node2D] = []
+
+func _ready():
+	victory_label.visible = false
+	enemy_info_panel.hide_panel()
+	card_pile_viewer.hide()
+
+	PlayerData.reset_battle_stats()
+
+	PlayerData.energy_changed.connect(_on_energy_changed)
+	player_hand_ui_instance.hand_card_was_clicked.connect(_on_player_hand_card_clicked)
+	draw_pile_button.pile_clicked.connect(_on_draw_pile_clicked)
+	discard_pile_button.pile_clicked.connect(_on_discard_pile_clicked)
+	win_button.pressed.connect(_on_win_button_pressed)
+
+	spawn_player_unit()
+	spawn_enemy_units()
+	await get_tree().create_timer(0.2).timeout
+	start_player_turn()
+
+func _on_win_button_pressed():
+	print("DEBUG: Okamžitá výhra aktivována.")
+	end_battle_as_victory()
+
+# --- OPRAVA ZDE ---
+# Funkce nyní přijímá argument `_unit_node`, i když ho nepoužívá.
+# Tím se shoduje se signálem `died` a hra nespadne.
+func _on_player_died(_unit_node: Node2D):
+	_current_turn_state = TurnState.BATTLE_OVER
+	GameManager.battle_finished(false)
+
+func _on_enemy_died(enemy_node: Node2D):
+	if _enemy_units.has(enemy_node):
+		_enemy_units.erase(enemy_node)
+	battle_grid_instance.remove_object_by_instance(enemy_node)
+	if _enemy_units.is_empty():
+		end_battle_as_victory()
+
+func spawn_player_unit():
+	if PlayerData.selected_subclass and PlayerData.selected_subclass.specific_unit_data:
+		_player_unit_node = _spawn_unit(PlayerData.selected_subclass.specific_unit_data, Vector2i(1, battle_grid_instance.grid_rows / 2))
+		if is_instance_valid(_player_unit_node):
+			_player_unit_node.unit_selected.connect(_on_unit_selected_on_grid)
+			_player_unit_node.stats_changed.connect(_on_unit_stats_changed)
+			# Propojíme signál smrti s novou, opravenou funkcí
+			_player_unit_node.died.connect(_on_player_died)
+
+# ... zbytek souboru zůstává stejný ...
+# (Následující kód je zde pro kompletnost, ale neměnil se.)
+
+func start_player_turn():
+	_current_turn_state = TurnState.PLAYER_TURN
+	end_turn_button.disabled = false
+	PlayerData.reset_energy()
+	
+	var extra_draw = 0
+	if is_instance_valid(_player_unit_node):
+		_player_unit_node.reset_for_new_turn()
+		extra_draw = _player_unit_node.process_turn_start_statuses()
+		
+	for unit in _enemy_units:
+		if is_instance_valid(unit):
+			unit.reset_for_new_turn()
+			
+	set_enemy_intents()
+	
+	var cards_to_draw = starting_hand_size + extra_draw
+	PlayerData.draw_new_hand(cards_to_draw)
+	
+	_update_hand_ui()
+
+func start_enemy_turn():
+	_current_turn_state = TurnState.ENEMY_TURN
+	end_turn_button.disabled = true
+	_reset_player_selection()
+	PlayerData.discard_hand()
+	player_hand_ui_instance.clear_hand()
+	_update_pile_counts()
+	await get_tree().create_timer(0.5).timeout
+	process_enemy_actions()
+
+func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: CardData):
+	if _current_turn_state != TurnState.PLAYER_TURN: return
+	if _selected_card_ui == card_ui_node:
+		_reset_player_selection()
+		return
+	if PlayerData.current_energy < card_data_resource.cost:
+		print("Nedostatek energie!")
+		return
+
+	_reset_player_selection()
+	_player_action_state = PlayerActionState.CARD_SELECTED
+	_selected_card_ui = card_ui_node
+	_selected_card_data = card_data_resource
+	player_hand_ui_instance.set_selected_card(card_ui_node)
+	_show_valid_targets_for_card(card_data_resource)
+
+func try_play_card(card: CardData, initial_target: Node2D):
+	if not card: return
+	
+	if not PlayerData.spend_energy(card.cost):
+		print("Nedostatek energie!")
+		return
+
+	var card_played_successfully = false
+	for effect_data in card.effects:
+		var targets = _get_targets_for_effect(effect_data, initial_target)
+		if not targets.is_empty():
+			card_played_successfully = true
+			for target_unit in targets:
+				if is_instance_valid(target_unit):
+					_apply_single_effect(effect_data, target_unit)
+					
+	if card_played_successfully:
+		var has_exhaust_effect = card.effects.any(func(e): return e.effect_type == CardEffectData.EffectType.EXHAUST)
+		if has_exhaust_effect:
+			PlayerData.add_card_to_exhaust_pile(card)
+		else:
+			PlayerData.add_card_to_discard_pile(card)
+		PlayerData.current_hand.erase(card)
+		_reset_player_selection()
+		_update_hand_ui()
+	else:
+		print("Karta '%s' nenašla žádný platný cíl." % card.card_name)
+		PlayerData.gain_energy(card.cost)
+
+func _on_unit_selected_on_grid(unit_node: Node2D):
+	if _current_turn_state != TurnState.PLAYER_TURN: return
+	
+	if unit_node.unit_data.faction == UnitData.Faction.PLAYER and unit_node.can_move():
+		_reset_player_selection()
+		_player_action_state = PlayerActionState.UNIT_SELECTED
+		_selected_unit = unit_node
+		_selected_unit.set_selected_visual(true)
+		battle_grid_instance.show_movable_range(unit_node.grid_position, unit_node.unit_data.movement_range)
+	else:
+		print("Tuto jednotku nelze vybrat nebo se již v tomto kole pohnula.")
+
+func _execute_move(unit_to_move: Node2D, target_cell: Vector2i):
+	unit_to_move.use_move_action()
+	var original_pos = unit_to_move.grid_position
+	battle_grid_instance.remove_object_by_instance(unit_to_move)
+	battle_grid_instance.place_object_on_cell(unit_to_move, target_cell, true)
+	_reset_player_selection()
+
+func _apply_single_effect(effect: CardEffectData, target: Node2D):
+	if not is_instance_valid(target): return
+	
+	match effect.effect_type:
+		CardEffectData.EffectType.DEAL_DAMAGE:
+			target.take_damage(effect.value)
+		CardEffectData.EffectType.GAIN_BLOCK:
+			target.add_block(effect.value)
+		CardEffectData.EffectType.HEAL_UNIT:
+			target.heal(effect.value)
+		CardEffectData.EffectType.HEAL_TO_FULL:
+			target.heal_to_full()
+		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK:
+			target.take_damage(_player_unit_node.current_block)
+		CardEffectData.EffectType.DRAW_CARDS:
+			PlayerData.draw_cards(effect.value)
+			_update_hand_ui()
+		CardEffectData.EffectType.GAIN_ENERGY:
+			PlayerData.gain_energy(effect.value)
+		CardEffectData.EffectType.APPLY_STATUS:
+			target.apply_status(effect.string_value, effect.value)
+		CardEffectData.EffectType.GAIN_EXTRA_MOVE:
+			target.gain_extra_move()
+		_:
+			print("Neznámý efekt karty: ", effect.effect_type)
+
+func process_enemy_actions():
+	var ai_controller = AIController.new()
+	for enemy_unit in _enemy_units:
+		if not is_instance_valid(enemy_unit): continue
+		
+		enemy_unit.process_turn_start_statuses()
+		enemy_unit.hide_intent()
+
+		var action = ai_controller.get_next_action(enemy_unit, [_player_unit_node], battle_grid_instance)
+		match action.type:
+			AIController.AIAction.ActionType.ATTACK:
+				enemy_unit.attack(action.target_unit)
+			AIController.AIAction.ActionType.MOVE:
+				if enemy_unit.can_move():
+					enemy_unit.use_move_action()
+					var path = action.move_path
+					if path.size() > 1:
+						var move_dist = min(path.size() - 1, enemy_unit.unit_data.movement_range)
+						var target_pos = path[move_dist]
+						battle_grid_instance.remove_object_by_instance(enemy_unit)
+						battle_grid_instance.place_object_on_cell(enemy_unit, target_pos, true)
+						await get_tree().create_timer(0.4).timeout
+						var attack_action = ai_controller.get_next_action(enemy_unit, [_player_unit_node], battle_grid_instance)
+						if attack_action.type == AIController.AIAction.ActionType.ATTACK:
+							enemy_unit.attack(attack_action.target_unit)
+	
+	await get_tree().create_timer(0.5).timeout
+	start_player_turn()
+
+func _unhandled_input(event: InputEvent):
+	if _current_turn_state != TurnState.PLAYER_TURN: return
+	if card_pile_viewer.visible:
+		if event.is_action_pressed("ui_cancel"): card_pile_viewer.hide(); return
+	
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		if _player_action_state == PlayerActionState.CARD_SELECTED:
+			var clicked_grid_cell = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
+			var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
+			try_play_card(_selected_card_data, target_node)
+			get_viewport().set_input_as_handled()
+		elif _player_action_state == PlayerActionState.UNIT_SELECTED:
+			var clicked_grid_cell = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
+			if battle_grid_instance.is_cell_movable(clicked_grid_cell):
+				_execute_move(_selected_unit, clicked_grid_cell)
+			else:
+				_reset_player_selection()
+			get_viewport().set_input_as_handled()
+
+func _get_targets_for_effect(effect: CardEffectData, initial_target: Node2D) -> Array[Node2D]:
+	var targets: Array[Node2D] = []
+	match effect.target_type:
+		CardEffectData.TargetType.SELF_UNIT:
+			if initial_target == _player_unit_node:
+				targets.append(_player_unit_node)
+		CardEffectData.TargetType.SELECTED_ENEMY_UNIT:
+			if is_instance_valid(initial_target) and initial_target.get_unit_data().faction == UnitData.Faction.ENEMY:
+				if battle_grid_instance.get_distance(_player_unit_node.grid_position, initial_target.grid_position) <= _selected_card_data.range_value:
+					targets.append(initial_target)
+		CardEffectData.TargetType.ALL_ENEMY_UNITS:
+			targets.assign(_enemy_units)
+	return targets
+
+func _reset_player_selection():
+	if is_instance_valid(_selected_unit):
+		_selected_unit.set_selected_visual(false)
+		_selected_unit = null
+	if is_instance_valid(_selected_card_ui):
+		player_hand_ui_instance.set_selected_card(null)
+		_selected_card_ui = null
+		_selected_card_data = null
+	battle_grid_instance.hide_movable_range()
+	battle_grid_instance.hide_targetable_cells()
+	_player_action_state = PlayerActionState.IDLE
+
+func _on_unit_stats_changed(unit_node: Node2D):
+	if not is_instance_valid(unit_node): return
+	if unit_node == _player_unit_node:
+		player_info_panel.update_stats(unit_node)
+
+func _on_draw_pile_clicked(): card_pile_viewer.show_cards(PlayerData.draw_pile)
+func _on_discard_pile_clicked(): card_pile_viewer.show_cards(PlayerData.discard_pile)
+
+func _on_end_turn_button_pressed():
+	if _current_turn_state == TurnState.PLAYER_TURN:
+		start_enemy_turn()
+
+func _on_energy_changed(new_amount: int):
+	energy_label.text = "Energie: " + str(new_amount)
+
+func _physics_process(_delta):
+	var mouse_pos = get_global_mouse_position()
+	var grid_cell = battle_grid_instance.get_cell_at_world_position(mouse_pos)
+	var unit_under_mouse = battle_grid_instance.get_object_on_cell(grid_cell)
+	if is_instance_valid(unit_under_mouse) and unit_under_mouse.get_unit_data().faction == UnitData.Faction.ENEMY:
+		enemy_info_panel.update_stats(unit_under_mouse)
+	else:
+		enemy_info_panel.hide_panel()
+
+func _show_valid_targets_for_card(card: CardData):
+	var valid_target_cells: Array[Vector2i] = []
+	var is_attack = true
+	for effect in card.effects:
+		match effect.target_type:
+			CardEffectData.TargetType.SELECTED_ENEMY_UNIT:
+				is_attack = true
+				for enemy in _enemy_units:
+					if is_instance_valid(enemy):
+						var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, enemy.grid_position)
+						if distance <= card.range_value:
+							valid_target_cells.append(enemy.grid_position)
+			CardEffectData.TargetType.SELF_UNIT:
+				is_attack = false
+				if not valid_target_cells.has(_player_unit_node.grid_position):
+					valid_target_cells.append(_player_unit_node.grid_position)
+	battle_grid_instance.show_targetable_cells(valid_target_cells, is_attack)
+
+func _update_pile_counts():
+	if is_instance_valid(draw_pile_button):
+		draw_pile_button.update_count(PlayerData.draw_pile.size())
+	if is_instance_valid(discard_pile_button):
+		discard_pile_button.update_count(PlayerData.discard_pile.size())
+
+func _update_hand_ui():
+	player_hand_ui_instance.clear_hand()
+	for card_data in PlayerData.current_hand:
+		player_hand_ui_instance.add_card_to_hand(card_data)
+	_update_pile_counts()
+
+func set_enemy_intents():
+	for enemy_unit in _enemy_units:
+		if is_instance_valid(enemy_unit) and enemy_unit.has_method("show_intent"):
+			var damage = 0
+			if enemy_unit.get_unit_data():
+				damage = enemy_unit.get_unit_data().attack_damage
+			enemy_unit.show_intent(damage)
+
+func spawn_enemy_units():
+	if not encounter_data:
+		printerr("BattleScene: Chybí EncounterData!")
+		return
+	for enemy_entry in encounter_data.enemies:
+		if not enemy_entry is EncounterEntry or not enemy_entry.unit_data:
+			continue
+		var enemy_node = _spawn_unit(enemy_entry.unit_data, enemy_entry.grid_position)
+		if is_instance_valid(enemy_node):
+			_enemy_units.append(enemy_node)
+			enemy_node.died.connect(_on_enemy_died)
+			enemy_node.stats_changed.connect(_on_unit_stats_changed)
+
+func _spawn_unit(unit_data: UnitData, grid_pos: Vector2i) -> Node2D:
+	if not unit_data: return null
+	var unit_instance = UnitScene.instantiate()
+	unit_instance.unit_data = unit_data
+	if battle_grid_instance.place_object_on_cell(unit_instance, grid_pos):
+		return unit_instance
+	else:
+		unit_instance.queue_free()
+		return null
+
+func end_battle_as_victory():
+	_current_turn_state = TurnState.BATTLE_OVER
+	if is_instance_valid(_player_unit_node):
+		PlayerData.current_hp = _player_unit_node.current_health
+	GameManager.battle_finished(true)

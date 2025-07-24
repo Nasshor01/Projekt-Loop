@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=3 format=3 uid="uid://cinytm63bvwah"]
+
+[ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_s5pp1"]
+[ext_resource type="Texture2D" uid="uid://b3ophvnb4ra66" path="res://art/sprites/units/Boss_DemonGirl.png" id="2_75lmh"]
+
+[resource]
+script = ExtResource("1_s5pp1")
+unit_id = "demon"
+unit_name = "Demon Bitch"
+description = "Popis jednotky."
+faction = 1
+max_health = 150
+attack_damage = 17
+movement_range = 3
+attack_range = 1
+sprite_texture = ExtResource("2_75lmh")
+metadata/_custom_type_script = "uid://celcfyrl033bg"

@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://bvw1qxgfyra2w"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_a3508"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_jvgvh"]
+
+[sub_resource type="Resource" id="Resource_a3508"]
+script = ExtResource("1_a3508")
+effect_type = 8
+value = 0
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[sub_resource type="Resource" id="Resource_jvgvh"]
+script = ExtResource("1_a3508")
+effect_type = 9
+value = 0
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_jvgvh")
+card_id = "lay_on_hands"
+card_name = "Vkládání rukou"
+card_description = "Vyléč se do plných životů. Vyčerpat."
+cost = 3
+range_type = 2
+range_value = 1
+tags = Array[int]([6, 8])
+rarity = 2
+effects = Array[ExtResource("1_a3508")]([SubResource("Resource_a3508"), SubResource("Resource_jvgvh")])
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

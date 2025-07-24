@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://dvvvw8dvuaf0n"]
+
+[ext_resource type="Script" uid="uid://bbmavis6cw87a" path="res://scenes/ui/PlayerHandUI.gd" id="1_rb2pt"]
+
+[node name="PlayerHandUI" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 128.0
+offset_top = 448.0
+offset_right = 1024.0
+offset_bottom = 576.0
+script = ExtResource("1_rb2pt")
+
+[node name="ArrangeTimer" type="Timer" parent="."]
+wait_time = 0.05
+one_shot = true

@@ -1,0 +1,121 @@
+[gd_resource type="Resource" script_class="SubclassData" load_steps=35 format=3 uid="uid://bqaye7oh04v8p"]
+
+[ext_resource type="Resource" uid="uid://dbgquedjcu78p" path="res://data/classes/Tank.tres" id="1_6n481"]
+[ext_resource type="Script" uid="uid://v4pp2wfp7qoh" path="res://data/classes/SubclassData.gd" id="1_pmeaw"]
+[ext_resource type="Resource" uid="uid://big4b3x4pngq" path="res://data/units/paladin_unit.tres" id="3_4jb1q"]
+[ext_resource type="Script" uid="uid://erb1281erb63" path="res://scripts/DeckEntry.gd" id="4_4jb1q"]
+[ext_resource type="Resource" uid="uid://c4s0mkx36b14w" path="res://data/cards/paladin/smite.tres" id="5_4jb1q"]
+[ext_resource type="Resource" uid="uid://3n2gxev54dwm" path="res://data/cards/everyone/adrenaline.tres" id="5_y08cr"]
+[ext_resource type="Resource" uid="uid://bh6efbo2040g5" path="res://data/cards/paladin/pious_defense.tres" id="6_3ylp1"]
+[ext_resource type="Resource" uid="uid://bvg4ywjpmslod" path="res://data/cards/everyone/defend.tres" id="6_a0158"]
+[ext_resource type="Resource" uid="uid://cirhhgn2eiphr" path="res://data/cards/everyone/fortify.tres" id="7_bhomb"]
+[ext_resource type="Resource" uid="uid://cblfwkybymy36" path="res://data/cards/everyone/heavy_strike.tres" id="8_ve6ly"]
+[ext_resource type="Resource" uid="uid://cp8h7oc1tue5q" path="res://data/cards/everyone/nimble_move.tres" id="9_w41tb"]
+[ext_resource type="Resource" uid="uid://cw6mp8no12cmq" path="res://data/cards/everyone/quick_strike.tres" id="10_t6x5h"]
+[ext_resource type="Resource" uid="uid://ca02ckpdcolin" path="res://data/cards/everyone/regroup.tres" id="11_3vhlj"]
+[ext_resource type="Resource" uid="uid://wi3ebnuo0l4i" path="res://data/cards/paladin/aura_of_devotion.tres" id="12_g574m"]
+[ext_resource type="Resource" uid="uid://bexputys1ir15" path="res://data/cards/paladin/consecration.tres" id="13_nqirt"]
+[ext_resource type="Resource" uid="uid://c37ghd1e5v374" path="res://data/cards/paladin/divine_wrath.tres" id="14_jq1sn"]
+[ext_resource type="Resource" uid="uid://bvw1qxgfyra2w" path="res://data/cards/paladin/lay_on_hands.tres" id="15_k05bi"]
+[ext_resource type="Resource" uid="uid://c2a8j4lj2vtyt" path="res://data/cards/paladin/lesser_heal.tres" id="16_4t4su"]
+[ext_resource type="Resource" uid="uid://svmsprb7o3cv" path="res://data/cards/paladin/shield_bash.tres" id="18_1ytuj"]
+
+[sub_resource type="Resource" id="Resource_aba4d"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("5_y08cr")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_srqoh"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("6_a0158")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_1alt0"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("7_bhomb")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_i0ht6"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("8_ve6ly")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_ahum4"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("9_w41tb")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_nvo80"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("10_t6x5h")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_cjagk"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("11_3vhlj")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_o0j3p"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("12_g574m")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_ssqwb"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("13_nqirt")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_rdtty"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("14_jq1sn")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_r73hp"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("15_k05bi")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_yg0b4"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("16_4t4su")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_ju8s5"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("6_3ylp1")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_xu1ci"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("18_1ytuj")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_2v0g0"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("5_4jb1q")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[resource]
+script = ExtResource("1_pmeaw")
+subclass_id = "paladin"
+subclass_name = "Paladin"
+description = "Svatý bojovník, který chrání spojence a trestá nepřátele."
+parent_class = ExtResource("1_6n481")
+starting_deck = Array[ExtResource("4_4jb1q")]([SubResource("Resource_aba4d"), SubResource("Resource_srqoh"), SubResource("Resource_1alt0"), SubResource("Resource_i0ht6"), SubResource("Resource_ahum4"), SubResource("Resource_nvo80"), SubResource("Resource_cjagk"), SubResource("Resource_o0j3p"), SubResource("Resource_ssqwb"), SubResource("Resource_rdtty"), SubResource("Resource_r73hp"), SubResource("Resource_yg0b4"), SubResource("Resource_ju8s5"), SubResource("Resource_xu1ci"), SubResource("Resource_2v0g0")])
+specific_unit_data = ExtResource("3_4jb1q")
+metadata/_custom_type_script = "uid://v4pp2wfp7qoh"

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c5cr66yeqfqxr"]
+
+[ext_resource type="Script" uid="uid://cosm1ceu5i8bq" path="res://scripts/map/ConnectionLine.gd" id="1_fechp"]
+
+[node name="ConnectionLine" type="Line2D"]
+script = ExtResource("1_fechp")

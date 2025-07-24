@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=5 format=3 uid="uid://cpsbvlcxoyqfd"]
+
+[ext_resource type="Script" uid="uid://tp0lo3xqiiqb" path="res://data/encounters/EncounterEntry.gd" id="1_3imfq"]
+[ext_resource type="Resource" uid="uid://cinytm63bvwah" path="res://data/units/Boss_demonGirl.tres" id="2_fabrd"]
+[ext_resource type="Script" uid="uid://dq86v2djx6q1m" path="res://data/encounters/EncounterData.gd" id="2_rtk84"]
+
+[sub_resource type="Resource" id="Resource_3buoe"]
+script = ExtResource("1_3imfq")
+unit_data = ExtResource("2_fabrd")
+grid_position = Vector2i(7, 5)
+metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
+
+[resource]
+script = ExtResource("2_rtk84")
+enemies = Array[ExtResource("1_3imfq")]([SubResource("Resource_3buoe")])
+metadata/_custom_type_script = "uid://dq86v2djx6q1m"

@@ -1,0 +1,8 @@
+StartingDeckPool
+ImageTexture
+EncounterData
+UnitData
+CardData
+FontFile
+SubclassData
+ClassData

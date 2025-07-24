@@ -1,0 +1,45 @@
+[gd_scene load_steps=3 format=3 uid="uid://drjxjljeflimr"]
+
+[ext_resource type="Script" uid="uid://ooy1vlqxvqir" path="res://scripts/map/Map.gd" id="1_ub3q0"]
+[ext_resource type="Script" uid="uid://c68oy7p72j11q" path="res://scripts/map/MapGenerator.gd" id="2_nuen2"]
+
+[node name="Map" type="Node2D"]
+script = ExtResource("1_ub3q0")
+
+[node name="MapGenerator" type="Node" parent="."]
+script = ExtResource("2_nuen2")
+vis_boss_y_offset = -85.0
+
+[node name="Connections" type="Node2D" parent="."]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="SeedLabel" type="Label" parent="CanvasLayer"]
+offset_left = 2.0
+offset_top = 622.0
+offset_right = 42.0
+offset_bottom = 645.0
+
+[node name="Panel" type="Panel" parent="CanvasLayer"]
+offset_left = 5.0
+offset_top = 462.0
+offset_right = 186.0
+offset_bottom = 566.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Panel"]
+layout_mode = 0
+offset_right = 180.0
+offset_bottom = 103.0
+
+[node name="SeedLineEdit" type="LineEdit" parent="CanvasLayer/Panel/VBoxContainer"]
+layout_mode = 2
+
+[node name="GenerateSeedButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer"]
+layout_mode = 2
+text = "GenerateSeedButton "
+
+[node name="RandomSeedButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer"]
+layout_mode = 2
+text = "RandomSeedButton "

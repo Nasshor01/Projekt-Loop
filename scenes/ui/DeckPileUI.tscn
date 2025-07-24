@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://csfa8idl8266g"]
+
+[ext_resource type="Texture2D" uid="uid://do62nk32kdufh" path="res://art/icons/back_brown.png" id="1_s3e2u"]
+[ext_resource type="Script" uid="uid://culjp6tt1xvgu" path="res://scripts/DeckPileUI.gd" id="2_vwerc"]
+
+[node name="DeckPileUI" type="TextureButton"]
+offset_right = 40.0
+offset_bottom = 40.0
+texture_normal = ExtResource("1_s3e2u")
+texture_pressed = ExtResource("1_s3e2u")
+texture_hover = ExtResource("1_s3e2u")
+script = ExtResource("2_vwerc")
+
+[node name="CountLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 24.0
+offset_right = 40.0
+offset_bottom = 37.0
+vertical_alignment = 1

@@ -1,0 +1,25 @@
+[gd_scene load_steps=3 format=3 uid="uid://bw4guv8ep65dr"]
+
+[ext_resource type="Script" uid="uid://c2ntxvqmfackd" path="res://scenes/battle/Unit.gd" id="1_38ld8"]
+[ext_resource type="Resource" uid="uid://big4b3x4pngq" path="res://data/units/paladin_unit.tres" id="2_xhfnc"]
+
+[node name="Unit" type="Node2D"]
+script = ExtResource("1_38ld8")
+unit_data = ExtResource("2_xhfnc")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.5, 0.5)
+
+[node name="IntentUI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_left = -21.0
+offset_top = -43.0
+offset_right = 19.0
+offset_bottom = -3.0
+
+[node name="StatusEffectContainer" type="HBoxContainer" parent="."]
+offset_left = -24.0
+offset_top = -60.0
+offset_right = 16.0
+offset_bottom = -20.0
