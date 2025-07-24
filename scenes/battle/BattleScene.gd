@@ -12,7 +12,7 @@ const AIController = preload("res://scripts/EnemyAIController.gd")
 @onready var draw_pile_button: TextureButton = %DrawPileButton
 @onready var discard_pile_button: TextureButton = %DiscardPileButton
 @onready var card_pile_viewer: PanelContainer = %CardPileViewer
-@onready var battle_grid_instance: Node2D = $BattleGrid
+@onready var battle_grid_instance: BattleGrid = $BattleGrid
 @onready var player_hand_ui_instance: Control = $PlayerHandUI
 @onready var end_turn_button: Button = $EndTurnButton
 @onready var victory_label: Label = $VictoryLabel
@@ -41,12 +41,15 @@ func _ready():
 
 	PlayerData.energy_changed.connect(_on_energy_changed)
 	player_hand_ui_instance.hand_card_was_clicked.connect(_on_player_hand_card_clicked)
+	player_hand_ui_instance.card_hover_started.connect(_on_card_hover_started)
+	player_hand_ui_instance.card_hover_ended.connect(_on_card_hover_ended)
 	draw_pile_button.pile_clicked.connect(_on_draw_pile_clicked)
 	discard_pile_button.pile_clicked.connect(_on_discard_pile_clicked)
 	win_button.pressed.connect(_on_win_button_pressed)
 
 	spawn_player_unit()
 	spawn_enemy_units()
+	_place_terrain_features()
 	await get_tree().create_timer(0.2).timeout
 	start_player_turn()
 
@@ -129,13 +132,16 @@ func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: Car
 
 func try_play_card(card: CardData, initial_target: Node2D):
 	if not card: return
-	
 	if not PlayerData.spend_energy(card.cost):
 		print("Nedostatek energie!")
 		return
 
 	var card_played_successfully = false
 	for effect_data in card.effects:
+		# Pro AoE karty považujeme zahrání za úspěšné vždy
+		if effect_data.target_type == CardEffectData.TargetType.ANY_GRID_CELL:
+			card_played_successfully = true
+		
 		var targets = _get_targets_for_effect(effect_data, initial_target)
 		if not targets.is_empty():
 			card_played_successfully = true
@@ -249,20 +255,35 @@ func _unhandled_input(event: InputEvent):
 				_reset_player_selection()
 			get_viewport().set_input_as_handled()
 
-func _get_targets_for_effect(effect: CardEffectData, initial_target: Node2D) -> Array[Node2D]:
+func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node2D) -> Array[Node2D]:
 	var targets: Array[Node2D] = []
+	var clicked_grid_cell = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
+
+	# Nová logika pro AoE karty cílící na zem
+	if effect.target_type == CardEffectData.TargetType.ANY_GRID_CELL:
+		var affected_cells = battle_grid_instance.get_cells_for_aoe(
+			clicked_grid_cell,
+			effect.area_of_effect_type,
+			effect.aoe_param_x,
+			effect.aoe_param_y
+		)
+		for cell in affected_cells:
+			var unit_on_cell = battle_grid_instance.get_object_on_cell(cell)
+			if is_instance_valid(unit_on_cell) and unit_on_cell.get_unit_data().faction == UnitData.Faction.ENEMY:
+				targets.append(unit_on_cell)
+		return targets
+
 	match effect.target_type:
 		CardEffectData.TargetType.SELF_UNIT:
-			if initial_target == _player_unit_node:
-				targets.append(_player_unit_node)
+			targets.append(_player_unit_node)
 		CardEffectData.TargetType.SELECTED_ENEMY_UNIT:
-			if is_instance_valid(initial_target) and initial_target.get_unit_data().faction == UnitData.Faction.ENEMY:
-				if battle_grid_instance.get_distance(_player_unit_node.grid_position, initial_target.grid_position) <= _selected_card_data.range_value:
-					targets.append(initial_target)
+			if is_instance_valid(initial_target_node) and initial_target_node.get_unit_data().faction == UnitData.Faction.ENEMY:
+				if battle_grid_instance.get_distance(_player_unit_node.grid_position, initial_target_node.grid_position) <= _selected_card_data.range_value:
+					targets.append(initial_target_node)
 		CardEffectData.TargetType.ALL_ENEMY_UNITS:
 			targets.assign(_enemy_units)
 	return targets
-
+	
 func _reset_player_selection():
 	if is_instance_valid(_selected_unit):
 		_selected_unit.set_selected_visual(false)
@@ -273,6 +294,7 @@ func _reset_player_selection():
 		_selected_card_data = null
 	battle_grid_instance.hide_movable_range()
 	battle_grid_instance.hide_targetable_cells()
+	battle_grid_instance.hide_aoe_highlight()
 	_player_action_state = PlayerActionState.IDLE
 
 func _on_unit_stats_changed(unit_node: Node2D):
@@ -298,6 +320,8 @@ func _physics_process(_delta):
 		enemy_info_panel.update_stats(unit_under_mouse)
 	else:
 		enemy_info_panel.hide_panel()
+	if _player_action_state == PlayerActionState.CARD_SELECTED:
+			_update_card_target_preview()
 
 func _show_valid_targets_for_card(card: CardData):
 	var valid_target_cells: Array[Vector2i] = []
@@ -365,3 +389,81 @@ func end_battle_as_victory():
 	if is_instance_valid(_player_unit_node):
 		PlayerData.current_hp = _player_unit_node.current_health
 	GameManager.battle_finished(true)
+
+func _on_card_hover_started(card_data: CardData):
+	# TUTO FUNKCI ÚPLNĚ VYPRÁZDNÍME, UŽ JI NEPOTŘEBUJEME
+	pass
+
+func _on_card_hover_ended():
+	# ZDE POUZE ZAJISTÍME, ABY ZMIZELO ZVÝRAZNĚNÍ, KDYŽ SJEDEME Z KARTY
+	# POKUD ZROVNA NĚJAKOU NECÍLÍME
+	if _player_action_state != PlayerActionState.CARD_SELECTED:
+		battle_grid_instance.hide_aoe_highlight()
+
+func _update_card_target_preview():
+	if not _selected_card_data: return
+
+	var mouse_grid_pos = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
+
+	if not battle_grid_instance._is_valid_grid_position(mouse_grid_pos):
+		battle_grid_instance.hide_aoe_highlight() # Pokud ne, skryjeme preview
+		return
+	var aoe_cells: Array[Vector2i] = []
+
+	for effect in _selected_card_data.effects:
+		if effect.area_of_effect_type == CardEffectData.AreaOfEffectType.SINGLE_TARGET:
+			continue
+
+		match effect.area_of_effect_type:
+			CardEffectData.AreaOfEffectType.ROW:
+				for x in range(battle_grid_instance.grid_columns):
+					aoe_cells.append(Vector2i(x, mouse_grid_pos.y))
+
+			CardEffectData.AreaOfEffectType.COLUMN:
+				for y in range(battle_grid_instance.grid_rows):
+					aoe_cells.append(Vector2i(mouse_grid_pos.x, y))
+
+			CardEffectData.AreaOfEffectType.SQUARE_X_BY_Y:
+				var width = effect.aoe_param_x
+				var height = effect.aoe_param_y
+				for y in range(mouse_grid_pos.y, mouse_grid_pos.y + height):
+					for x in range(mouse_grid_pos.x, mouse_grid_pos.x + width):
+						var cell = Vector2i(x, y)
+						if battle_grid_instance._is_valid_grid_position(cell):
+							aoe_cells.append(cell)
+
+			CardEffectData.AreaOfEffectType.ALL_ON_GRID:
+				for enemy in _enemy_units:
+					if is_instance_valid(enemy):
+						aoe_cells.append(enemy.grid_position)
+
+	if not aoe_cells.is_empty():
+		battle_grid_instance.show_aoe_highlight(aoe_cells)
+	else:
+		# Pokud karta nemá AoE, skryjeme staré zvýraznění
+		battle_grid_instance.hide_aoe_highlight()
+
+func _place_terrain_features():
+	var rock_data = preload("res://data/terrain/rock.tres")
+	var obstacles_to_place = 3 # Kolik překážek chceme
+	var placed_obstacles = 0
+	var occupied_cells = []
+
+	# Sebereme pozice všech jednotek, abychom na ně neumístili kámen
+	occupied_cells.append(_player_unit_node.grid_position)
+	for enemy in _enemy_units:
+		occupied_cells.append(enemy.grid_position)
+
+	var attempts = 0 # Pojistka proti zacyklení
+	while placed_obstacles < obstacles_to_place and attempts < 100:
+		attempts += 1
+		# Vygenerujeme náhodnou pozici
+		var rand_x = randi_range(1, battle_grid_instance.grid_columns - 2) # Vynecháme kraje
+		var rand_y = randi_range(0, battle_grid_instance.grid_rows - 1)
+		var random_pos = Vector2i(rand_x, rand_y)
+
+		# Zkontrolujeme, zda už na pozici něco není
+		if not occupied_cells.has(random_pos):
+			battle_grid_instance.place_terrain(random_pos, rock_data)
+			occupied_cells.append(random_pos) # Přidáme novou překážku do obsazených polí
+			placed_obstacles += 1

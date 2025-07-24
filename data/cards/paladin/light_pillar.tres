@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://d2ko5pprq2g6e"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_wlt6y"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_38e5h"]
+
+[sub_resource type="Resource" id="Resource_k6dw4"]
+script = ExtResource("1_wlt6y")
+effect_type = 0
+value = 6
+string_value = ""
+target_type = 6
+area_of_effect_type = 2
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_38e5h")
+card_id = "light_pillar"
+card_name = "Sloup Světla"
+card_description = "Způsobí 6 poškození všem nepřátelům ve sloupci."
+cost = 2
+range_type = 5
+range_value = 5
+tags = Array[int]([0])
+rarity = 1
+effects = Array[ExtResource("1_wlt6y")]([SubResource("Resource_k6dw4")])
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

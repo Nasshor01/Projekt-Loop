@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SubclassData" load_steps=35 format=3 uid="uid://bqaye7oh04v8p"]
+[gd_resource type="Resource" script_class="SubclassData" load_steps=41 format=3 uid="uid://bqaye7oh04v8p"]
 
 [ext_resource type="Resource" uid="uid://dbgquedjcu78p" path="res://data/classes/Tank.tres" id="1_6n481"]
 [ext_resource type="Script" uid="uid://v4pp2wfp7qoh" path="res://data/classes/SubclassData.gd" id="1_pmeaw"]
@@ -19,6 +19,9 @@
 [ext_resource type="Resource" uid="uid://bvw1qxgfyra2w" path="res://data/cards/paladin/lay_on_hands.tres" id="15_k05bi"]
 [ext_resource type="Resource" uid="uid://c2a8j4lj2vtyt" path="res://data/cards/paladin/lesser_heal.tres" id="16_4t4su"]
 [ext_resource type="Resource" uid="uid://svmsprb7o3cv" path="res://data/cards/paladin/shield_bash.tres" id="18_1ytuj"]
+[ext_resource type="Resource" uid="uid://bmnffdqv8sp7f" path="res://data/cards/paladin/holy_wave.tres" id="20_ve6ly"]
+[ext_resource type="Resource" uid="uid://d2ko5pprq2g6e" path="res://data/cards/paladin/light_pillar.tres" id="21_w41tb"]
+[ext_resource type="Resource" uid="uid://qtmmceitmyel" path="res://data/cards/paladin/purging_burst.tres" id="22_t6x5h"]
 
 [sub_resource type="Resource" id="Resource_aba4d"]
 script = ExtResource("4_4jb1q")
@@ -110,12 +113,30 @@ card = ExtResource("5_4jb1q")
 count = 1
 metadata/_custom_type_script = "uid://erb1281erb63"
 
+[sub_resource type="Resource" id="Resource_3vhlj"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("20_ve6ly")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_g574m"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("21_w41tb")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
+[sub_resource type="Resource" id="Resource_nqirt"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("22_t6x5h")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
 [resource]
 script = ExtResource("1_pmeaw")
 subclass_id = "paladin"
 subclass_name = "Paladin"
 description = "Svatý bojovník, který chrání spojence a trestá nepřátele."
 parent_class = ExtResource("1_6n481")
-starting_deck = Array[ExtResource("4_4jb1q")]([SubResource("Resource_aba4d"), SubResource("Resource_srqoh"), SubResource("Resource_1alt0"), SubResource("Resource_i0ht6"), SubResource("Resource_ahum4"), SubResource("Resource_nvo80"), SubResource("Resource_cjagk"), SubResource("Resource_o0j3p"), SubResource("Resource_ssqwb"), SubResource("Resource_rdtty"), SubResource("Resource_r73hp"), SubResource("Resource_yg0b4"), SubResource("Resource_ju8s5"), SubResource("Resource_xu1ci"), SubResource("Resource_2v0g0")])
+starting_deck = Array[ExtResource("4_4jb1q")]([SubResource("Resource_aba4d"), SubResource("Resource_srqoh"), SubResource("Resource_1alt0"), SubResource("Resource_i0ht6"), SubResource("Resource_ahum4"), SubResource("Resource_nvo80"), SubResource("Resource_cjagk"), SubResource("Resource_o0j3p"), SubResource("Resource_ssqwb"), SubResource("Resource_rdtty"), SubResource("Resource_r73hp"), SubResource("Resource_yg0b4"), SubResource("Resource_ju8s5"), SubResource("Resource_xu1ci"), SubResource("Resource_2v0g0"), SubResource("Resource_3vhlj"), SubResource("Resource_g574m"), SubResource("Resource_nqirt")])
 specific_unit_data = ExtResource("3_4jb1q")
 metadata/_custom_type_script = "uid://v4pp2wfp7qoh"

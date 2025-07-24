@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TerrainData" load_steps=3 format=3 uid="uid://dfr8lmry8de2l"]
+
+[ext_resource type="Script" uid="uid://bdck0xpv16hbr" path="res://data/terrain/TerrainData.gd" id="1_vobtq"]
+[ext_resource type="Texture2D" uid="uid://bsm7nbrsx2m74" path="res://art/sprites/map/battlegrid/sutr.png" id="2_bsygv"]
+
+[resource]
+script = ExtResource("1_vobtq")
+terrain_id = "rock"
+terrain_name = "Skála"
+description = "Neprůchodná překážka."
+sprite = ExtResource("2_bsygv")
+is_walkable = false
+blocks_line_of_sight = false
+effect_type = 0
+effect_string_value = ""
+effect_numeric_value = 0
+effect_duration = 1
+metadata/_custom_type_script = "uid://bdck0xpv16hbr"

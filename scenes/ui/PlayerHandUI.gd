@@ -3,6 +3,8 @@
 extends Control
 
 signal hand_card_was_clicked(card_ui_instance: Control, card_data_resource: CardData)
+signal card_hover_started(card_data_resource: CardData)
+signal card_hover_ended()
 
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 
@@ -104,11 +106,13 @@ func _arrange_cards():
 
 func _on_card_mouse_entered(card: Control):
 	_hovered_card = card
+	emit_signal("card_hover_started", card.card_data)
 	_request_arrange()
 
 func _on_card_mouse_exited(card: Control):
 	if _hovered_card == card:
 		_hovered_card = null
+		emit_signal("card_hover_ended")
 		_request_arrange()
 
 func _on_card_gui_input(event: InputEvent, card_node: Control):

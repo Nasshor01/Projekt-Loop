@@ -1,4 +1,4 @@
-res://scenes/ui/CardUI.tscn
+res://scenes/battle/BattleGrid.tscn
 res://data/classes/Tank.tres
 res://data/cards/paladin/smite.tres
 res://data/cards/everyone/adrenaline.tres
@@ -17,8 +17,11 @@ res://data/cards/paladin/lesser_heal.tres
 res://data/cards/paladin/shield_bash.tres
 res://data/classes/Paladin.tres
 res://data/encounters/first_battle.tres
+res://data/cards/paladin/holy_wave.tres
+res://data/cards/paladin/purging_burst.tres
+res://data/cards/paladin/light_pillar.tres
+res://scenes/ui/CardUI.tscn
 res://scenes/battle/Unit.tscn
-res://scenes/battle/BattleGrid.tscn
 res://scenes/ui/PlayerHandUI.tscn
 res://scenes/battle/BattleScene.tscn
 res://scenes/battle/UnitInfoPanel.tscn
@@ -29,3 +32,8 @@ res://scenes/map/Map.tscn
 res://scenes/map/MapNode.tscn
 res://main.tscn
 res://scenes/ui/GameOver.tscn
+res://scenes/battle/BattleScene.gd
+res://scenes/battle/BattleGrid.gd
+res://data/terrain/TerrainData.gd
+res://data/terrain/rock.tres
+res://scripts/EnemyAIController.gd
