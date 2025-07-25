@@ -7,15 +7,15 @@
 **Cíl:** Mít plně hratelnou a uspokojivou verzi jednoho "runu" od začátku do konce. Soustředíme se na tvůj cíl: **"Bojiště 2.0"** a základní komfort pro hráče.
 
 1.  **Priorita č. 1: Vylepšení Bojiště:**
-    * **Implementovat vizualizaci AoE:** Klíčový úkol. Vytvořit v `BattleGrid.gd` funkci, která dočasně zvýrazní zasažená políčka, když hráč klikne myší na kartu s plošným efektem.
-    * **Implementovat překážky:** Přidat na bojiště neprůchodné překážky (kameny, trosky), aby se zvýšila taktická hloubka. AI se je musí naučit obcházet.
-    * **Zpětná vazba pro hráče:** Přidat "plovoucí" čísla pro poškození/léčení, aby byly dopady karet okamžitě vidět.
+    * **Implementovat vizualizaci AoE:** Klíčový úkol. Vytvořit v `BattleGrid.gd` funkci, která dočasně zvýrazní zasažená políčka, když hráč klikne myší na kartu s plošným efektem. (částečně implementováno, stále co vylepšovat)
+    * **Implementovat překážky:** Přidat na bojiště neprůchodné překážky (kameny, trosky), aby se zvýšila taktická hloubka. AI se je musí naučit obcházet. (již kámen co blokuje movement a bahno co snižuje pohyb,- stále co vylepšovat)
+    * **Zpětná vazba pro hráče:** Přidat "plovoucí" čísla pro poškození/léčení, aby byly dopady karet okamžitě vidět. (work in progress)
 
 2.  **Systém Ukládání a Načítání:**
-    * Umožnit hráči uložit hru na mapě a vrátit se později. Vytvořit `SaveManager.gd`, který bude ukládat klíčová data (HP, balíček, pozice na mapě, seed) do JSON souboru.
+    * Umožnit hráči uložit hru na mapě a vrátit se později. Vytvořit `SaveManager.gd`, který bude ukládat klíčová data (HP, balíček, pozice na mapě, seed) do JSON souboru. (stále neaktivní)
 
 3.  **Základy Meta-progrese:**
-    * Odměnit hráče za každý pokus. Po každém "runu" dej hráči permanentní měnu ("Střepy Věčnosti"). Zatím je jenom sbírej a zobrazuj v nějakém jednoduchém menu.
+    * Odměnit hráče za každý pokus. Po každém "runu" dej hráči permanentní měnu ("Střepy Věčnosti"). Zatím je jenom sbírej a zobrazuj v nějakém jednoduchém menu. (stále neaktivní)
 
 ---
 
