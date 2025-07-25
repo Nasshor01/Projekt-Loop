@@ -1,12 +1,12 @@
 # Projekt: Loop
 
-Vítejte v repozitáři hry **Loop**, single-player (s plánovaným co-op módem) hry žánru **deck-building roguelike RPG**. Tento projekt je vyvíjen v **Godot Engine** s cílem vytvořit hluboký a znovuhratelný zážitek inspirovaný klasikami jako *Slay the Spire*. Hráč si vybere svou postavu, postupuje po náhodně generované mapě a bojuje s nepřáteli pomocí balíčku karet, který si postupně vylepšuje.
+Vítejte v repozitáři mé hry **Loop**, single-player (s plánovaným co-op módem) hry žánru **deck-building roguelike RPG**. Tento projekt vyvíjím v **Godot Engine** s cílem vytvořit hluboký a znovuhratelný zážitek inspirovaný klasikami jako *Slay the Spire*. Hráč si vybere svou postavu, postupuje po náhodně generované mapě a bojuje s nepřáteli pomocí balíčku karet, který si postupně vylepšuje.
 
-Největší technickou předností projektu je jeho **data-driven design**. Veškerý herní obsah – karty, jednotky, nepřátelé, souboje a jejich vlastnosti – je definován jako externí datové soubory. To nám umožňuje extrémně snadno a rychle přidávat nový obsah a ladit balanc hry bez zásahů do kódu.
+Největší technickou předností projektu je jeho **data-driven design**. Veškerý herní obsah – karty, jednotky, nepřátelé, souboje a jejich vlastnosti – je definován jako externí datové soubory. To mi umožňuje extrémně snadno a rychle přidávat nový obsah a ladit balanc hry bez zásahů do kódu.
 
 ## Klíčové mechaniky (Současný stav)
 
-Hra již nyní obsahuje robustní základ, na kterém stavíme další funkce:
+Hra již nyní obsahuje robustní základ, na kterém stavím další funkce:
 
 * **🎲 Procedurálně generovaná mapa:** Každá hra je jedinečná díky náhodně generované mapě s různými cestami a typy uzlů (souboje, elity, boss, odpočinek, poklad, obchod, náhodné události).
 
@@ -20,18 +20,18 @@ Hra již nyní obsahuje robustní základ, na kterém stavíme další funkce:
 
 ## Budoucí vize a ambice
 
-Naším hlavním cílem je vytvořit hru s vysokou znovuhratelností a strategickou hloubkou. **Prioritou číslo jedna je dokončení plnohodnotného single-player zážitku.** Jakmile bude tato část hotová a odladěná, zaměříme se na další ambiciózní cíle.
+Mým hlavním cílem je vytvořit hru s vysokou znovuhratelností a strategickou hloubkou. **Prioritou číslo jedna je dokončení plnohodnotného single-player zážitku.** Jakmile bude tato část hotová a odladěná, zaměřím se na další ambiciózní cíle.
 
 ### Plánovaný Kooperativní Mód (Co-op)
 
-Nejzajímavější budoucí vizí je unikátní kooperativní mód pro dva hráče. Nechceme jít cestou, kdy dva hráči jen bojují bok po boku. Náš koncept je postaven na sdíleném riziku a unikátních synergických mechanikách:
+Nejzajímavější budoucí vizí je unikátní kooperativní mód pro dva hráče. Nechci jít cestou, kdy dva hráči jen bojují bok po boku. Můj koncept je postaven na sdíleném riziku a unikátních synergických mechanikách:
 
 * **Zvýšená obtížnost:** V co-op módu budou nepřátelé výrazně silnější (například 2.5x), aby byla spolupráce a strategie naprosto klíčová.
 * **Fúze Artefaktů:** Každý hráč bude sbírat své vlastní artefakty. Pokud se ale stane, že **oba hráči získají stejný artefakt**, dojde k jeho **fúzi**. Původní artefakty zmizí a místo nich oba hráči získají jeden **společný, extrémně silný artefakt**, který bude násobně (např. 2.5x) silnější než jeho původní verze a navíc získá bonusové vlastnosti. To povede k unikátním strategickým rozhodnutím a budování společných synergii.
 
 ### Další plánovaný obsah a vylepšení
 
-Souběžně s prací na hlavních režimech budeme hru rozšiřovat o:
+Souběžně s prací na hlavních režimech budu hru rozšiřovat o:
 * **Nové herní třídy:** Warrior, Rogue, Mage a další.
 * **Rozšíření bojového systému:** Přidání status efektů (jed, zranitelnost, síla...), pasivních relikvií a jednorázových elixírů.
 * **Nový obsah:** Více nepřátel, bossů, karet a náhodných událostí na mapě.
