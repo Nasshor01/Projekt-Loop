@@ -1,5 +1,4 @@
 # MapData.gd
-# Opraveno: Správná inicializace polí.
 extends Resource
 class_name MapData
 

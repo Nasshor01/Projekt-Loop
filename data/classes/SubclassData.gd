@@ -12,8 +12,6 @@ extends Resource
 
 @export var parent_class: ClassData
 
-# --- ZMĚNA ZDE ---
-# Nyní používáme pole DeckEntry pro definici startovního balíčku.
 @export var starting_deck: Array[DeckEntry] = []
 
 # Můžeme mít specifickou jednotku pro podtřídu, pokud se liší od základní.

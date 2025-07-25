@@ -1,5 +1,5 @@
 # ===================================================================
-# Soubor: res://scripts/EnemyAIController.gd (FINÁLNÍ OPRAVA)
+# Soubor: res://scripts/EnemyAIController.gd
 # POPIS: Čistá a funkční verze AI, která správně obchází překážky.
 # ===================================================================
 class_name EnemyAIController
@@ -69,7 +69,6 @@ func _find_path_to_unit(from_unit: Node2D, to_unit: Node2D) -> Array[Vector2i]:
 	var result_path: Array[Vector2i] = []; for p in path_vectors: result_path.append(Vector2i(p))
 	return result_path
 
-# --- JEDINÁ ZMĚNA JE V TÉTO FUNKCI ---
 func _update_astar_grid(moving_unit: Node2D):
 	astar_grid.clear()
 	var all_units = battle_grid.get_all_objects_on_grid()

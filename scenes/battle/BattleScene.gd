@@ -1,8 +1,3 @@
-# ===================================================================
-# Soubor: res://scenes/battle/BattleScene.gd (Kompletní a finální oprava)
-# POPIS: Opravuje pohyb AI pod vlivem statusu "Slow" a správně
-# spravuje statusy na konci kola pro všechny jednotky.
-# ===================================================================
 extends Node2D
 
 const UnitScene = preload("res://scenes/battle/Unit.tscn")
@@ -101,7 +96,6 @@ func start_enemy_turn():
 	_current_turn_state = TurnState.ENEMY_TURN
 	end_turn_button.disabled = true
 	
-	# Zpracujeme efekty konce kola pro hráče
 	if is_instance_valid(_player_unit_node):
 		_player_unit_node.process_turn_end_statuses()
 
@@ -188,26 +182,27 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D):
 	
 	match effect.effect_type:
 		CardEffectData.EffectType.DEAL_DAMAGE:
-			target.take_damage(effect.value)
+			if target.has_method("take_damage"): target.take_damage(effect.value)
 		CardEffectData.EffectType.GAIN_BLOCK:
-			target.add_block(effect.value)
+			if target.has_method("add_block"): target.add_block(effect.value)
 		CardEffectData.EffectType.HEAL_UNIT:
-			target.heal(effect.value)
+			if target.has_method("heal"): target.heal(effect.value)
 		CardEffectData.EffectType.HEAL_TO_FULL:
-			target.heal_to_full()
+			if target.has_method("heal_to_full"): target.heal_to_full()
 		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK:
-			target.take_damage(_player_unit_node.current_block)
+			if is_instance_valid(_player_unit_node) and target.has_method("take_damage"):
+				target.take_damage(_player_unit_node.current_block)
 		CardEffectData.EffectType.DRAW_CARDS:
 			PlayerData.draw_cards(effect.value)
 			_update_hand_ui()
 		CardEffectData.EffectType.GAIN_ENERGY:
 			PlayerData.gain_energy(effect.value)
 		CardEffectData.EffectType.APPLY_STATUS:
-			target.apply_status(effect.string_value, effect.value)
+			if target.has_method("apply_status"): target.apply_status(effect.string_value, effect.value)
 		CardEffectData.EffectType.GAIN_EXTRA_MOVE:
-			target.gain_extra_move()
+			if target.has_method("gain_extra_move"): target.gain_extra_move()
 		_:
-			print("Neznámý efekt karty: ", effect.effect_type)
+			pass
 
 func process_enemy_actions():
 	var ai_controller = AIController.new()
@@ -225,7 +220,6 @@ func process_enemy_actions():
 					enemy_unit.use_move_action()
 					var path = action.move_path
 					if path.size() > 1:
-						# ZDE JE OPRAVA PRO AI: Používáme správnou funkci pro výpočet dosahu
 						var move_dist = min(path.size() - 1, enemy_unit.get_current_movement_range())
 						if move_dist > 0:
 							var target_pos = path[move_dist]
@@ -242,7 +236,6 @@ func process_enemy_actions():
 							if attack_action.type == AIController.AIAction.ActionType.ATTACK:
 								enemy_unit.attack(attack_action.target_unit)
 
-		# Zpracujeme efekty konce kola pro aktuálního nepřítele
 		enemy_unit.process_turn_end_statuses()
 
 	await get_tree().create_timer(0.5).timeout
@@ -255,6 +248,20 @@ func _unhandled_input(event: InputEvent):
 	
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		if _player_action_state == PlayerActionState.CARD_SELECTED:
+			var is_self_targeting_card = false
+			if is_instance_valid(_selected_card_data):
+				is_self_targeting_card = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
+
+			if is_self_targeting_card:
+				if is_instance_valid(_player_unit_node):
+					try_play_card(_selected_card_data, _player_unit_node)
+					get_viewport().set_input_as_handled()
+					return
+				else:
+					_reset_player_selection()
+					get_viewport().set_input_as_handled()
+					return
+			
 			var clicked_grid_cell = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
 			var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
 			try_play_card(_selected_card_data, target_node)

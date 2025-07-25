@@ -1,5 +1,5 @@
 # ===================================================================
-# Soubor: res://scenes/ui/DeckPileUI.gd (NOVÝ SOUBOR)
+# Soubor: res://scenes/ui/DeckPileUI.gd
 # POPIS: Skript pro klikatelnou ikonu balíčku.
 # ===================================================================
 extends TextureButton

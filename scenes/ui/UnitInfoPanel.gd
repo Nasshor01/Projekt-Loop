@@ -1,6 +1,5 @@
 # ===================================================================
-# Soubor: res://scenes/ui/UnitInfoPanel.gd (UPRAVENÁ VERZE)
-# POPIS: Odstraněna reference na APLabel, která již neexistuje.
+# Soubor: res://scenes/ui/UnitInfoPanel.gd
 # ===================================================================
 extends PanelContainer
 

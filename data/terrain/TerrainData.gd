@@ -1,4 +1,4 @@
-# Soubor: data/terrain/TerrainData.gd (NOVÝ SOUBOR)
+# Soubor: data/terrain/TerrainData.gd
 # POPIS: Základní datová struktura pro všechny typy terénu na bojišti.
 class_name TerrainData
 extends Resource

@@ -1,6 +1,5 @@
 # ClassData.gd
 # Resource pro definici hlavní třídy postavy.
-# Uložte např. do res://data/classes/ClassData.gd
 class_name ClassData
 extends Resource
 

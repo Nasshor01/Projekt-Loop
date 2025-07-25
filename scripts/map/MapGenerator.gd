@@ -1,7 +1,4 @@
 # MapGenerator.gd
-# VERZE: Přidány @export proměnné pro snadnou modifikaci v Godot editoru.
-# OPRAVENO: Přepsána logika pro _ensure_unique_destinations, aby striktně
-# dodržovala pravidlo o unikátních typech místností při větvení cest.
 extends Node
 
 #=============================================================================

@@ -1,7 +1,7 @@
 # ===================================================================
-# Soubor: res://scenes/battle/Unit.gd (Kompletní a opravená verze)
-# POPIS: Zahrnuje správnou implementaci terénních efektů a statusů.
+# Soubor: res://scenes/battle/Unit.gd
 # ===================================================================
+class_name Unit
 extends Node2D
 
 signal died(unit_node)
@@ -140,6 +140,23 @@ func process_terrain_effects(terrain_data: TerrainData):
 
 func heal(amount: int):
 	current_health = min(current_health + amount, unit_data.max_health)
+	_update_stats_and_emit_signal()
+
+func heal_to_full():
+	if not is_instance_valid(unit_data):
+		return
+	
+	# Pokud je jednotka hráčova, vyléčí se na PlayerData.max_hp
+	if unit_data.faction == UnitData.Faction.PLAYER:
+		if is_instance_valid(PlayerData): # Ujistíme se, že PlayerData existuje
+			current_health = PlayerData.max_hp
+		else:
+			# Fallback, pokud by PlayerData z nějakého důvodu nebylo dostupné
+			current_health = unit_data.max_health
+	else:
+		# Pro ostatní jednotky se léčí na jejich vlastní max_health
+		current_health = unit_data.max_health
+	
 	_update_stats_and_emit_signal()
 
 func _die():

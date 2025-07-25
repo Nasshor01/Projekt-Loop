@@ -1,7 +1,3 @@
-# ===================================================================
-# Soubor: res://scenes/battle/BattleGrid.gd (FINÁLNÍ OPRAVA)
-# POPIS: Opravena metoda pro odstranění jednotky.
-# ===================================================================
 class_name BattleGrid
 extends Node2D
 
@@ -80,7 +76,6 @@ func remove_object_by_instance(object_node: Node2D):
 			_grid_objects.erase(cell)
 			return
 
-# Zbytek je stejný
 func get_distance(cell_a: Vector2i, cell_b: Vector2i) -> int: return abs(cell_a.x - cell_b.x) + abs(cell_a.y - cell_b.y)
 func get_cell_at_world_position(world_position: Vector2) -> Vector2i:
 	var local_position = to_local(world_position); return Vector2i(floori(local_position.x / cell_size.x), floori(local_position.y / cell_size.y))

@@ -1,5 +1,4 @@
 # MapNode.gd
-# OPRAVENO: Přidána podtržítka k nepoužitým parametrům.
 extends Area2D
 class_name MapNode
 

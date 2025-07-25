@@ -1,5 +1,4 @@
 # Soubor: scripts/autoload/PlayerData.gd
-# POPIS: Kompletní verze se správnou resetovací funkcí.
 extends Node
 
 var selected_class: ClassData = null

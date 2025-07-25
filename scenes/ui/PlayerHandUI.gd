@@ -1,5 +1,4 @@
 # Soubor: scenes/ui/PlayerHandUI.gd
-# POPIS: Kompletní finální verze, která řeší chybu časovače při mazání scény.
 extends Control
 
 signal hand_card_was_clicked(card_ui_instance: Control, card_data_resource: CardData)
@@ -30,9 +29,6 @@ func _ready():
 	resized.connect(_request_arrange)
 
 func _request_arrange():
-	# --- FINÁLNÍ OPRAVA ZDE ---
-	# Spustíme časovač pouze pokud je tento uzel stále aktivní součástí scény
-	# a pokud časovač zrovna neběží. Tím se vyhneme chybě při mazání.
 	if is_inside_tree() and _arrange_timer.is_stopped():
 		_arrange_timer.start()
 

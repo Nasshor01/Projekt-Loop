@@ -1,5 +1,4 @@
 # Soubor: scripts/RewardScene.gd
-# POPIS: Kompletní oprava. Řeší pád hry a přidává kartu do balíčku hráče.
 extends Control
 
 # Seznam všech možných karet, které se mohou objevit jako odměna
@@ -17,7 +16,6 @@ const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 const NUM_CARD_CHOICES = 3 # Počet karet, ze kterých se vybírá
 
 func _ready():
-	# --- OPRAVA CHYBY "Read-only state" ---
 	# 1. Vytvoříme upravitelnou kopii pole karet.
 	var available_cards = CARD_REWARD_POOL.duplicate()
 	# 2. Zamícháme tuto kopii, ne konstantu.

@@ -1,6 +1,5 @@
 # ===================================================================
-# Soubor: res://data/units/UnitData.gd (UPRAVENÁ VERZE)
-# POPIS: Odstraněna proměnná max_action_points.
+# Soubor: res://data/units/UnitData.gd
 # ===================================================================
 class_name UnitData
 extends Resource

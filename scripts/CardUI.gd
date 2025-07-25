@@ -1,7 +1,5 @@
 # ===================================================================
-# Soubor: res://scripts/CardUI.gd (Definitivní oprava)
-# POPIS: Přidán chybějící `class_name CardUI` a odstraněna
-# nadbytečná logika, kterou nyní spravuje PlayerHandUI.
+# Soubor: res://scripts/CardUI.gd
 # ===================================================================
 class_name CardUI
 extends Control

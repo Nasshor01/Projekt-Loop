@@ -1,6 +1,5 @@
 # ===================================================================
-# Soubor: res://data/cards/CardEffectData.gd (UPRAVENÁ VERZE)
-# POPIS: Odstraněn GAIN_ACTION_POINTS a přidán GAIN_EXTRA_MOVE.
+# Soubor: res://data/cards/CardEffectData.gd
 # ===================================================================
 class_name CardEffectData
 extends Resource

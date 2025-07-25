@@ -1,7 +1,5 @@
 # ===================================================================
-# Soubor: res://scripts/DeckEntry.gd (NOVÝ SOUBOR)
-# POPIS: Malá datová třída, která reprezentuje jeden typ karty
-# a její počet v balíčku.
+# Soubor: res://scripts/DeckEntry.gd
 # ===================================================================
 class_name DeckEntry
 extends Resource

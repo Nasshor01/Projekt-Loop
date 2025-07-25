@@ -1,14 +1,10 @@
 # ===================================================================
-# Soubor: res://scenes/ui/CardPileViewer.gd (OPRAVENÁ VERZE)
-# POPIS: Aktualizovány cesty k uzlům, aby odpovídaly nové,
-# robustnější struktuře scény.
+# Soubor: res://scenes/ui/CardPileViewer.gd
 # ===================================================================
 extends PanelContainer
 
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 
-# --- OPRAVA ZDE ---
-# Cesty nyní odpovídají nové hierarchii s VBoxContainer a HBoxContainer.
 @onready var grid_container: GridContainer = $MarginContainer/VBoxContainer/ScrollContainer/GridContainer
 @onready var close_button: Button = $MarginContainer/VBoxContainer/HBoxContainer/Control/CloseButton
 

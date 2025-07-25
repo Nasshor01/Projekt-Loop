@@ -1,7 +1,6 @@
 # ===================================================================
-# Soubor: res://data/encounters/EncounterData.gd (NOVÝ SOUBOR)
+# Soubor: res://data/encounters/EncounterData.gd
 # POPIS: Tento Resource definuje celou skupinu nepřátel pro jeden
-# konkrétní souboj.
 # ===================================================================
 class_name EncounterData
 extends Resource

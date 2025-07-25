@@ -1,5 +1,4 @@
 # MapNodeResource.gd
-# Opraveno: Přidán typ UNASSIGNED a správná inicializace polí.
 extends Resource
 class_name MapNodeResource
 

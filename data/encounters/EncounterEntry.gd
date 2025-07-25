@@ -1,5 +1,5 @@
 # ===================================================================
-# Soubor: res://data/encounters/EncounterEntry.gd (NOVÝ SOUBOR)
+# Soubor: res://data/encounters/EncounterEntry.gd
 # POPIS: Malá datová třída, která definuje jednu jednotku v souboji
 # a její startovní pozici na mřížce.
 # ===================================================================
