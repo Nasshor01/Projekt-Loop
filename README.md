@@ -10,7 +10,7 @@ Hra již nyní obsahuje robustní základ, na kterém stavím další funkce:
 
 * **🎲 Procedurálně generovaná mapa:** Každá hra je jedinečná díky náhodně generované mapě s různými cestami a typy uzlů (souboje, elity, boss, odpočinek, poklad, obchod, náhodné události).
 
-* **⚔️ Tahový bojový systém:** Souboje probíhají na přehledné mřížce. Hráč každý tah dobírá karty a využívá energii k jejich zahrání. Nepřátelé jsou řízeni vlastní umělou inteligencí.
+* **⚔️ Taktický bojový systém:** Souboje probíhají na přehledné mřížce. Hráč každý tah dobírá karty a využívá energii k jejich zahrání. Nepřátelé jsou řízeni vlastní umělou inteligencí.
 
 * **🃏 Dynamický systém karet:** Jádrem hry je propracovaný systém karet a balíčků. Hráč začíná se základním balíčkem a postupně jej vylepšuje. Karty mají definovanou cenu, efekty a jsou rozděleny na obecné a třídní.
 
@@ -18,21 +18,27 @@ Hra již nyní obsahuje robustní základ, na kterém stavím další funkce:
 
 * **🔄 Herní smyčka:** Základní cyklus hry (Mapa -> Souboj -> Odměna) je plně funkční a poskytuje základ pro kompletní herní zážitek.
 
-## Budoucí vize a ambice
+## Aktuální Roadmapa (srpen – prosinec 2025)
 
-Mým hlavním cílem je vytvořit hru s vysokou znovuhratelností a strategickou hloubkou. **Prioritou číslo jedna je dokončení plnohodnotného single-player zážitku.** Jakmile bude tato část hotová a odladěná, zaměřím se na další ambiciózní cíle.
+Mám jasně daný plán, jak hru posunout od funkčního prototypu k plnohodnotnému zážitku. **Prioritou číslo jedna je dokončení single-player módu.**
 
-### Plánovaný Kooperativní Mód (Co-op)
+### Fáze 1: Vylepšení Hratelnosti a Základů (srpen – polovina října)
+**Cíl:** Mít plně hratelný "run" s klíčovými komfortními funkcemi a taktickou hloubkou.
+- **Bojiště 2.0:** Vylepšení bojiště o vizualizaci plošných útoků (AoE), taktické překážky a vizuální zpětnou vazbu (plovoucí čísla poškození/léčení).
+- **Systém ukládání a načítání:** Možnost uložit a načíst rozehranou hru.
+- **Základy Meta-progrese:** Přidání permanentní měny ("Střepy Věčnosti"), kterou hráč získává po každém průchodu hrou.
 
-Nejzajímavější budoucí vizí je unikátní kooperativní mód pro dva hráče. Nechci jít cestou, kdy dva hráči jen bojují bok po boku. Můj koncept je postaven na sdíleném riziku a unikátních synergických mechanikách:
+### Fáze 2: Obsahová Exploze (polovina října – listopad)
+**Cíl:** Naplnit hru obsahem pro zajištění vysoké znovuhratelnosti.
+- **Druhá hratelná třída:** Implementace kompletní nové třídy (např. **Mág -> Elementalista**) s unikátními kartami a herním stylem.
+- **Nové Karty a Artefakty:** Rozšíření počtu karet a přidání prvních ~15-20 artefaktů, které zásadně mění hru.
+- **Nové Nepřátelské Frakce:** Vytvoření první tematické skupiny nepřátel ("Zrezivělá Pevnost") s 15-20 novými jednotkami.
 
-* **Zvýšená obtížnost:** V co-op módu budou nepřátelé výrazně silnější (například 2.5x), aby byla spolupráce a strategie naprosto klíčová.
-* **Fúze Artefaktů:** Každý hráč bude sbírat své vlastní artefakty. Pokud se ale stane, že **oba hráči získají stejný artefakt**, dojde k jeho **fúzi**. Původní artefakty zmizí a místo nich oba hráči získají jeden **společný, extrémně silný artefakt**, který bude násobně (např. 2.5x) silnější než jeho původní verze a navíc získá bonusové vlastnosti. To povede k unikátním strategickým rozhodnutím a budování společných synergii.
+### Fáze 3: Leštění a Příprava na Veřejnost (prosinec)
+**Cíl:** Přeměnit funkční prototyp na hru, která působí jako ucelený a profesionální produkt.
+- **Vizuální a Zvukový "Juice":** Přidání základních zvukových efektů, hudby a jednoduchých animací pro lepší pocit z hraní.
+- **Hlavní Menu:** Vytvoření hlavní nabídky a sjednocení uživatelského rozhraní.
+- **Příprava Dema:** Vytvoření a odladění demoverze (první akt) pro budoucí prezentaci, například na **Steam Next Festu**.
 
-### Další plánovaný obsah a vylepšení
-
-Souběžně s prací na hlavních režimech budu hru rozšiřovat o:
-* **Nové herní třídy:** Warrior, Rogue, Mage a další.
-* **Rozšíření bojového systému:** Přidání status efektů (jed, zranitelnost, síla...), pasivních relikvií a jednorázových elixírů.
-* **Nový obsah:** Více nepřátel, bossů, karet a náhodných událostí na mapě.
-* **Vylepšení kvality:** Kompletní UI, hlavní menu, systém ukládání a načítání, a samozřejmě zvukové efekty a hudba.
+## Vzdálenější Budoucnost: Kooperativní Mód
+Po dokončení single-playeru je mou velkou ambicí vytvořit unikátní kooperativní mód pro dva hráče, který bude postaven na sdíleném riziku a speciálních mechanikách, jako je **Fúze Artefaktů**.
