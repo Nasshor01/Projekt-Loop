@@ -12,23 +12,28 @@
 script = ExtResource("1_vd1me")
 encounter_data = ExtResource("2_q8wks")
 
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(576, 324)
+
 [node name="BattleGrid" parent="." instance=ExtResource("2_t3o3d")]
 position = Vector2(50, 50)
 
-[node name="PlayerHandUI" parent="." instance=ExtResource("3_rjp4h")]
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="PlayerHandUI" parent="CanvasLayer" instance=ExtResource("3_rjp4h")]
 offset_left = 188.0
 offset_top = 496.0
 offset_right = 996.0
 offset_bottom = 624.0
 
-[node name="EndTurnButton" type="Button" parent="."]
+[node name="EndTurnButton" type="Button" parent="CanvasLayer"]
 offset_left = 1032.0
 offset_top = 16.0
 offset_right = 1128.0
 offset_bottom = 56.0
 text = "Ukončit tah"
 
-[node name="VictoryLabel" type="Label" parent="."]
+[node name="VictoryLabel" type="Label" parent="CanvasLayer"]
 visible = false
 offset_right = 1152.0
 offset_bottom = 648.0
@@ -37,7 +42,7 @@ text = "Výhra"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="EnergyLabel" type="Label" parent="."]
+[node name="EnergyLabel" type="Label" parent="CanvasLayer"]
 offset_top = 448.0
 offset_right = 112.0
 offset_bottom = 488.0
@@ -46,33 +51,33 @@ text = "Energie:"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PlayerInfoPanel" parent="." instance=ExtResource("4_t3o3d")]
+[node name="PlayerInfoPanel" parent="CanvasLayer" instance=ExtResource("4_t3o3d")]
 offset_left = 8.0
 offset_top = 488.0
 offset_right = 128.0
 offset_bottom = 632.0
 
-[node name="EnemyInfoPanel" parent="." instance=ExtResource("4_t3o3d")]
+[node name="EnemyInfoPanel" parent="CanvasLayer" instance=ExtResource("4_t3o3d")]
 offset_left = 1040.0
 offset_top = 488.0
 offset_right = 1144.0
 offset_bottom = 632.0
 
-[node name="DrawPileButton" parent="." instance=ExtResource("5_nabc4")]
+[node name="DrawPileButton" parent="CanvasLayer" instance=ExtResource("5_nabc4")]
 unique_name_in_owner = true
 offset_left = 1088.0
 offset_top = 312.0
 offset_right = 1136.0
 offset_bottom = 376.0
 
-[node name="DiscardPileButton" parent="." instance=ExtResource("5_nabc4")]
+[node name="DiscardPileButton" parent="CanvasLayer" instance=ExtResource("5_nabc4")]
 unique_name_in_owner = true
 offset_left = 1088.0
 offset_top = 392.0
 offset_right = 1136.0
 offset_bottom = 456.0
 
-[node name="CardPileViewer" parent="." instance=ExtResource("6_q8wks")]
+[node name="CardPileViewer" parent="CanvasLayer" instance=ExtResource("6_q8wks")]
 unique_name_in_owner = true
 visible = false
 modulate = Color(1, 1, 1, 0.784314)
@@ -82,11 +87,11 @@ offset_top = 64.0
 offset_right = 1024.0
 offset_bottom = 448.0
 
-[node name="WinButton" type="Button" parent="."]
+[node name="WinButton" type="Button" parent="CanvasLayer"]
 offset_left = 1032.0
 offset_top = 72.0
 offset_right = 1124.0
 offset_bottom = 93.0
 text = "Okamžitá výhra"
 
-[connection signal="pressed" from="EndTurnButton" to="." method="_on_end_turn_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/EndTurnButton" to="." method="_on_end_turn_button_pressed"]

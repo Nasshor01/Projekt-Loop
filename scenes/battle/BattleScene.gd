@@ -1,21 +1,64 @@
 extends Node2D
 
+const SHAPE_DEFAULT = [
+	"111111111111111",
+	"111111111111111",
+	"111111111111111",
+	"111111111111111",
+	"111111111111111",
+	"111111111111111",
+	"111111111111111",
+	"111111111111111",
+	"111111111111111",
+	"111111111111111",
+]
+
+const SHAPE_CROSS = [
+	"0001111111000",
+	"0001111111000",
+	"1111111111111",
+	"1111111111111",
+	"1111111111111",
+	"1111111111111",
+	"0001111111000",
+	"0001111111000",
+]
+
+const SHAPE_DIAMOND = [
+	"00001110000",
+	"00011111000",
+	"00111111100",
+	"01111111110",
+	"11111111111",
+	"01111111110",
+	"00111111100",
+	"00011111000",
+	"00001110000",
+]
+
 const UnitScene = preload("res://scenes/battle/Unit.tscn")
 const AIController = preload("res://scripts/EnemyAIController.gd")
 
 @export var encounter_data: EncounterData
 
-@onready var player_info_panel = $PlayerInfoPanel
-@onready var enemy_info_panel = $EnemyInfoPanel
-@onready var draw_pile_button: TextureButton = %DrawPileButton
-@onready var discard_pile_button: TextureButton = %DiscardPileButton
-@onready var card_pile_viewer: PanelContainer = %CardPileViewer
+@onready var player_info_panel = $CanvasLayer/PlayerInfoPanel
+@onready var enemy_info_panel = $CanvasLayer/EnemyInfoPanel
+@onready var draw_pile_button: TextureButton = $CanvasLayer/DrawPileButton
+@onready var discard_pile_button: TextureButton = $CanvasLayer/DiscardPileButton
+@onready var card_pile_viewer: PanelContainer = $CanvasLayer/CardPileViewer
+@onready var player_hand_ui_instance: Control = $CanvasLayer/PlayerHandUI
+@onready var end_turn_button: Button = $CanvasLayer/EndTurnButton
+@onready var victory_label: Label = $CanvasLayer/VictoryLabel
+@onready var energy_label: Label = $CanvasLayer/EnergyLabel
+@onready var win_button: Button = $CanvasLayer/WinButton
+
+# Ostatní reference, které nejsou v CanvasLayer
 @onready var battle_grid_instance: BattleGrid = $BattleGrid
-@onready var player_hand_ui_instance: Control = $PlayerHandUI
-@onready var end_turn_button: Button = $EndTurnButton
-@onready var victory_label: Label = $VictoryLabel
-@onready var energy_label: Label = $EnergyLabel
-@onready var win_button: Button = $WinButton
+@onready var camera_2d: Camera2D = $Camera2D
+@export var camera_speed = 1.0 # Citlivost pohybu myší
+@export var camera_zoom_speed = 0.1 # Rychlost/citlivost zoomování
+@export var camera_min_zoom = 0.5 # Jak nejvíce lze kameru oddálit
+@export var camera_max_zoom = 2.0 # Jak nejvíce lze kameru přiblížit
 
 enum PlayerActionState { IDLE, CARD_SELECTED, UNIT_SELECTED }
 var _player_action_state: PlayerActionState = PlayerActionState.IDLE
@@ -44,7 +87,11 @@ func _ready():
 	draw_pile_button.pile_clicked.connect(_on_draw_pile_clicked)
 	discard_pile_button.pile_clicked.connect(_on_discard_pile_clicked)
 	win_button.pressed.connect(_on_win_button_pressed)
-
+	
+	if is_instance_valid(camera_2d) and camera_2d.has_method("set_camera_limits"):
+		camera_2d.set_camera_limits(battle_grid_instance.grid_columns, battle_grid_instance.grid_rows, battle_grid_instance.cell_size)
+	
+	_generate_grid_from_shape()
 	spawn_player_unit()
 	spawn_enemy_units()
 	_place_terrain_features()
@@ -170,13 +217,14 @@ func _execute_move(unit_to_move: Node2D, target_cell: Vector2i):
 	unit_to_move.use_move_action()
 	battle_grid_instance.remove_object_by_instance(unit_to_move)
 	battle_grid_instance.place_object_on_cell(unit_to_move, target_cell, true)
-	
-	var terrain_on_cell = battle_grid_instance.terrain_layer.get(target_cell)
-	if terrain_on_cell:
-		unit_to_move.process_terrain_effects(terrain_on_cell)
-	
-	_reset_player_selection()
 
+
+	var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(target_cell)
+	if is_instance_valid(terrain_on_cell):
+		_apply_terrain_effect(unit_to_move, terrain_on_cell)
+
+	_reset_player_selection()
+	
 func _apply_single_effect(effect: CardEffectData, target: Node2D):
 	if not is_instance_valid(target): return
 	
@@ -225,10 +273,10 @@ func process_enemy_actions():
 							var target_pos = path[move_dist]
 							battle_grid_instance.remove_object_by_instance(enemy_unit)
 							battle_grid_instance.place_object_on_cell(enemy_unit, target_pos, true)
-							
-							var terrain_on_cell = battle_grid_instance.terrain_layer.get(target_pos)
-							if terrain_on_cell:
-								enemy_unit.process_terrain_effects(terrain_on_cell)
+
+							var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(target_pos)
+							if is_instance_valid(terrain_on_cell):
+								_apply_terrain_effect(enemy_unit, terrain_on_cell)
 							
 							await get_tree().create_timer(0.4).timeout
 							
@@ -241,7 +289,25 @@ func process_enemy_actions():
 	await get_tree().create_timer(0.5).timeout
 	start_player_turn()
 
+# Soubor: BattleScene.gd
+
 func _unhandled_input(event: InputEvent):
+	# --- Logika pro ovládání kamery ---
+	# Tato část kódu se provede vždy.
+	if event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_MIDDLE or event.button_mask & MOUSE_BUTTON_MASK_RIGHT):
+		camera_2d.position -= event.relative / camera_2d.zoom * camera_speed
+
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
+			var new_zoom_value = camera_2d.zoom / (1 + camera_zoom_speed)
+			camera_2d.zoom = new_zoom_value.clamp(Vector2(camera_min_zoom, camera_min_zoom), Vector2(camera_max_zoom, camera_max_zoom))
+			
+		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
+			var new_zoom_value = camera_2d.zoom * (1 + camera_zoom_speed)
+			camera_2d.zoom = new_zoom_value.clamp(Vector2(camera_min_zoom, camera_min_zoom), Vector2(camera_max_zoom, camera_max_zoom))
+
+	# --- Původní herní logika ---
+	# Zbytek kódu se provede, pouze pokud je na tahu hráč.
 	if _current_turn_state != TurnState.PLAYER_TURN: return
 	if card_pile_viewer.visible:
 		if event.is_action_pressed("ui_cancel"): card_pile_viewer.hide(); return
@@ -383,10 +449,43 @@ func spawn_enemy_units():
 	if not encounter_data:
 		printerr("BattleScene: Chybí EncounterData!")
 		return
+
+	# --- NOVÁ LOGIKA PRO NÁHODNÝ SPAWN ---
+
+	# 1. Definujeme oblast, kde se nepřátelé mohou objevit (pravá polovina mřížky).
+	var spawn_start_x = battle_grid_instance.grid_columns / 2
+	var spawn_end_x = battle_grid_instance.grid_columns - 1
+	var spawn_start_y = 0
+	var spawn_end_y = battle_grid_instance.grid_rows - 1
+	
+	# 2. Vytvoříme seznam všech možných volných pozic v této oblasti.
+	var available_spawn_cells: Array[Vector2i] = []
+	for y in range(spawn_start_y, spawn_end_y + 1):
+		for x in range(spawn_start_x, spawn_end_x + 1):
+			var cell = Vector2i(x, y)
+			# Ujistíme se, že políčko je průchozí a není obsazené.
+			var terrain = battle_grid_instance.get_terrain_on_cell(cell)
+			var is_walkable = not terrain or terrain.is_walkable
+			
+			if battle_grid_instance.get_object_on_cell(cell) == null and is_walkable:
+				available_spawn_cells.append(cell)
+
+	# 3. Projdeme nepřátele a každému přiřadíme náhodnou pozici.
 	for enemy_entry in encounter_data.enemies:
 		if not enemy_entry is EncounterEntry or not enemy_entry.unit_data:
 			continue
-		var enemy_node = _spawn_unit(enemy_entry.unit_data, enemy_entry.grid_position)
+		
+		# Pokud už nejsou volná místa, skončíme.
+		if available_spawn_cells.is_empty():
+			printerr("Nedostatek volných pozic pro spawn nepřátel!")
+			break
+			
+		# Vybereme náhodnou pozici a hned ji ze seznamu odstraníme,
+		# aby se na ní neobjevil další nepřítel.
+		var random_pos = available_spawn_cells.pick_random()
+		available_spawn_cells.erase(random_pos)
+
+		var enemy_node = _spawn_unit(enemy_entry.unit_data, random_pos)
 		if is_instance_valid(enemy_node):
 			_enemy_units.append(enemy_node)
 			enemy_node.died.connect(_on_enemy_died)
@@ -415,40 +514,41 @@ func _on_card_hover_ended():
 	if _player_action_state != PlayerActionState.CARD_SELECTED:
 		battle_grid_instance.hide_aoe_highlight()
 
+
+
+# Soubor: BattleScene.gd
+
 func _update_card_target_preview():
 	if not _selected_card_data: return
 
 	var mouse_grid_pos = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
 
+	# Stále kontrolujeme, jestli je myš v obdélníku, aby to nepočítalo zbytečně
 	if not battle_grid_instance.is_valid_grid_position(mouse_grid_pos):
 		battle_grid_instance.hide_aoe_highlight()
 		return
-	var aoe_cells: Array[Vector2i] = []
+	
+	var final_aoe_cells: Array[Vector2i] = []
 
 	for effect in _selected_card_data.effects:
 		if effect.area_of_effect_type == CardEffectData.AreaOfEffectType.SINGLE_TARGET:
 			continue
 
-		match effect.area_of_effect_type:
-			CardEffectData.AreaOfEffectType.ROW:
-				for x in range(battle_grid_instance.grid_columns): aoe_cells.append(Vector2i(x, mouse_grid_pos.y))
-			CardEffectData.AreaOfEffectType.COLUMN:
-				for y in range(battle_grid_instance.grid_rows): aoe_cells.append(Vector2i(mouse_grid_pos.x, y))
-			CardEffectData.AreaOfEffectType.SQUARE_X_BY_Y:
-				var width = effect.aoe_param_x
-				var height = effect.aoe_param_y
-				for y in range(mouse_grid_pos.y, mouse_grid_pos.y + height):
-					for x in range(mouse_grid_pos.x, mouse_grid_pos.x + width):
-						var cell = Vector2i(x, y)
-						if battle_grid_instance.is_valid_grid_position(cell): aoe_cells.append(cell)
-			CardEffectData.AreaOfEffectType.ALL_ON_GRID:
-				for enemy in _enemy_units:
-					if is_instance_valid(enemy): aoe_cells.append(enemy.grid_position)
+		# 1. Získáme "hrubý" geometrický tvar od BattleGrid (jako v původní verzi)
+		var potential_cells = battle_grid_instance.get_cells_for_aoe(
+			mouse_grid_pos,
+			effect.area_of_effect_type,
+			effect.aoe_param_x,
+			effect.aoe_param_y
+		)
+		
+		# 2. Z tohoto tvaru vybereme jen buňky, které na mapě reálně existují
+		for cell in potential_cells:
+			if battle_grid_instance.is_cell_active(cell):
+				final_aoe_cells.append(cell)
 
-	if not aoe_cells.is_empty():
-		battle_grid_instance.show_aoe_highlight(aoe_cells)
-	else:
-		battle_grid_instance.hide_aoe_highlight()
+	# 3. Zobrazíme pouze platné buňky
+	battle_grid_instance.show_aoe_highlight(final_aoe_cells)
 
 func _place_terrain_features():
 	var terrains_to_spawn = [
@@ -486,3 +586,37 @@ func _place_terrain_features():
 				battle_grid_instance.place_terrain(random_pos, terrain_data)
 				occupied_cells.append(random_pos)
 				placed_count += 1
+
+func _apply_terrain_effect(unit: Node2D, terrain: TerrainData):
+	"""
+	Zpracuje a aplikuje efekty z terénu na jednotku, která na něj vstoupila.
+	"""
+	if not is_instance_valid(unit) or not is_instance_valid(terrain):
+		return
+
+	# Použijeme match pro různé typy efektů z vašeho TerrainData.gd
+	match terrain.effect_type:
+		TerrainData.TerrainEffect.NONE:
+			pass # Nic se nestane
+
+		TerrainData.TerrainEffect.APPLY_STATUS_ON_ENTER:
+			if unit.has_method("apply_status") and not terrain.effect_string_value.is_empty():
+				print("%s vstupuje na '%s' a získává status '%s'." % [unit.unit_data.unit_name, terrain.terrain_name, terrain.effect_string_value])
+				unit.apply_status(terrain.effect_string_value, terrain.effect_duration)
+
+		TerrainData.TerrainEffect.MODIFY_DEFENSE_ON_TILE:
+			if unit.has_method("add_block"):
+				print("%s vstupuje na '%s' a získává %d bloku." % [unit.unit_data.unit_name, terrain.terrain_name, terrain.effect_numeric_value])
+				unit.add_block(terrain.effect_numeric_value)
+
+		# Zde můžete v budoucnu přidat další case pro MODIFY_ATTACK_ON_TILE atd.
+		_:
+			pass
+
+
+func _generate_grid_from_shape():
+	var all_shapes = [SHAPE_DEFAULT, SHAPE_CROSS, SHAPE_DIAMOND]
+	var selected_shape = all_shapes.pick_random()
+	
+	# ZAVOLÁME NOVOU FUNKCI Z BATTLEGRID
+	battle_grid_instance.build_from_shape(selected_shape)
