@@ -15,6 +15,7 @@ extends Node2D
 
 @onready var units_container: Node2D = $UnitsContainer
 var _terrain_container: Node2D
+var camera: Camera2D
 
 # ZMĚNA: Přidáváme slovník jen pro aktivní buňky, odděleně od jednotek!
 var _active_cells: Dictionary = {}
@@ -30,15 +31,49 @@ func _ready():
 	_terrain_container = Node2D.new(); _terrain_container.name = "TerrainContainer"; add_child(_terrain_container); move_child(_terrain_container, 0)
 	if not units_container:
 		units_container = Node2D.new(); units_container.name = "UnitsContainer"; add_child(units_container)
+	
+	
 	set_process_input(true)
+	set_process(true) 
 	queue_redraw()
 
+func set_camera(cam_ref: Camera2D):
+	self.camera = cam_ref
+
+func _process(_delta):
+	# Vynutí překreslení každý snímek. To zajistí, že se tloušťka čáry
+	# aktualizuje plynule při zoomování.
+	queue_redraw()
+
+# Soubor: scenes/battle/BattleGrid.gd
+# Nahraďte vaši stávající funkci _draw() touto verzí.
+
 func _draw():
-	# Kreslíme mřížku jen tam, kde jsou aktivní buňky
+	var line_thickness: float
+
+	# Pojistka pro případ, že kamera ještě není platná.
+	if not is_instance_valid(camera):
+		# Pokud nemáme kameru, použijeme pevnou tloušťku 1.0.
+		line_thickness = 1.0
+	else:
+		# --- NOVÝ A ROBUSTNĚJŠÍ VÝPOČET ---
+		# 1. Nastavíme si vyšší základní tloušťku. Můžete experimentovat
+		#    s hodnotou 1.5 a zvýšit ji třeba na 2.0 nebo 2.5, pokud bude potřeba.
+		var base_thickness = 1.5
+
+		# 2. Vynásobíme ji zoomem kamery, abychom kompenzovali oddálení.
+		#    Když je kamera oddálená (zoom > 1), čára bude tlustší.
+		line_thickness = base_thickness * camera.zoom.x
+		
+		# 3. Důležitá pojistka: Zajistíme, aby čára na obrazovce nikdy nebyla
+		#    tenčí než cca 1 pixel, bez ohledu na zoom.
+		var min_thickness_on_screen = get_canvas_transform().affine_inverse().get_scale().x
+		line_thickness = max(line_thickness, min_thickness_on_screen)
+
+	# --- Vykreslení mřížky s nově spočítanou tloušťkou ---
 	for cell_pos in _active_cells:
 		var top_left = Vector2(cell_pos) * cell_size
-		# Nakreslíme čtverec pro každou aktivní buňku
-		draw_rect(Rect2(top_left, cell_size), grid_line_color, false, 1.0)
+		draw_rect(Rect2(top_left, cell_size), grid_line_color, false, line_thickness)
 
 	if is_cell_active(_mouse_over_cell):
 		draw_rect(Rect2(Vector2(_mouse_over_cell) * cell_size, cell_size), highlight_color, true)
@@ -49,10 +84,8 @@ func _draw():
 	for cell in _aoe_cells:
 		draw_rect(Rect2(Vector2(cell) * cell_size, cell_size), aoe_highlight_color, true)
 
-
 func _input(event: InputEvent):
 	if event is InputEventMouseMotion:
-		# OPRAVA: Použijeme globální pozici myši kvůli kameře
 		var new_mouse_cell = get_cell_at_world_position(get_global_mouse_position())
 		if new_mouse_cell != _mouse_over_cell:
 			_mouse_over_cell = new_mouse_cell

@@ -72,6 +72,7 @@ var _selected_card_data: CardData = null
 var _player_unit_node: Node2D = null
 var _selected_unit: Node2D = null
 var _enemy_units: Array[Node2D] = []
+var _is_action_processing: bool = false
 
 func _ready():
 	victory_label.visible = false
@@ -88,9 +89,8 @@ func _ready():
 	discard_pile_button.pile_clicked.connect(_on_discard_pile_clicked)
 	win_button.pressed.connect(_on_win_button_pressed)
 	
-	if is_instance_valid(camera_2d) and camera_2d.has_method("set_camera_limits"):
-		camera_2d.set_camera_limits(battle_grid_instance.grid_columns, battle_grid_instance.grid_rows, battle_grid_instance.cell_size)
-	
+	_setup_camera_boundaries()
+	battle_grid_instance.set_camera(camera_2d)
 	_generate_grid_from_shape()
 	spawn_player_unit()
 	spawn_enemy_units()
@@ -169,12 +169,15 @@ func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: Car
 	player_hand_ui_instance.set_selected_card(card_ui_node)
 	_show_valid_targets_for_card(card_data_resource)
 
-func try_play_card(card: CardData, initial_target: Node2D):
+func try_play_card(card: CardData, initial_target: Node2D) -> void:
+	if _is_action_processing: return
 	if not card: return
 	if not PlayerData.spend_energy(card.cost):
 		print("Nedostatek energie!")
 		return
 
+	_is_action_processing = true
+	
 	var card_played_successfully = false
 	for effect_data in card.effects:
 		if effect_data.target_type == CardEffectData.TargetType.ANY_GRID_CELL:
@@ -185,7 +188,7 @@ func try_play_card(card: CardData, initial_target: Node2D):
 			card_played_successfully = true
 			for target_unit in targets:
 				if is_instance_valid(target_unit):
-					_apply_single_effect(effect_data, target_unit)
+					await _apply_single_effect(effect_data, target_unit)
 					
 	if card_played_successfully:
 		var has_exhaust_effect = card.effects.any(func(e): return e.effect_type == CardEffectData.EffectType.EXHAUST)
@@ -194,11 +197,13 @@ func try_play_card(card: CardData, initial_target: Node2D):
 		else:
 			PlayerData.add_card_to_discard_pile(card)
 		PlayerData.current_hand.erase(card)
-		_reset_player_selection()
-		_update_hand_ui()
 	else:
 		print("Karta '%s' nenašla žádný platný cíl." % card.card_name)
 		PlayerData.gain_energy(card.cost)
+
+	_is_action_processing = false
+	_reset_player_selection()
+	_update_hand_ui()
 
 func _on_unit_selected_on_grid(unit_node: Node2D):
 	if _current_turn_state != TurnState.PLAYER_TURN: return
@@ -225,12 +230,13 @@ func _execute_move(unit_to_move: Node2D, target_cell: Vector2i):
 
 	_reset_player_selection()
 	
-func _apply_single_effect(effect: CardEffectData, target: Node2D):
+func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 	if not is_instance_valid(target): return
 	
 	match effect.effect_type:
 		CardEffectData.EffectType.DEAL_DAMAGE:
-			if target.has_method("take_damage"): target.take_damage(effect.value)
+			if target.has_method("take_damage"): 
+				await target.take_damage(effect.value)
 		CardEffectData.EffectType.GAIN_BLOCK:
 			if target.has_method("add_block"): target.add_block(effect.value)
 		CardEffectData.EffectType.HEAL_UNIT:
@@ -239,7 +245,7 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D):
 			if target.has_method("heal_to_full"): target.heal_to_full()
 		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK:
 			if is_instance_valid(_player_unit_node) and target.has_method("take_damage"):
-				target.take_damage(_player_unit_node.current_block)
+				await target.take_damage(_player_unit_node.current_block)
 		CardEffectData.EffectType.DRAW_CARDS:
 			PlayerData.draw_cards(effect.value)
 			_update_hand_ui()
@@ -252,7 +258,10 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D):
 		_:
 			pass
 
-func process_enemy_actions():
+
+func process_enemy_actions() -> void:
+	_is_action_processing = true
+
 	var ai_controller = AIController.new()
 	for enemy_unit in _enemy_units:
 		if not is_instance_valid(enemy_unit): continue
@@ -262,7 +271,7 @@ func process_enemy_actions():
 		var action = ai_controller.get_next_action(enemy_unit, [_player_unit_node], battle_grid_instance)
 		match action.type:
 			AIController.AIAction.ActionType.ATTACK:
-				enemy_unit.attack(action.target_unit)
+				await enemy_unit.attack(action.target_unit)
 			AIController.AIAction.ActionType.MOVE:
 				if enemy_unit.can_move():
 					enemy_unit.use_move_action()
@@ -282,18 +291,19 @@ func process_enemy_actions():
 							
 							var attack_action = ai_controller.get_next_action(enemy_unit, [_player_unit_node], battle_grid_instance)
 							if attack_action.type == AIController.AIAction.ActionType.ATTACK:
-								enemy_unit.attack(attack_action.target_unit)
+								await enemy_unit.attack(attack_action.target_unit)
 
 		enemy_unit.process_turn_end_statuses()
 
 	await get_tree().create_timer(0.5).timeout
+	
+	_is_action_processing = false
 	start_player_turn()
 
-# Soubor: BattleScene.gd
-
 func _unhandled_input(event: InputEvent):
+	if _is_action_processing: return # Pokud se něco zpracovává, ignorujeme nový vstup
+
 	# --- Logika pro ovládání kamery ---
-	# Tato část kódu se provede vždy.
 	if event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_MIDDLE or event.button_mask & MOUSE_BUTTON_MASK_RIGHT):
 		camera_2d.position -= event.relative / camera_2d.zoom * camera_speed
 
@@ -339,6 +349,8 @@ func _unhandled_input(event: InputEvent):
 			else:
 				_reset_player_selection()
 			get_viewport().set_input_as_handled()
+
+
 
 func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node2D) -> Array[Node2D]:
 	var targets: Array[Node2D] = []
@@ -620,3 +632,26 @@ func _generate_grid_from_shape():
 	
 	# ZAVOLÁME NOVOU FUNKCI Z BATTLEGRID
 	battle_grid_instance.build_from_shape(selected_shape)
+
+func _setup_camera_boundaries():
+	if not (is_instance_valid(battle_grid_instance) and is_instance_valid(camera_2d)):
+		return # Pojistka, pokud by něco nebylo načteno
+
+	# --- ZDE MŮŽETE NASTAVIT, KOLIK MÍSTA CHCETE OKOLO MŘÍŽKY ---
+	# Experimentujte s těmito hodnotami, dokud nebudete spokojeni.
+	var horizontal_padding = 500.0 # Místo vlevo a vpravo
+	var top_padding = 300.0        # Místo nahoře
+	var bottom_padding = 400.0     # Místo dole pro karty
+
+	# Vypočítáme velikost mřížky v pixelech
+	var grid_pixel_width = battle_grid_instance.grid_columns * battle_grid_instance.cell_size.x
+	var grid_pixel_height = battle_grid_instance.grid_rows * battle_grid_instance.cell_size.y
+
+	# Nastavíme limity s odsazením
+	# Povolíme kameře jít do záporných souřadnic (doleva a nahoru od mřížky)
+	camera_2d.limit_left = 0 - horizontal_padding
+	camera_2d.limit_top = 0 - top_padding
+	
+	# Nastavíme pravý a spodní okraj s přidaným odsazením
+	camera_2d.limit_right = grid_pixel_width + horizontal_padding
+	camera_2d.limit_bottom = grid_pixel_height + bottom_padding

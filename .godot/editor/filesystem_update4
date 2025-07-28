@@ -1,4 +1,4 @@
-res://scenes/battle/BattleScene.tscn
+res://scenes/ui/CardUI.tscn
 res://data/classes/Tank.tres
 res://data/cards/paladin/smite.tres
 res://data/cards/everyone/adrenaline.tres
@@ -20,11 +20,9 @@ res://data/cards/paladin/light_pillar.tres
 res://data/cards/paladin/purging_burst.tres
 res://data/classes/Paladin.tres
 res://data/encounters/first_battle.tres
-res://scenes/battle/BattleGrid.gd
-res://scenes/battle/BattleScene.gd
-res://scenes/ui/CardUI.tscn
 res://scenes/battle/Unit.tscn
 res://scenes/battle/BattleGrid.tscn
+res://scenes/battle/BattleScene.tscn
 res://scenes/ui/PlayerHandUI.tscn
 res://scenes/battle/UnitInfoPanel.tscn
 res://scenes/ui/DeckPileUI.tscn
@@ -34,5 +32,8 @@ res://scenes/map/Map.tscn
 res://scenes/map/MapNode.tscn
 res://main.tscn
 res://scenes/ui/GameOver.tscn
-res://scenes/battle/CameraMovement.gd
-res://data/terrain/TerrainData.gd
+res://scenes/battle/BattleGrid.gd
+res://scenes/battle/BattleScene.gd
+res://scenes/ui/FloatingText.tscn
+res://scenes/ui/FloatingText.gd
+res://scenes/battle/Unit.gd
