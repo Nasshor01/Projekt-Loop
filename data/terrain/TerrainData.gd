@@ -20,7 +20,8 @@ enum TerrainEffect {
 	APPLY_STATUS_ON_ENTER, # Aplikuje status na jednotku, která na políčko vstoupí
 	MODIFY_DEFENSE_ON_TILE, # Přidá bonus/postih k obraně, dokud jednotka stojí na políčku
 	MODIFY_ATTACK_ON_TILE, # Přidá bonus/postih k útoku
-	CHANCE_TO_MISS_TARGET # Zvyšuje šanci, že útok na jednotku na tomto políčku mine
+	CHANCE_TO_MISS_TARGET, # Zvyšuje šanci, že útok na jednotku na tomto políčku mine
+	IMPASSABLE # Políčko, které jen blokuje cestu
 }
 @export var effect_type: TerrainEffect = TerrainEffect.NONE
 

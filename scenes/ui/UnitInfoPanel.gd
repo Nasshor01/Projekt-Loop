@@ -6,7 +6,6 @@ extends PanelContainer
 @onready var name_label: Label = %NameLabel
 @onready var hp_label: Label = %HPLabel
 @onready var block_label: Label = %BlockLabel
-# ap_label byl odstraněn
 @onready var attack_label: Label = %AttackLabel
 @onready var status_effects_list: VBoxContainer = %StatusEffectsList
 
