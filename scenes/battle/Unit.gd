@@ -134,9 +134,16 @@ func process_turn_end_statuses():
 
 func get_current_movement_range() -> int:
 	var current_range = unit_data.movement_range
+	# Pokud má jednotka status "Slow", aplikuje se postih.
+	# Vaše logika s přičítáním záporné hodnoty je zde zachována.
 	if active_statuses.has("Slow"):
 		current_range += active_statuses["Slow"].value
-	return max(0, current_range)
+	
+	# Zajistíme, aby pohyb nikdy neklesl pod 1 (pokud má jednotka vůbec nějaký pohyb).
+	if unit_data.movement_range > 0:
+		return max(1, current_range)
+	else:
+		return 0
 
 func process_terrain_effects(terrain_data: TerrainData):
 	if not terrain_data or terrain_data.effect_type == TerrainData.TerrainEffect.NONE:

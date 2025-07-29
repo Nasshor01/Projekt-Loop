@@ -2,7 +2,6 @@ class_name BattleGrid
 extends Node2D
 
 @export var cell_size: Vector2 = Vector2(64, 64)
-# Tyto hodnoty se přepíší při generování tvaru, ale necháme je tu pro přehlednost
 @export var grid_columns: int = 15
 @export var grid_rows: int = 10
 
@@ -12,73 +11,66 @@ extends Node2D
 @export var attack_highlight_color: Color = Color(1.0, 0.2, 0.2, 0.4)
 @export var support_highlight_color: Color = Color(0.2, 0.5, 1.0, 0.4)
 @export var aoe_highlight_color: Color = Color(0.8, 0.2, 1.0, 0.35)
+@export var player_spawn_highlight_color: Color = Color(0.2, 0.9, 0.9, 0.4) # NOVÁ BARVA
+@export var movement_warning_color: Color = Color(0.9, 0.8, 0.1, 0.4) # ŽLUTÁ PRO BAHNO
+@export var danger_zone_color: Color = Color(0.8, 0.2, 0.2, 0.35)      # ČERVENÁ PRO NEPŘÁTELE
 
 @onready var units_container: Node2D = $UnitsContainer
 var _terrain_container: Node2D
 var camera: Camera2D
 
-# ZMĚNA: Přidáváme slovník jen pro aktivní buňky, odděleně od jednotek!
 var _active_cells: Dictionary = {}
-var _grid_objects: Dictionary = {} # Toto je jen pro jednotky!
+var _grid_objects: Dictionary = {}
 var terrain_layer: Dictionary = {}
 var _mouse_over_cell: Vector2i = Vector2i(-1, -1)
 var _movable_cells: Array[Vector2i] = []
 var _targetable_cells: Array[Vector2i] = []
 var _aoe_cells: Array[Vector2i] = []
+var _player_spawn_cells: Array[Vector2i] = [] # NOVÝ SEZNAM
 var _targetable_cells_color: Color = attack_highlight_color
+var _warning_cells: Array[Vector2i] = [] # Pro žluté zvýraznění
+var _danger_cells: Array[Vector2i] = []  # Pro červené zvýraznění
 
 func _ready():
 	_terrain_container = Node2D.new(); _terrain_container.name = "TerrainContainer"; add_child(_terrain_container); move_child(_terrain_container, 0)
 	if not units_container:
 		units_container = Node2D.new(); units_container.name = "UnitsContainer"; add_child(units_container)
 	
-	
 	set_process_input(true)
-	set_process(true) 
+	set_process(true)
 	queue_redraw()
 
 func set_camera(cam_ref: Camera2D):
 	self.camera = cam_ref
 
 func _process(_delta):
-	# Vynutí překreslení každý snímek. To zajistí, že se tloušťka čáry
-	# aktualizuje plynule při zoomování.
 	queue_redraw()
-
-# Soubor: scenes/battle/BattleGrid.gd
-# Nahraďte vaši stávající funkci _draw() touto verzí.
 
 func _draw():
 	var line_thickness: float
-
-	# Pojistka pro případ, že kamera ještě není platná.
 	if not is_instance_valid(camera):
-		# Pokud nemáme kameru, použijeme pevnou tloušťku 1.0.
 		line_thickness = 1.0
 	else:
-		# --- NOVÝ A ROBUSTNĚJŠÍ VÝPOČET ---
-		# 1. Nastavíme si vyšší základní tloušťku. Můžete experimentovat
-		#    s hodnotou 1.5 a zvýšit ji třeba na 2.0 nebo 2.5, pokud bude potřeba.
 		var base_thickness = 1.5
-
-		# 2. Vynásobíme ji zoomem kamery, abychom kompenzovali oddálení.
-		#    Když je kamera oddálená (zoom > 1), čára bude tlustší.
 		line_thickness = base_thickness * camera.zoom.x
-		
-		# 3. Důležitá pojistka: Zajistíme, aby čára na obrazovce nikdy nebyla
-		#    tenčí než cca 1 pixel, bez ohledu na zoom.
 		var min_thickness_on_screen = get_canvas_transform().affine_inverse().get_scale().x
 		line_thickness = max(line_thickness, min_thickness_on_screen)
 
-	# --- Vykreslení mřížky s nově spočítanou tloušťkou ---
 	for cell_pos in _active_cells:
-		var top_left = Vector2(cell_pos) * cell_size
-		draw_rect(Rect2(top_left, cell_size), grid_line_color, false, line_thickness)
+		draw_rect(Rect2(Vector2(cell_pos) * cell_size, cell_size), grid_line_color, false, line_thickness)
 
 	if is_cell_active(_mouse_over_cell):
 		draw_rect(Rect2(Vector2(_mouse_over_cell) * cell_size, cell_size), highlight_color, true)
+	
+	# NOVÁ VYKRESLOVACÍ LOGIKA
+	for cell in _danger_cells:
+		draw_rect(Rect2(Vector2(cell) * cell_size, cell_size), danger_zone_color, true)
 	for cell in _movable_cells:
 		draw_rect(Rect2(Vector2(cell) * cell_size, cell_size), movement_highlight_color, true)
+	for cell in _warning_cells:
+		draw_rect(Rect2(Vector2(cell) * cell_size, cell_size), movement_warning_color, true)
+	for cell in _player_spawn_cells:
+		draw_rect(Rect2(Vector2(cell) * cell_size, cell_size), player_spawn_highlight_color, true)
 	for cell in _targetable_cells:
 		draw_rect(Rect2(Vector2(cell) * cell_size, cell_size), _targetable_cells_color, true)
 	for cell in _aoe_cells:
@@ -91,34 +83,27 @@ func _input(event: InputEvent):
 			_mouse_over_cell = new_mouse_cell
 			queue_redraw()
 
-
-
 func build_from_shape(shape_array: Array):
 	_active_cells.clear()
 	grid_rows = shape_array.size()
 	
-	# Stále nastavíme celkovou šířku podle prvního řádku pro konzistenci
 	if grid_rows > 0:
 		grid_columns = shape_array[0].length()
 	else:
 		grid_columns = 0
 
-	# Projdeme všechny řádky
 	for y in range(grid_rows):
 		var row_string = shape_array[y]
-		# Projdeme všechny znaky JEN v aktuálním řádku
 		for x in range(row_string.length()):
 			if row_string[x] == "1":
 				_active_cells[Vector2i(x, y)] = true
 	
 	queue_redraw()
 
-# --- NOVÁ, JEDNODUŠŠÍ FUNKCE ---
 func is_cell_active(grid_position: Vector2i) -> bool:
 	return _active_cells.has(grid_position)
 
 func place_object_on_cell(object_node: Node2D, grid_position: Vector2i, is_moving: bool = false) -> bool:
-	# Kontrolujeme proti novému slovníku _active_cells
 	if not is_cell_active(grid_position) or _grid_objects.has(grid_position): return false
 	
 	if object_node.get_parent() != units_container:
@@ -161,22 +146,71 @@ func show_targetable_cells(cells: Array[Vector2i], is_attack: bool):
 	_targetable_cells = cells; _targetable_cells_color = attack_highlight_color if is_attack else support_highlight_color; queue_redraw()
 func hide_targetable_cells(): _targetable_cells.clear(); queue_redraw()
 
-func show_movable_range(from_cell: Vector2i, move_range: int):
-	_movable_cells.clear(); var q = [from_cell]; var dists = {from_cell: 0}
-	var head = 0
-	while head < q.size():
-		var curr = q[head]; head += 1
-		var d = dists[curr]
-		if d >= move_range: continue
-		for n in [curr + Vector2i.UP, curr + Vector2i.DOWN, curr + Vector2i.LEFT, curr + Vector2i.RIGHT]:
-			if not dists.has(n) and is_cell_active(n) and not get_object_on_cell(n):
-				var terrain_on_cell = terrain_layer.get(n)
-				if not terrain_on_cell or terrain_on_cell.is_walkable:
-					dists[n] = d + 1; q.append(n); _movable_cells.append(n)
+func show_movable_range(unit: Unit):
+	hide_movable_range()
+	if not is_instance_valid(unit) or not is_instance_valid(unit.unit_data):
+		return
+
+	var move_range = unit.get_current_movement_range()
+	var start_cell = unit.grid_position
+
+	# Slovník pro ukládání nejnižších nákladů na dosažení každé buňky
+	var costs = {start_cell: 0}
+	# Pole buněk, které ještě musíme prozkoumat
+	var to_visit = [start_cell]
+
+	while not to_visit.is_empty():
+		# <<< ZDE JE KLÍČOVÁ OPRAVA >>>
+		# Nahrazujeme neexistující funkci 'min_by' standardním cyklem.
+		# Najdeme buňku s nejnižší cenou, kterou jsme ještě neprozkoumali.
+		var current_cell = to_visit[0]
+		for cell in to_visit:
+			if costs[cell] < costs[current_cell]:
+				current_cell = cell
+		
+		to_visit.erase(current_cell)
+		var cost_to_current = costs[current_cell]
+
+		# Prozkoumáme sousedy
+		for neighbor_offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+			var neighbor_cell = current_cell + neighbor_offset
+
+			if not is_cell_active(neighbor_cell) or get_object_on_cell(neighbor_cell):
+				continue
+			var terrain = get_terrain_on_cell(neighbor_cell)
+			if terrain and not terrain.is_walkable:
+				continue
+
+			var cost_to_enter = 1
+			if terrain:
+				cost_to_enter = terrain.movement_cost
+
+			var new_cost = cost_to_current + cost_to_enter
+
+			if new_cost <= move_range and (not costs.has(neighbor_cell) or new_cost < costs[neighbor_cell]):
+				costs[neighbor_cell] = new_cost
+				if not to_visit.has(neighbor_cell):
+					to_visit.append(neighbor_cell)
+
+	costs.erase(start_cell)
+	for cell in costs.keys():
+		var terrain = get_terrain_on_cell(cell)
+		if terrain and terrain.movement_cost > 1:
+			if not _warning_cells.has(cell): _warning_cells.append(cell)
+		else:
+			if not _movable_cells.has(cell): _movable_cells.append(cell)
+
 	queue_redraw()
 
-func hide_movable_range(): _movable_cells.clear(); queue_redraw()
-func is_cell_movable(cell: Vector2i) -> bool: return _movable_cells.has(cell)
+func hide_movable_range():
+	_movable_cells.clear()
+	_warning_cells.clear() # Přidáno čištění varovných buněk
+	queue_redraw()
+
+func is_cell_movable(cell: Vector2i) -> bool:
+	# Nyní kontroluje oba typy buněk
+	return _movable_cells.has(cell) or _warning_cells.has(cell)
+
 func show_aoe_highlight(cells: Array[Vector2i]):
 	_aoe_cells = cells; queue_redraw()
 func hide_aoe_highlight():
@@ -209,3 +243,57 @@ func place_terrain(grid_position: Vector2i, terrain_data: TerrainData):
 		_terrain_container.add_child(terrain_sprite)
 func get_terrain_on_cell(grid_position: Vector2i) -> TerrainData:
 	return terrain_layer.get(grid_position, null)
+
+# NOVÉ FUNKCE PRO VÝBĚR SPAWNU HRÁČE
+func get_player_spawn_points(num_columns: int) -> Array[Vector2i]:
+	var spawn_points: Array[Vector2i] = []
+	for y in range(grid_rows):
+		for x in range(num_columns):
+			var cell = Vector2i(x, y)
+			if is_cell_active(cell) and get_object_on_cell(cell) == null:
+				var terrain = get_terrain_on_cell(cell)
+				if not terrain or terrain.is_walkable:
+					spawn_points.append(cell)
+	return spawn_points
+
+func show_player_spawn_points(cells: Array[Vector2i]):
+	_player_spawn_cells = cells
+	queue_redraw()
+
+func hide_player_spawn_points():
+	if not _player_spawn_cells.is_empty():
+		_player_spawn_cells.clear()
+		queue_redraw()
+
+func is_cell_a_valid_spawn_point(cell: Vector2i) -> bool:
+	return _player_spawn_cells.has(cell)
+
+func show_danger_zone(enemy_units: Array[Node2D]):
+	_danger_cells.clear()
+	var danger_dict = {}
+	for enemy in enemy_units:
+		if not is_instance_valid(enemy): continue
+		var enemy_data = enemy.get_unit_data()
+		if not is_instance_valid(enemy_data): continue
+		
+		var attack_range = enemy_data.attack_range
+		for x in range(-attack_range, attack_range + 1):
+			for y in range(-attack_range, attack_range + 1):
+				if abs(x) + abs(y) <= attack_range:
+					var cell = enemy.grid_position + Vector2i(x, y)
+					if is_cell_active(cell):
+						danger_dict[cell] = true
+
+	# <<< ZDE JE NOVÁ, EXPLICITNÍ OPRAVA >>>
+	# Místo přímého přiřazení projdeme všechny klíče a ručně je přidáme
+	# do nového, správně typovaného pole. To je pro Godot 100% srozumitelné.
+	var new_danger_cells: Array[Vector2i] = []
+	for cell_key in danger_dict.keys():
+		new_danger_cells.append(cell_key)
+	
+	_danger_cells = new_danger_cells
+	queue_redraw()
+
+func hide_danger_zone():
+	_danger_cells.clear()
+	queue_redraw()

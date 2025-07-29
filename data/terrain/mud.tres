@@ -11,6 +11,7 @@ description = "Popis, co tento terén dělá."
 sprite = ExtResource("2_6m5g2")
 is_walkable = true
 blocks_line_of_sight = false
+movement_cost = 2
 effect_type = 1
 effect_string_value = "Slow"
 effect_numeric_value = -2

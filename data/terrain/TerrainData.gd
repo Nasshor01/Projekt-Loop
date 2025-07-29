@@ -12,6 +12,7 @@ extends Resource
 # --- Herní pravidla ---
 @export var is_walkable: bool = true # Může se přes to chodit?
 @export var blocks_line_of_sight: bool = false # Blokuje to výhled? (pro budoucí střely)
+@export var movement_cost: int = 1 # Kolik bodů pohybu stojí vstup na pole
 
 # --- Efekty (to nejdůležitější!) ---
 # Seznam efektů, které terén může mít. Můžeme jich později přidat více.
