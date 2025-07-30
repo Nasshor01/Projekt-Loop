@@ -31,8 +31,6 @@ func start_new_run(seed = null):
 	
 	print("Zahajuji nový běh se seedem: ", current_seed)
 	
-	# --- PŘIDEJTE TENTO ŘÁDEK ---
-	# Resetujeme stav kamery pro novou hru.
 	has_saved_camera_state = false
 	
 	current_map_data = null

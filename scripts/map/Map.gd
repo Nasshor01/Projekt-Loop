@@ -44,9 +44,36 @@ var map_nodes_visual: Dictionary = {}
 @onready var camera: Camera2D = $Camera2D
 
 func _ready():
-	generate_seed_button.pressed.connect(func(): GameManager.start_new_run())
-	random_seed_button.pressed.connect(func(): GameManager.start_new_run())
+	# Tato funkce se volá při startu scény
+	generate_seed_button.pressed.connect(_on_generate_custom_seed_pressed)
+	random_seed_button.pressed.connect(_on_generate_random_seed_pressed)
 	initialize_map()
+
+func _on_generate_random_seed_pressed():
+	# Funkce pro tlačítko náhodného seedu
+	GameManager.start_new_run()
+
+func _on_generate_custom_seed_pressed():
+	# Funkce pro tlačítko vlastního seedu
+	var custom_seed_text = seed_line_edit.text
+	
+	if custom_seed_text.is_empty():
+		# Pokud je pole prázdné, chová se jako tlačítko pro náhodný seed
+		GameManager.start_new_run()
+		print("Vstupní pole pro seed je prázdné, generuji náhodný seed.")
+	elif custom_seed_text.is_valid_int():
+		# POKUD je text platné celé číslo (např. "12345")
+		# Převedeme ho přímo na číslo a použijeme ho
+		var seed_value = custom_seed_text.to_int()
+		GameManager.start_new_run(seed_value)
+		print("Generuji mapu z číselného seedu: ", seed_value)
+	else:
+		# POKUD text není číslo (např. "ahoj svete")
+		# Použijeme hash, abychom z textu dostali unikátní číslo
+		var seed_value = custom_seed_text.hash()
+		GameManager.start_new_run(seed_value)
+		print("Generuji mapu z textového seedu (hash): ", custom_seed_text)
+
 
 func initialize_map():
 	_clear_map()
@@ -81,10 +108,8 @@ func _render_map_visuals():
 			sprite.texture = node_textures[node_data.type]
 			if node_data.type == MapNodeResource.NodeType.BOSS: sprite.scale = Vector2(0.5, 0.5)
 		
-		# Připojení signálu pro kliknutí (toto už tam máte)
 		map_node_instance.node_clicked.connect(_on_map_node_clicked)
 		
-		# --- PŘIDEJTE TYTO DVĚ ŘÁDKY ---
 		map_node_instance.node_hovered.connect(_on_map_node_hovered)
 		map_node_instance.node_exited.connect(_on_map_node_exited)
 		
