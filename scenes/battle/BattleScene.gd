@@ -51,7 +51,8 @@ var _player_unit_node: Node2D = null
 var _selected_unit: Node2D = null
 var _enemy_units: Array[Node2D] = []
 var _is_action_processing: bool = false
-
+var _cards_to_draw_queue: int = 0
+var _is_drawing_cards: bool = false
 
 func _ready():
 	_current_battle_state = BattleState.SETUP
@@ -68,13 +69,15 @@ func _ready():
 	discard_pile_button.pile_clicked.connect(_on_discard_pile_clicked)
 	win_button.pressed.connect(_on_win_button_pressed)
 	
+	# --- PŘIPOJENÍ NOVÝCH SIGNÁLŮ ---
+	player_hand_ui_instance.card_draw_animation_finished.connect(_on_card_draw_animation_finished)
+	player_hand_ui_instance.hand_discard_animation_finished.connect(_on_hand_discard_animation_finished)
+	
 	_setup_camera_boundaries()
 	battle_grid_instance.set_camera(camera_2d)
 	_generate_grid_from_shape()
 	
-	# Spustíme proces výběru hráčovy pozice
 	start_player_spawn_selection()
-
 
 func _unhandled_input(event: InputEvent):
 	if _is_action_processing: return
@@ -146,9 +149,7 @@ func confirm_player_spawn(at_position: Vector2i):
 	spawn_enemy_units()
 	_place_terrain_features()
 	
-	await get_tree().create_timer(0.2).timeout
-	
-	start_player_turn()
+	call_deferred("start_player_turn")
 
 func spawn_player_unit_at(grid_pos: Vector2i):
 	if PlayerData.selected_subclass and PlayerData.selected_subclass.specific_unit_data:
@@ -161,14 +162,16 @@ func spawn_player_unit_at(grid_pos: Vector2i):
 
 
 func start_player_turn():
-	_current_battle_state = BattleState.PLAYER_TURN
-	end_turn_button.disabled = false
+	_current_battle_state = BattleState.PROCESSING
+	end_turn_button.disabled = true
+	
 	PlayerData.reset_energy()
 	
 	if is_instance_valid(_player_unit_node):
 		_player_unit_node.reset_for_new_turn()
 		var extra_draw = _player_unit_node.process_turn_start_statuses()
-		PlayerData.draw_new_hand(starting_hand_size + extra_draw)
+		_cards_to_draw_queue = starting_hand_size + extra_draw
+		_draw_next_card_in_queue() # Spustíme řetězec dobírání
 	
 	for unit in _enemy_units:
 		if is_instance_valid(unit):
@@ -176,27 +179,86 @@ func start_player_turn():
 			unit.process_turn_start_statuses()
 			
 	set_enemy_intents()
-	_update_hand_ui()
-	# Zobrazíme nebezpečnou zónu
 	battle_grid_instance.show_danger_zone(_enemy_units)
+
+func _draw_next_card_in_queue():
+	if _is_drawing_cards: return # Zabráníme spuštění, pokud už běží
+	if _cards_to_draw_queue <= 0:
+		_finish_drawing_hand()
+		return
+
+	_is_drawing_cards = true
+	var cards_drawn = PlayerData.draw_cards(1)
+	
+	if cards_drawn > 0:
+		var new_card = PlayerData.current_hand.back()
+		player_hand_ui_instance.add_card_animated(new_card, draw_pile_button.global_position)
+		_update_pile_counts()
+	else:
+		if not PlayerData.discard_pile.is_empty():
+			_reshuffle_and_continue_drawing()
+		else:
+			_finish_drawing_hand()
+
+func _on_card_draw_animation_finished():
+	_cards_to_draw_queue -= 1
+	_is_drawing_cards = false
+	_draw_next_card_in_queue()
+
+func _reshuffle_and_continue_drawing():
+	print("Míchám odhazovací balíček...")
+	var tween = create_tween()
+	tween.tween_property(discard_pile_button, "modulate", Color.YELLOW, 0.2)
+	tween.tween_property(discard_pile_button, "modulate", Color.WHITE, 0.2)
+	
+	tween.finished.connect(func():
+		PlayerData.reshuffle_discard_into_draw_pile()
+		_update_pile_counts()
+		
+		var bounce_tween = create_tween()
+		bounce_tween.tween_property(draw_pile_button, "scale", Vector2(1.2, 1.2), 0.15).set_trans(Tween.TRANS_QUAD)
+		bounce_tween.tween_property(draw_pile_button, "scale", Vector2(1.0, 1.0), 0.15).set_trans(Tween.TRANS_BOUNCE)
+		
+		bounce_tween.finished.connect(func():
+			_is_drawing_cards = false
+			_draw_next_card_in_queue()
+		)
+	)
+
+func _finish_drawing_hand():
+	print("Dobírání dokončeno.")
+	_is_drawing_cards = false
+	player_hand_ui_instance._request_arrange()
+	_current_battle_state = BattleState.PLAYER_TURN
+	end_turn_button.disabled = false
 
 func start_enemy_turn():
 	_current_battle_state = BattleState.ENEMY_TURN
 	end_turn_button.disabled = true
 	
-	# Skryjeme nebezpečnou zónu
 	battle_grid_instance.hide_danger_zone()
 	
 	if is_instance_valid(_player_unit_node):
 		_player_unit_node.process_turn_end_statuses()
 
 	_reset_player_selection()
-	PlayerData.discard_hand()
-	player_hand_ui_instance.clear_hand()
-	_update_pile_counts()
-	await get_tree().create_timer(0.5).timeout
-	process_enemy_actions()
 	
+	# Spustíme animaci odhození. Zbytek logiky se provede po jejím dokončení.
+	player_hand_ui_instance.discard_hand_animated(discard_pile_button.global_position)
+
+func _on_hand_discard_animation_finished():
+	# Tato funkce se zavolá, až když animace odhození skončí.
+	PlayerData.discard_hand()
+	_update_pile_counts()
+	
+	var timer = get_tree().create_timer(0.5)
+	timer.timeout.connect(process_enemy_actions)
+# Starou funkci _update_hand_ui() SMAŽTE NEBO ZAKOMENTUJTE, již není potřeba.
+# func _update_hand_ui():
+# 	player_hand_ui_instance.clear_hand()
+# 	for card_data in PlayerData.current_hand: player_hand_ui_instance.add_card_to_hand(card_data)
+# 	_update_pile_counts()
+
 func end_battle_as_victory():
 	_current_battle_state = BattleState.BATTLE_OVER
 	if is_instance_valid(_player_unit_node):
@@ -281,16 +343,17 @@ func try_play_card(card: CardData, initial_target: Node2D) -> void:
 
 	_is_action_processing = true
 	var card_played_successfully = false
+	
+	# Uložíme si referenci na kartu, kterou hrajeme
+	var card_ui_to_remove = _selected_card_ui
+	
 	for effect_data in card.effects:
-		if effect_data.target_type == CardEffectData.TargetType.ANY_GRID_CELL:
-			card_played_successfully = true
-		
 		var targets = _get_targets_for_effect(effect_data, initial_target)
 		if not targets.is_empty():
 			card_played_successfully = true
 			for target_unit in targets:
 				if is_instance_valid(target_unit):
-					await _apply_single_effect(effect_data, target_unit)
+					_apply_single_effect(effect_data, target_unit) # Už zde není await
 					
 	if card_played_successfully:
 		var has_exhaust_effect = card.effects.any(func(e): return e.effect_type == CardEffectData.EffectType.EXHAUST)
@@ -299,13 +362,18 @@ func try_play_card(card: CardData, initial_target: Node2D) -> void:
 		else:
 			PlayerData.add_card_to_discard_pile(card)
 		PlayerData.current_hand.erase(card)
+		
+		# OPRAVA: Odstraníme vizuální kartu a seřadíme zbytek
+		if is_instance_valid(card_ui_to_remove):
+			card_ui_to_remove.queue_free()
+		player_hand_ui_instance._request_arrange()
+		_update_pile_counts()
 	else:
 		print("Karta '%s' nenašla žádný platný cíl." % card.card_name)
 		PlayerData.gain_energy(card.cost)
 
 	_is_action_processing = false
 	_reset_player_selection()
-	_update_hand_ui()
 	
 func _on_unit_selected_on_grid(unit_node: Unit):
 	if _current_battle_state != BattleState.PLAYER_TURN: return
@@ -333,7 +401,7 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 	if not is_instance_valid(target): return
 	match effect.effect_type:
 		CardEffectData.EffectType.DEAL_DAMAGE:
-			if target.has_method("take_damage"): await target.take_damage(effect.value)
+			if target.has_method("take_damage"): target.take_damage(effect.value)
 		CardEffectData.EffectType.GAIN_BLOCK:
 			if target.has_method("add_block"): target.add_block(effect.value)
 		CardEffectData.EffectType.HEAL_UNIT:
@@ -342,9 +410,11 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 			if target.has_method("heal_to_full"): target.heal_to_full()
 		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK:
 			if is_instance_valid(_player_unit_node) and target.has_method("take_damage"):
-				await target.take_damage(_player_unit_node.current_block)
+				target.take_damage(_player_unit_node.current_block)
 		CardEffectData.EffectType.DRAW_CARDS:
-			PlayerData.draw_cards(effect.value); _update_hand_ui()
+			# OPRAVA: Místo přímého volání UI jen přidáme karty do fronty
+			_cards_to_draw_queue += effect.value
+			_draw_next_card_in_queue()
 		CardEffectData.EffectType.GAIN_ENERGY: PlayerData.gain_energy(effect.value)
 		CardEffectData.EffectType.APPLY_STATUS:
 			if target.has_method("apply_status"): target.apply_status(effect.string_value, effect.value)
@@ -483,10 +553,11 @@ func _update_pile_counts():
 	if is_instance_valid(draw_pile_button): draw_pile_button.update_count(PlayerData.draw_pile.size())
 	if is_instance_valid(discard_pile_button): discard_pile_button.update_count(PlayerData.discard_pile.size())
 
-func _update_hand_ui():
-	player_hand_ui_instance.clear_hand()
-	for card_data in PlayerData.current_hand: player_hand_ui_instance.add_card_to_hand(card_data)
-	_update_pile_counts()
+#func _update_hand_ui():
+#	player_hand_ui_instance.clear_hand()
+#	for card_data in PlayerData.current_hand: player_hand_ui_instance.add_card_to_hand(card_data)
+#	_update_pile_counts()
+
 
 func set_enemy_intents():
 	for enemy_unit in _enemy_units:

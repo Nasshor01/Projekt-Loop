@@ -4,6 +4,8 @@ extends Control
 signal hand_card_was_clicked(card_ui_instance: Control, card_data_resource: CardData)
 signal card_hover_started(card_data_resource: CardData)
 signal card_hover_ended()
+signal card_draw_animation_finished() # Nový signál, který oznámí dokončení animace dobrání
+signal hand_discard_animation_finished() # Nový signál pro dokončení odhození
 
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 
@@ -31,6 +33,53 @@ func _ready():
 func _request_arrange():
 	if is_inside_tree() and _arrange_timer.is_stopped():
 		_arrange_timer.start()
+
+# --- UPRAVENÁ FUNKCE PRO PŘIDÁNÍ KARET S ANIMACÍ (BEZ ASYNC) ---
+func add_card_animated(card_data: CardData, from_pos: Vector2):
+	var card_ui_instance = CardUIScene.instantiate()
+	add_child(card_ui_instance)
+	card_ui_instance.load_card(card_data)
+	
+	card_ui_instance.mouse_entered.connect(_on_card_mouse_entered.bind(card_ui_instance))
+	card_ui_instance.mouse_exited.connect(_on_card_mouse_exited.bind(card_ui_instance))
+	card_ui_instance.gui_input.connect(_on_card_gui_input.bind(card_ui_instance))
+	
+	card_ui_instance.global_position = from_pos
+	card_ui_instance.scale = Vector2.ZERO
+	card_ui_instance.rotation_degrees = randf_range(-15, 15)
+	
+	# Místo await použijeme Timer, který po dokončení animace vyšle signál
+	var timer = get_tree().create_timer(0.01)
+	# Použijeme .call_deferred, abychom zajistili, že se arrange zavolá až v dalším framu
+	timer.timeout.connect(call_deferred.bind("_request_arrange"))
+	
+	var finish_timer = get_tree().create_timer(0.2) # Doba animace
+	finish_timer.timeout.connect(func(): emit_signal("card_draw_animation_finished"))
+
+# --- UPRAVENÁ FUNKCE PRO ODHOZENÍ KARET S ANIMACÍ (BEZ ASYNC) ---
+func discard_hand_animated(to_pos: Vector2):
+	var cards = get_children().filter(func(c): return c is CardUI)
+	if cards.is_empty():
+		emit_signal("hand_discard_animation_finished")
+		return
+
+	var master_tween = create_tween().set_parallel()
+	
+	for card in cards:
+		if not is_instance_valid(card): continue
+		card.set_mouse_filter(MOUSE_FILTER_IGNORE)
+		
+		var tween = create_tween()
+		tween.set_parallel()
+		tween.tween_property(card, "global_position", to_pos, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		tween.tween_property(card, "scale", Vector2.ZERO, 0.3)
+		master_tween.tween_tween(tween)
+
+	# Připojíme se k signálu 'finished' a až poté vyčistíme ruku a pošleme signál dál
+	master_tween.finished.connect(func():
+		clear_hand()
+		emit_signal("hand_discard_animation_finished")
+	)
 
 func add_card_to_hand(card_data_resource: CardData):
 	if not card_data_resource or not CardUIScene: return

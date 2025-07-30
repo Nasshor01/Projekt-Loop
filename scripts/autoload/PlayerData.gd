@@ -21,12 +21,10 @@ func get_current_node() -> MapNodeResource:
 		return path_taken.back()
 	return null
 
-# Tato funkce resetuje stav hráče pro nový běh (HP, pozici na mapě atd.)
 func start_new_run_state():
 	current_hp = max_hp
 	path_taken.clear()
 
-# Tato funkce nastavuje startovní balíček. Je oddělená pro přehlednost.
 func initialize_player(p_class: ClassData, p_subclass: SubclassData):
 	if not p_class or not p_subclass:
 		printerr("PlayerData: Chyba inicializace!")
@@ -39,10 +37,8 @@ func initialize_player(p_class: ClassData, p_subclass: SubclassData):
 			for i in range(entry.count):
 				master_deck.append(entry.card)
 	
-	# Po inicializaci balíčku hned resetujeme stav pro první souboj.
 	reset_battle_stats()
 
-# Tato funkce resetuje jen stav pro souboj (karty v ruce, odhazovací balíček atd.)
 func reset_battle_stats():
 	draw_pile.clear()
 	discard_pile.clear()
@@ -55,7 +51,6 @@ func reset_energy():
 	current_energy = max_energy
 	emit_signal("energy_changed", current_energy)
 
-# ... zbytek souboru (spend_energy, gain_energy atd.) je stejný ...
 func spend_energy(amount: int) -> bool:
 	if current_energy >= amount:
 		current_energy -= amount
@@ -92,12 +87,20 @@ func draw_new_hand(hand_size: int = 5):
 	current_hand.clear()
 	draw_cards(hand_size)
 
-func draw_cards(amount: int):
+# --- ZMĚNA ZDE ---
+# Funkce nyní vrací počet karet, které se jí podařilo dobrat.
+# Už sama nemíchá balíček, to bude řídit BattleScene.
+func draw_cards(amount: int) -> int:
+	var cards_drawn_count = 0
 	for _i in range(amount):
 		if draw_pile.is_empty():
-			reshuffle_discard_into_draw_pile()
-			if draw_pile.is_empty():
-				break
+			# Pokud je dobírací balíček prázdný, přestaneme dobírat.
+			# BattleScene se postará o zamíchání a zavolá nás znovu.
+			break
+		
 		var drawn_card = draw_pile.pop_front()
 		if drawn_card is CardData:
 			current_hand.append(drawn_card)
+			cards_drawn_count += 1
+			
+	return cards_drawn_count

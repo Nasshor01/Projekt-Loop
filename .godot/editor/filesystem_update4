@@ -36,3 +36,6 @@ res://scenes/ui/GameOver.tscn
 res://scenes/ui/FloatingText.tscn
 res://scripts/autoload/GameManager.gd
 res://scenes/map/ConnectionLine.tscn
+res://scripts/autoload/PlayerData.gd
+res://scenes/ui/PlayerHandUI.gd
+res://scenes/battle/BattleScene.gd
