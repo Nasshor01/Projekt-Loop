@@ -25,7 +25,7 @@ Překážky nemusí jen blokovat cestu, mohou být samy o sobě nástrojem nebo 
 Terén nemusí jen zraňovat nebo zpomalovat, může i pomáhat.
 
 * **Posilující terén (Bude):**
-    * **Vysoká Tráva 🌿:** Jednotka stojící v trávě získá status "Skrytý", který způsobí, že příští útok proti ní mine. Status se po prvním útoku spotřebuje.
+    * **Vysoká Tráva 🌿:** Jednotka stojící v trávě získá status "Skrytý", který způsobí, že příští útok proti ní mine. Status se po prvním útoku spotřebuje. Když jednotka stojící za vysokou trávou tak se zmenší range spellu kvůli obtížné viditelnosti.
     * **Svěcená Půda 🙏:** Spojeno s Paladinem. Jednotky s dobrým přesvědčením (hráč), které stojí na tomto poli, si na konci svého tahu obnoví malé množství HP.
     * **Runový Kámen 🔮:** Poskytuje pasivní bonus, dokud na něm jednotka stojí (např. +1 k poškození všemi útoky).
 
