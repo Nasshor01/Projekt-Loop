@@ -37,9 +37,11 @@ offset_bottom = 103.0
 layout_mode = 2
 
 [node name="GenerateSeedButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "GenerateSeedButton "
 
 [node name="RandomSeedButton" type="Button" parent="CanvasLayer/Panel/VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "RandomSeedButton "

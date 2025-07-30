@@ -38,6 +38,7 @@ func start_new_run(seed = null):
 	PlayerData.start_new_run_state()
 	
 	_change_scene(map_scene)
+
 func start_battle(encounter: EncounterData):
 	print("Zahajuji souboj...")
 	current_encounter = encounter

@@ -69,11 +69,14 @@ func discard_hand_animated(to_pos: Vector2):
 		if not is_instance_valid(card): continue
 		card.set_mouse_filter(MOUSE_FILTER_IGNORE)
 		
-		var tween = create_tween()
-		tween.set_parallel()
-		tween.tween_property(card, "global_position", to_pos, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-		tween.tween_property(card, "scale", Vector2.ZERO, 0.3)
-		master_tween.tween_tween(tween)
+		# Pro každou kartu vytvoříme samostatný Tween a hned ho spustíme
+		var card_tween = create_tween()
+		card_tween.set_parallel()
+		card_tween.tween_property(card, "global_position", to_pos, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		card_tween.tween_property(card, "scale", Vector2.ZERO, 0.3)
+		
+		# Místo tween_tween použijeme tento řádek, který přidá animaci do hlavního master_tween
+		master_tween.tween_callback(card_tween.play)
 
 	# Připojíme se k signálu 'finished' a až poté vyčistíme ruku a pošleme signál dál
 	master_tween.finished.connect(func():
