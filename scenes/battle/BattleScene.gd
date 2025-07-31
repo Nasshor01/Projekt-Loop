@@ -39,9 +39,9 @@ const AIController = preload("res://scripts/EnemyAIController.gd")
 enum PlayerActionState { IDLE, CARD_SELECTED, UNIT_SELECTED }
 var _player_action_state: PlayerActionState = PlayerActionState.IDLE
 
-# UPRAVENÝ STAVOVÝ SYSTÉM
 enum BattleState { SETUP, AWAITING_PLAYER_SPAWN, PLAYER_TURN, ENEMY_TURN, PROCESSING, BATTLE_OVER }
 var _current_battle_state: BattleState = BattleState.SETUP
+
 
 @export var starting_hand_size: int = 5
 
@@ -53,9 +53,11 @@ var _enemy_units: Array[Node2D] = []
 var _is_action_processing: bool = false
 var _cards_to_draw_queue: int = 0
 var _is_drawing_cards: bool = false
+var _is_first_turn: bool = true
 
 func _ready():
 	_current_battle_state = BattleState.SETUP
+	_is_first_turn = true
 	victory_label.visible = false
 	enemy_info_panel.hide_panel()
 	card_pile_viewer.hide()
@@ -69,7 +71,6 @@ func _ready():
 	discard_pile_button.pile_clicked.connect(_on_discard_pile_clicked)
 	win_button.pressed.connect(_on_win_button_pressed)
 	
-	# --- PŘIPOJENÍ NOVÝCH SIGNÁLŮ ---
 	player_hand_ui_instance.card_draw_animation_finished.connect(_on_card_draw_animation_finished)
 	player_hand_ui_instance.hand_discard_animation_finished.connect(_on_hand_discard_animation_finished)
 	
@@ -149,7 +150,9 @@ func confirm_player_spawn(at_position: Vector2i):
 	spawn_enemy_units()
 	_place_terrain_features()
 	
+	# Už zde neaplikujeme artefakty, přesunuli jsme to
 	call_deferred("start_player_turn")
+
 
 func spawn_player_unit_at(grid_pos: Vector2i):
 	if PlayerData.selected_subclass and PlayerData.selected_subclass.specific_unit_data:
@@ -169,9 +172,18 @@ func start_player_turn():
 	
 	if is_instance_valid(_player_unit_node):
 		_player_unit_node.reset_for_new_turn()
+		
+		if _is_first_turn:
+			# --- OPRAVENO ZDE ---
+			for artifact in PlayerData.artifacts:
+				if artifact.effect_id == "start_of_combat_block":
+					_player_unit_node.add_block(artifact.value)
+					print("Artefakt '%s' přidal hráči %d blocku." % [artifact.artifact_name, artifact.value])
+			_is_first_turn = false
+		
 		var extra_draw = _player_unit_node.process_turn_start_statuses()
 		_cards_to_draw_queue = starting_hand_size + extra_draw
-		_draw_next_card_in_queue() # Spustíme řetězec dobírání
+		_draw_next_card_in_queue()
 	
 	for unit in _enemy_units:
 		if is_instance_valid(unit):

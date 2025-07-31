@@ -1,0 +1,35 @@
+[gd_scene load_steps=2 format=3 uid="uid://bojpq3tydo1tl"]
+
+[ext_resource type="Script" uid="uid://cygnyo7kpi8hh" path="res://scenes/rewards/TreasureScene.gd" id="1_jjf1o"]
+
+[node name="TreasureScene" type="CanvasLayer"]
+script = ExtResource("1_jjf1o")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.588235)
+
+[node name="Label" type="Label" parent="."]
+offset_left = 432.0
+offset_top = 24.0
+offset_right = 648.0
+offset_bottom = 56.0
+size_flags_horizontal = 4
+text = "Našel jsi poklad! Vyber si artefakt."
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+offset_left = 64.0
+offset_top = 128.0
+offset_right = 1088.0
+offset_bottom = 576.0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 20

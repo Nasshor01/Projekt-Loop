@@ -1,6 +1,4 @@
-# ===================================================================
 # Soubor: res://scenes/battle/Unit.gd
-# ===================================================================
 class_name Unit
 extends Node2D
 
@@ -20,6 +18,9 @@ var active_statuses: Dictionary = {}
 
 var has_used_base_move: bool = false
 var extra_moves: int = 0
+
+# --- NOVÁ PROMĚNNÁ ---
+var last_attacker: Unit = null
 
 @onready var _sprite_node: Sprite2D = $Sprite2D
 @onready var _intent_ui: Control = $IntentUI
@@ -43,6 +44,61 @@ func _ready():
 	await get_tree().process_frame
 	emit_signal("stats_changed", self)
 
+# --- NOVÉ FUNKCE PRO ZJIŠTĚNÍ ÚTOČNÍKA ---
+func set_last_attacker(attacker: Unit):
+	last_attacker = attacker
+
+func get_last_attacker() -> Unit:
+	return last_attacker
+
+# --- UPRAVENÁ FUNKCE ATTACK ---
+# Nyní si cíl zapamatuje, kdo na něj zaútočil
+func attack(target: Node2D) -> void:
+	if not is_instance_valid(target) or not target.has_method("take_damage"): return
+	
+	if target.has_method("set_last_attacker"):
+		target.set_last_attacker(self)
+		
+	await target.take_damage(unit_data.attack_damage)
+
+# --- UPRAVENÁ FUNKCE TAKE_DAMAGE ---
+# Přidána logika pro artefakt "thorns_damage"
+func take_damage(amount: int) -> void:
+	var damage_to_deal = amount
+	var block_before = current_block
+	
+	var absorbed_by_block = min(amount, block_before)
+	
+	if absorbed_by_block > 0:
+		_show_floating_text(absorbed_by_block, "block_loss")
+
+	current_block -= absorbed_by_block
+	damage_to_deal -= absorbed_by_block
+	
+	if absorbed_by_block > 0 and damage_to_deal > 0:
+		await get_tree().create_timer(0.3).timeout
+
+	if damage_to_deal > 0:
+		current_health -= damage_to_deal
+		_show_floating_text(damage_to_deal, "damage")
+		if current_health < 0:
+			current_health = 0
+	
+	_update_stats_and_emit_signal()
+	
+	if unit_data.faction == UnitData.Faction.PLAYER and damage_to_deal > 0:
+		var attacker = get_last_attacker()
+		if is_instance_valid(attacker):
+			for relic in PlayerData.relics:
+				if relic.effect_id == "thorns_damage":
+					print("Artefakt '%s' vrací %d poškození." % [relic.relic_name, relic.value])
+					await attacker.take_damage(relic.value)
+	# ------------------------------------
+	
+	if current_health <= 0:
+		_die()
+
+
 func reset_for_new_turn():
 	current_block = 0
 	has_used_base_move = false
@@ -62,14 +118,10 @@ func gain_extra_move():
 	extra_moves += 1
 
 func apply_status(status_id: String, value: int, duration: int = 1):
-	# ZMĚNA: Pokud status již existuje, přičteme novou hodnotu.
 	if active_statuses.has(status_id):
 		active_statuses[status_id].value += value
-		# Můžeme případně i obnovit dobu trvání, pokud by to bylo potřeba
-		# active_statuses[status_id].duration = max(active_statuses[status_id].duration, duration)
 		print("DEBUG: Status '%s' na jednotce %s byl posílen na hodnotu %d." % [status_id, unit_data.unit_name, active_statuses[status_id].value])
 	else:
-		# Pokud status neexistuje, vytvoříme ho.
 		active_statuses[status_id] = {
 			"id": status_id,
 			"value": value,
@@ -92,7 +144,6 @@ func process_turn_start_statuses() -> int:
 			"draw_plus_one":
 				extra_draw += status_data.value
 				statuses_to_remove.append(status_id)
-			# "Slow" zde záměrně není, jeho efekt se aplikuje pasivně
 				
 	for status_id in statuses_to_remove:
 		active_statuses.erase(status_id)
@@ -103,23 +154,16 @@ func process_turn_start_statuses() -> int:
 	return extra_draw
 
 func process_turn_end_statuses():
-	"""
-	Zpracuje statusy na konci kola. Sníží dobu trvání a odstraní ty, co vypršely.
-	"""
 	if active_statuses.is_empty():
 		return
 
 	var statuses_to_remove = []
 	for status_id in active_statuses.keys():
-		# --- PŘIDANÁ VÝJIMKA PRO PERMANENTNÍ STATUSY ---
-		# Pokud status nemá mít omezenou dobu trvání, přeskočíme ho.
 		if status_id == "aura_devotion":
-			continue # Přeskočí zbytek cyklu a jde na další status
+			continue
 
-		# Snížíme dobu trvání o 1
 		active_statuses[status_id].duration -= 1
 		
-		# Pokud klesne na 0, označíme status k odstranění
 		if active_statuses[status_id].duration <= 0:
 			statuses_to_remove.append(status_id)
 			print("DEBUG: Status '%s' na jednotce %s vypršel." % [status_id, unit_data.unit_name])
@@ -134,12 +178,9 @@ func process_turn_end_statuses():
 
 func get_current_movement_range() -> int:
 	var current_range = unit_data.movement_range
-	# Pokud má jednotka status "Slow", aplikuje se postih.
-	# Vaše logika s přičítáním záporné hodnoty je zde zachována.
 	if active_statuses.has("Slow"):
 		current_range += active_statuses["Slow"].value
 	
-	# Zajistíme, aby pohyb nikdy neklesl pod 1 (pokud má jednotka vůbec nějaký pohyb).
 	if unit_data.movement_range > 0:
 		return max(1, current_range)
 	else:
@@ -152,33 +193,21 @@ func process_terrain_effects(terrain_data: TerrainData):
 	if terrain_data.effect_type == TerrainData.TerrainEffect.APPLY_STATUS_ON_ENTER:
 		var status_id = terrain_data.effect_string_value
 		var value = terrain_data.effect_numeric_value
-		var duration = terrain_data.effect_duration # Získáváme dobu trvání z .tres souboru
+		var duration = terrain_data.effect_duration
 		if status_id != "":
-			# Předáváme všechny tři parametry
 			apply_status(status_id, value, duration)
-
 
 func heal_to_full():
 	if not is_instance_valid(unit_data):
 		return
 
-	# Uložíme si, kolik HP bylo před léčením
 	var health_before = current_health
-	var max_hp_target = unit_data.max_health # Výchozí cíl
-
-	# Pokud je to hráč, cíl je jeho maximální HP z PlayerData
+	var max_hp_target = unit_data.max_health
 	if unit_data.faction == UnitData.Faction.PLAYER and is_instance_valid(PlayerData):
 		max_hp_target = PlayerData.max_hp
-
-	# Nastavíme zdraví na maximum
 	current_health = max_hp_target
-	
-	# Vypočítáme, kolik se reálně vyléčilo
 	var amount_healed = current_health - health_before
-	
-	# Zobrazíme plovoucí text s touto hodnotou
 	_show_floating_text(amount_healed, "heal")
-
 	_update_stats_and_emit_signal()
 
 func _die():
@@ -187,51 +216,15 @@ func _die():
 	tween.tween_property(self, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(queue_free)
 
-# Soubor: scenes/battle/Unit.gd
-
-func take_damage(amount: int) -> void:
-	var damage_to_deal = amount
-	var block_before = current_block
-	
-	var absorbed_by_block = min(amount, block_before)
-	
-	# Zobrazíme ztrátu bloku s typem "block_loss"
-	if absorbed_by_block > 0:
-		_show_floating_text(absorbed_by_block, "block_loss")
-
-	# Odečteme pohlcené poškození
-	current_block -= absorbed_by_block
-	damage_to_deal -= absorbed_by_block
-	
-	# Pauza mezi zobrazením bloku a poškození
-	if absorbed_by_block > 0 and damage_to_deal > 0:
-		await get_tree().create_timer(0.3).timeout
-
-	# Zobrazíme a aplikujeme poškození zdraví
-	if damage_to_deal > 0:
-		current_health -= damage_to_deal
-		_show_floating_text(damage_to_deal, "damage")
-		if current_health < 0:
-			current_health = 0
-	
-	_update_stats_and_emit_signal()
-	if current_health <= 0:
-		_die()
-
 func heal(amount: int):
 	var health_to_restore = min(amount, unit_data.max_health - current_health)
 	current_health += health_to_restore
-	
-	_show_floating_text(health_to_restore, "heal") # Zavoláme naši funkci
-
+	_show_floating_text(health_to_restore, "heal")
 	_update_stats_and_emit_signal()
 
 func add_block(amount: int):
 	current_block += amount
-	
-	# Použijeme nový typ "block_gain"
 	_show_floating_text(amount, "block_gain")
-	
 	_update_stats_and_emit_signal()
 
 func get_unit_data() -> UnitData: return unit_data
@@ -246,7 +239,6 @@ func set_selected_visual(selected: bool):
 	is_selected = selected
 	_sprite_node.modulate = Color(1.3, 1.3, 1.0) if selected else Color.WHITE
 
-
 func show_intent(attack_damage: int = 0):
 	var label = _intent_ui.get_node_or_null("Label")
 	if label:
@@ -255,11 +247,6 @@ func show_intent(attack_damage: int = 0):
 
 func hide_intent():
 	_intent_ui.visible = false
-
-func attack(target: Node2D) -> void:
-	if not is_instance_valid(target) or not target.has_method("take_damage"): return
-	# Přidáme 'await', protože take_damage nyní může obsahovat pauzu
-	await target.take_damage(unit_data.attack_damage)
 
 func _show_floating_text(amount: int, type: String):
 	if amount <= 0:
@@ -276,12 +263,12 @@ func _show_floating_text(amount: int, type: String):
 		"heal":
 			text_to_display = "+" + str(amount)
 			color = Color.PALE_GREEN
-		"block_gain": # Nový typ pro zisk bloku
+		"block_gain":
 			text_to_display = "+" + str(amount)
 			color = Color.LIGHT_SKY_BLUE
-		"block_loss": # Nový typ pro ztrátu bloku
+		"block_loss":
 			text_to_display = "-" + str(amount)
-			color = Color.SLATE_GRAY # Šedá barva pro ztrátu
+			color = Color.SLATE_GRAY
 	
 	add_child(instance)
 	instance.position = Vector2(0, -80)

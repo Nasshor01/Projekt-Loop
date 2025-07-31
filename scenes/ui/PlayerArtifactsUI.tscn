@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://cu6oy5nwloafr"]
+
+[ext_resource type="Script" uid="uid://c4yck52k7eiu6" path="res://scenes/ui/PlayerArtifactsUI.gd" id="1_1qvl0"]
+
+[node name="PlayerArtifactsUI" type="HBoxContainer"]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_1qvl0")

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3 uid="uid://bnqlphfjrx6un"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_xm1gl"]
+[ext_resource type="Texture2D" uid="uid://b2prchllgr7uu" path="res://art/icons/Artifacts/54.png" id="2_q6lnm"]
+
+[resource]
+script = ExtResource("1_xm1gl")
+artifact_name = "Mana Krystal"
+description = " Na začátku každého tahu získej 1 energii navíc."
+texture = ExtResource("2_q6lnm")
+effect_id = "extra_energy_per_turn"
+value = 1
+metadata/_custom_type_script = "uid://cojmro6kj47du"

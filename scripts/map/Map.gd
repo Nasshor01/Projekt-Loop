@@ -147,6 +147,10 @@ func _trigger_node_action(node_data: MapNodeResource):
 		MapNodeResource.NodeType.BOSS:
 			if not boss_encounters.is_empty():
 				encounter_to_start = load(boss_encounters[0])
+		
+		MapNodeResource.NodeType.TREASURE:
+			GameManager.show_treasure_node()
+			return # Ukončíme funkci, protože nepokračujeme do bitvy
 
 		# Pro ostatní typy místností (Event, Shop, atd.), které nezačínají bitvu.
 		_:

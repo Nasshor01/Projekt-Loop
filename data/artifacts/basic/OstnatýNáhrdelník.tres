@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3 uid="uid://343v3ujpwn46"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_8heem"]
+[ext_resource type="Texture2D" uid="uid://bi6hs7eqy1svp" path="res://art/icons/Artifacts/100.png" id="2_ak5ft"]
+
+[resource]
+script = ExtResource("1_8heem")
+artifact_name = "Ostnatý náhrdelník"
+description = "Pokaždé, když tě nepřítel zasáhne útokem, vrátíš mu 2 poškození."
+texture = ExtResource("2_ak5ft")
+effect_id = "thorns_damage"
+value = 2
+metadata/_custom_type_script = "uid://cojmro6kj47du"

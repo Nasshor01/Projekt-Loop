@@ -14,6 +14,10 @@ var max_energy: int = 3
 var max_hp: int = 50
 var current_hp: int = 50
 
+# --- SJEDNOCENÉ NÁZVY ---
+signal artifacts_changed
+var artifacts: Array[ArtifactsData] = []
+
 var path_taken: Array[MapNodeResource] = []
 
 func get_current_node() -> MapNodeResource:
@@ -24,6 +28,8 @@ func get_current_node() -> MapNodeResource:
 func start_new_run_state():
 	current_hp = max_hp
 	path_taken.clear()
+	artifacts.clear() # Vyčistíme artefakty na začátku nového běhu
+	emit_signal("artifacts_changed")
 
 func initialize_player(p_class: ClassData, p_subclass: SubclassData):
 	if not p_class or not p_subclass:
@@ -49,6 +55,13 @@ func reset_battle_stats():
 
 func reset_energy():
 	current_energy = max_energy
+	
+	# --- OPRAVENO: Používá 'artifacts' ---
+	for artifact in artifacts:
+		if artifact.effect_id == "extra_energy_per_turn":
+			current_energy += artifact.value
+			print("Artefakt '%s' přidal hráči %d energii." % [artifact.artifact_name, artifact.value])
+	
 	emit_signal("energy_changed", current_energy)
 
 func spend_energy(amount: int) -> bool:
@@ -87,15 +100,10 @@ func draw_new_hand(hand_size: int = 5):
 	current_hand.clear()
 	draw_cards(hand_size)
 
-# --- ZMĚNA ZDE ---
-# Funkce nyní vrací počet karet, které se jí podařilo dobrat.
-# Už sama nemíchá balíček, to bude řídit BattleScene.
 func draw_cards(amount: int) -> int:
 	var cards_drawn_count = 0
 	for _i in range(amount):
 		if draw_pile.is_empty():
-			# Pokud je dobírací balíček prázdný, přestaneme dobírat.
-			# BattleScene se postará o zamíchání a zavolá nás znovu.
 			break
 		
 		var drawn_card = draw_pile.pop_front()
@@ -104,3 +112,14 @@ func draw_cards(amount: int) -> int:
 			cards_drawn_count += 1
 			
 	return cards_drawn_count
+
+# --- SJEDNOCENÉ NÁZVY FUNKCÍ ---
+func add_artifact(artifact_data: ArtifactsData):
+	if not artifacts.has(artifact_data):
+		artifacts.append(artifact_data)
+		emit_signal("artifacts_changed")
+
+func remove_artifact(artifact_data: ArtifactsData):
+	if artifacts.has(artifact_data):
+		artifacts.erase(artifact_data)
+		emit_signal("artifacts_changed")

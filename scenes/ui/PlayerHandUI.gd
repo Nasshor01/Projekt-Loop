@@ -56,33 +56,44 @@ func add_card_animated(card_data: CardData, from_pos: Vector2):
 	var finish_timer = get_tree().create_timer(0.2) # Doba animace
 	finish_timer.timeout.connect(func(): emit_signal("card_draw_animation_finished"))
 
-# --- UPRAVENÁ FUNKCE PRO ODHOZENÍ KARET S ANIMACÍ (BEZ ASYNC) ---
+
 func discard_hand_animated(to_pos: Vector2):
 	var cards = get_children().filter(func(c): return c is CardUI)
 	if cards.is_empty():
 		emit_signal("hand_discard_animation_finished")
 		return
 
-	var master_tween = create_tween().set_parallel()
-	
-	for card in cards:
+	var card_count = cards.size()
+
+	# Projdeme všechny karty v ruce
+	for i in range(card_count):
+		var card = cards[i]
 		if not is_instance_valid(card): continue
+		
+		# Vypneme možnost na kartu klikat
 		card.set_mouse_filter(MOUSE_FILTER_IGNORE)
 		
-		# Pro každou kartu vytvoříme samostatný Tween a hned ho spustíme
-		var card_tween = create_tween()
-		card_tween.set_parallel()
-		card_tween.tween_property(card, "global_position", to_pos, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-		card_tween.tween_property(card, "scale", Vector2.ZERO, 0.3)
+		# Vytvoříme si timer, který spustí animaci každé karty s malým zpožděním
+		# První karta (i=0) se spustí hned, druhá za 0.1s, třetí za 0.2s atd.
+		var delay_timer = get_tree().create_timer(i * 0.1)
 		
-		# Místo tween_tween použijeme tento řádek, který přidá animaci do hlavního master_tween
-		master_tween.tween_callback(card_tween.play)
+		# Po uplynutí zpoždění se spustí tato anonymní funkce
+		delay_timer.timeout.connect(func():
+			# Vytvoříme animaci pro tuto jednu kartu
+			var card_tween = create_tween()
+			card_tween.set_parallel(true)
+			card_tween.tween_property(card, "global_position", to_pos, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+			card_tween.tween_property(card, "scale", Vector2.ZERO, 0.25)
+			
+			# Důležitý krok: Pouze u POSLEDNÍ karty v ruce sledujeme, kdy její animace skončí.
+			# Až když skončí poslední animace, vyčistíme ruku a dáme vědět BattleScene.
+			if i == card_count - 1:
+				card_tween.finished.connect(func():
+					clear_hand()
+					emit_signal("hand_discard_animation_finished")
+				)
+		)
 
-	# Připojíme se k signálu 'finished' a až poté vyčistíme ruku a pošleme signál dál
-	master_tween.finished.connect(func():
-		clear_hand()
-		emit_signal("hand_discard_animation_finished")
-	)
 
 func add_card_to_hand(card_data_resource: CardData):
 	if not card_data_resource or not CardUIScene: return
