@@ -1,0 +1,35 @@
+[gd_scene load_steps=3 format=3 uid="uid://c2y1v7bbphs46"]
+
+[ext_resource type="Script" uid="uid://cxjm6qrlkogyv" path="res://scenes/shop/ShopItemUI.gd" id="1_b06mc"]
+[ext_resource type="Texture2D" uid="uid://dnip28myu7q4x" path="res://art/icons/7.png" id="2_elsfu"]
+
+[node name="ShopItemUI" type="PanelContainer"]
+custom_minimum_size = Vector2(220, 300)
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_b06mc")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="ItemContent" type="Control" parent="MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="PriceLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Cena:100"
+
+[node name="GoldIcon" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+texture = ExtResource("2_elsfu")
+
+[node name="BuyButton" type="Button" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Koupit"

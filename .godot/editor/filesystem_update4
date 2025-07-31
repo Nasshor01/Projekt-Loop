@@ -46,3 +46,8 @@ res://scenes/ui/PlayerArtifactsUI.gd
 res://scenes/ui/PlayerArtifactsUI.tscn
 res://scenes/ui/DevConsole.tscn
 res://scenes/ui/DevConsole.gd
+res://scenes/ui/CardUI.tscn
+res://scenes/shop/ShopItemUI.tscn
+res://scenes/shop/ShopItemUI.gd
+res://scenes/shop/ShopScene.tscn
+res://scenes/shop/ShopScene.gd

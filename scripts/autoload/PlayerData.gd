@@ -1,6 +1,11 @@
 # Soubor: scripts/autoload/PlayerData.gd
 extends Node
 
+# --- OPRAVENÁ DEFINICE SIGNÁLU ---
+signal energy_changed(new_energy_amount)
+signal artifacts_changed
+signal gold_changed(new_amount) # Překlep "chaged" opraven na "changed"
+
 var selected_class: ClassData = null
 var selected_subclass: SubclassData = null
 var master_deck: Array[CardData] = []
@@ -8,15 +13,14 @@ var current_hand: Array[CardData] = []
 var discard_pile: Array[CardData] = []
 var draw_pile: Array[CardData] = []
 var exhaust_pile: Array[CardData] = []
-signal energy_changed(new_energy_amount)
+
 var current_energy: int = 3
 var max_energy: int = 3
 var max_hp: int = 50
 var current_hp: int = 50
-
-# --- SJEDNOCENÉ NÁZVY ---
-signal artifacts_changed
 var artifacts: Array[ArtifactsData] = []
+var gold: int = 0
+
 
 var path_taken: Array[MapNodeResource] = []
 
@@ -28,8 +32,12 @@ func get_current_node() -> MapNodeResource:
 func start_new_run_state():
 	current_hp = max_hp
 	path_taken.clear()
-	artifacts.clear() # Vyčistíme artefakty na začátku nového běhu
+	artifacts.clear()
 	emit_signal("artifacts_changed")
+	
+	gold = 100 # Startovní zlato
+	# Nyní se volá správně existující signál
+	emit_signal("gold_changed", gold)
 
 func initialize_player(p_class: ClassData, p_subclass: SubclassData):
 	if not p_class or not p_subclass:
@@ -56,7 +64,6 @@ func reset_battle_stats():
 func reset_energy():
 	current_energy = max_energy
 	
-	# --- OPRAVENO: Používá 'artifacts' ---
 	for artifact in artifacts:
 		if artifact.effect_id == "extra_energy_per_turn":
 			current_energy += artifact.value
@@ -113,7 +120,7 @@ func draw_cards(amount: int) -> int:
 			
 	return cards_drawn_count
 
-# --- SJEDNOCENÉ NÁZVY FUNKCÍ ---
+
 func add_artifact(artifact_data: ArtifactsData):
 	if not artifacts.has(artifact_data):
 		artifacts.append(artifact_data)
@@ -123,3 +130,15 @@ func remove_artifact(artifact_data: ArtifactsData):
 	if artifacts.has(artifact_data):
 		artifacts.erase(artifact_data)
 		emit_signal("artifacts_changed")
+
+# --- Funkce pro zlato nyní volají správný signál ---
+func add_gold(amount: int):
+	gold += amount
+	emit_signal("gold_changed", gold)
+
+func spend_gold(amount: int) -> bool:
+	if gold >= amount:
+		gold -= amount
+		emit_signal("gold_changed", gold)
+		return true
+	return false

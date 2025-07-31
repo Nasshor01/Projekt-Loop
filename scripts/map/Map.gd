@@ -115,6 +115,7 @@ func _render_map_visuals():
 		
 		add_child(map_node_instance)
 		map_nodes_visual[node_data] = map_node_instance
+
 func _on_map_node_clicked(clicked_node: MapNode):
 	var current_node = PlayerData.get_current_node()
 	var destination_node = clicked_node.node_data
@@ -134,7 +135,6 @@ func _on_map_node_clicked(clicked_node: MapNode):
 func _trigger_node_action(node_data: MapNodeResource):
 	var encounter_to_start: EncounterData = null
 
-	# Zjistíme, o jaký typ místnosti se jedná, a připravíme příslušná data.
 	match node_data.type:
 		MapNodeResource.NodeType.MONSTER:
 			if not monster_encounters.is_empty():
@@ -150,16 +150,21 @@ func _trigger_node_action(node_data: MapNodeResource):
 		
 		MapNodeResource.NodeType.TREASURE:
 			GameManager.show_treasure_node()
-			return # Ukončíme funkci, protože nepokračujeme do bitvy
-
-		# Pro ostatní typy místností (Event, Shop, atd.), které nezačínají bitvu.
-		_:
-			# Vypíšeme do konzole, že akce zatím není implementována.
-			print("Akce typu '%s' zatím není implementována. Pokračuje se dál." % MapNodeResource.NodeType.keys()[node_data.type])
-			# Aktualizujeme zvýraznění mapy pro další tah.
-			_update_highlighting()
-			# Ukončíme funkci, protože nepokračujeme do bitvy.
 			return
+
+		MapNodeResource.NodeType.SHOP:
+			# Uložíme stav kamery, stejně jako před bitvou
+			GameManager.saved_camera_position = camera.position
+			GameManager.saved_camera_zoom = camera.zoom
+			GameManager.has_saved_camera_state = true
+			GameManager.go_to_shop()
+			return # Ukončíme funkci, nepokračujeme do bitvy
+
+		_:
+			print("Akce typu '%s' zatím není implementována. Pokračuje se dál." % MapNodeResource.NodeType.keys()[node_data.type])
+			_update_highlighting()
+			return
+
 
 	# Zkontrolujeme, zda se podařilo načíst data pro souboj.
 	if is_instance_valid(encounter_to_start):

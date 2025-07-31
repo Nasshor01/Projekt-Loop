@@ -10,6 +10,7 @@ var battle_scene = "res://scenes/battle/BattleScene.tscn"
 var reward_scene = "res://scenes/rewards/RewardScene.tscn"
 var game_over_scene = "res://scenes/ui/GameOver.tscn"
 var treasure_scene = "res://scenes/rewards/TreasureScene.tscn"
+var shop_scene = "res://scenes/shop/ShopScene.tscn"
 
 var current_scene: Node = null
 var current_seed: int
@@ -63,6 +64,14 @@ func show_treasure_node():
 
 func treasure_collected():
 	print("Poklad sebrán, vracím se na mapu.")
+	_change_scene(map_scene)
+
+func go_to_shop():
+	print("Vstup do obchodu.")
+	_change_scene(shop_scene)
+
+func leave_shop():
+	print("Odchod z obchodu, návrat na mapu.")
 	_change_scene(map_scene)
 
 func _change_scene(scene_path: String):

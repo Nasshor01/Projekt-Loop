@@ -89,10 +89,10 @@ func take_damage(amount: int) -> void:
 	if unit_data.faction == UnitData.Faction.PLAYER and damage_to_deal > 0:
 		var attacker = get_last_attacker()
 		if is_instance_valid(attacker):
-			for relic in PlayerData.relics:
-				if relic.effect_id == "thorns_damage":
-					print("Artefakt '%s' vrací %d poškození." % [relic.relic_name, relic.value])
-					await attacker.take_damage(relic.value)
+			for artifacts in PlayerData.artifacts:
+				if artifacts.effect_id == "thorns_damage":
+					print("Artefakt '%s' vrací %d poškození." % [artifacts.artifact_name, artifacts.value])
+					await attacker.take_damage(artifacts.value)
 	# ------------------------------------
 	
 	if current_health <= 0:
