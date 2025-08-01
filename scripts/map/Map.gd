@@ -42,11 +42,13 @@ var map_nodes_visual: Dictionary = {}
 @onready var generate_seed_button: Button = $CanvasLayer/Panel/VBoxContainer/GenerateSeedButton
 @onready var random_seed_button: Button = $CanvasLayer/Panel/VBoxContainer/RandomSeedButton
 @onready var camera: Camera2D = $Camera2D
+@onready var dev_console: CanvasLayer = $DevConsole
 
 func _ready():
 	# Tato funkce se volá při startu scény
 	generate_seed_button.pressed.connect(_on_generate_custom_seed_pressed)
 	random_seed_button.pressed.connect(_on_generate_random_seed_pressed)
+	dev_console.command_submitted.connect(_on_dev_command)
 	initialize_map()
 
 func _on_generate_random_seed_pressed():
@@ -308,3 +310,56 @@ func _on_map_node_exited(map_node: MapNode):
 	# Vytvoříme animaci, která vrátí uzel na původní velikost. 
 	var tween = create_tween().set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
 	tween.tween_property(map_node, "scale", Vector2(1.0, 1.0), 0.15)
+
+func _on_dev_command(command: String, args: Array):
+	match command:
+		"goto":
+			_execute_goto_command(args)
+		_:
+			dev_console.log_error("Neznámý příkaz: '%s'" % command)
+
+# Logika pro příkaz GOTO
+func _execute_goto_command(args: Array):
+	if args.is_empty() or not args[0].begins_with("f"):
+		dev_console.log_error("Použití: goto f<číslo_patra>")
+		return
+	
+	var floor_str = args[0].substr(1)
+	if not floor_str.is_valid_int():
+		dev_console.log_error("Neplatné číslo patra: '%s'" % floor_str)
+		return
+	
+	var target_floor = floor_str.to_int()
+	
+	# Speciální případ pro start (patro 0)
+	if target_floor == 0:
+		PlayerData.path_taken.clear()
+		_update_highlighting()
+		dev_console.log_success("Přesun na start (patro 0).")
+		return
+
+	# Najdeme VŠECHNY uzly na cílovém patře
+	var target_floor_nodes: Array[MapNodeResource] = []
+	for node in map_data.all_nodes:
+		if node.row == target_floor:
+			target_floor_nodes.append(node)
+			
+	if target_floor_nodes.is_empty():
+		dev_console.log_error("Na patře %d nebyly nalezeny žádné uzly." % target_floor)
+		return
+		
+	# --- ZDE JE TEN TRIK ---
+	# Vytvoříme dočasný "master" uzel, který není na mapě vidět.
+	var dummy_node = MapNodeResource.new()
+	# Řekneme mu, že se z něj dá dostat na VŠECHNY uzly na cílovém patře.
+	dummy_node.connections = target_floor_nodes
+	
+	# Nastavíme cestu hráče tak, jako by byl POUZE na tomto dočasném uzlu.
+	PlayerData.path_taken.clear()
+	PlayerData.path_taken.append(dummy_node)
+	
+	# Překreslíme mapu. Funkce _update_highlighting si teď přečte cesty
+	# z našeho dočasného uzlu a rozsvítí všechny cílové uzly.
+	_update_highlighting()
+	
+	dev_console.log_success("Přesun dokončen. Můžeš si vybrat jakýkoliv uzel na patře %d." % target_floor)

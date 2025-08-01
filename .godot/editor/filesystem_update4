@@ -50,3 +50,5 @@ res://data/encounters/goblin_duo.tres
 res://data/encounters/one_orc.tres
 res://data/encounters/Skeleton.tres
 res://data/encounters/Skeleton_army.tres
+res://scenes/ui/DevConsole.gd
+res://scripts/map/Map.gd

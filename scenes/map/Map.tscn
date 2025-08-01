@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://drjxjljeflimr"]
+[gd_scene load_steps=4 format=3 uid="uid://drjxjljeflimr"]
 
 [ext_resource type="Script" uid="uid://ooy1vlqxvqir" path="res://scripts/map/Map.gd" id="1_ub3q0"]
 [ext_resource type="Script" uid="uid://c68oy7p72j11q" path="res://scripts/map/MapGenerator.gd" id="2_nuen2"]
+[ext_resource type="PackedScene" uid="uid://ckvi6eu1vd02a" path="res://scenes/ui/DevConsole.tscn" id="3_nuen2"]
 
 [node name="Map" type="Node2D"]
 script = ExtResource("1_ub3q0")
@@ -45,3 +46,5 @@ text = "GenerateSeedButton "
 unique_name_in_owner = true
 layout_mode = 2
 text = "RandomSeedButton "
+
+[node name="DevConsole" parent="." instance=ExtResource("3_nuen2")]

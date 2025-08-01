@@ -1,6 +1,8 @@
 # Soubor: scripts/ui/DevConsole.gd
 extends CanvasLayer
 
+signal command_submitted(command, args)
+
 @onready var output_log: RichTextLabel = $ColorRect/VBoxContainer/OutputLog
 @onready var input_line: LineEdit = $ColorRect/VBoxContainer/InputLine
 
@@ -51,14 +53,16 @@ func _on_text_submitted(command_text: String):
 	log_message("> " + command_text)
 	input_line.clear()
 	
-	var parts = command_text.split(" ")
+	# strip_edges() odstraní mezery na začátku/konci
+	# false znamená, že více mezer za sebou se bere jako jedna
+	var parts = command_text.strip_edges().split(" ", false)
 	var command = parts[0].to_lower()
 	var args = parts.slice(1)
 	
 	match command:
 		"add_artifact":
-			if args.size() < 1:
-				log_error("Chybí název artefaktu. Použití: add_artifact <NazevSouboru>")
+			if args.is_empty():
+				log_error("Použití: add_artifact <NazevSouboru>")
 				return
 			var artifact_name = args[0]
 			if all_artifacts.has(artifact_name):
@@ -68,8 +72,8 @@ func _on_text_submitted(command_text: String):
 				log_error("Artefakt '%s' nebyl nalezen." % artifact_name)
 		
 		"remove_artifact":
-			if args.size() < 1:
-				log_error("Chybí název artefaktu. Použití: remove_artifact <NazevSouboru>")
+			if args.is_empty():
+				log_error("Použití: remove_artifact <NazevSouboru>")
 				return
 			var artifact_name = args[0]
 			if all_artifacts.has(artifact_name):
@@ -80,9 +84,29 @@ func _on_text_submitted(command_text: String):
 		
 		"list_artifacts":
 			log_message("Dostupné artefakty: " + str(all_artifacts.keys()))
+		
+		# --- PŘIDANÉ PŘÍKAZY PRO ZLATO ---
+		"add_gold":
+			if args.is_empty() or not args[0].is_valid_int():
+				log_error("Použití: add_gold <množství>")
+				return
+			var amount = args[0].to_int()
+			PlayerData.add_gold(amount)
+			log_success("Přidáno %d zlata. Celkem: %d" % [amount, PlayerData.gold])
+
+		"remove_gold":
+			if args.is_empty() or not args[0].is_valid_int():
+				log_error("Použití: remove_gold <množství>")
+				return
+			var amount = args[0].to_int()
+			PlayerData.spend_gold(amount)
+			log_success("Odebráno %d zlata. Celkem: %d" % [amount, PlayerData.gold])
+		# ------------------------------------
 
 		_:
-			log_error("Neznámý příkaz: '%s'" % command)
+			# Pokud příkaz neznáme, předáme ho dál pro případ,
+			# že by ho uměla zpracovat scéna, ve které se nacházíme (např. Map.gd)
+			emit_signal("command_submitted", command, args)
 
 func log_message(text: String):
 	output_log.append_text("\n" + text)
