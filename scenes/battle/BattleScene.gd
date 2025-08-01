@@ -56,6 +56,7 @@ var _is_drawing_cards: bool = false
 var _is_first_turn: bool = true
 
 func _ready():
+	player_info_panel.update_from_player_data()
 	_current_battle_state = BattleState.SETUP
 	_is_first_turn = true
 	victory_label.visible = false
@@ -274,6 +275,9 @@ func _on_hand_discard_animation_finished():
 func end_battle_as_victory():
 	_current_battle_state = BattleState.BATTLE_OVER
 	if is_instance_valid(_player_unit_node):
+		# UPOZORNĚNÍ: Přímé nastavování current_hp obejde náš nový signál.
+		# Prozatím to necháme, ale do budoucna by bylo lepší mít
+		# funkci PlayerData.set_health(), která signál také vyšle.
 		PlayerData.current_hp = _player_unit_node.current_health
 	GameManager.battle_finished(true)
 

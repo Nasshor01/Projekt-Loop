@@ -5,6 +5,7 @@ extends Node
 signal energy_changed(new_energy_amount)
 signal artifacts_changed
 signal gold_changed(new_amount) # Překlep "chaged" opraven na "changed"
+signal health_changed(new_hp, new_max_hp)
 
 var selected_class: ClassData = null
 var selected_subclass: SubclassData = null
@@ -35,9 +36,11 @@ func start_new_run_state():
 	artifacts.clear()
 	emit_signal("artifacts_changed")
 	
-	gold = 100 # Startovní zlato
-	# Nyní se volá správně existující signál
+	gold = 100
 	emit_signal("gold_changed", gold)
+	
+	# PŘIDÁNO: Na začátku běhu informujeme o stavu zdraví
+	emit_signal("health_changed", current_hp, max_hp)
 
 func initialize_player(p_class: ClassData, p_subclass: SubclassData):
 	if not p_class or not p_subclass:
@@ -142,3 +145,11 @@ func spend_gold(amount: int) -> bool:
 		emit_signal("gold_changed", gold)
 		return true
 	return false
+
+func take_damage(amount: int):
+	current_hp = max(0, current_hp - amount)
+	emit_signal("health_changed", current_hp, max_hp)
+
+func heal(amount: int):
+	current_hp = min(max_hp, current_hp + amount)
+	emit_signal("health_changed", current_hp, max_hp)

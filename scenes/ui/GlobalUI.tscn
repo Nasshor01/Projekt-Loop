@@ -1,0 +1,51 @@
+[gd_scene load_steps=4 format=3 uid="uid://igmyfibd5goq"]
+
+[ext_resource type="Script" uid="uid://x2hd3fytxgbm" path="res://scenes/ui/GlobalUI.gd" id="1_f4cv4"]
+[ext_resource type="PackedScene" uid="uid://cu6oy5nwloafr" path="res://scenes/ui/PlayerArtifactsUI.tscn" id="1_y6ips"]
+[ext_resource type="Texture2D" uid="uid://dnip28myu7q4x" path="res://art/icons/7.png" id="2_f4cv4"]
+
+[node name="GlobalUI" type="CanvasLayer"]
+script = ExtResource("1_f4cv4")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+offset_right = 741.0
+offset_bottom = 99.0
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="MainLayout" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="TopRow" type="HBoxContainer" parent="MarginContainer/MainLayout"]
+layout_mode = 2
+
+[node name="PlayerArtifactsUI" parent="MarginContainer/MainLayout/TopRow" instance=ExtResource("1_y6ips")]
+layout_mode = 2
+
+[node name="Control" type="Control" parent="MarginContainer/MainLayout/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GoldDisplay" type="HBoxContainer" parent="MarginContainer/MainLayout/TopRow"]
+layout_mode = 2
+
+[node name="GoldLabel" type="Label" parent="MarginContainer/MainLayout/TopRow/GoldDisplay"]
+layout_mode = 2
+text = "Zlato: 100"
+
+[node name="GoldIcon" type="TextureRect" parent="MarginContainer/MainLayout/TopRow/GoldDisplay"]
+layout_mode = 2
+texture = ExtResource("2_f4cv4")
+
+[node name="BottomLeft" type="PanelContainer" parent="MarginContainer/MainLayout"]
+layout_mode = 2
+
+[node name="HPDisplay" type="HBoxContainer" parent="MarginContainer/MainLayout/BottomLeft"]
+layout_mode = 2
+
+[node name="HPLabel" type="Label" parent="MarginContainer/MainLayout/BottomLeft/HPDisplay"]
+layout_mode = 2
+text = "HP: 50/50"

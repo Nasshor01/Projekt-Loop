@@ -66,7 +66,6 @@ func attack(target: Node2D) -> void:
 func take_damage(amount: int) -> void:
 	var damage_to_deal = amount
 	var block_before = current_block
-	
 	var absorbed_by_block = min(amount, block_before)
 	
 	if absorbed_by_block > 0:
@@ -83,6 +82,10 @@ func take_damage(amount: int) -> void:
 		_show_floating_text(damage_to_deal, "damage")
 		if current_health < 0:
 			current_health = 0
+		
+		# PŘIDÁNO: Pokud jsme hráč, nahlásíme změnu do PlayerData
+		if unit_data.faction == UnitData.Faction.PLAYER:
+			PlayerData.take_damage(damage_to_deal)
 	
 	_update_stats_and_emit_signal()
 	
@@ -93,7 +96,6 @@ func take_damage(amount: int) -> void:
 				if artifacts.effect_id == "thorns_damage":
 					print("Artefakt '%s' vrací %d poškození." % [artifacts.artifact_name, artifacts.value])
 					await attacker.take_damage(artifacts.value)
-	# ------------------------------------
 	
 	if current_health <= 0:
 		_die()
@@ -208,6 +210,11 @@ func heal_to_full():
 	current_health = max_hp_target
 	var amount_healed = current_health - health_before
 	_show_floating_text(amount_healed, "heal")
+	
+	# PŘIDÁNO: Pokud jsme hráč, nahlásíme změnu do PlayerData
+	if unit_data.faction == UnitData.Faction.PLAYER and amount_healed > 0:
+		PlayerData.heal(amount_healed)
+		
 	_update_stats_and_emit_signal()
 
 func _die():
@@ -220,6 +227,11 @@ func heal(amount: int):
 	var health_to_restore = min(amount, unit_data.max_health - current_health)
 	current_health += health_to_restore
 	_show_floating_text(health_to_restore, "heal")
+	
+	# PŘIDÁNO: Pokud jsme hráč, nahlásíme změnu do PlayerData
+	if unit_data.faction == UnitData.Faction.PLAYER and health_to_restore > 0:
+		PlayerData.heal(health_to_restore)
+		
 	_update_stats_and_emit_signal()
 
 func add_block(amount: int):

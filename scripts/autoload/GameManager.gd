@@ -11,6 +11,7 @@ var reward_scene = "res://scenes/rewards/RewardScene.tscn"
 var game_over_scene = "res://scenes/ui/GameOver.tscn"
 var treasure_scene = "res://scenes/rewards/TreasureScene.tscn"
 var shop_scene = "res://scenes/shop/ShopScene.tscn"
+var global_ui_scene = preload("res://scenes/ui/GlobalUI.tscn")
 
 var current_scene: Node = null
 var current_seed: int
@@ -19,9 +20,12 @@ var current_map_data: MapData = null
 var has_saved_camera_state: bool = false
 var saved_camera_position: Vector2 = Vector2.ZERO
 var saved_camera_zoom: Vector2 = Vector2(1.0, 1.0)
-
+var global_ui_instance: CanvasLayer = null
 
 func _ready():
+	# PŘIDÁNO: Vytvoříme instanci globálního UI a přidáme ji jako přímého potomka GameManageru
+	global_ui_instance = global_ui_scene.instantiate()
+	add_child(global_ui_instance)
 	start_new_run()
 
 func start_new_run(seed = null):
@@ -76,28 +80,39 @@ func leave_shop():
 
 func _change_scene(scene_path: String):
 	print("DEBUG: Pokouším se změnit scénu na: ", scene_path)
-	
+
+	# Zkontrolujeme, jestli instance GlobalUI existuje, než na ni budeme volat metody.
+	if is_instance_valid(global_ui_instance):
+		if scene_path == map_scene:
+			global_ui_instance.show()
+			global_ui_instance.show_hp() # Na mapě HP chceme vidět
+		elif scene_path == battle_scene:
+			global_ui_instance.show()
+			global_ui_instance.hide_hp() # V bitvě HP schováme
+		else:
+			# V ostatních scénách (shop, odměny, poklad) schováme celé GlobalUI
+			global_ui_instance.hide()
+	# -------------------------------------------------
+
+	# Zbytek funkce pro změnu scény
 	if is_instance_valid(current_scene):
 		print("DEBUG: Mažu starou scénu: ", current_scene.scene_file_path)
 		current_scene.queue_free()
-	
+
 	var new_scene_resource = load(scene_path)
-	
+
 	if new_scene_resource:
 		print("DEBUG: Zdroj scény načten úspěšně.")
 		current_scene = new_scene_resource.instantiate()
-		
-		# --- PŘIDANÁ KONTROLA ZDE ---
+
 		if is_instance_valid(current_scene):
 			print("DEBUG: Scéna instancována úspěšně. Přidávám do stromu.")
-			
+
 			if "encounter_data" in current_scene:
 				current_scene.encounter_data = current_encounter
-				
+
 			get_tree().get_root().call_deferred("add_child", current_scene)
 		else:
-			# Pokud se dostaneme sem, víme, že selhalo .instantiate()
 			printerr("FATÁLNÍ CHYBA: Selhalo instancování scény: ", scene_path)
 	else:
-		# Pokud se dostaneme sem, víme, že selhalo load()
 		printerr("FATÁLNÍ CHYBA: Nepodařilo se načíst zdroj scény: ", scene_path)

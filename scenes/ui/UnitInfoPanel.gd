@@ -59,3 +59,20 @@ func _update_status_display(unit_node: Node2D):
 
 func hide_panel():
 	visible = false
+
+func update_from_player_data():
+	# Vezmeme si data o classu hráče
+	var unit_data = PlayerData.selected_subclass.specific_unit_data
+	if not is_instance_valid(unit_data):
+		hide_panel()
+		return
+
+	name_label.text = unit_data.unit_name
+	# Aktuální HP vezmeme přímo z PlayerData
+	hp_label.text = "HP: %d / %d" % [PlayerData.current_hp, PlayerData.max_hp]
+	
+	# Ostatní věci, které hráč na začátku nemá, skryjeme
+	block_label.visible = false
+	attack_label.visible = false
+	status_effects_list.visible = false
+	show()
