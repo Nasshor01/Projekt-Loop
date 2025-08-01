@@ -3,12 +3,30 @@ extends Node2D
 
 const ShopItemUIScene = preload("res://scenes/shop/ShopItemUI.tscn")
 
-# Proměnné jen deklarujeme, abychom se vyhnuli problémům s načítáním
-var all_cards: Array[CardData] = []
-var all_artifacts: Array[ArtifactsData] = []
+# --- BAZÉNY ZBOŽÍ PRO OBCHOD ---
+# Můžeme je později načítat ze souboru, ale takto je to přehlednější
+var shop_card_pool = [
+	load("res://data/cards/paladin/smite.tres"),
+	load("res://data/cards/paladin/holy_wave.tres"),
+	load("res://data/cards/everyone/heavy_strike.tres"),
+	# Přidej sem další karty, které se mohou objevit v obchodě
+]
+var shop_artifact_pool = [
+	load("res://data/artifacts/basic/ManaKrystal.tres"),
+	load("res://data/artifacts/basic/OstnatýNáhrdelník.tres"),
+]
+# -----------------------------
 
+# --- DYNAMICKÉ CENY PODLE VZÁCNOSTI ---
+const CARD_PRICES = {
+	CardData.CardRarity.COMMON: 50,
+	CardData.CardRarity.UNCOMMON: 75,
+	CardData.CardRarity.RARE: 150,
+	# Doplň další vzácnosti a jejich ceny
+}
+const ARTIFACT_PRICE = 200
 const CARD_REMOVAL_COST = 75
-
+# ------------------------------------
 @onready var gold_label: Label = $CanvasLayer/MainContainer/VBoxContainer/Header/GoldDisplay/HBoxContainer/GoldLabel
 @onready var items_grid: GridContainer = $CanvasLayer/MainContainer/VBoxContainer/ItemsPanel/ScrollContainer/ItemsGrid
 @onready var remove_card_button: Button = $CanvasLayer/MainContainer/VBoxContainer/ServicesPanel/HBoxContainer/RemoveCardButton
@@ -16,26 +34,8 @@ const CARD_REMOVAL_COST = 75
 @onready var card_pile_viewer = $CanvasLayer/MainContainer/CardPileViewer
 
 func _ready():
-	# Načítáme zdroje bezpečně uvnitř _ready()
-	all_cards = [
-		load("res://data/cards/paladin/smite.tres"),
-		load("res://data/cards/paladin/holy_wave.tres"),
-		load("res://data/cards/everyone/heavy_strike.tres"),
-	]
-	all_artifacts = [
-		load("res://data/artifacts/basic/ManaKrystal.tres"),
-		load("res://data/artifacts/basic/OstnatýNáhrdelník.tres"),
-	]
-
-	# --- OPRAVA OKAMŽITÉHO ZAVŘENÍ ---
-	# Odpojíme starý signál, pokud by tam náhodou byl, a připojíme nový, chytřejší.
-	# Nereagujeme na obecné "pressed", ale na konkrétní vstup.
-	if leave_button.is_connected("pressed", _on_leave_button_pressed):
-		leave_button.disconnect("pressed", _on_leave_button_pressed)
+	# Připojení signálů zůstává stejné
 	leave_button.gui_input.connect(_on_leave_button_input)
-	# --------------------------------
-
-	# Zbytek připojení
 	remove_card_button.pressed.connect(_on_remove_card_button_pressed)
 	PlayerData.gold_changed.connect(_update_gold_label)
 	card_pile_viewer.visibility_changed.connect(_on_viewer_visibility_changed)
@@ -59,30 +59,33 @@ func _generate_shop_inventory():
 	for child in items_grid.get_children():
 		child.queue_free()
 
-	var cards_to_sell = []
-	for card in all_cards:
-		if is_instance_valid(card):
-			cards_to_sell.append(card)
+	# -- Generování karet s dynamickou cenou --
+	var available_cards = shop_card_pool.duplicate()
+	available_cards.shuffle()
+	var cards_to_sell = available_cards.slice(0, 3) # Nabídneme 3 náhodné karty z poolu
 
 	for card_data in cards_to_sell:
-		var cost = 50
-		var shop_item_ui = ShopItemUIScene.instantiate()
-		items_grid.add_child(shop_item_ui)
-		shop_item_ui.set_item(card_data, cost)
-		shop_item_ui.item_purchased.connect(_on_item_purchased)
+		if is_instance_valid(card_data):
+			# Získáme cenu z našeho slovníku, defaultně 50, pokud by vzácnost nebyla nalezena
+			var cost = CARD_PRICES.get(card_data.rarity, 50)
+			
+			var shop_item_ui = ShopItemUIScene.instantiate()
+			items_grid.add_child(shop_item_ui)
+			# Předáme do UI i cenu, kterou jsme vypočítali
+			shop_item_ui.set_item(card_data, cost)
+			shop_item_ui.item_purchased.connect(_on_item_purchased)
 
-	var valid_artifacts = []
-	for artifact in all_artifacts:
-		if is_instance_valid(artifact):
-			valid_artifacts.append(artifact)
-	
-	if not valid_artifacts.is_empty():
-		var artifact_to_sell = valid_artifacts.pick_random()
-		var cost = 150
-		var shop_item_ui = ShopItemUIScene.instantiate()
-		items_grid.add_child(shop_item_ui)
-		shop_item_ui.set_item(artifact_to_sell, cost)
-		shop_item_ui.item_purchased.connect(_on_item_purchased)
+	# -- Generování artefaktu --
+	var available_artifacts = shop_artifact_pool.duplicate()
+	if not available_artifacts.is_empty():
+		var artifact_to_sell = available_artifacts.pick_random()
+		if is_instance_valid(artifact_to_sell):
+			var shop_item_ui = ShopItemUIScene.instantiate()
+			items_grid.add_child(shop_item_ui)
+			shop_item_ui.set_item(artifact_to_sell, ARTIFACT_PRICE)
+			shop_item_ui.item_purchased.connect(_on_item_purchased)
+
+
 
 
 func _update_gold_label(new_amount: int):
@@ -93,9 +96,10 @@ func _update_gold_label(new_amount: int):
 func _on_item_purchased(item_data: Resource, button_node: Button):
 	var cost: int
 	if item_data is CardData:
-		cost = 50
+		# Znovu zjistíme cenu, abychom ji nemuseli předávat signálem
+		cost = CARD_PRICES.get(item_data.rarity, 50)
 	elif item_data is ArtifactsData:
-		cost = 150
+		cost = ARTIFACT_PRICE
 	else:
 		return
 

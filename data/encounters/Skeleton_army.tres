@@ -42,5 +42,6 @@ metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
 
 [resource]
 script = ExtResource("3_dlu8r")
+encounter_type = 1
 enemies = Array[ExtResource("1_3ppqm")]([SubResource("Resource_yodov"), SubResource("Resource_3ppqm"), SubResource("Resource_8dp5v"), SubResource("Resource_dlu8r"), SubResource("Resource_xsouq"), SubResource("Resource_n5rls")])
 metadata/_custom_type_script = "uid://dq86v2djx6q1m"

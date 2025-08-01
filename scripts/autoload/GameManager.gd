@@ -21,6 +21,7 @@ var has_saved_camera_state: bool = false
 var saved_camera_position: Vector2 = Vector2.ZERO
 var saved_camera_zoom: Vector2 = Vector2(1.0, 1.0)
 var global_ui_instance: CanvasLayer = null
+var last_battle_gold_reward: int = 0
 
 func _ready():
 	# PŘIDÁNO: Vytvoříme instanci globálního UI a přidáme ji jako přímého potomka GameManageru
@@ -53,10 +54,24 @@ func start_battle(encounter: EncounterData):
 func battle_finished(player_won: bool):
 	if player_won:
 		print("Hráč vyhrál! Přecházím na obrazovku odměn.")
+		
+		# PŘIDÁNO: Výpočet odměny ve zlatě
+		# Zde si můžete nastavit logiku, jakou chcete.
+		# Například podle typu encounteru.
+		if current_encounter.encounter_type == EncounterData.EncounterType.ELITE:
+			last_battle_gold_reward = randi_range(40, 60)
+		elif current_encounter.encounter_type == EncounterData.EncounterType.BOSS:
+			last_battle_gold_reward = randi_range(90, 110)
+		else: # Běžný souboj
+			last_battle_gold_reward = randi_range(15, 25)
+			
+		print("Hráč získává %d zlata." % last_battle_gold_reward)
+		
 		_change_scene(reward_scene)
 	else:
 		print("Hráč prohrál! Přecházím na obrazovku Game Over.")
 		_change_scene(game_over_scene)
+
 
 func reward_chosen():
 	print("Odměna vybrána, vracím se na mapu.")
@@ -107,6 +122,12 @@ func _change_scene(scene_path: String):
 
 		if is_instance_valid(current_scene):
 			print("DEBUG: Scéna instancována úspěšně. Přidávám do stromu.")
+			
+			# --- PŘIDANÁ LOGIKA PRO ODMĚNY ---
+			# Pokud je nová scéna obrazovkou odměn, předáme jí vypočítané zlato.
+			if scene_path == reward_scene:
+				current_scene.gold_reward = last_battle_gold_reward
+			# -----------------------------------
 
 			if "encounter_data" in current_scene:
 				current_scene.encounter_data = current_encounter

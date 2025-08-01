@@ -36,7 +36,7 @@ func start_new_run_state():
 	artifacts.clear()
 	emit_signal("artifacts_changed")
 	
-	gold = 100
+	gold = 0
 	emit_signal("gold_changed", gold)
 	
 	# PŘIDÁNO: Na začátku běhu informujeme o stavu zdraví

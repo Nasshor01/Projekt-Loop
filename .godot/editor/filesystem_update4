@@ -40,3 +40,13 @@ res://scripts/autoload/GameManager.gd
 res://scenes/ui/UnitInfoPanel.gd
 res://scenes/battle/BattleScene.gd
 res://scenes/battle/Unit.gd
+res://scenes/rewards/RewardScene.tscn
+res://scenes/rewards/RewardScene.gd
+res://scenes/shop/ShopScene.gd
+res://data/encounters/EncounterData.gd
+res://data/encounters/boss_battle.tres
+res://data/encounters/elite_battle.tres
+res://data/encounters/goblin_duo.tres
+res://data/encounters/one_orc.tres
+res://data/encounters/Skeleton.tres
+res://data/encounters/Skeleton_army.tres

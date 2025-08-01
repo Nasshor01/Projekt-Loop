@@ -1,18 +1,52 @@
-[gd_scene load_steps=2 format=3 uid="uid://cdkaugeoudrqa"]
+[gd_scene load_steps=3 format=3 uid="uid://cdkaugeoudrqa"]
 
 [ext_resource type="Script" uid="uid://4evnmm0nmlqh" path="res://scenes/rewards/RewardScene.gd" id="1_4cy2o"]
+[ext_resource type="Texture2D" uid="uid://dnip28myu7q4x" path="res://art/icons/7.png" id="2_1jct0"]
 
-[node name="RewardScene" type="Control"]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+[node name="RewardScene" type="PanelContainer"]
+custom_minimum_size = Vector2(800, 550)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -275.0
+offset_right = 400.0
+offset_bottom = 275.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_4cy2o")
 
-[node name="CardContainer" type="HBoxContainer" parent="."]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 50
+
+[node name="CenterContainer" type="CenterContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer/CenterContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Odměny"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="GoldRewardDisplay" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
 alignment = 1
+
+[node name="GoldIcon" type="TextureRect" parent="VBoxContainer/GoldRewardDisplay"]
+layout_mode = 2
+texture = ExtResource("2_1jct0")
+
+[node name="GoldLabel" type="Label" parent="VBoxContainer/GoldRewardDisplay"]
+layout_mode = 2
+
+[node name="CardContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="ContinueButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Pokračovat"

@@ -61,9 +61,18 @@ func attack(target: Node2D) -> void:
 		
 	await target.take_damage(unit_data.attack_damage)
 
-# --- UPRAVENÁ FUNKCE TAKE_DAMAGE ---
-# Přidána logika pro artefakt "thorns_damage"
 func take_damage(amount: int) -> void:
+	# Tuto logiku přesouváme na začátek. Aktivuje se, jakmile jsi napaden,
+	# bez ohledu na to, jestli poškození projde přes blok.
+	if unit_data.faction == UnitData.Faction.PLAYER:
+		var attacker = get_last_attacker()
+		if is_instance_valid(attacker):
+			for artifacts in PlayerData.artifacts:
+				if artifacts.effect_id == "thorns_damage":
+					print("Artefakt '%s' vrací %d poškození." % [artifacts.artifact_name, artifacts.value])
+					await attacker.take_damage(artifacts.value)
+	# ---------------------------------------------
+
 	var damage_to_deal = amount
 	var block_before = current_block
 	var absorbed_by_block = min(amount, block_before)
@@ -83,19 +92,13 @@ func take_damage(amount: int) -> void:
 		if current_health < 0:
 			current_health = 0
 		
-		# PŘIDÁNO: Pokud jsme hráč, nahlásíme změnu do PlayerData
+		# Pokud jsme hráč, nahlásíme změnu do PlayerData
 		if unit_data.faction == UnitData.Faction.PLAYER:
 			PlayerData.take_damage(damage_to_deal)
 	
 	_update_stats_and_emit_signal()
 	
-	if unit_data.faction == UnitData.Faction.PLAYER and damage_to_deal > 0:
-		var attacker = get_last_attacker()
-		if is_instance_valid(attacker):
-			for artifacts in PlayerData.artifacts:
-				if artifacts.effect_id == "thorns_damage":
-					print("Artefakt '%s' vrací %d poškození." % [artifacts.artifact_name, artifacts.value])
-					await attacker.take_damage(artifacts.value)
+	# Starou logiku trnů odsud mažeme, protože je nyní na začátku.
 	
 	if current_health <= 0:
 		_die()
