@@ -348,7 +348,6 @@ func _execute_goto_command(args: Array):
 		dev_console.log_error("Na patře %d nebyly nalezeny žádné uzly." % target_floor)
 		return
 		
-	# --- ZDE JE TEN TRIK ---
 	# Vytvoříme dočasný "master" uzel, který není na mapě vidět.
 	var dummy_node = MapNodeResource.new()
 	# Řekneme mu, že se z něj dá dostat na VŠECHNY uzly na cílovém patře.
