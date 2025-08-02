@@ -2,43 +2,37 @@
 extends CanvasLayer
 
 const ArtifactChoiceScene = preload("res://scenes/ui/ArtifactChoiceUI.tscn")
-const ALL_ARTIFACTS_PATH = "res://data/artifacts/"
+const ARTIFACT_POOL = preload("res://data/artifacts/basic_artifact_pool.tres")
 
 @onready var choices_container: HBoxContainer = $HBoxContainer
 
 func _ready():
-	var all_artifacts = _load_all_artifacts(ALL_ARTIFACTS_PATH)
-	all_artifacts.shuffle()
+	# Vezmeme data z naší knihovny
+	var available_artifacts = ARTIFACT_POOL.artifacts.duplicate()
+	available_artifacts.shuffle()
 	
-	var choices: Array[ArtifactsData] = []
-	for i in range(min(3, all_artifacts.size())):
-		choices.append(all_artifacts[i])
-	
-	setup_choices(choices)
-
-func _load_all_artifacts(path: String) -> Array[ArtifactsData]:
-	var artifacts: Array[ArtifactsData] = []
-	var dir = DirAccess.open(path)
-	if dir:
-		dir.list_dir_begin()
-		var file_name = dir.get_next()
-		while file_name != "":
-			if file_name == "." or file_name == "..":
-				file_name = dir.get_next()
-				continue
-
-			var full_path = path.path_join(file_name)
-			if dir.current_is_dir():
-				artifacts.append_array(_load_all_artifacts(full_path))
-			elif file_name.ends_with(".tres"):
-				var resource = load(full_path)
-				if resource is ArtifactsData:
-					artifacts.append(resource)
-			
-			file_name = dir.get_next()
+	# Vybereme maximálně 3 artefakty na zobrazení
+	var artifact_choices = []
+	if available_artifacts.size() <= 3:
+		artifact_choices = available_artifacts
 	else:
-		printerr("Nepodařilo se otevřít složku: ", path)
-	return artifacts
+		artifact_choices = available_artifacts.slice(0, 3)
+	
+	# Vyčistíme kontejner od starých prvků (pro jistotu)
+	for child in choices_container.get_children():
+		child.queue_free()
+	
+	# Vytvoříme a zobrazíme nové UI pro výběr artefaktů
+	for artifact_data in artifact_choices:
+		if is_instance_valid(artifact_data):
+			# OPRAVA: Používáme správný název proměnné "ArtifactChoiceScene"
+			var choice_ui = ArtifactChoiceScene.instantiate()
+			# OPRAVA: Používáme správný název proměnné "choices_container"
+			choices_container.add_child(choice_ui)
+			choice_ui.display_artifact(artifact_data)
+			choice_ui.artifact_chosen.connect(_on_artifact_chosen)
+
+
 
 func setup_choices(artifacts: Array[ArtifactsData]):
 	for child in choices_container.get_children():

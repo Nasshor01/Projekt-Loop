@@ -28,6 +28,7 @@ range_value = 1
 tags = Array[int]([])
 rarity = 5
 effects = Array[ExtResource("2_pmyly")]([SubResource("Resource_fsx4a")])
+is_upgraded = false
 metadata/_custom_type_script = "uid://uk53klqs1ti4"
 
 [node name="CardUi" type="Control"]

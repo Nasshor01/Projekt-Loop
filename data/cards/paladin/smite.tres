@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://c4s0mkx36b14w"]
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://c4s0mkx36b14w"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_s10ii"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_nsmfl"]
+[ext_resource type="Resource" uid="uid://cguaoxmcon440" path="res://data/cards/paladin/smite_upgraded.tres" id="3_nsmfl"]
 
 [sub_resource type="Resource" id="Resource_s10ii"]
 script = ExtResource("1_s10ii")
@@ -25,4 +26,6 @@ range_value = 1
 tags = Array[int]([0])
 rarity = 0
 effects = Array[ExtResource("1_s10ii")]([SubResource("Resource_s10ii")])
+is_upgraded = false
+upgraded_version = ExtResource("3_nsmfl")
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

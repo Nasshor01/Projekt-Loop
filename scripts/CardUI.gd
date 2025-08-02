@@ -12,6 +12,8 @@ extends Control
 
 @export var placeholder_artwork: Texture2D
 
+var initial_scale: Vector2 = Vector2.ZERO
+
 var _ui_nodes_ready = false
 @onready var artwork_texture_rect: TextureRect = $ArtworkTextureRect
 @onready var name_label: Label = $NameLabel
@@ -24,6 +26,10 @@ var original_scale: Vector2 = Vector2(0.8, 0.8)
 func _ready():
 	_ui_nodes_ready = true
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	
+	# ZMĚNA: Použijeme initial_scale, pokud je nastaveno
+	if initial_scale != Vector2.ZERO:
+		original_scale = initial_scale
 	scale = original_scale
 	
 	if card_data:

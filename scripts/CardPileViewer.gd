@@ -15,7 +15,7 @@ func _ready():
 	else:
 		printerr("CardPileViewer: Tlačítko 'CloseButton' nebylo nalezeno! Zkontroluj strukturu scény a cestu ve skriptu.")
 
-func show_cards(cards: Array[CardData]):
+func show_cards(cards: Array[CardData], p_scale: Vector2 = Vector2(0.7, 0.7)):
 	if not is_instance_valid(grid_container):
 		printerr("CardPileViewer: 'GridContainer' nebyl nalezen!")
 		return
@@ -32,7 +32,7 @@ func show_cards(cards: Array[CardData]):
 			if not is_instance_valid(card_data): continue
 			
 			var card_ui_instance = CardUIScene.instantiate()
+			card_ui_instance.initial_scale = p_scale
 			card_ui_instance.card_data = card_data
-			card_ui_instance.scale = Vector2(0.7, 0.7)
 			grid_container.add_child(card_ui_instance)
 	show()

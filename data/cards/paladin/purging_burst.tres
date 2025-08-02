@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://qtmmceitmyel"]
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://qtmmceitmyel"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_wjmv7"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_58gbk"]
+[ext_resource type="Resource" uid="uid://b7pmmqqh5nyn6" path="res://data/cards/paladin/purging_burst_upgraded.tres" id="3_58gbk"]
 
 [sub_resource type="Resource" id="Resource_2e356"]
 script = ExtResource("1_wjmv7")
@@ -25,4 +26,6 @@ range_value = 5
 tags = Array[int]([0])
 rarity = 2
 effects = Array[ExtResource("1_wjmv7")]([SubResource("Resource_2e356")])
+is_upgraded = false
+upgraded_version = ExtResource("3_58gbk")
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

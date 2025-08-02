@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://c2a8j4lj2vtyt"]
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://c2a8j4lj2vtyt"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_mjv14"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_rcksv"]
+[ext_resource type="Resource" uid="uid://dm6en4imjweui" path="res://data/cards/paladin/lesser_heal_upgraded.tres" id="3_rcksv"]
 
 [sub_resource type="Resource" id="Resource_mjv14"]
 script = ExtResource("1_mjv14")
@@ -25,4 +26,6 @@ range_value = 1
 tags = Array[int]([6])
 rarity = 0
 effects = Array[ExtResource("1_mjv14")]([SubResource("Resource_mjv14")])
+is_upgraded = false
+upgraded_version = ExtResource("3_rcksv")
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

@@ -436,6 +436,10 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 			if target.has_method("apply_status"): target.apply_status(effect.string_value, effect.value)
 		CardEffectData.EffectType.GAIN_EXTRA_MOVE:
 			if target.has_method("gain_extra_move"): target.gain_extra_move()
+		CardEffectData.EffectType.DEAL_DOUBLE_DAMAGE_FROM_BLOCK:
+			if is_instance_valid(_player_unit_node) and target.has_method("take_damage"):
+				var damage = _player_unit_node.current_block * 2
+				target.take_damage(damage)
 
 func process_enemy_actions() -> void:
 	_is_action_processing = true

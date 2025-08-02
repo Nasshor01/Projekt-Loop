@@ -11,7 +11,9 @@ var reward_scene = "res://scenes/rewards/RewardScene.tscn"
 var game_over_scene = "res://scenes/ui/GameOver.tscn"
 var treasure_scene = "res://scenes/rewards/TreasureScene.tscn"
 var shop_scene = "res://scenes/shop/ShopScene.tscn"
+var rest_scene = "res://scenes/camp/RestScene.tscn"
 var global_ui_scene = preload("res://scenes/ui/GlobalUI.tscn")
+
 
 var current_scene: Node = null
 var current_seed: int
@@ -92,6 +94,10 @@ func go_to_shop():
 func leave_shop():
 	print("Odchod z obchodu, návrat na mapu.")
 	_change_scene(map_scene)
+	
+func go_to_rest_scene():
+	print("Vstup do scény odpočinku.")
+	_change_scene(rest_scene)
 
 func _change_scene(scene_path: String):
 	print("DEBUG: Pokouším se změnit scénu na: ", scene_path)
@@ -104,6 +110,8 @@ func _change_scene(scene_path: String):
 		elif scene_path == battle_scene:
 			global_ui_instance.show()
 			global_ui_instance.hide_hp() # V bitvě HP schováme
+		elif scene_path == rest_scene:
+			global_ui_instance.hide()
 		else:
 			# V ostatních scénách (shop, odměny, poklad) schováme celé GlobalUI
 			global_ui_instance.hide()

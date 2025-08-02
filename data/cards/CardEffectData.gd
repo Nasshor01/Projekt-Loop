@@ -15,7 +15,8 @@ enum EffectType {
 	HEAL_UNIT,              # Vyléčí jednotku
 	HEAL_TO_FULL,           # Vyléčí do plných životů
 	EXHAUST,                # Karta zmizí
-	GAIN_EXTRA_MOVE         # Získá další pohybovou akci v tomto kole
+	GAIN_EXTRA_MOVE,         # Získá další pohybovou akci v tomto kole
+	DEAL_DOUBLE_DAMAGE_FROM_BLOCK #způsobí double požkození z aktuálního bloku
 }
 
 enum TargetType {

@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://bvw1qxgfyra2w"]
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://bvw1qxgfyra2w"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_a3508"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_jvgvh"]
+[ext_resource type="Resource" uid="uid://cbvtqubhi6pjv" path="res://data/cards/paladin/lay_on_hands_upgraded.tres" id="3_jvgvh"]
 
 [sub_resource type="Resource" id="Resource_a3508"]
 script = ExtResource("1_a3508")
@@ -36,4 +37,6 @@ range_value = 1
 tags = Array[int]([6, 8])
 rarity = 2
 effects = Array[ExtResource("1_a3508")]([SubResource("Resource_a3508"), SubResource("Resource_jvgvh")])
+is_upgraded = false
+upgraded_version = ExtResource("3_jvgvh")
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

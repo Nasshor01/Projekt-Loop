@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://bh3awrxea453o"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_smsti"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_icxbo"]
+
+[sub_resource type="Resource" id="Resource_8fnk2"]
+script = ExtResource("1_smsti")
+effect_type = 10
+value = 2
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[sub_resource type="Resource" id="Resource_3uoxi"]
+script = ExtResource("1_smsti")
+effect_type = 3
+value = 1
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_icxbo")
+card_id = "nimble_move"
+card_name = "Hbitý pohyb"
+card_description = "mužeš se pohnout 2.
+ Lízněte si 1 kartu."
+cost = 1
+range_type = 2
+range_value = 1
+tags = Array[int]([7, 5])
+rarity = 0
+effects = Array[ExtResource("1_smsti")]([SubResource("Resource_8fnk2"), SubResource("Resource_3uoxi")])
+is_upgraded = true
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

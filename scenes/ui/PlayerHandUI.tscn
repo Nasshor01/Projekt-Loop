@@ -10,6 +10,7 @@ offset_top = 448.0
 offset_right = 1024.0
 offset_bottom = 576.0
 script = ExtResource("1_rb2pt")
+card_overlap_ratio = 0.3
 
 [node name="ArrangeTimer" type="Timer" parent="."]
 wait_time = 0.05

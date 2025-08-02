@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://r5w3x6a5y0hr"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_71uty"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_n56f4"]
+
+[sub_resource type="Resource" id="Resource_cr8q0"]
+script = ExtResource("1_71uty")
+effect_type = 0
+value = 20
+string_value = ""
+target_type = 3
+area_of_effect_type = 4
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_n56f4")
+card_id = "divine_wrath+"
+card_name = "Boží hněv+"
+card_description = "Způsob 20 poškození všem nepřátelům."
+cost = 4
+range_type = 6
+range_value = 1
+tags = Array[int]([0])
+rarity = 2
+effects = Array[ExtResource("1_71uty")]([SubResource("Resource_cr8q0")])
+is_upgraded = true
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

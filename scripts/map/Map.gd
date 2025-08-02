@@ -162,8 +162,18 @@ func _trigger_node_action(node_data: MapNodeResource):
 			GameManager.go_to_shop()
 			return # Ukončíme funkci, nepokračujeme do bitvy
 
-		_:
-			print("Akce typu '%s' zatím není implementována. Pokračuje se dál." % MapNodeResource.NodeType.keys()[node_data.type])
+		MapNodeResource.NodeType.REST:
+			# Uložíme stav kamery pro případný návrat
+			GameManager.saved_camera_position = camera.position
+			GameManager.saved_camera_zoom = camera.zoom
+			GameManager.has_saved_camera_state = true
+			# Zavoláme správnou funkci v GameManageru
+			GameManager.go_to_rest_scene()
+			return
+		# ----------------------------------------------------
+
+		_: # Defaultní případ
+			print("Akce typu '%s' zatím není implementována." % MapNodeResource.NodeType.keys()[node_data.type])
 			_update_highlighting()
 			return
 

@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://c37ghd1e5v374"]
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://c37ghd1e5v374"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_cr8q0"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_3csrg"]
+[ext_resource type="Resource" uid="uid://r5w3x6a5y0hr" path="res://data/cards/paladin/divine_wrath_upgraded.tres" id="3_3csrg"]
 
 [sub_resource type="Resource" id="Resource_cr8q0"]
 script = ExtResource("1_cr8q0")
@@ -25,4 +26,6 @@ range_value = 1
 tags = Array[int]([0])
 rarity = 2
 effects = Array[ExtResource("1_cr8q0")]([SubResource("Resource_cr8q0")])
+is_upgraded = false
+upgraded_version = ExtResource("3_3csrg")
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

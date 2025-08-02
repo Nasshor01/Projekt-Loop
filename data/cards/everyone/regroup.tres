@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://ca02ckpdcolin"]
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://ca02ckpdcolin"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_yu1yh"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_xejwg"]
+[ext_resource type="Resource" uid="uid://mobljbuh7wjh" path="res://data/cards/everyone/regroup_upgraded.tres" id="3_xejwg"]
 
 [sub_resource type="Resource" id="Resource_mpjsk"]
 script = ExtResource("1_yu1yh")
@@ -25,4 +26,6 @@ range_value = 0
 tags = Array[int]([7])
 rarity = 0
 effects = Array[ExtResource("1_yu1yh")]([SubResource("Resource_mpjsk")])
+is_upgraded = false
+upgraded_version = ExtResource("3_xejwg")
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

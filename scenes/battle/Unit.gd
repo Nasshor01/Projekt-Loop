@@ -1,4 +1,4 @@
-# Soubor: res://scenes/battle/Unit.gd
+# Soubor: res://scenes/battle/Unit.gd (FINÁLNÍ VERZE S OPRAVOU BLOKU)
 class_name Unit
 extends Node2D
 
@@ -12,14 +12,15 @@ signal stats_changed(unit_node)
 
 var current_health: int = 0
 var current_block: int = 0
+# --- PŘIDÁNO: Nová proměnná pro permanentní blok ---
+var retained_block: int = 0
+
 var grid_position: Vector2i
 var is_selected: bool = false
 var active_statuses: Dictionary = {}
 
 var has_used_base_move: bool = false
 var extra_moves: int = 0
-
-# --- NOVÁ PROMĚNNÁ ---
 var last_attacker: Unit = null
 
 @onready var _sprite_node: Sprite2D = $Sprite2D
@@ -44,26 +45,20 @@ func _ready():
 	await get_tree().process_frame
 	emit_signal("stats_changed", self)
 
-# --- NOVÉ FUNKCE PRO ZJIŠTĚNÍ ÚTOČNÍKA ---
 func set_last_attacker(attacker: Unit):
 	last_attacker = attacker
 
 func get_last_attacker() -> Unit:
 	return last_attacker
 
-# --- UPRAVENÁ FUNKCE ATTACK ---
-# Nyní si cíl zapamatuje, kdo na něj zaútočil
 func attack(target: Node2D) -> void:
 	if not is_instance_valid(target) or not target.has_method("take_damage"): return
-	
 	if target.has_method("set_last_attacker"):
 		target.set_last_attacker(self)
-		
 	await target.take_damage(unit_data.attack_damage)
 
+# --- UPRAVENÁ FUNKCE TAKE_DAMAGE ---
 func take_damage(amount: int) -> void:
-	# Tuto logiku přesouváme na začátek. Aktivuje se, jakmile jsi napaden,
-	# bez ohledu na to, jestli poškození projde přes blok.
 	if unit_data.faction == UnitData.Faction.PLAYER:
 		var attacker = get_last_attacker()
 		if is_instance_valid(attacker):
@@ -71,17 +66,18 @@ func take_damage(amount: int) -> void:
 				if artifacts.effect_id == "thorns_damage":
 					print("Artefakt '%s' vrací %d poškození." % [artifacts.artifact_name, artifacts.value])
 					await attacker.take_damage(artifacts.value)
-	# ---------------------------------------------
 
 	var damage_to_deal = amount
-	var block_before = current_block
-	var absorbed_by_block = min(amount, block_before)
+	var absorbed_by_block = min(amount, current_block)
 	
 	if absorbed_by_block > 0:
 		_show_floating_text(absorbed_by_block, "block_loss")
 
 	current_block -= absorbed_by_block
 	damage_to_deal -= absorbed_by_block
+	
+	# PŘIDÁNO: Pokud se spotřeboval i permanentní blok, snížíme ho
+	retained_block = min(retained_block, current_block)
 	
 	if absorbed_by_block > 0 and damage_to_deal > 0:
 		await get_tree().create_timer(0.3).timeout
@@ -92,20 +88,19 @@ func take_damage(amount: int) -> void:
 		if current_health < 0:
 			current_health = 0
 		
-		# Pokud jsme hráč, nahlásíme změnu do PlayerData
 		if unit_data.faction == UnitData.Faction.PLAYER:
 			PlayerData.take_damage(damage_to_deal)
 	
 	_update_stats_and_emit_signal()
 	
-	# Starou logiku trnů odsud mažeme, protože je nyní na začátku.
-	
 	if current_health <= 0:
 		_die()
 
-
+# --- UPRAVENÁ FUNKCE RESET_FOR_NEW_TURN ---
 func reset_for_new_turn():
-	current_block = 0
+	# Dočasný blok zmizí, ale permanentní základ zůstane.
+	current_block = retained_block
+	
 	has_used_base_move = false
 	extra_moves = 0
 	_update_stats_and_emit_signal()
@@ -127,25 +122,34 @@ func apply_status(status_id: String, value: int, duration: int = 1):
 		active_statuses[status_id].value += value
 		print("DEBUG: Status '%s' na jednotce %s byl posílen na hodnotu %d." % [status_id, unit_data.unit_name, active_statuses[status_id].value])
 	else:
-		active_statuses[status_id] = {
-			"id": status_id,
-			"value": value,
-			"duration": duration
-		}
+		active_statuses[status_id] = { "id": status_id, "value": value, "duration": duration }
 		print("DEBUG: Jednotka %s získala status '%s' s hodnotou %d na %d kola." % [unit_data.unit_name, status_id, value, duration])
 		
 	_update_stats_and_emit_signal()
 
+# --- UPRAVENÁ FUNKCE PROCESS_TURN_START_STATUSES ---
 func process_turn_start_statuses() -> int:
 	var extra_draw = 0
 	if active_statuses.is_empty(): return extra_draw
 	
+	# Nejdříve zpracujeme aury, které ovlivňují blok
+	if active_statuses.has("aura_devotion_plus"):
+		var status_data = active_statuses["aura_devotion_plus"]
+		# Nastavíme (přičteme) hodnotu permanentního bloku
+		retained_block = status_data.value
+		# A na začátku kola ho rovnou přičteme i k aktuálnímu bloku
+		add_block(status_data.value)
+	
+	if active_statuses.has("aura_devotion"):
+		var status_data = active_statuses["aura_devotion"]
+		# Běžná aura dává jen dočasný blok
+		add_block(status_data.value)
+		
+	# Zpracujeme ostatní statusy
 	var statuses_to_remove = []
 	for status_id in active_statuses.keys():
 		var status_data = active_statuses[status_id]
 		match status_id:
-			"aura_devotion":
-				add_block(status_data.value)
 			"draw_plus_one":
 				extra_draw += status_data.value
 				statuses_to_remove.append(status_id)
@@ -158,13 +162,15 @@ func process_turn_start_statuses() -> int:
 		
 	return extra_draw
 
+# --- UPRAVENÁ FUNKCE PROCESS_TURN_END_STATUSES ---
 func process_turn_end_statuses():
 	if active_statuses.is_empty():
 		return
 
 	var statuses_to_remove = []
 	for status_id in active_statuses.keys():
-		if status_id == "aura_devotion":
+		# Aura (permanentní buffy) a pomocné statusy neztrácí trvání
+		if status_id == "aura_devotion" or status_id == "aura_devotion_plus":
 			continue
 
 		active_statuses[status_id].duration -= 1
@@ -205,7 +211,6 @@ func process_terrain_effects(terrain_data: TerrainData):
 func heal_to_full():
 	if not is_instance_valid(unit_data):
 		return
-
 	var health_before = current_health
 	var max_hp_target = unit_data.max_health
 	if unit_data.faction == UnitData.Faction.PLAYER and is_instance_valid(PlayerData):
@@ -214,7 +219,6 @@ func heal_to_full():
 	var amount_healed = current_health - health_before
 	_show_floating_text(amount_healed, "heal")
 	
-	# PŘIDÁNO: Pokud jsme hráč, nahlásíme změnu do PlayerData
 	if unit_data.faction == UnitData.Faction.PLAYER and amount_healed > 0:
 		PlayerData.heal(amount_healed)
 		
@@ -231,7 +235,6 @@ func heal(amount: int):
 	current_health += health_to_restore
 	_show_floating_text(health_to_restore, "heal")
 	
-	# PŘIDÁNO: Pokud jsme hráč, nahlásíme změnu do PlayerData
 	if unit_data.faction == UnitData.Faction.PLAYER and health_to_restore > 0:
 		PlayerData.heal(health_to_restore)
 		
@@ -266,7 +269,6 @@ func hide_intent():
 func _show_floating_text(amount: int, type: String):
 	if amount <= 0:
 		return
-
 	var instance = FloatingTextScene.instantiate()
 	var text_to_display: String
 	var color: Color

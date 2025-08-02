@@ -46,6 +46,8 @@ enum CardRarity {
 # Pole efektů, které karta způsobí
 # Použijeme náš dříve vytvořený CardEffectData
 @export var effects: Array[CardEffectData] = []
+@export var is_upgraded: bool = false
+@export var upgraded_version: CardData = null
 
 
 # Enum pro typy dosahu - PŘESUNUTO SEM z CardEffectData, protože dosah je spíše vlastnost karty jako celku
