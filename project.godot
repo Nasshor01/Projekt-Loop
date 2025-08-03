@@ -23,6 +23,7 @@ buses/default_bus_layout=""
 
 PlayerData="*res://scripts/autoload/PlayerData.gd"
 GameManager="*res://scripts/autoload/GameManager.gd"
+SaveManager="*res://scripts/autoload/SaveManager.gd"
 
 [display]
 

@@ -1,0 +1,88 @@
+[gd_scene load_steps=3 format=3 uid="uid://bvyeogw4m1mmk"]
+
+[ext_resource type="Script" uid="uid://c68st28udgsme" path="res://scenes/CharSelect/CharacterScreen.gd" id="1_ao84h"]
+[ext_resource type="Texture2D" uid="uid://dxwv0ss2gox45" path="res://art/icons/20.png" id="2_7b6ns"]
+
+[node name="CharacterScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ao84h")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 50
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/VBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Výběr postavy"
+horizontal_alignment = 1
+
+[node name="StartButton" type="Button" parent="MarginContainer/VBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Start"
+
+[node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Zpět do menu"
+
+[node name="HSplitContainer" type="HSplitContainer" parent="MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 500)
+layout_mode = 2
+
+[node name="LeftPanel" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HSplitContainer"]
+layout_mode = 2
+
+[node name="Portrait" type="TextureRect" parent="MarginContainer/VBoxContainer/HSplitContainer/LeftPanel"]
+layout_mode = 2
+texture = ExtResource("2_7b6ns")
+
+[node name="LevelLabel" type="Label" parent="MarginContainer/VBoxContainer/HSplitContainer/LeftPanel"]
+layout_mode = 2
+text = "Level: 1"
+
+[node name="XPBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/HSplitContainer/LeftPanel"]
+layout_mode = 2
+step = 1.0
+show_percentage = false
+
+[node name="XPLabel" type="Label" parent="MarginContainer/VBoxContainer/HSplitContainer/LeftPanel"]
+layout_mode = 2
+text = "XP: 0 / 100"
+
+[node name="PointsLabel" type="Label" parent="MarginContainer/VBoxContainer/HSplitContainer/LeftPanel"]
+layout_mode = 2
+text = "Dovednostní body: 0"
+
+[node name="RightPanel" type="PanelContainer" parent="MarginContainer/VBoxContainer/HSplitContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/HSplitContainer/RightPanel"]
+layout_mode = 2
+text = "Strom dovedností (již brzy)"
+horizontal_alignment = 1

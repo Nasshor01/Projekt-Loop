@@ -1,10 +1,11 @@
-# Soubor: scripts/autoload/GameManager.gd
-# POPIS: Přidány diagnostické výpisy pro odhalení chyby.
+# Soubor: scripts/autoload/GameManager.gd (Kombinace funkčního základu a nové logiky)
 extends Node
 
 const PlayerClassData = preload("res://data/classes/Tank.tres")
 const PlayerSubclassData = preload("res://data/classes/Paladin.tres")
 
+var main_menu_scene = "res://scenes/ui/MainMenu.tscn"
+var character_screen_scene = "res://scenes/CharSelect/CharacterScreen.tscn"
 var map_scene = "res://scenes/map/Map.tscn"
 var battle_scene = "res://scenes/battle/BattleScene.tscn"
 var reward_scene = "res://scenes/rewards/RewardScene.tscn"
@@ -13,7 +14,6 @@ var treasure_scene = "res://scenes/rewards/TreasureScene.tscn"
 var shop_scene = "res://scenes/shop/ShopScene.tscn"
 var rest_scene = "res://scenes/camp/RestScene.tscn"
 var global_ui_scene = preload("res://scenes/ui/GlobalUI.tscn")
-
 
 var current_scene: Node = null
 var current_seed: int
@@ -26,10 +26,10 @@ var global_ui_instance: CanvasLayer = null
 var last_battle_gold_reward: int = 0
 
 func _ready():
-	# PŘIDÁNO: Vytvoříme instanci globálního UI a přidáme ji jako přímého potomka GameManageru
 	global_ui_instance = global_ui_scene.instantiate()
 	add_child(global_ui_instance)
-	start_new_run()
+	# ZMĚNA 1: Hra se nespustí rovnou, ale zobrazí hlavní menu.
+	_change_scene(main_menu_scene)
 
 func start_new_run(seed = null):
 	if seed == null:
@@ -41,7 +41,6 @@ func start_new_run(seed = null):
 	print("Zahajuji nový běh se seedem: ", current_seed)
 	
 	has_saved_camera_state = false
-	
 	current_map_data = null
 	PlayerData.initialize_player(PlayerClassData, PlayerSubclassData)
 	PlayerData.start_new_run_state()
@@ -57,23 +56,25 @@ func battle_finished(player_won: bool):
 	if player_won:
 		print("Hráč vyhrál! Přecházím na obrazovku odměn.")
 		
-		# PŘIDÁNO: Výpočet odměny ve zlatě
-		# Zde si můžete nastavit logiku, jakou chcete.
-		# Například podle typu encounteru.
-		if current_encounter.encounter_type == EncounterData.EncounterType.ELITE:
+		if current_encounter and current_encounter.encounter_type == EncounterData.EncounterType.ELITE:
 			last_battle_gold_reward = randi_range(40, 60)
-		elif current_encounter.encounter_type == EncounterData.EncounterType.BOSS:
+		elif current_encounter and current_encounter.encounter_type == EncounterData.EncounterType.BOSS:
 			last_battle_gold_reward = randi_range(90, 110)
-		else: # Běžný souboj
+		else:
 			last_battle_gold_reward = randi_range(15, 25)
 			
 		print("Hráč získává %d zlata." % last_battle_gold_reward)
 		
 		_change_scene(reward_scene)
 	else:
-		print("Hráč prohrál! Přecházím na obrazovku Game Over.")
-		_change_scene(game_over_scene)
+		# ZMĚNA 2: Když hráč prohraje, spočítáme XP a vrátíme se do hlavního menu
+		print("Hráč prohrál!")
+		var xp_earned = PlayerData.floors_cleared * 10 
+		SaveManager.add_xp(xp_earned)
+		_change_scene(main_menu_scene)
 
+func go_to_character_screen():
+	_change_scene(character_screen_scene)
 
 func reward_chosen():
 	print("Odměna vybrána, vracím se na mapu.")
@@ -102,41 +103,28 @@ func go_to_rest_scene():
 func _change_scene(scene_path: String):
 	print("DEBUG: Pokouším se změnit scénu na: ", scene_path)
 
-	# Zkontrolujeme, jestli instance GlobalUI existuje, než na ni budeme volat metody.
 	if is_instance_valid(global_ui_instance):
-		if scene_path == map_scene:
+		if scene_path == map_scene or scene_path == battle_scene:
 			global_ui_instance.show()
-			global_ui_instance.show_hp() # Na mapě HP chceme vidět
-		elif scene_path == battle_scene:
-			global_ui_instance.show()
-			global_ui_instance.hide_hp() # V bitvě HP schováme
-		elif scene_path == rest_scene:
-			global_ui_instance.hide()
+			if scene_path == map_scene:
+				global_ui_instance.show_hp()
+			else:
+				global_ui_instance.hide_hp()
 		else:
-			# V ostatních scénách (shop, odměny, poklad) schováme celé GlobalUI
 			global_ui_instance.hide()
-	# -------------------------------------------------
 
-	# Zbytek funkce pro změnu scény
 	if is_instance_valid(current_scene):
-		print("DEBUG: Mažu starou scénu: ", current_scene.scene_file_path)
 		current_scene.queue_free()
 
 	var new_scene_resource = load(scene_path)
 
 	if new_scene_resource:
-		print("DEBUG: Zdroj scény načten úspěšně.")
 		current_scene = new_scene_resource.instantiate()
 
 		if is_instance_valid(current_scene):
-			print("DEBUG: Scéna instancována úspěšně. Přidávám do stromu.")
-			
-			# --- PŘIDANÁ LOGIKA PRO ODMĚNY ---
-			# Pokud je nová scéna obrazovkou odměn, předáme jí vypočítané zlato.
 			if scene_path == reward_scene:
 				current_scene.gold_reward = last_battle_gold_reward
-			# -----------------------------------
-
+			
 			if "encounter_data" in current_scene:
 				current_scene.encounter_data = current_encounter
 

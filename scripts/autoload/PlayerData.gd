@@ -21,12 +21,14 @@ var max_hp: int = 50
 var current_hp: int = 50
 var artifacts: Array[ArtifactsData] = []
 var gold: int = 0
+var floors_cleared: int = 0
 
 
 var path_taken: Array[MapNodeResource] = []
 
 func get_current_node() -> MapNodeResource:
 	if not path_taken.is_empty():
+		floors_cleared = path_taken.size()
 		return path_taken.back()
 	return null
 
@@ -34,6 +36,7 @@ func start_new_run_state():
 	current_hp = max_hp
 	path_taken.clear()
 	artifacts.clear()
+	floors_cleared = 0
 	emit_signal("artifacts_changed")
 	
 	gold = 0
