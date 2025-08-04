@@ -1,5 +1,4 @@
 res://main.tscn
-res://data/classes/Tank.tres
 res://data/cards/paladin/smite_upgraded.tres
 res://data/cards/paladin/smite.tres
 res://data/cards/everyone/adrenaline_upgraded.tres
@@ -37,6 +36,7 @@ res://data/cards/paladin/light_pillar.tres
 res://data/cards/paladin/purging_burst_upgraded.tres
 res://data/cards/paladin/purging_burst.tres
 res://data/classes/Paladin.tres
+res://data/artifacts/basic_artifact_pool.tres
 res://data/encounters/first_battle.tres
 res://scenes/map/Map.tscn
 res://scenes/map/MapNode.tscn
@@ -57,13 +57,14 @@ res://scenes/ui/PlayerHandUI.tscn
 res://scenes/camp/RestScene.tscn
 res://scenes/ui/CardPileViewer.tscn
 res://scenes/ui/MainMenu.tscn
-res://scenes/CharSelect/CharacterScreen.tscn
 res://scenes/CharSelect/CharacterSelectScreen.tscn
-res://scenes/CharSelect/CharacterSelectScreen.gd
-res://scenes/ui/EndOfRunScreen.tscn
-res://scenes/ui/EndOfRunScreen.gd
-res://scripts/autoload/GameManager.gd
 res://scenes/CharSelect/RunPrepScreen.tscn
-res://scenes/ui/MainMenu.gd
-res://scenes/CharSelect/RunPrepScreen.gd
+res://scenes/ui/EndOfRunScreen.tscn
+res://data/classes/Tank.tres
+res://data/cards/CardPool.gd
+res://data/cards/reward_card_pool.tres
+res://scenes/rewards/RewardScene.gd
+res://data/cards/shop_card_pool.tres
+res://scenes/shop/ShopItemUI.gd
+res://scenes/shop/ShopScene.gd
 res://scripts/autoload/PlayerData.gd

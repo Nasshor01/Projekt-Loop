@@ -1,9 +1,10 @@
-Button
+RichTextLabel
+HBoxContainer
 Label
+Button
 VBoxContainer
 TextureRect
 PanelContainer
-HBoxContainer
 ProgressBar
 HSplitContainer
 MarginContainer
