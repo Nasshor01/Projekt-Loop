@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://bvyeogw4m1mmk"]
 
-[ext_resource type="Script" uid="uid://c68st28udgsme" path="res://scenes/CharSelect/CharacterScreen.gd" id="1_ao84h"]
-[ext_resource type="Texture2D" uid="uid://dxwv0ss2gox45" path="res://art/icons/20.png" id="2_7b6ns"]
+[ext_resource type="Script" uid="uid://c68st28udgsme" path="res://scenes/CharSelect/RunPrepScreen.gd" id="1_nhtog"]
+[ext_resource type="Texture2D" uid="uid://dxwv0ss2gox45" path="res://art/icons/20.png" id="2_pbubs"]
 
 [node name="CharacterScreen" type="Control"]
 layout_mode = 3
@@ -10,7 +10,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_ao84h")
+script = ExtResource("1_nhtog")
 
 [node name="Background" type="TextureRect" parent="."]
 layout_mode = 1
@@ -49,7 +49,7 @@ text = "Start"
 
 [node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/VBoxContainer"]
 layout_mode = 2
-text = "Zpět do menu"
+text = "Zpět do výběru postavy"
 
 [node name="HSplitContainer" type="HSplitContainer" parent="MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 500)
@@ -60,7 +60,7 @@ layout_mode = 2
 
 [node name="Portrait" type="TextureRect" parent="MarginContainer/VBoxContainer/HSplitContainer/LeftPanel"]
 layout_mode = 2
-texture = ExtResource("2_7b6ns")
+texture = ExtResource("2_pbubs")
 
 [node name="LevelLabel" type="Label" parent="MarginContainer/VBoxContainer/HSplitContainer/LeftPanel"]
 layout_mode = 2

@@ -1,13 +1,13 @@
-VBoxContainer
 Button
 Label
-PanelContainer
-ProgressBar
+VBoxContainer
 TextureRect
+PanelContainer
+HBoxContainer
+ProgressBar
 HSplitContainer
 MarginContainer
 ColorRect
-HBoxContainer
 CenterContainer
 Panel
 Control

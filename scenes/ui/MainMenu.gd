@@ -1,10 +1,12 @@
 # Soubor: scenes/ui/MainMenu.gd (SPRÁVNÁ VERZE)
 extends Control
 
-@onready var new_game_button: Button = $VBoxContainer/new_game_button
+@onready var play_button: Button = $VBoxContainer/PlayButton
+@onready var exit_button: Button = $VBoxContainer/ExitButton 
 
 func _ready():
-	new_game_button.pressed.connect(_on_new_game_pressed)
+	play_button.pressed.connect(GameManager.go_to_character_select)
+	exit_button.pressed.connect(func(): get_tree().quit())
 
 func _on_new_game_pressed():
 	# Řekneme GameManageru, aby přešel na obrazovku výběru postavy.

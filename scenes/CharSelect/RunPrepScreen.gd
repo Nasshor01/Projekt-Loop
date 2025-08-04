@@ -1,4 +1,4 @@
-# Soubor: scenes/ui/CharacterScreen.gd (NOVÝ SKRIPT)
+# Soubor: scenes/CharSelect/RunPrepScreen.gd
 extends Control
 
 # Cesty k uzlům, ujisti se, že odpovídají tvé scéně
@@ -10,8 +10,8 @@ extends Control
 @onready var back_button: Button = $MarginContainer/VBoxContainer/VBoxContainer/BackButton
 
 func _ready():
-	start_button.pressed.connect(_on_start_pressed)
-	back_button.pressed.connect(_on_back_pressed)
+	start_button.pressed.connect(GameManager.start_new_run)
+	back_button.pressed.connect(GameManager.go_to_character_select)
 	update_display()
 
 func update_display():

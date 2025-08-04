@@ -45,6 +45,27 @@ func start_new_run_state():
 	# PŘIDÁNO: Na začátku běhu informujeme o stavu zdraví
 	emit_signal("health_changed", current_hp, max_hp)
 
+func start_ng_plus_state():
+	# Tato funkce resetuje jen to nejnutnější
+	current_hp = max_hp
+	path_taken.clear()
+	floors_cleared = 0
+	
+	# PŘIDÁNO: Výpis pro kontrolu
+	print("--- STAV PRO NG+ ---")
+	print("  - Ponecháno zlata: %d" % gold)
+	print("  - Ponecháno artefaktů: %d" % artifacts.size())
+	print("  - Ponecháno karet v balíčku: %d" % master_deck.size())
+	print("--------------------")
+	
+	# Resetujeme bojové balíčky pro novou hru
+	reset_battle_stats()
+	
+	# Oznámíme změny, aby se UI aktualizovalo
+	emit_signal("health_changed", current_hp, max_hp)
+	emit_signal("artifacts_changed")
+	emit_signal("gold_changed", gold)
+
 func initialize_player(p_class: ClassData, p_subclass: SubclassData):
 	if not p_class or not p_subclass:
 		printerr("PlayerData: Chyba inicializace!")
