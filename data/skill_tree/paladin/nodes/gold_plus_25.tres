@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="PassiveSkillNode" load_steps=5 format=3 uid="uid://b43ynd88cu503"]
+
+[ext_resource type="Script" uid="uid://bhefsqpmjhqur" path="res://data/skills/PassiveEffectData.gd" id="1_n7uf5"]
+[ext_resource type="Script" uid="uid://c4kidtjyabnas" path="res://data/skills/PassiveSkillNode.gd" id="2_50d7i"]
+[ext_resource type="Texture2D" uid="uid://cr7sarh5l3wxv" path="res://art/icons/skills/237.png" id="2_umibb"]
+
+[sub_resource type="Resource" id="Resource_umibb"]
+script = ExtResource("1_n7uf5")
+effect_type = 1
+value = 25
+string_value = ""
+metadata/_custom_type_script = "uid://bhefsqpmjhqur"
+
+[resource]
+script = ExtResource("2_50d7i")
+id = &"paladin_gold_1"
+skill_name = "Desátek"
+description = "Začínáš s 25 zlatými navíc."
+icon = ExtResource("2_umibb")
+position = Vector2(150, 0)
+is_notable = false
+cost = 1
+connected_nodes = ["paladin_start"]
+effects = Array[ExtResource("1_n7uf5")]([SubResource("Resource_umibb")])
+metadata/_custom_type_script = "uid://c4kidtjyabnas"

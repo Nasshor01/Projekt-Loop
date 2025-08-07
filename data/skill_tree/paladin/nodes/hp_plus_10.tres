@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="PassiveSkillNode" load_steps=5 format=3 uid="uid://k02c8ugn2214"]
+
+[ext_resource type="Script" uid="uid://bhefsqpmjhqur" path="res://data/skills/PassiveEffectData.gd" id="1_r08hj"]
+[ext_resource type="Texture2D" uid="uid://dtpo2ir7vw4fv" path="res://art/icons/skills/119.png" id="2_2wb0w"]
+[ext_resource type="Script" uid="uid://c4kidtjyabnas" path="res://data/skills/PassiveSkillNode.gd" id="2_c0esn"]
+
+[sub_resource type="Resource" id="Resource_umibb"]
+script = ExtResource("1_r08hj")
+effect_type = 0
+value = 10
+string_value = ""
+metadata/_custom_type_script = "uid://bhefsqpmjhqur"
+
+[resource]
+script = ExtResource("2_c0esn")
+id = &"paladin_hp_1"
+skill_name = "Ocelové zdraví"
+description = "Zvýší maximální životy o 10."
+icon = ExtResource("2_2wb0w")
+position = Vector2(0, -150)
+is_notable = false
+cost = 1
+connected_nodes = ["paladin_start"]
+effects = Array[ExtResource("1_r08hj")]([SubResource("Resource_umibb")])
+metadata/_custom_type_script = "uid://c4kidtjyabnas"

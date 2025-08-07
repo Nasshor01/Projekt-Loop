@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://saye51gujkj3"]
+
+[ext_resource type="Script" uid="uid://c0tck26ok117s" path="res://scenes/ui/SkillTreeCamera.gd" id="1_5noij"]
+[ext_resource type="Script" uid="uid://du41vyeble6ee" path="res://scenes/ui/PassiveSkillTree.gd" id="1_pupw7"]
+
+[node name="PassiveSkillTree" type="Node2D"]
+script = ExtResource("1_pupw7")
+
+[node name="ConnectionLines" type="Node2D" parent="."]
+
+[node name="SkillNodes" type="Node2D" parent="."]
+
+[node name="SkillTreeCamera" type="Camera2D" parent="."]
+script = ExtResource("1_5noij")

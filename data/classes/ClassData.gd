@@ -18,6 +18,7 @@ extends Resource
 # Může obsahovat seznam ID karet, které jsou pro tuto třídu základní nebo vždy dostupné
 # @export var core_card_ids: Array[String]
 
+
 func _init(p_id: String = "", p_name: String = "Třída", p_desc: String = ""):
 	class_id = p_id
 	display_name = p_name

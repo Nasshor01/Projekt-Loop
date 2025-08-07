@@ -1,8 +1,6 @@
 # Soubor: scripts/autoload/GameManager.gd (Kombinace funkčního základu a nové logiky)
 extends Node
 
-const PlayerClassData = preload("res://data/classes/Tank.tres")
-const PlayerSubclassData = preload("res://data/classes/Paladin.tres")
 
 var main_menu_scene = "res://scenes/ui/MainMenu.tscn"
 var character_select_scene = "res://scenes/CharSelect/CharacterSelectScreen.tscn"
@@ -52,7 +50,8 @@ func start_new_run(seed = null):
 	
 	has_saved_camera_state = false
 	current_map_data = null
-	PlayerData.initialize_player(PlayerClassData, PlayerSubclassData)
+	# VOLÁNÍ initialize_player ZDE UŽ NENÍ POTŘEBA! Je zavoláno dříve.
+	# Místo toho rovnou resetujeme staty pro nový běh.
 	PlayerData.start_new_run_state()
 	
 	_change_scene(map_scene)
@@ -72,7 +71,13 @@ func start_new_game_plus(seed = null):
 	PlayerData.start_ng_plus_state() # Volá částečný reset
 	
 	_change_scene(map_scene)
-
+	
+func select_character_and_go_to_prep(p_class: ClassData, p_subclass: SubclassData):
+	# 1. Nejdříve inicializujeme hráče a tím nastavíme aktivní strom
+	PlayerData.initialize_player(p_class, p_subclass)
+	# 2. AŽ TEĎ, když je vše připraveno, přejdeme na obrazovku se stromem
+	go_to_run_prep_screen()
+	
 func start_battle(encounter: EncounterData):
 	print("Zahajuji souboj...")
 	current_encounter = encounter

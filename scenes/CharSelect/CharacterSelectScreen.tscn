@@ -1,7 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://bmsqxk7qw1bd0"]
+[gd_scene load_steps=5 format=3 uid="uid://bmsqxk7qw1bd0"]
 
 [ext_resource type="Script" uid="uid://cdxpf617wcyde" path="res://scenes/CharSelect/CharacterSelectScreen.gd" id="1_jvmhw"]
+[ext_resource type="Resource" uid="uid://dbgquedjcu78p" path="res://data/classes/Tank.tres" id="2_g2f6r"]
 [ext_resource type="Texture2D" uid="uid://dxwv0ss2gox45" path="res://art/icons/20.png" id="2_kga5u"]
+[ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_tof21"]
 
 [node name="CharacterSelectScreen" type="Control"]
 layout_mode = 3
@@ -11,6 +13,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_jvmhw")
+character_class = ExtResource("2_g2f6r")
+character_subclass = ExtResource("3_tof21")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 0

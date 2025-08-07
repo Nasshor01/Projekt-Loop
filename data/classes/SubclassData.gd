@@ -20,3 +20,5 @@ extends Resource
 func _init(p_id: String = "", p_name: String = "Podtřída"):
 	subclass_id = p_id
 	subclass_name = p_name
+
+@export var passive_skill_tree: PassiveSkillTreeData

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="PassiveSkillTreeData" load_steps=6 format=3 uid="uid://kq2gaw3thhxg"]
+
+[ext_resource type="Script" uid="uid://bvbd0xaypsrcp" path="res://data/skills/PassiveSkillTreeData.gd" id="1_kejlt"]
+[ext_resource type="Script" uid="uid://c4kidtjyabnas" path="res://data/skills/PassiveSkillNode.gd" id="2_cd2js"]
+[ext_resource type="Resource" uid="uid://d2uc4tgmnvaib" path="res://data/skill_tree/paladin/nodes/start.tres" id="3_ivfjm"]
+[ext_resource type="Resource" uid="uid://b43ynd88cu503" path="res://data/skill_tree/paladin/nodes/gold_plus_25.tres" id="4_nrp4m"]
+[ext_resource type="Resource" uid="uid://k02c8ugn2214" path="res://data/skill_tree/paladin/nodes/hp_plus_10.tres" id="5_3vwm3"]
+
+[resource]
+script = ExtResource("1_kejlt")
+skill_nodes = Array[ExtResource("2_cd2js")]([ExtResource("3_ivfjm"), ExtResource("4_nrp4m"), ExtResource("5_3vwm3")])
+metadata/_custom_type_script = "uid://bvbd0xaypsrcp"

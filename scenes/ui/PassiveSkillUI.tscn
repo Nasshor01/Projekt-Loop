@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://xwfl8cgan2m6"]
+
+[ext_resource type="Script" uid="uid://bqymi6rvxilwp" path="res://scenes/ui/PassiveSkillUI.gd" id="1_tyxoq"]
+
+[node name="PassiveSkillUI" type="Button"]
+script = ExtResource("1_tyxoq")
+
+[node name="TextureRect" type="TextureRect" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0

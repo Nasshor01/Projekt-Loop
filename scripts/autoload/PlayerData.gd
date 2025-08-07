@@ -1,12 +1,15 @@
 # Soubor: scripts/autoload/PlayerData.gd
 extends Node
 
-# --- OPRAVENÁ DEFINICE SIGNÁLU ---
+
+# --- Signály ---
 signal energy_changed(new_energy_amount)
 signal artifacts_changed
-signal gold_changed(new_amount) # Překlep "chaged" opraven na "changed"
+signal gold_changed(new_amount)
 signal health_changed(new_hp, new_max_hp)
+signal player_initialized
 
+# --- Proměnné pro jeden "run" ---
 var selected_class: ClassData = null
 var selected_subclass: SubclassData = null
 var master_deck: Array[CardData] = []
@@ -14,7 +17,6 @@ var current_hand: Array[CardData] = []
 var discard_pile: Array[CardData] = []
 var draw_pile: Array[CardData] = []
 var exhaust_pile: Array[CardData] = []
-
 var current_energy: int = 3
 var max_energy: int = 3
 var max_hp: int = 50
@@ -22,9 +24,11 @@ var current_hp: int = 50
 var artifacts: Array[ArtifactsData] = []
 var gold: int = 0
 var floors_cleared: int = 0
-
-
 var path_taken: Array[MapNodeResource] = []
+var active_skill_tree: PassiveSkillTreeData = null
+var has_revive: bool = false
+var global_card_damage_bonus: int = 0
+var starting_retained_block: int = 0
 
 func get_current_node() -> MapNodeResource:
 	if not path_taken.is_empty():
@@ -33,52 +37,107 @@ func get_current_node() -> MapNodeResource:
 	return null
 
 func start_new_run_state():
-	current_hp = max_hp
+	# 1. Resetujeme balíček na startovní
+	master_deck.clear()
+	if is_instance_valid(selected_subclass):
+		for entry in selected_subclass.starting_deck:
+			if entry is DeckEntry and is_instance_valid(entry.card):
+				for i in range(entry.count):
+					master_deck.append(entry.card)
+	
+	# 2. Aplikujeme pasivní skilly, které mohou změnit startovní staty
+	apply_passive_skills()
+
+	# 3. Připravíme bojové balíčky a zbytek
+	reset_battle_stats()
 	path_taken.clear()
 	artifacts.clear()
 	floors_cleared = 0
+	
+	# 4. Oznámíme UI, jaký je finální stav
 	emit_signal("artifacts_changed")
-	
-	gold = 50
 	emit_signal("gold_changed", gold)
-	
-	# PŘIDÁNO: Na začátku běhu informujeme o stavu zdraví
 	emit_signal("health_changed", current_hp, max_hp)
 
 func start_ng_plus_state():
-	# Tato funkce resetuje jen to nejnutnější
 	current_hp = max_hp
 	path_taken.clear()
 	floors_cleared = 0
 	
-	# PŘIDÁNO: Výpis pro kontrolu
 	print("--- STAV PRO NG+ ---")
 	print("  - Ponecháno zlata: %d" % gold)
 	print("  - Ponecháno artefaktů: %d" % artifacts.size())
 	print("  - Ponecháno karet v balíčku: %d" % master_deck.size())
 	print("--------------------")
 	
-	# Resetujeme bojové balíčky pro novou hru
 	reset_battle_stats()
 	
-	# Oznámíme změny, aby se UI aktualizovalo
 	emit_signal("health_changed", current_hp, max_hp)
 	emit_signal("artifacts_changed")
 	emit_signal("gold_changed", gold)
 
+func apply_passive_skills():
+	# 1. Resetujeme všechny hodnoty na úplný základ
+	max_hp = 50
+	gold = 50
+	max_energy = 3
+	has_revive = false
+	global_card_damage_bonus = 0
+	starting_retained_block = 0
+	
+	if not is_instance_valid(active_skill_tree):
+		current_hp = max_hp
+		return
+
+	var unlocked_ids = SaveManager.meta_progress.unlocked_skill_ids
+	
+	# 3. Projdeme odemčené skilly a aplikujeme jejich EFEKTY
+	for skill_id in unlocked_ids:
+		var skill_node = active_skill_tree.get_node_by_id(skill_id)
+		if not is_instance_valid(skill_node):
+			continue
+		
+		print("Aplikuji pasivní skill: ", skill_node.skill_name)
+		
+		# Projdeme všechny efekty definované v uzlu
+		for effect_data in skill_node.effects:
+			if not is_instance_valid(effect_data):
+				continue
+			
+			# Tady je ta nová, čistá logika s ENUMEM!
+			match effect_data.effect_type:
+				PassiveEffectData.EffectType.ADD_MAX_HP:
+					max_hp += effect_data.value
+				PassiveEffectData.EffectType.ADD_STARTING_GOLD:
+					gold += effect_data.value
+				PassiveEffectData.EffectType.ADD_MAX_ENERGY:
+					max_energy += effect_data.value
+				PassiveEffectData.EffectType.GRANT_REVIVE:
+					if effect_data.value > 0: has_revive = true
+				PassiveEffectData.EffectType.ADD_CARD_DAMAGE:
+					global_card_damage_bonus += effect_data.value
+				PassiveEffectData.EffectType.ADD_RETAINED_BLOCK:
+					starting_retained_block += effect_data.value
+	
+	current_hp = max_hp
+
 func initialize_player(p_class: ClassData, p_subclass: SubclassData):
 	if not p_class or not p_subclass:
-		printerr("PlayerData: Chyba inicializace!")
+		printerr("PlayerData: Chyba inicializace! Chybí třída nebo podtřída.")
 		return
+		
 	selected_class = p_class
 	selected_subclass = p_subclass
-	master_deck.clear()
-	for entry in selected_subclass.starting_deck:
-		if entry is DeckEntry and is_instance_valid(entry.card):
-			for i in range(entry.count):
-				master_deck.append(entry.card)
 	
-	reset_battle_stats()
+	if is_instance_valid(p_subclass.passive_skill_tree):
+		active_skill_tree = p_subclass.passive_skill_tree
+	else:
+		active_skill_tree = null
+		print("Varování: Pro podtřídu '%s' nebyl nastaven žádný strom dovedností." % p_subclass.subclass_name)
+
+	# PŘIDEJ TENTO ŘÁDEK NA KONEC FUNKCE
+	# Tímto "zakřičíme" na celou hru: "Hráč je připraven!"
+	emit_signal("player_initialized")
 
 func reset_battle_stats():
 	draw_pile.clear()
