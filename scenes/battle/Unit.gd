@@ -1,4 +1,4 @@
-# Soubor: res://scenes/battle/Unit.gd (FINÁLNÍ VERZE S OPRAVOU BLOKU)
+# Soubor: res://scenes/battle/Unit.gd (ROZŠÍŘENÁ VERZE)
 class_name Unit
 extends Node2D
 
@@ -12,7 +12,6 @@ signal stats_changed(unit_node)
 
 var current_health: int = 0
 var current_block: int = 0
-# --- PŘIDÁNO: Nová proměnná pro permanentní blok ---
 var retained_block: int = 0
 
 var grid_position: Vector2i
@@ -30,8 +29,21 @@ func _ready():
 	if unit_data:
 		if unit_data.faction == UnitData.Faction.PLAYER:
 			current_health = PlayerData.current_hp
+			# NOVÉ: Aplikuj Avatar of Light efekt pro hráče
+			if PlayerData.avatar_starting_block_multiplier > 0:
+				var avatar_block = PlayerData.max_hp * PlayerData.avatar_starting_block_multiplier
+				retained_block += avatar_block
+				current_block += avatar_block
+				print("🌟 Avatar of Light aktivován: +%d bloku!" % avatar_block)
 		else:
 			current_health = unit_data.max_health
+			
+		# NOVÉ: Aplikuj startovní retained block
+		if unit_data.faction == UnitData.Faction.PLAYER and PlayerData.starting_retained_block > 0:
+			retained_block += PlayerData.starting_retained_block
+			current_block += PlayerData.starting_retained_block
+			print("🛡️ Startovní blok: +%d" % PlayerData.starting_retained_block)
+			
 	if _sprite_node and unit_data.sprite_texture:
 		_sprite_node.texture = unit_data.sprite_texture
 	_intent_ui.visible = false
@@ -55,17 +67,39 @@ func attack(target: Node2D) -> void:
 	if not is_instance_valid(target) or not target.has_method("take_damage"): return
 	if target.has_method("set_last_attacker"):
 		target.set_last_attacker(self)
-	await target.take_damage(unit_data.attack_damage)
+	
+	var damage = unit_data.attack_damage
+	
+	# NOVÉ: Aplikuj bonus poškození z karet pro hráče
+	if unit_data.faction == UnitData.Faction.PLAYER:
+		damage += PlayerData.global_card_damage_bonus
+	
+	# NOVÉ: Zkontroluj kritický zásah pro hráče
+	if unit_data.faction == UnitData.Faction.PLAYER and PlayerData.get_critical_chance() > 0:
+		var crit_roll = randi_range(1, 100)
+		if crit_roll <= PlayerData.get_critical_chance():
+			damage *= 2
+			_show_floating_text(damage, "critical")
+			print("💥 KRITICKÝ ZÁSAH! %d poškození" % damage)
+	
+	await target.take_damage(damage)
 
-# --- UPRAVENÁ FUNKCE TAKE_DAMAGE ---
 func take_damage(amount: int) -> void:
+	# NOVÉ: Aplikuj thorns damage pro hráče
 	if unit_data.faction == UnitData.Faction.PLAYER:
 		var attacker = get_last_attacker()
 		if is_instance_valid(attacker):
+			# Starý artefakt thorns
 			for artifacts in PlayerData.artifacts:
 				if artifacts.effect_id == "thorns_damage":
 					print("Artefakt '%s' vrací %d poškození." % [artifacts.artifact_name, artifacts.value])
 					await attacker.take_damage(artifacts.value)
+			
+			# NOVÉ: Skill thorns damage
+			var skill_thorns = PlayerData.get_thorns_damage()
+			if skill_thorns > 0:
+				print("🌹 Svaté trny vracejí %d poškození!" % skill_thorns)
+				await attacker.take_damage(skill_thorns)
 
 	var damage_to_deal = amount
 	var absorbed_by_block = min(amount, current_block)
@@ -76,7 +110,7 @@ func take_damage(amount: int) -> void:
 	current_block -= absorbed_by_block
 	damage_to_deal -= absorbed_by_block
 	
-	# PŘIDÁNO: Pokud se spotřeboval i permanentní blok, snížíme ho
+	# Pokud se spotřeboval i permanentní blok, snížíme ho
 	retained_block = min(retained_block, current_block)
 	
 	if absorbed_by_block > 0 and damage_to_deal > 0:
@@ -95,14 +129,20 @@ func take_damage(amount: int) -> void:
 	
 	if current_health <= 0:
 		_die()
+	
+	
 
-# --- UPRAVENÁ FUNKCE RESET_FOR_NEW_TURN ---
 func reset_for_new_turn():
-	# Dočasný blok zmizí, ale permanentní základ zůstane.
+	# Dočasný blok zmizí, ale permanentní základ zůstane
 	current_block = retained_block
 	
 	has_used_base_move = false
 	extra_moves = 0
+	
+	# NOVÉ: Aplikuj heal end of turn pro hráče
+	if unit_data.faction == UnitData.Faction.PLAYER:
+		PlayerData.process_heal_end_of_turn()
+	
 	_update_stats_and_emit_signal()
 
 func can_move() -> bool:
@@ -127,7 +167,6 @@ func apply_status(status_id: String, value: int, duration: int = 1):
 		
 	_update_stats_and_emit_signal()
 
-# --- UPRAVENÁ FUNKCE PROCESS_TURN_START_STATUSES ---
 func process_turn_start_statuses() -> int:
 	var extra_draw = 0
 	if active_statuses.is_empty(): return extra_draw
@@ -135,15 +174,26 @@ func process_turn_start_statuses() -> int:
 	# Nejdříve zpracujeme aury, které ovlivňují blok
 	if active_statuses.has("aura_devotion_plus"):
 		var status_data = active_statuses["aura_devotion_plus"]
-		# Nastavíme (přičteme) hodnotu permanentního bloku
-		retained_block = status_data.value
-		# A na začátku kola ho rovnou přičteme i k aktuálnímu bloku
-		add_block(status_data.value)
+		var aura_value = status_data.value
+		
+		# NOVÉ: Aplikuj aura enhancement
+		if unit_data.faction == UnitData.Faction.PLAYER and PlayerData.aura_enhancement > 0:
+			aura_value = aura_value * (100 + PlayerData.aura_enhancement) / 100
+			print("✨ Mistrovství aur: aura vylepšena na %d" % aura_value)
+		
+		retained_block = aura_value
+		add_block(aura_value)
 	
 	if active_statuses.has("aura_devotion"):
 		var status_data = active_statuses["aura_devotion"]
-		# Běžná aura dává jen dočasný blok
-		add_block(status_data.value)
+		var aura_value = status_data.value
+		
+		# NOVÉ: Aplikuj aura enhancement
+		if unit_data.faction == UnitData.Faction.PLAYER and PlayerData.aura_enhancement > 0:
+			aura_value = aura_value * (100 + PlayerData.aura_enhancement) / 100
+			print("✨ Mistrovství aur: aura vylepšena na %d" % aura_value)
+		
+		add_block(aura_value)
 		
 	# Zpracujeme ostatní statusy
 	var statuses_to_remove = []
@@ -162,7 +212,6 @@ func process_turn_start_statuses() -> int:
 		
 	return extra_draw
 
-# --- UPRAVENÁ FUNKCE PROCESS_TURN_END_STATUSES ---
 func process_turn_end_statuses():
 	if active_statuses.is_empty():
 		return
@@ -225,13 +274,21 @@ func heal_to_full():
 	_update_stats_and_emit_signal()
 
 func _die():
+	# NOVÉ: Aplikuj energy on kill pro hráče když zabije nepřítele
+	if unit_data.faction == UnitData.Faction.ENEMY:
+		# Zkontroluj, jestli má hráč skill energy on kill
+		if PlayerData.energy_on_kill > 0:
+			PlayerData.process_energy_on_kill()
+	
 	emit_signal("died", self)
 	var tween = create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(queue_free)
 
 func heal(amount: int):
-	var health_to_restore = min(amount, unit_data.max_health - current_health)
+	# NOVÉ: Aplikuj enhanced healing
+	var enhanced_amount = PlayerData.should_heal_enhanced(amount) if unit_data.faction == UnitData.Faction.PLAYER else amount
+	var health_to_restore = min(enhanced_amount, unit_data.max_health - current_health)
 	current_health += health_to_restore
 	_show_floating_text(health_to_restore, "heal")
 	
@@ -241,8 +298,14 @@ func heal(amount: int):
 	_update_stats_and_emit_signal()
 
 func add_block(amount: int):
-	current_block += amount
-	_show_floating_text(amount, "block_gain")
+	# NOVÉ: Aplikuj block on card play bonus
+	var bonus_block = 0
+	if unit_data.faction == UnitData.Faction.PLAYER:
+		bonus_block = PlayerData.process_block_on_card_play()
+	
+	var total_block = amount + bonus_block
+	current_block += total_block
+	_show_floating_text(total_block, "block_gain")
 	_update_stats_and_emit_signal()
 
 func get_unit_data() -> UnitData: return unit_data
@@ -286,6 +349,9 @@ func _show_floating_text(amount: int, type: String):
 		"block_loss":
 			text_to_display = "-" + str(amount)
 			color = Color.SLATE_GRAY
+		"critical":
+			text_to_display = "CRIT! -" + str(amount)
+			color = Color.ORANGE
 	
 	add_child(instance)
 	instance.position = Vector2(0, -80)

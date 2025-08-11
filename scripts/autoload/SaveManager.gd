@@ -24,10 +24,11 @@ func _check_for_level_up():
 func save_meta_progress():
 	var error = ResourceSaver.save(meta_progress, SAVE_PATH)
 	if error != OK:
+		DebugLogger.log_error("Failed to save meta progress! Error: %d" % error, "SAVE")
 		printerr("Chyba při ukládání meta-progrese! Kód chyby: ", error)
 	else:
+		DebugLogger.log_save_load("save_meta_progress", true, "Level: %d, XP: %d" % [meta_progress.player_level, meta_progress.total_xp])
 		print("Meta-progrese úspěšně uložena.")
-	# Po každém uložení vyšleme signál
 	emit_signal("meta_progress_changed")
 
 func load_meta_progress():

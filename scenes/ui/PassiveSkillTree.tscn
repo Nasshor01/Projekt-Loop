@@ -1,14 +1,17 @@
-[gd_scene load_steps=3 format=3 uid="uid://saye51gujkj3"]
+[gd_scene load_steps=4 format=3 uid="uid://saye51gujkj3"]
 
 [ext_resource type="Script" uid="uid://c0tck26ok117s" path="res://scenes/ui/SkillTreeCamera.gd" id="1_5noij"]
 [ext_resource type="Script" uid="uid://du41vyeble6ee" path="res://scenes/ui/PassiveSkillTree.gd" id="1_pupw7"]
+[ext_resource type="Resource" uid="uid://bwnwviwkv4ule" path="res://data/skills/paladin.tres" id="2_6bs2g"]
 
 [node name="PassiveSkillTree" type="Node2D"]
 script = ExtResource("1_pupw7")
+preview_tree_data = ExtResource("2_6bs2g")
 
 [node name="ConnectionLines" type="Node2D" parent="."]
 
 [node name="SkillNodes" type="Node2D" parent="."]
 
 [node name="SkillTreeCamera" type="Camera2D" parent="."]
+position = Vector2(576, 328)
 script = ExtResource("1_5noij")

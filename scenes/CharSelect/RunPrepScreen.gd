@@ -13,12 +13,14 @@ extends Control
 func _ready():
 	start_button.pressed.connect(GameManager.start_new_run)
 	back_button.pressed.connect(GameManager.go_to_character_select)
-	
 	SaveManager.meta_progress_changed.connect(update_display)
-	update_display()
 	
-	# Starý kód, který se snažil strom generovat, je pryč.
-	# Strom se teď postará sám o sebe díky signálu.
+	PlayerData.initialize_player(GameManager.selected_class_data, GameManager.selected_subclass_data)
+	
+	# ZDE VOLÁME SPRÁVNOU FUNKCI _refresh_tree()
+	skill_tree._refresh_tree() 
+	
+	update_display()
 
 func update_display():
 	var meta = SaveManager.meta_progress
@@ -31,6 +33,8 @@ func update_display():
 	xp_bar.max_value = xp_needed
 	xp_bar.value = meta.total_xp
 	
-	# Po každé aktualizaci řekneme i stromu, ať se překreslí
-	if is_instance_valid(skill_tree) and skill_tree.has_method("_refresh_tree"):
-		skill_tree._refresh_tree()
+	# ZDE UŽ NIC NENÍ POTŘEBA VOLAT
+	# `SaveManager.meta_progress_changed` zavolá `update_display`,
+	# a to by mělo stačit. Pokud by se strom nepřekresloval po level-upu,
+	# přidali bychom sem `skill_tree._refresh_tree()` znovu.
+	# Prozatím je to čistší takto.

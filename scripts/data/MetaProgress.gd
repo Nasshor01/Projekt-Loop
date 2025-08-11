@@ -6,4 +6,4 @@ extends Resource
 @export var player_level: int = 1
 # PŘIDÁNO: Počet bodů, které může hráč utratit ve stromu dovedností
 @export var skill_points: int = 0
-@export var unlocked_skill_ids: Array[StringName] = []
+@export var unlocked_skill_ids: PackedStringArray = []

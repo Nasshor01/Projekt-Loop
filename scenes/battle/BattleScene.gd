@@ -56,6 +56,7 @@ var _is_drawing_cards: bool = false
 var _is_first_turn: bool = true
 
 func _ready():
+	DebugLogger.log_info("Battle scene loaded", "BATTLE")
 	player_info_panel.update_from_player_data()
 	_current_battle_state = BattleState.SETUP
 	_is_first_turn = true
@@ -285,10 +286,12 @@ func _on_win_button_pressed():
 	end_battle_as_victory()
 
 func _on_player_died(_unit_node: Node2D):
+	DebugLogger.log_critical("PLAYER DIED! HP: %d, Floor: %d" % [PlayerData.current_hp, PlayerData.floors_cleared], "BATTLE")
 	_current_battle_state = BattleState.BATTLE_OVER
 	GameManager.battle_finished(false)
 
 func _on_enemy_died(enemy_node: Node2D):
+	DebugLogger.log_enemy_action(enemy_node.unit_data.unit_name, "died", {"remaining_enemies": _enemy_units.size() - 1})
 	if _enemy_units.has(enemy_node):
 		_enemy_units.erase(enemy_node)
 	battle_grid_instance.remove_object_by_instance(enemy_node)
@@ -351,6 +354,7 @@ func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: Car
 	_show_valid_targets_for_card(card_data_resource)
 
 func try_play_card(card: CardData, initial_target: Node2D) -> void:
+	DebugLogger.log_card_played(card.card_name, initial_target.name if initial_target else "none")
 	if _is_action_processing: return
 	if not card: return
 	if not PlayerData.spend_energy(card.cost):

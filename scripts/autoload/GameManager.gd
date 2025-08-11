@@ -28,9 +28,14 @@ var last_run_xp_earned: int = 0
 var scene_container: Node = null
 var last_run_was_victory: bool = false
 
+var selected_class_data: ClassData = null
+var selected_subclass_data: SubclassData = null
+
 func _ready():
-	# Vytvoříme si prázdný Node, který bude sloužit jako bezpečný kontejner
-	# pro všechny naše scény.
+	if has_node("/root/DebugLogger"):
+		DebugLogger.log_info("=== GAME MANAGER STARTED ===")
+	DebugLogger.log_info("=== GAME MANAGER STARTED ===")
+	DebugLogger.log_system_info() # Zaloguje system info
 	scene_container = Node.new()
 	scene_container.name = "SceneContainer"
 	add_child(scene_container)
@@ -38,6 +43,8 @@ func _ready():
 	global_ui_instance = global_ui_scene.instantiate()
 	add_child(global_ui_instance)
 	go_to_main_menu()
+
+
 
 func start_new_run(seed = null):
 	if seed == null:
@@ -50,8 +57,8 @@ func start_new_run(seed = null):
 	
 	has_saved_camera_state = false
 	current_map_data = null
-	# VOLÁNÍ initialize_player ZDE UŽ NENÍ POTŘEBA! Je zavoláno dříve.
-	# Místo toho rovnou resetujeme staty pro nový běh.
+	
+	# Inicializace se přesunula do RunPrepScreen, takže zde voláme už jen toto:
 	PlayerData.start_new_run_state()
 	
 	_change_scene(map_scene)
@@ -72,18 +79,15 @@ func start_new_game_plus(seed = null):
 	
 	_change_scene(map_scene)
 	
-func select_character_and_go_to_prep(p_class: ClassData, p_subclass: SubclassData):
-	# 1. Nejdříve inicializujeme hráče a tím nastavíme aktivní strom
-	PlayerData.initialize_player(p_class, p_subclass)
-	# 2. AŽ TEĎ, když je vše připraveno, přejdeme na obrazovku se stromem
-	go_to_run_prep_screen()
 	
 func start_battle(encounter: EncounterData):
+	DebugLogger.log_info("Starting battle with encounter: %s" % encounter.resource_path, "BATTLE")
 	print("Zahajuji souboj...")
 	current_encounter = encounter
 	_change_scene(battle_scene)
 
 func battle_finished(player_won: bool):
+	DebugLogger.log_battle_event("battle_finished", {"won": player_won, "floors_cleared": PlayerData.floors_cleared})
 	var is_boss = current_encounter and current_encounter.encounter_type == EncounterData.EncounterType.BOSS
 	
 	if player_won and not is_boss:
@@ -115,7 +119,11 @@ func go_to_main_menu():
 func go_to_character_select():
 	_change_scene(character_select_scene)
 
-func go_to_run_prep_screen():
+func go_to_run_prep_screen(p_class: ClassData, p_subclass: SubclassData):
+	# 1. Uložíme si data o postavě, aby si je RunPrepScreen mohl vyzvednout
+	selected_class_data = p_class
+	selected_subclass_data = p_subclass
+	# 2. Až pak změníme scénu
 	_change_scene(run_prep_scene)
 
 func reward_chosen():
@@ -143,6 +151,7 @@ func go_to_rest_scene():
 	_change_scene(rest_scene)
 
 func _change_scene(scene_path: String):
+	DebugLogger.log_scene_change(str(current_scene.scene_file_path) if current_scene else "none", scene_path)
 	print("DEBUG: Pokouším se změnit scénu na: ", scene_path)
 
 	if is_instance_valid(global_ui_instance):

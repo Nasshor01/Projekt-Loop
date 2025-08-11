@@ -18,10 +18,9 @@ func _ready():
 	back_button.pressed.connect(GameManager.go_to_main_menu)
 
 func _on_continue_pressed():
-	# Zkontrolujeme, jestli jsou data v editoru nastavená
 	if not character_class or not character_subclass:
 		printerr("CHYBA: V CharacterSelectScreen nejsou v inspektoru nastavená data postavy!")
 		return
 		
-	# Řekneme GameManageru, jakou postavu jsme vybrali A ABY ROVNOU ZOBRAZIL PREP SCREEN
-	GameManager.select_character_and_go_to_prep(character_class, character_subclass)
+	# Zavoláme upravenou funkci GameManageru a předáme jí data
+	GameManager.go_to_run_prep_screen(character_class, character_subclass)
