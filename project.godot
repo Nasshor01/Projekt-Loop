@@ -26,6 +26,7 @@ DebugLogger="*res://scripts/autoload/DebugLogger.gd"
 PlayerData="*res://scripts/autoload/PlayerData.gd"
 GameManager="*res://scripts/autoload/GameManager.gd"
 SystemDebug="*res://scripts/debug/SystemDebug.gd"
+EventManager="*res://scripts/autoload/EventManager.gd"
 
 [display]
 

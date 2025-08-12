@@ -22,18 +22,33 @@ func update_stats(unit_node: Node2D):
 	
 	name_label.text = data.unit_name
 	
-	# OPRAVA: Pro hráče použij PlayerData.max_hp místo data.max_health
+	# Zobrazení HP (zůstává stejné)
 	if data.faction == UnitData.Faction.PLAYER:
 		hp_label.text = "HP: %d / %d" % [unit_node.current_health, PlayerData.max_hp]
 	else:
 		hp_label.text = "HP: %d / %d" % [unit_node.current_health, data.max_health]
 	
+	# --- NOVÁ VYLEPŠENÁ LOGIKA PRO BLOK ---
 	if unit_node.current_block > 0:
-		block_label.text = "Blok: %d" % unit_node.current_block
 		block_label.visible = true
+		
+		# Zkontrolujeme, jestli má jednotka i nějaký udržitelný blok ("retained_block")
+		if unit_node.retained_block > 0:
+			# Pokud ano, zobrazíme ho v závorce pro lepší přehlednost
+			# Příklad: Blok: 50 (20)
+			block_label.text = "Blok: %d (%d)" % [unit_node.current_block, unit_node.retained_block]
+			block_label.tooltip_text = "Celkový blok (z toho v závorce je udržitelný pro další kolo)"
+		else:
+			# Pokud je všechen blok jen dočasný, ukážeme jen celkovou hodnotu
+			# Příklad: Blok: 10
+			block_label.text = "Blok: %d" % unit_node.current_block
+			block_label.tooltip_text = "Celkový blok"
 	else:
+		# Pokud není žádný blok, label skryjeme
 		block_label.visible = false
+	# --- KONEC NOVÉ LOGIKY PRO BLOK ---
 	
+	# Zobrazení útoku (zůstává stejné)
 	if data.faction != UnitData.Faction.PLAYER:
 		attack_label.text = "Útok: %d" % data.attack_damage
 		attack_label.visible = true

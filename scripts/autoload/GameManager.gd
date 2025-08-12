@@ -14,6 +14,7 @@ var treasure_scene = "res://scenes/rewards/TreasureScene.tscn"
 var shop_scene = "res://scenes/shop/ShopScene.tscn"
 var rest_scene = "res://scenes/camp/RestScene.tscn"
 var global_ui_scene = preload("res://scenes/ui/GlobalUI.tscn")
+var event_scene = "res://scenes/events/EventScene.tscn"
 
 var current_scene: Node = null
 var current_seed: int
@@ -176,6 +177,16 @@ func leave_shop():
 func go_to_rest_scene():
 	print("Vstup do scény odpočinku.")
 	_change_scene(rest_scene)
+
+func go_to_event_scene():
+	print("Vstup do event scény")
+	DebugLogger.log_info("Entering event scene", "GAME_FLOW")
+	_change_scene(event_scene)
+
+func event_completed():
+	print("Event dokončen, návrat na mapu")
+	DebugLogger.log_info("Event completed, returning to map", "GAME_FLOW")
+	_change_scene(map_scene)
 
 func _change_scene(scene_path: String):
 	DebugLogger.log_scene_change(str(current_scene.scene_file_path) if current_scene else "none", scene_path)

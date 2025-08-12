@@ -38,6 +38,7 @@ var thorns_damage: int = 0
 var double_healing_bonus: int = 0
 var energy_on_kill: int = 0
 var block_on_card_play: int = 0
+var global_shield: int = 0
 
 func get_current_node() -> MapNodeResource:
 	if not path_taken.is_empty():
@@ -46,6 +47,7 @@ func get_current_node() -> MapNodeResource:
 	return null
 
 func start_new_run_state():
+	EventManager.start_new_run()
 	print("=== START NEW RUN STATE ===")
 	
 	# 1. Resetujeme balíček na startovní
@@ -66,7 +68,7 @@ func start_new_run_state():
 						master_deck.append(entry.card)
 		
 		print("Startovní balíček obsahuje %d karet" % master_deck.size())
-	
+		global_shield = 0
 	# 2. Aplikujeme pasivní skilly, které mohou změnit startovní staty
 	apply_passive_skills()
 	
@@ -156,7 +158,16 @@ func apply_passive_skills():
 		DebugLogger.log_info("Skill tree OK, nodes: %d" % active_skill_tree.skill_nodes.size(), "SKILLS")
 
 	# Načteme odemčené skilly
-	var unlocked_ids = SaveManager.meta_progress.unlocked_skill_ids
+	#var unlocked_ids = SaveManager.meta_progress.unlocked_skill_ids
+	#DebugLogger.log_info("Aplikuji %d odemčených skillů" % unlocked_ids.size(), "SKILLS")
+	
+	var unlocked_ids = [
+		"paladin_start", "paladin_block_1", "paladin_hp_1", "righteous_anger", 
+		"swift_justice", "fortress", "divine_wrath", "blessed_recovery", 
+		"divine_protection", "sacred_thorns", "righteous_fury", "aura_mastery", 
+		"avatar_of_light"
+	]
+
 	DebugLogger.log_info("Aplikuji %d odemčených skillů" % unlocked_ids.size(), "SKILLS")
 	
 	# 4. Projdeme odemčené skilly a aplikujeme jejich EFEKTY
@@ -204,8 +215,9 @@ func apply_passive_skills():
 					aura_enhancement += effect_data.value
 					print("  + %d%% vylepšení aur (nyní %d%%)" % [effect_data.value, aura_enhancement])
 				PassiveEffectData.EffectType.AVATAR_STARTING_BLOCK:
-					avatar_starting_block_multiplier = effect_data.value
-					print("  ✅ Avatar blok: %dx max HP na začátku souboje" % effect_data.value)
+					var shield_amount = max_hp * effect_data.value
+					global_shield += shield_amount
+					print(" ✨ Avatar Světla přidal %d do GLOBÁLNÍHO ŠTÍTU (nyní %d)" % [shield_amount, global_shield])
 				PassiveEffectData.EffectType.THORNS_DAMAGE:
 					thorns_damage += effect_data.value
 					print("  + %d poškození trny (nyní %d)" % [effect_data.value, thorns_damage])

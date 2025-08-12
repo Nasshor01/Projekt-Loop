@@ -281,12 +281,30 @@ func end_battle_as_victory():
 		# Prozatím to necháme, ale do budoucna by bylo lepší mít
 		# funkci PlayerData.set_health(), která signál také vyšle.
 		PlayerData.current_hp = _player_unit_node.current_health
+		PlayerData.global_shield = _player_unit_node.current_block
+		print("GLOBÁLNÍ ŠTÍT uložen, nová hodnota: %d" % PlayerData.global_shield)
 	GameManager.battle_finished(true)
 
 func _on_win_button_pressed():
 	end_battle_as_victory()
 
-func _on_player_died(_unit_node: Node2D):
+func _on_player_died(unit_node: Node2D):
+	# Logika pro oživení (tuto část už máš správně)
+	if PlayerData.has_revive:
+		print("!!! BOŽSKÁ OCHRANA AKTIVOVÁNA !!!")
+		PlayerData.has_revive = false
+		var heal_amount = PlayerData.max_hp / 2
+		if is_instance_valid(unit_node) and unit_node.has_method("heal"):
+			unit_node.heal(heal_amount)
+		return
+
+	# --- PŘIDANÁ ČÁST PRO ANIMACI DEFINITIVNÍ SMRTI ---
+	# Pokud nemáme oživení, spustíme animaci zmizení před koncem hry.
+	var tween = create_tween()
+	tween.tween_property(unit_node, "modulate:a", 0.0, 0.5)
+	# --- KONEC PŘIDANÉ ČÁSTI ---
+
+	# Logika pro konec hry (tato část už je správně)
 	DebugLogger.log_critical("PLAYER DIED! HP: %d, Floor: %d" % [PlayerData.current_hp, PlayerData.floors_cleared], "BATTLE")
 	_current_battle_state = BattleState.BATTLE_OVER
 	GameManager.battle_finished(false)
@@ -295,7 +313,15 @@ func _on_enemy_died(enemy_node: Node2D):
 	DebugLogger.log_enemy_action(enemy_node.unit_data.unit_name, "died", {"remaining_enemies": _enemy_units.size() - 1})
 	if _enemy_units.has(enemy_node):
 		_enemy_units.erase(enemy_node)
+	
 	battle_grid_instance.remove_object_by_instance(enemy_node)
+
+	# --- PŘIDANÁ ČÁST PRO ANIMACI A SMAZÁNÍ ---
+	var tween = create_tween()
+	tween.tween_property(enemy_node, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(enemy_node.queue_free)
+	# --- KONEC PŘIDANÉ ČÁSTI ---
+
 	if _enemy_units.is_empty():
 		end_battle_as_victory()
 
@@ -420,27 +446,60 @@ func _execute_move(unit_to_move: Unit, target_cell: Vector2i):
 	
 func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 	if not is_instance_valid(target): return
+	
 	match effect.effect_type:
 		CardEffectData.EffectType.DEAL_DAMAGE:
-			if target.has_method("take_damage"): target.take_damage(effect.value)
+			if target.has_method("take_damage"):
+				
+				# --- ZAČÁTEK LOGIKY PRO VÝPOČET POŠKOZENÍ ---
+				
+				# 1. Získáme základní poškození z karty
+				var damage_to_deal = effect.value
+
+				# 2. Přidáme bonus z pasivních skillů (např. "Spravedlivý hněv")
+				damage_to_deal += PlayerData.global_card_damage_bonus
+
+				# 3. Zkusíme "hodit kostkou" na kritický zásah
+				if PlayerData.get_critical_chance() > 0:
+					var crit_roll = randi_range(1, 100)
+					if crit_roll <= PlayerData.get_critical_chance():
+						# KRITICKÝ ZÁSAH! Zdvojnásobíme poškození.
+						damage_to_deal *= 2
+						print("💥 KRITICKÝ ZÁSAH! Poškození: %d" % damage_to_deal)
+						# Zobrazíme speciální plovoucí text
+						if is_instance_valid(_player_unit_node):
+							_player_unit_node._show_floating_text(damage_to_deal, "critical")
+				
+				# 4. Až teď, po všech výpočtech, aplikujeme finální poškození na cíl
+				target.take_damage(damage_to_deal)
+				
+				# --- KONEC LOGIKY ---
+
 		CardEffectData.EffectType.GAIN_BLOCK:
 			if target.has_method("add_block"): target.add_block(effect.value)
+			
 		CardEffectData.EffectType.HEAL_UNIT:
 			if target.has_method("heal"): target.heal(effect.value)
+			
 		CardEffectData.EffectType.HEAL_TO_FULL:
 			if target.has_method("heal_to_full"): target.heal_to_full()
+			
 		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK:
 			if is_instance_valid(_player_unit_node) and target.has_method("take_damage"):
 				target.take_damage(_player_unit_node.current_block)
+				
 		CardEffectData.EffectType.DRAW_CARDS:
-			# OPRAVA: Místo přímého volání UI jen přidáme karty do fronty
 			_cards_to_draw_queue += effect.value
 			_draw_next_card_in_queue()
+			
 		CardEffectData.EffectType.GAIN_ENERGY: PlayerData.gain_energy(effect.value)
+		
 		CardEffectData.EffectType.APPLY_STATUS:
 			if target.has_method("apply_status"): target.apply_status(effect.string_value, effect.value)
+			
 		CardEffectData.EffectType.GAIN_EXTRA_MOVE:
 			if target.has_method("gain_extra_move"): target.gain_extra_move()
+			
 		CardEffectData.EffectType.DEAL_DOUBLE_DAMAGE_FROM_BLOCK:
 			if is_instance_valid(_player_unit_node) and target.has_method("take_damage"):
 				var damage = _player_unit_node.current_block * 2

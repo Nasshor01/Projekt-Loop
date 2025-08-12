@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://c4uyep3iwku52"]
+
+[ext_resource type="Script" uid="uid://m2u37j21db8u" path="res://scenes/events/EventChoiceButton.gd" id="1_5qijk"]
+
+[node name="EventChoiceButton" type="Button"]
+custom_minimum_size = Vector2(400, 80)
+script = ExtResource("1_5qijk")

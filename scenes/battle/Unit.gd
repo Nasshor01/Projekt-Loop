@@ -28,27 +28,22 @@ var last_attacker: Unit = null
 func _ready():
 	if unit_data:
 		if unit_data.faction == UnitData.Faction.PLAYER:
-			print("DEBUG Unit._ready(): PlayerData.current_hp = %d, PlayerData.max_hp = %d" % [PlayerData.current_hp, PlayerData.max_hp])
-			current_health = PlayerData.current_hp  # nebo max_hp podle toho co chceš
-			print("DEBUG Unit._ready(): current_health nastaveno na %d" % current_health)
+			# Nastavení zdraví hráče
+			current_health = PlayerData.current_hp
 			
-			# Avatar of Light efekt
-			if PlayerData.avatar_starting_block_multiplier > 0:
-				var avatar_block = PlayerData.max_hp * PlayerData.avatar_starting_block_multiplier
-				retained_block += avatar_block
-				current_block += avatar_block
-				print("🌟 Avatar of Light aktivován: +%d bloku!" % avatar_block)
-		else:
+			# JEDINÁ LOGIKA PRO BLOK: Načteme finální hodnotu z Globálního Štítu
+			retained_block = PlayerData.global_shield
+			current_block = retained_block
+			
+			print("🛡️ Načten Globální Štít: startovní blok pro tento souboj je %d" % current_block)
+			
+		else: # Pro nepřátele
 			current_health = unit_data.max_health
 			
-		# NOVÉ: Aplikuj startovní retained block
-		if unit_data.faction == UnitData.Faction.PLAYER and PlayerData.starting_retained_block > 0:
-			retained_block += PlayerData.starting_retained_block
-			current_block += PlayerData.starting_retained_block
-			print("🛡️ Startovní blok: +%d" % PlayerData.starting_retained_block)
-			
+	# Zbytek funkce pro nastavení grafiky a klikání
 	if _sprite_node and unit_data.sprite_texture:
 		_sprite_node.texture = unit_data.sprite_texture
+	
 	_intent_ui.visible = false
 	var clickable_area = Area2D.new(); var collision_shape = CollisionShape2D.new()
 	var rect_shape = RectangleShape2D.new()
@@ -57,6 +52,7 @@ func _ready():
 	collision_shape.shape = rect_shape; clickable_area.add_child(collision_shape)
 	add_child(clickable_area)
 	clickable_area.input_event.connect(_on_input_event)
+	
 	await get_tree().process_frame
 	emit_signal("stats_changed", self)
 
@@ -285,16 +281,14 @@ func heal_to_full():
 	_update_stats_and_emit_signal()
 
 func _die():
-	# NOVÉ: Aplikuj energy on kill pro hráče když zabije nepřítele
+	# Zpracujeme efekt "energie za zabití", pokud umírá nepřítel
 	if unit_data.faction == UnitData.Faction.ENEMY:
-		# Zkontroluj, jestli má hráč skill energy on kill
 		if PlayerData.energy_on_kill > 0:
 			PlayerData.process_energy_on_kill()
 	
+	# Jediná a nejdůležitější věc: Oznámíme všem, že jsme zemřeli.
+	# Animaci a smazání už zde neřešíme!
 	emit_signal("died", self)
-	var tween = create_tween()
-	tween.tween_property(self, "modulate:a", 0.0, 0.5)
-	tween.tween_callback(queue_free)
 
 func heal(amount: int):
 	# NOVÉ: Aplikuj enhanced healing

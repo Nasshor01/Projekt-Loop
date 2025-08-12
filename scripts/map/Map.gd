@@ -170,7 +170,11 @@ func _trigger_node_action(node_data: MapNodeResource):
 			# Zavoláme správnou funkci v GameManageru
 			GameManager.go_to_rest_scene()
 			return
-		# ----------------------------------------------------
+
+		MapNodeResource.NodeType.EVENT:
+			GameManager.go_to_event_scene()
+			return
+
 
 		_: # Defaultní případ
 			print("Akce typu '%s' zatím není implementována." % MapNodeResource.NodeType.keys()[node_data.type])

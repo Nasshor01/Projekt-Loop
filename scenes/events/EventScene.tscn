@@ -1,0 +1,118 @@
+[gd_scene load_steps=2 format=3 uid="uid://dn8aea8c5urnk"]
+
+[ext_resource type="Script" uid="uid://i74m13048qkr" path="res://scenes/events/EventScene.gd" id="1_snngf"]
+
+[node name="EventScene" type="Node2D"]
+script = ExtResource("1_snngf")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="ColorRect" type="ColorRect" parent="UI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.215902, 0.215902, 0.215902, 1)
+
+[node name="EventPanel" type="Panel" parent="UI"]
+custom_minimum_size = Vector2(500, 600)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -472.0
+offset_top = -300.0
+offset_right = 488.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/EventPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/EventPanel/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="UI/EventPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Název Eventu"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EventImage" type="TextureRect" parent="UI/EventPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 300)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DescriptionText" type="RichTextLabel" parent="UI/EventPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/mono_font_size = 24
+theme_override_font_sizes/normal_font_size = 24
+bbcode_enabled = true
+text = "Zde bude delší popis toho, co se děje. Může mít více řádků a vyprávět krátký příběh, který hráče uvede do situace."
+fit_content = true
+
+[node name="ChoicesContainer" type="VBoxContainer" parent="UI/EventPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="ResultPanel" type="Panel" parent="UI"]
+custom_minimum_size = Vector2(700, 400)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/ResultPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/ResultPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="ResultText" type="RichTextLabel" parent="UI/ResultPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 28
+bbcode_enabled = true
+text = "Zde bude výsledek tvé volby."
+fit_content = true
+
+[node name="ContinueButton" type="Button" parent="UI/ResultPanel/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Pokračovat"
