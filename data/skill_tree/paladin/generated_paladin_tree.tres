@@ -1,0 +1,76 @@
+[gd_resource type="Resource" script_class="PassiveSkillTreeData" load_steps=12 format=3 uid="uid://uh8b6fdhbqmg"]
+
+[ext_resource type="Script" uid="uid://bvbd0xaypsrcp" path="res://data/skills/PassiveSkillTreeData.gd" id="1_sgnc2"]
+[ext_resource type="Texture2D" uid="uid://cjo5pqf55ay3x" path="res://art/icons/skills/136.png" id="2_13xox"]
+[ext_resource type="Script" uid="uid://c4kidtjyabnas" path="res://data/skills/PassiveSkillNode.gd" id="3_stm5i"]
+[ext_resource type="Script" uid="uid://bhefsqpmjhqur" path="res://data/skills/PassiveEffectData.gd" id="4_y55bq"]
+
+[sub_resource type="Resource" id="Resource_sgnc2"]
+script = ExtResource("3_stm5i")
+id = &"paladin_start"
+skill_name = "Počátek cesty"
+description = "Základní uzel Paladina. Odtud začíná tvoje cesta."
+icon = ExtResource("2_13xox")
+position = Vector2(0, 0)
+is_notable = false
+cost = 0
+connected_nodes = PackedStringArray()
+effects = []
+
+[sub_resource type="Resource" id="Resource_13xox"]
+script = ExtResource("4_y55bq")
+effect_type = 0
+value = 15
+string_value = ""
+
+[sub_resource type="Resource" id="Resource_stm5i"]
+script = ExtResource("3_stm5i")
+id = &"paladin_hp_basic"
+skill_name = "Ocelové zdraví"
+description = "Zvýší tvou odolnost o 15 životů."
+icon = ExtResource("2_13xox")
+position = Vector2(0, -120)
+is_notable = false
+cost = 1
+connected_nodes = PackedStringArray("paladin_start")
+effects = [SubResource("Resource_13xox")]
+
+[sub_resource type="Resource" id="Resource_y55bq"]
+script = ExtResource("4_y55bq")
+effect_type = 1
+value = 25
+string_value = ""
+
+[sub_resource type="Resource" id="Resource_evi2c"]
+script = ExtResource("3_stm5i")
+id = &"paladin_gold_basic"
+skill_name = "Desátek"
+description = "Začínáš s 25 zlatými navíc."
+icon = ExtResource("2_13xox")
+position = Vector2(-150, 0)
+is_notable = false
+cost = 1
+connected_nodes = PackedStringArray("paladin_start")
+effects = [SubResource("Resource_y55bq")]
+
+[sub_resource type="Resource" id="Resource_2dmiu"]
+script = ExtResource("4_y55bq")
+effect_type = 4
+value = 2
+string_value = ""
+
+[sub_resource type="Resource" id="Resource_4odjl"]
+script = ExtResource("3_stm5i")
+id = &"paladin_damage_basic"
+skill_name = "Světelná zbraň"
+description = "Tvé útoky jsou požehnané světlem (+2 damage)."
+icon = ExtResource("2_13xox")
+position = Vector2(150, 0)
+is_notable = false
+cost = 1
+connected_nodes = PackedStringArray("paladin_start")
+effects = [SubResource("Resource_2dmiu")]
+
+[resource]
+script = ExtResource("1_sgnc2")
+skill_nodes = [SubResource("Resource_sgnc2"), SubResource("Resource_stm5i"), SubResource("Resource_evi2c"), SubResource("Resource_4odjl")]

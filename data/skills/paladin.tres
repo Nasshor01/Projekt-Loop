@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://c4kidtjyabnas" path="res://data/skills/PassiveSkillNode.gd" id="2_0ooa8"]
 [ext_resource type="Script" uid="uid://bhefsqpmjhqur" path="res://data/skills/PassiveEffectData.gd" id="3_cp153"]
 
-[sub_resource type="Resource" id="Resource_bqprc"]
+[sub_resource type="Resource" id="Resource_u5pxc"]
 script = ExtResource("3_cp153")
 effect_type = 0
 value = 5
@@ -13,7 +13,7 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_v4ic7"]
+[sub_resource type="Resource" id="Resource_0ooa8"]
 script = ExtResource("2_0ooa8")
 id = &"paladin_start"
 skill_name = "Svatý Závazek"
@@ -24,14 +24,14 @@ node_type = 4
 cost = 0
 connected_nodes = PackedStringArray("paladin_hp_1", "righteous_anger", "blessed_recovery")
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_bqprc")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_u5pxc")])
 is_starter = true
 max_allocations = 1
 branch = "main"
 branch_position = 0
 unlock_conditions = Array[String]([])
 
-[sub_resource type="Resource" id="Resource_w3ykv"]
+[sub_resource type="Resource" id="Resource_cp153"]
 script = ExtResource("3_cp153")
 effect_type = 5
 value = 3
@@ -40,25 +40,25 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_j42w7"]
+[sub_resource type="Resource" id="Resource_bqprc"]
 script = ExtResource("2_0ooa8")
-id = &"paladin_hp_1"
+id = &"paladin_block_1"
 skill_name = "Výcvik se štítem"
 description = "Začni každý souboj s 3 body bloku."
 position = Vector2(160, 150)
 tier = 1
 node_type = 0
 cost = 1
-connected_nodes = PackedStringArray("paladin_gold_1", "fortress")
+connected_nodes = PackedStringArray("fortress")
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_w3ykv")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_cp153")])
 is_starter = false
 max_allocations = 1
 branch = "defense"
 branch_position = 0
 unlock_conditions = Array[String]([])
 
-[sub_resource type="Resource" id="Resource_b6e5t"]
+[sub_resource type="Resource" id="Resource_v4ic7"]
 script = ExtResource("3_cp153")
 effect_type = 0
 value = 8
@@ -67,25 +67,25 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_g478p"]
+[sub_resource type="Resource" id="Resource_w3ykv"]
 script = ExtResource("2_0ooa8")
-id = &"paladin_gold_1"
+id = &"paladin_hp_1"
 skill_name = "Vitalita"
 description = "Zvýší maximální zdraví o 8."
 position = Vector2(240, 150)
 tier = 1
 node_type = 0
 cost = 1
-connected_nodes = PackedStringArray("fortress")
+connected_nodes = PackedStringArray("paladin_block_1", "fortress")
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_b6e5t")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_v4ic7")])
 is_starter = false
 max_allocations = 1
 branch = "defense"
 branch_position = 1
 unlock_conditions = Array[String]([])
 
-[sub_resource type="Resource" id="Resource_okd3b"]
+[sub_resource type="Resource" id="Resource_j42w7"]
 script = ExtResource("3_cp153")
 effect_type = 4
 value = 1
@@ -94,7 +94,7 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_eugad"]
+[sub_resource type="Resource" id="Resource_b6e5t"]
 script = ExtResource("2_0ooa8")
 id = &"righteous_anger"
 skill_name = "Spravedlivý hněv"
@@ -105,14 +105,14 @@ node_type = 0
 cost = 1
 connected_nodes = PackedStringArray("swift_justice", "divine_wrath")
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_okd3b")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_j42w7")])
 is_starter = false
 max_allocations = 1
 branch = "offense"
 branch_position = 0
 unlock_conditions = Array[String]([])
 
-[sub_resource type="Resource" id="Resource_d8kyd"]
+[sub_resource type="Resource" id="Resource_g478p"]
 script = ExtResource("3_cp153")
 effect_type = 2
 value = 1
@@ -121,7 +121,7 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_uuodq"]
+[sub_resource type="Resource" id="Resource_okd3b"]
 script = ExtResource("2_0ooa8")
 id = &"swift_justice"
 skill_name = "Rychlá spravedlnost"
@@ -132,14 +132,14 @@ node_type = 0
 cost = 1
 connected_nodes = PackedStringArray("divine_wrath")
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_d8kyd")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_g478p")])
 is_starter = false
 max_allocations = 1
 branch = "offense"
 branch_position = 1
 unlock_conditions = Array[String]([])
 
-[sub_resource type="Resource" id="Resource_3ccws"]
+[sub_resource type="Resource" id="Resource_eugad"]
 script = ExtResource("3_cp153")
 effect_type = 5
 value = 8
@@ -148,7 +148,7 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_p3e4r"]
+[sub_resource type="Resource" id="Resource_d8kyd"]
 script = ExtResource("2_0ooa8")
 id = &"fortress"
 skill_name = "Pevnost"
@@ -159,14 +159,14 @@ node_type = 1
 cost = 1
 connected_nodes = PackedStringArray("divine_protection", "sacred_thorns")
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_3ccws")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_eugad")])
 is_starter = false
 max_allocations = 1
 branch = "defense"
 branch_position = 0
 unlock_conditions = Array[String]([])
 
-[sub_resource type="Resource" id="Resource_k717i"]
+[sub_resource type="Resource" id="Resource_uuodq"]
 script = ExtResource("3_cp153")
 effect_type = 6
 value = 20
@@ -175,7 +175,7 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_n26wq"]
+[sub_resource type="Resource" id="Resource_3ccws"]
 script = ExtResource("2_0ooa8")
 id = &"divine_wrath"
 skill_name = "Božský hněv"
@@ -186,14 +186,14 @@ node_type = 1
 cost = 1
 connected_nodes = PackedStringArray("righteous_fury")
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_k717i")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_uuodq")])
 is_starter = false
 max_allocations = 1
 branch = "offense"
 branch_position = 0
 unlock_conditions = Array[String]([])
 
-[sub_resource type="Resource" id="Resource_upmwp"]
+[sub_resource type="Resource" id="Resource_p3e4r"]
 script = ExtResource("3_cp153")
 effect_type = 7
 value = 2
@@ -202,7 +202,7 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_1a7tv"]
+[sub_resource type="Resource" id="Resource_k717i"]
 script = ExtResource("2_0ooa8")
 id = &"blessed_recovery"
 skill_name = "Požehnaná obnova"
@@ -213,14 +213,14 @@ node_type = 0
 cost = 1
 connected_nodes = PackedStringArray("aura_mastery")
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_upmwp")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_p3e4r")])
 is_starter = false
 max_allocations = 1
 branch = "main"
 branch_position = 0
 unlock_conditions = Array[String]([])
 
-[sub_resource type="Resource" id="Resource_4wiw2"]
+[sub_resource type="Resource" id="Resource_n26wq"]
 script = ExtResource("3_cp153")
 effect_type = 3
 value = 1
@@ -229,7 +229,7 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_ypqph"]
+[sub_resource type="Resource" id="Resource_upmwp"]
 script = ExtResource("2_0ooa8")
 id = &"divine_protection"
 skill_name = "Božská ochrana"
@@ -240,14 +240,14 @@ node_type = 2
 cost = 1
 connected_nodes = PackedStringArray("aura_mastery")
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_4wiw2")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_n26wq")])
 is_starter = false
 max_allocations = 1
 branch = "defense"
 branch_position = 0
 unlock_conditions = Array[String]([])
 
-[sub_resource type="Resource" id="Resource_2tbnx"]
+[sub_resource type="Resource" id="Resource_1a7tv"]
 script = ExtResource("3_cp153")
 effect_type = 10
 value = 3
@@ -256,7 +256,7 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_0nj3c"]
+[sub_resource type="Resource" id="Resource_4wiw2"]
 script = ExtResource("2_0ooa8")
 id = &"sacred_thorns"
 skill_name = "Svaté trny"
@@ -267,14 +267,14 @@ node_type = 1
 cost = 1
 connected_nodes = PackedStringArray("aura_mastery")
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_2tbnx")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_1a7tv")])
 is_starter = false
 max_allocations = 1
 branch = "defense"
 branch_position = 1
 unlock_conditions = Array[String]([])
 
-[sub_resource type="Resource" id="Resource_cjf5r"]
+[sub_resource type="Resource" id="Resource_ypqph"]
 script = ExtResource("3_cp153")
 effect_type = 12
 value = 1
@@ -283,7 +283,7 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_1lefm"]
+[sub_resource type="Resource" id="Resource_2tbnx"]
 script = ExtResource("2_0ooa8")
 id = &"righteous_fury"
 skill_name = "Spravedlivá zuřivost"
@@ -294,14 +294,14 @@ node_type = 1
 cost = 1
 connected_nodes = PackedStringArray("aura_mastery")
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_cjf5r")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_ypqph")])
 is_starter = false
 max_allocations = 1
 branch = "offense"
 branch_position = 0
 unlock_conditions = Array[String]([])
 
-[sub_resource type="Resource" id="Resource_ooj6y"]
+[sub_resource type="Resource" id="Resource_0nj3c"]
 script = ExtResource("3_cp153")
 effect_type = 8
 value = 50
@@ -310,7 +310,7 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_qlxto"]
+[sub_resource type="Resource" id="Resource_cjf5r"]
 script = ExtResource("2_0ooa8")
 id = &"aura_mastery"
 skill_name = "Mistrovství aur"
@@ -321,14 +321,14 @@ node_type = 3
 cost = 1
 connected_nodes = PackedStringArray("avatar_of_light")
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_ooj6y")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_0nj3c")])
 is_starter = false
 max_allocations = 1
 branch = "main"
 branch_position = 0
 unlock_conditions = Array[String]([])
 
-[sub_resource type="Resource" id="Resource_kn8dd"]
+[sub_resource type="Resource" id="Resource_1lefm"]
 script = ExtResource("3_cp153")
 effect_type = 9
 value = 2
@@ -337,7 +337,7 @@ secondary_value = 0
 conditional = false
 condition_description = ""
 
-[sub_resource type="Resource" id="Resource_1tyed"]
+[sub_resource type="Resource" id="Resource_ooj6y"]
 script = ExtResource("2_0ooa8")
 id = &"avatar_of_light"
 skill_name = "Avatár světla"
@@ -348,7 +348,7 @@ node_type = 2
 cost = 1
 connected_nodes = PackedStringArray()
 prerequisite_nodes = PackedStringArray()
-effects = Array[ExtResource("3_cp153")]([SubResource("Resource_kn8dd")])
+effects = Array[ExtResource("3_cp153")]([SubResource("Resource_1lefm")])
 is_starter = false
 max_allocations = 1
 branch = "main"
@@ -357,4 +357,4 @@ unlock_conditions = Array[String]([])
 
 [resource]
 script = ExtResource("1_u5pxc")
-skill_nodes = Array[ExtResource("2_0ooa8")]([SubResource("Resource_v4ic7"), SubResource("Resource_j42w7"), SubResource("Resource_g478p"), SubResource("Resource_eugad"), SubResource("Resource_uuodq"), SubResource("Resource_p3e4r"), SubResource("Resource_n26wq"), SubResource("Resource_1a7tv"), SubResource("Resource_ypqph"), SubResource("Resource_0nj3c"), SubResource("Resource_1lefm"), SubResource("Resource_qlxto"), SubResource("Resource_1tyed")])
+skill_nodes = Array[ExtResource("2_0ooa8")]([SubResource("Resource_0ooa8"), SubResource("Resource_bqprc"), SubResource("Resource_w3ykv"), SubResource("Resource_b6e5t"), SubResource("Resource_okd3b"), SubResource("Resource_d8kyd"), SubResource("Resource_3ccws"), SubResource("Resource_k717i"), SubResource("Resource_upmwp"), SubResource("Resource_4wiw2"), SubResource("Resource_2tbnx"), SubResource("Resource_cjf5r"), SubResource("Resource_ooj6y")])

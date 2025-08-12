@@ -53,13 +53,17 @@ func start_new_run(seed = null):
 	else:
 		current_seed = seed
 	
-	print("Zahajuji nový běh se seedem: ", current_seed)
+	# NOVÉ DEBUG LOGOVÁNÍ
+	DebugLogger.log_info("=== STARTING NEW RUN ===", "GAME_FLOW")
+	DebugLogger.log_info("Seed: %d" % current_seed, "GAME_FLOW")
 	
 	has_saved_camera_state = false
 	current_map_data = null
 	
-	# Inicializace se přesunula do RunPrepScreen, takže zde voláme už jen toto:
 	PlayerData.start_new_run_state()
+	
+	# LOGUJ POČÁTEČNÍ STAV
+	DebugLogger.log_full_game_state()
 	
 	_change_scene(map_scene)
 
@@ -81,36 +85,52 @@ func start_new_game_plus(seed = null):
 	
 	
 func start_battle(encounter: EncounterData):
-	DebugLogger.log_info("Starting battle with encounter: %s" % encounter.resource_path, "BATTLE")
-	print("Zahajuji souboj...")
+	DebugLogger.log_info("=== STARTING BATTLE ===", "BATTLE")
+	DebugLogger.log_info("Encounter: %s" % encounter.resource_path, "BATTLE")
+	DebugLogger.log_info("Encounter type: %s" % str(encounter.encounter_type), "BATTLE")
+	
+	# Loguj stav před bitvou
+	DebugLogger.log_player_stats()
+	DebugLogger.log_deck_state()
+	
 	current_encounter = encounter
 	_change_scene(battle_scene)
 
 func battle_finished(player_won: bool):
-	DebugLogger.log_battle_event("battle_finished", {"won": player_won, "floors_cleared": PlayerData.floors_cleared})
+	DebugLogger.log_info("=== BATTLE FINISHED ===", "BATTLE")
+	DebugLogger.log_battle_event("battle_result", {
+		"won": player_won,
+		"floors_cleared": PlayerData.floors_cleared,
+		"hp_remaining": PlayerData.current_hp,
+		"gold_earned": last_battle_gold_reward
+	})
+	
+	# Loguj stav po bitvě
+	DebugLogger.log_player_stats()
+	DebugLogger.log_artifacts()
+	
 	var is_boss = current_encounter and current_encounter.encounter_type == EncounterData.EncounterType.BOSS
 	
 	if player_won and not is_boss:
-		# Běžné vítězství -> obrazovka odměn
-		print("Hráč vyhrál! Přecházím na obrazovku odměn.")
+		# Běžné vítězství
 		if current_encounter and current_encounter.encounter_type == EncounterData.EncounterType.ELITE:
 			last_battle_gold_reward = randi_range(40, 60)
 		else:
 			last_battle_gold_reward = randi_range(15, 25)
 		_change_scene(reward_scene)
 	else:
-		last_run_was_victory = player_won # Uložíme si, jestli hráč vyhrál (true) nebo prohrál (false)
-		# Prohra NEBO vítězství nad bossem -> konec běhu
-		if player_won:
-			print("Hráč vyhrál hru!")
-		else:
-			print("Hráč prohrál!")
+		last_run_was_victory = player_won
+		
+		# Loguj souhrn běhu
+		DebugLogger.log_run_summary()
 		
 		# Vypočítáme a uložíme XP
 		last_run_xp_earned = PlayerData.floors_cleared * 10
 		SaveManager.add_xp(last_run_xp_earned)
 		
-		# Přesun na obrazovku konce běhu
+		DebugLogger.log_info("XP earned: %d" % last_run_xp_earned, "PROGRESSION")
+		DebugLogger.log_meta_progress()
+		
 		_change_scene(end_of_run_scene)
 
 func go_to_main_menu():
@@ -120,10 +140,17 @@ func go_to_character_select():
 	_change_scene(character_select_scene)
 
 func go_to_run_prep_screen(p_class: ClassData, p_subclass: SubclassData):
-	# 1. Uložíme si data o postavě, aby si je RunPrepScreen mohl vyzvednout
 	selected_class_data = p_class
 	selected_subclass_data = p_subclass
-	# 2. Až pak změníme scénu
+	
+	# Loguj výběr postavy
+	DebugLogger.log_info("=== CHARACTER SELECTED ===", "CHAR_SELECT")
+	DebugLogger.log_info("Class: %s" % p_class.resource_path, "CHAR_SELECT")
+	var subclass_name = "Unknown"
+	if "subclass_name" in p_subclass:
+		subclass_name = p_subclass.subclass_name
+	DebugLogger.log_info("Subclass: %s" % subclass_name, "CHAR_SELECT")
+	
 	_change_scene(run_prep_scene)
 
 func reward_chosen():

@@ -1,6 +1,4 @@
-# ===================================================================
 # Soubor: res://scenes/ui/UnitInfoPanel.gd
-# ===================================================================
 extends PanelContainer
 
 @onready var name_label: Label = %NameLabel
@@ -14,7 +12,7 @@ func update_stats(unit_node: Node2D):
 		printerr("UnitInfoPanel: Některé z Label/Kontejner uzlů nebyly nalezeny!")
 		visible = false
 		return
-
+		
 	if not is_instance_valid(unit_node) or not unit_node.has_method("get_unit_data"):
 		visible = false
 		return
@@ -23,15 +21,18 @@ func update_stats(unit_node: Node2D):
 	var data = unit_node.get_unit_data()
 	
 	name_label.text = data.unit_name
-	hp_label.text = "HP: %d / %d" % [unit_node.current_health, data.max_health]
+	
+	# OPRAVA: Pro hráče použij PlayerData.max_hp místo data.max_health
+	if data.faction == UnitData.Faction.PLAYER:
+		hp_label.text = "HP: %d / %d" % [unit_node.current_health, PlayerData.max_hp]
+	else:
+		hp_label.text = "HP: %d / %d" % [unit_node.current_health, data.max_health]
 	
 	if unit_node.current_block > 0:
 		block_label.text = "Blok: %d" % unit_node.current_block
 		block_label.visible = true
 	else:
 		block_label.visible = false
-	
-	# APLabel byl odstraněn
 	
 	if data.faction != UnitData.Faction.PLAYER:
 		attack_label.text = "Útok: %d" % data.attack_damage
@@ -44,11 +45,11 @@ func update_stats(unit_node: Node2D):
 func _update_status_display(unit_node: Node2D):
 	for child in status_effects_list.get_children():
 		child.queue_free()
-
+		
 	if not "active_statuses" in unit_node or unit_node.active_statuses.is_empty():
 		status_effects_list.visible = false
 		return
-
+		
 	status_effects_list.visible = true
 	
 	for status_id in unit_node.active_statuses:
@@ -66,7 +67,7 @@ func update_from_player_data():
 	if not is_instance_valid(unit_data):
 		hide_panel()
 		return
-
+		
 	name_label.text = unit_data.unit_name
 	# Aktuální HP vezmeme přímo z PlayerData
 	hp_label.text = "HP: %d / %d" % [PlayerData.current_hp, PlayerData.max_hp]

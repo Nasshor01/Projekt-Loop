@@ -69,6 +69,10 @@ func start_new_run_state():
 	
 	# 2. Aplikujeme pasivní skilly, které mohou změnit startovní staty
 	apply_passive_skills()
+	
+	# 2.5 KRITICKÁ OPRAVA - zajisti plné HP po aplikaci skillů
+	current_hp = max_hp  # <-- PŘIDEJ TENTO ŘÁDEK
+	print("DEBUG: Po aplikaci skillů - current_hp: %d, max_hp: %d" % [current_hp, max_hp])
 
 	# 3. Připravíme bojové balíčky a zbytek
 	reset_battle_stats()
@@ -104,6 +108,8 @@ func start_ng_plus_state():
 	emit_signal("gold_changed", gold)
 
 func apply_passive_skills():
+	DebugLogger.log_info("=== APPLYING PASSIVE SKILLS ===", "SKILLS")
+	DebugLogger.start_performance_timer("apply_passive_skills")
 	print("=== APLIKACE PASIVNÍCH SKILLŮ ===")
 	
 	# 1. Resetujeme všechny hodnoty na úplný základ
@@ -124,48 +130,43 @@ func apply_passive_skills():
 	energy_on_kill = 0
 	block_on_card_play = 0
 	
-	# 2. DEBUG: Zkontrolujeme skill tree
-	print("Kontrolujem skill tree...")
+	# DEBUG: Loguj stav skill tree
 	if not is_instance_valid(active_skill_tree):
-		print("❌ PROBLÉM: active_skill_tree je null!")
+		DebugLogger.log_error("active_skill_tree je null!", "SKILLS")
 		
-		# Zkusíme ho načíst ze selected_subclass
 		if is_instance_valid(selected_subclass):
 			var subclass_name = "Unknown"
-			if "subclass_name" in selected_subclass and selected_subclass.subclass_name != "":
+			if "subclass_name" in selected_subclass:
 				subclass_name = selected_subclass.subclass_name
-			elif "subclass_id" in selected_subclass and selected_subclass.subclass_id != "":
-				subclass_name = selected_subclass.subclass_id
 			
-			print("Zkouším načíst tree ze selected_subclass: %s" % subclass_name)
+			DebugLogger.log_info("Pokouším se načíst tree ze subclass: %s" % subclass_name, "SKILLS")
 			
 			if "passive_skill_tree" in selected_subclass and is_instance_valid(selected_subclass.passive_skill_tree):
 				active_skill_tree = selected_subclass.passive_skill_tree
-				print("✅ Tree úspěšně načten ze subclass!")
+				DebugLogger.log_info("✅ Tree načten! Nodes: %d" % active_skill_tree.skill_nodes.size(), "SKILLS")
 			else:
-				print("❌ selected_subclass.passive_skill_tree je také null nebo neexistuje!")
-		else:
-			print("❌ selected_subclass je null!")
+				DebugLogger.log_error("Skill tree nebyl nalezen v subclass!", "SKILLS")
 		
 		if not is_instance_valid(active_skill_tree):
-			print("❌ Skill tree se nepodařilo načíst. Končím apply_passive_skills().")
+			DebugLogger.log_critical("Selhalo načtení skill tree!", "SKILLS")
 			current_hp = max_hp
+			DebugLogger.end_performance_timer("apply_passive_skills")
 			return
 	else:
-		print("✅ active_skill_tree je načten správně")
+		DebugLogger.log_info("Skill tree OK, nodes: %d" % active_skill_tree.skill_nodes.size(), "SKILLS")
 
-	# 3. Načteme odemčené skilly
+	# Načteme odemčené skilly
 	var unlocked_ids = SaveManager.meta_progress.unlocked_skill_ids
-	print("Odemčené skilly (%d): %s" % [unlocked_ids.size(), unlocked_ids])
+	DebugLogger.log_info("Aplikuji %d odemčených skillů" % unlocked_ids.size(), "SKILLS")
 	
 	# 4. Projdeme odemčené skilly a aplikujeme jejich EFEKTY
 	for skill_id in unlocked_ids:
 		var skill_node = active_skill_tree.get_node_by_id(skill_id)
 		if not is_instance_valid(skill_node):
-			print("⚠️ Skill s ID '%s' nebyl nalezen v tree!" % skill_id)
+			DebugLogger.log_warning("Skill '%s' nebyl nalezen!" % skill_id, "SKILLS")
 			continue
 		
-		print("Aplikuji pasivní skill: %s" % skill_node.skill_name)
+		DebugLogger.log_debug("Aplikuji: %s (Tier %d)" % [skill_node.skill_name, skill_node.tier], "SKILLS")
 		
 		# Projdeme všechny efekty definované v uzlu
 		for effect_data in skill_node.effects:
@@ -219,10 +220,17 @@ func apply_passive_skills():
 					print("  + %d blok za kartu (nyní %d)" % [effect_data.value, block_on_card_play])
 	
 	current_hp = max_hp
-	print("=== APLIKACE DOKONČENA ===")
-	print("Finální staty: HP=%d, Gold=%d, Energy=%d, Retained Block=%d" % [max_hp, gold, max_energy, starting_retained_block])
-	print("Speciální efekty: Crit=%d%%, Heal/turn=%d, Thorns=%d" % [critical_chance, heal_end_of_turn, thorns_damage])
-
+	# Loguj finální staty
+	DebugLogger.log_info("Finální staty po aplikaci skillů:", "SKILLS")
+	DebugLogger.log_info("  HP: %d, Gold: %d, Energy: %d" % [max_hp, gold, max_energy], "SKILLS")
+	DebugLogger.log_info("  Crit: %d%%, Heal/turn: %d, Thorns: %d" % [critical_chance, heal_end_of_turn, thorns_damage], "SKILLS")
+	
+	DebugLogger.end_performance_timer("apply_passive_skills")
+	DebugLogger.log_skill_tree_state()  # Kompletní stav stromu
+	
+	emit_signal("health_changed", current_hp, max_hp)
+	
+	
 func initialize_player(p_class, p_subclass):
 	print("=== INICIALIZACE HRÁČE ===")
 	
@@ -257,13 +265,10 @@ func apply_avatar_starting_block():
 		print("🌟 Avatar of Light: +%d bloku na začátku souboje!" % bonus_block)
 
 func process_heal_end_of_turn():
-	"""Zpracuje léčení na konci tahu"""
-	if heal_end_of_turn > 0:
-		var heal_amount = heal_end_of_turn
-		if double_healing_bonus > 0:
-			heal_amount = heal_amount * (100 + double_healing_bonus) / 100
-		heal(heal_amount)
-		print("💚 Požehnaná obnova: +%d HP" % heal_amount)
+	"""Zpracuje léčení na konci tahu - již se volá z Unit.gd"""
+	# Tato funkce je nyní prázdná, protože heal se zpracovává přímo v Unit.reset_for_new_turn()
+	# aby se správně zobrazil floating text
+	pass
 
 func process_energy_on_kill():
 	"""Zpracuje bonus energie za zabití nepřítele"""
@@ -349,21 +354,32 @@ func draw_new_hand(hand_size: int = 5):
 	draw_cards(hand_size)
 
 func draw_cards(amount: int) -> int:
+	DebugLogger.log_debug("Drawing %d cards" % amount, "CARDS")
 	var cards_drawn_count = 0
+	
 	for _i in range(amount):
 		if draw_pile.is_empty():
+			DebugLogger.log_debug("Draw pile empty, cannot draw more", "CARDS")
 			break
 		
 		var drawn_card = draw_pile.pop_front()
 		if drawn_card is CardData:
 			current_hand.append(drawn_card)
 			cards_drawn_count += 1
-			
+			DebugLogger.log_debug("Drew: %s" % drawn_card.card_name, "CARDS")
+	
+	DebugLogger.log_debug("Cards drawn: %d, Hand size: %d" % [cards_drawn_count, current_hand.size()], "CARDS")
 	return cards_drawn_count
 
 func add_artifact(artifact_data: ArtifactsData):
 	if not artifacts.has(artifact_data):
 		artifacts.append(artifact_data)
+		DebugLogger.log_info("Artifact gained: %s (effect: %s, value: %d)" % [
+			artifact_data.artifact_name,
+			artifact_data.effect_id,
+			artifact_data.value
+		], "ARTIFACTS")
+		DebugLogger.log_artifacts()  # Loguj všechny artefakty
 		emit_signal("artifacts_changed")
 
 func remove_artifact(artifact_data: ArtifactsData):

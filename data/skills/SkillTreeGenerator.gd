@@ -30,13 +30,13 @@ static func generate_paladin_tree() -> PassiveSkillTreeData:
 	nodes.append(starter)
 	
 	# Defense Branch - Tier 1
-	var shield_training = create_node("paladin_hp_1", "Výcvik se štítem",
+	var shield_training = create_node("paladin_block_1", "Výcvik se štítem",
 		"Začni každý souboj s 3 body bloku.",
 		PassiveSkillNode.SkillTier.TIER_1, Branch.DEFENSE, 0)
 	add_effect(shield_training, PassiveEffectData.EffectType.ADD_RETAINED_BLOCK, 3)
 	nodes.append(shield_training)
 	
-	var vitality = create_node("paladin_gold_1", "Vitalita",
+	var vitality = create_node("paladin_hp_1", "Vitalita",
 		"Zvýší maximální zdraví o 8.",
 		PassiveSkillNode.SkillTier.TIER_1, Branch.DEFENSE, 1)
 	add_effect(vitality, PassiveEffectData.EffectType.ADD_MAX_HP, 8)
@@ -155,10 +155,10 @@ static func setup_connections(nodes: Array[PassiveSkillNode]):
 		starter.connected_nodes = ["paladin_hp_1", "righteous_anger"]
 	
 	# Defense branch propojení
-	if node_map.has("paladin_hp_1"):
-		node_map["paladin_hp_1"].connected_nodes = ["paladin_gold_1", "fortress"]
-	if node_map.has("paladin_gold_1"):
-		node_map["paladin_gold_1"].connected_nodes = ["fortress"]
+	if node_map.has("paladin_hp_1"): # Vitalita
+		node_map["paladin_hp_1"].connected_nodes = ["paladin_block_1", "fortress"]
+	if node_map.has("paladin_block_1"): # Výcvik se štítem
+		node_map["paladin_block_1"].connected_nodes = ["fortress"]
 	if node_map.has("fortress"):
 		node_map["fortress"].connected_nodes = ["divine_protection", "sacred_thorns"]
 	if node_map.has("sacred_thorns"):

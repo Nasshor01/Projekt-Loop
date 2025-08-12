@@ -28,8 +28,11 @@ var last_attacker: Unit = null
 func _ready():
 	if unit_data:
 		if unit_data.faction == UnitData.Faction.PLAYER:
-			current_health = PlayerData.current_hp
-			# NOVÉ: Aplikuj Avatar of Light efekt pro hráče
+			print("DEBUG Unit._ready(): PlayerData.current_hp = %d, PlayerData.max_hp = %d" % [PlayerData.current_hp, PlayerData.max_hp])
+			current_health = PlayerData.current_hp  # nebo max_hp podle toho co chceš
+			print("DEBUG Unit._ready(): current_health nastaveno na %d" % current_health)
+			
+			# Avatar of Light efekt
 			if PlayerData.avatar_starting_block_multiplier > 0:
 				var avatar_block = PlayerData.max_hp * PlayerData.avatar_starting_block_multiplier
 				retained_block += avatar_block
@@ -139,9 +142,17 @@ func reset_for_new_turn():
 	has_used_base_move = false
 	extra_moves = 0
 	
-	# NOVÉ: Aplikuj heal end of turn pro hráče
-	if unit_data.faction == UnitData.Faction.PLAYER:
-		PlayerData.process_heal_end_of_turn()
+	# OPRAVENO: Heal end of turn přímo v Unit aby se zobrazil floating text
+	if unit_data.faction == UnitData.Faction.PLAYER and PlayerData.heal_end_of_turn > 0:
+		var heal_amount = PlayerData.heal_end_of_turn
+		
+		# Aplikuj healing bonus pokud existuje
+		if PlayerData.double_healing_bonus > 0:
+			heal_amount = heal_amount * (100 + PlayerData.double_healing_bonus) / 100
+		
+		# Healuj jednotku (to zobrazí floating text)
+		heal(heal_amount)
+		print("💚 Požehnaná obnova: +%d HP" % heal_amount)
 	
 	_update_stats_and_emit_signal()
 
@@ -288,7 +299,13 @@ func _die():
 func heal(amount: int):
 	# NOVÉ: Aplikuj enhanced healing
 	var enhanced_amount = PlayerData.should_heal_enhanced(amount) if unit_data.faction == UnitData.Faction.PLAYER else amount
-	var health_to_restore = min(enhanced_amount, unit_data.max_health - current_health)
+	
+	# OPRAVA: Použij správné max HP pro hráče
+	var max_health_target = unit_data.max_health
+	if unit_data.faction == UnitData.Faction.PLAYER:
+		max_health_target = PlayerData.max_hp  # <-- TOTO CHYBĚLO!
+	
+	var health_to_restore = min(enhanced_amount, max_health_target - current_health)
 	current_health += health_to_restore
 	_show_floating_text(health_to_restore, "heal")
 	

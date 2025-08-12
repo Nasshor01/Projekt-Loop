@@ -21,10 +21,11 @@ buses/default_bus_layout=""
 
 [autoload]
 
+SaveManager="*res://scripts/autoload/SaveManager.gd"
 DebugLogger="*res://scripts/autoload/DebugLogger.gd"
 PlayerData="*res://scripts/autoload/PlayerData.gd"
 GameManager="*res://scripts/autoload/GameManager.gd"
-SaveManager="*res://scripts/autoload/SaveManager.gd"
+SystemDebug="*res://scripts/debug/SystemDebug.gd"
 
 [display]
 
