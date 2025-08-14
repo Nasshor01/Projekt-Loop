@@ -2,6 +2,7 @@
 extends Node2D
 
 const ChoiceButtonScene = preload("res://scenes/events/EventChoiceButton.tscn")
+const CardPileViewerScene = preload("res://scenes/ui/CardPileViewer.tscn")
 
 @onready var event_panel: Panel = $UI/EventPanel
 @onready var event_title: Label = $UI/EventPanel/MarginContainer/VBoxContainer/TitleLabel
@@ -13,10 +14,16 @@ const ChoiceButtonScene = preload("res://scenes/events/EventChoiceButton.tscn")
 @onready var result_text: RichTextLabel = $UI/ResultPanel/MarginContainer/VBoxContainer/ResultText
 @onready var continue_button: Button = $UI/ResultPanel/MarginContainer/VBoxContainer/ContinueButton
 
+@onready var card_removal_viewer: PanelContainer = $UI/CardPileViewer
+
 var current_event: EventData
 var event_resolved: bool = false
 var choice_buttons: Array[Button] = []
 var rng: RandomNumberGenerator
+
+var pending_card_removal: bool = false
+var pending_card_upgrade: bool = false
+var cards_to_remove_count: int = 0
 
 func _ready():
 	DebugLogger.log_info("=== EVENT SCENE STARTED ===", "EVENT")
@@ -26,6 +33,10 @@ func _ready():
 	
 	result_panel.visible = false
 	event_panel.visible = true
+	
+	# Skryj card removal viewer na začátku
+	if card_removal_viewer:
+		card_removal_viewer.visible = false
 	
 	continue_button.pressed.connect(_on_continue_pressed)
 	
@@ -115,6 +126,12 @@ func _process_choice_new(choice: EventChoice):
 	if success:
 		if choice.reward:
 			choice.reward.apply_reward(results_log)
+			# Zkontroluj pending akce
+			if choice.reward.pending_card_removal:
+				pending_card_removal = true
+				cards_to_remove_count = 1
+			if choice.reward.pending_card_upgrade:
+				pending_card_upgrade = true
 	else:
 		if choice.failure_cost:
 			choice.failure_cost.apply_cost()
@@ -139,8 +156,18 @@ func show_result(result_lines: Array):
 			result_text.append_text(line + "\n")
 
 func _on_continue_pressed():
+	# Zkontroluj pending akce
+	if pending_card_removal:
+		_open_card_removal_screen()
+		return
+	
+	if pending_card_upgrade:
+		_open_card_upgrade_screen()
+		return
+	
 	DebugLogger.log_info("Leaving event scene", "EVENT")
 	GameManager.event_completed()
+
 
 func _load_fallback_event():
 	current_event = EventData.new()
@@ -157,3 +184,89 @@ func _load_fallback_event():
 	choice2.choice_text = "Pokračovat"
 	
 	current_event.choices = [choice, choice2]
+
+func _open_card_removal_screen():
+	"""Otevře obrazovku pro výběr karty k odstranění"""
+	if not card_removal_viewer:
+		# Vytvoř viewer pokud neexistuje
+		card_removal_viewer = CardPileViewerScene.instantiate()
+		$UI.add_child(card_removal_viewer)
+	
+	# Skryj result panel
+	result_panel.visible = false
+	
+	# Zobraz karty
+	card_removal_viewer.visible = true
+	card_removal_viewer.show_cards(PlayerData.master_deck)
+	
+	# Připoj signály pro kliknutí na karty
+	for card_ui in card_removal_viewer.get_node("MarginContainer/VBoxContainer/ScrollContainer/GridContainer").get_children():
+		if card_ui.has_signal("gui_input"):
+			if not card_ui.is_connected("gui_input", _on_removal_card_clicked):
+				card_ui.gui_input.connect(_on_removal_card_clicked.bind(card_ui.card_data))
+
+func _on_removal_card_clicked(event: InputEvent, card_data: CardData):
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
+		# Odstraň kartu
+		PlayerData.master_deck.erase(card_data)
+		print("Karta '%s' byla odstraněna z balíčku." % card_data.card_name)
+		
+		cards_to_remove_count -= 1
+		
+		# Pokud už není co odstranit, pokračuj
+		if cards_to_remove_count <= 0:
+			pending_card_removal = false
+			card_removal_viewer.visible = false
+			result_panel.visible = true
+			
+			# Aktualizuj result text
+			result_text.append_text("\n[color=gray]Odstraněna karta: %s[/color]" % card_data.card_name)
+
+func _open_card_upgrade_screen():
+	"""Otevře obrazovku pro výběr karty k vylepšení"""
+	if not card_removal_viewer:
+		card_removal_viewer = CardPileViewerScene.instantiate()
+		$UI.add_child(card_removal_viewer)
+	
+	# Filtruj jen upgradeable karty
+	var upgradeable_cards = []
+	for card in PlayerData.master_deck:
+		if card and not card.is_upgraded and card.upgraded_version:
+			upgradeable_cards.append(card)
+	
+	if upgradeable_cards.is_empty():
+		pending_card_upgrade = false
+		result_text.append_text("\n[color=gray]Žádné karty nelze vylepšit[/color]")
+		return
+	
+	# Skryj result panel
+	result_panel.visible = false
+	
+	# Zobraz upgradeable karty
+	card_removal_viewer.visible = true
+	card_removal_viewer.show_cards(upgradeable_cards)
+	
+	# Připoj signály
+	for card_ui in card_removal_viewer.get_node("MarginContainer/VBoxContainer/ScrollContainer/GridContainer").get_children():
+		if card_ui.has_signal("gui_input"):
+			if not card_ui.is_connected("gui_input", _on_upgrade_card_clicked):
+				card_ui.gui_input.connect(_on_upgrade_card_clicked.bind(card_ui.card_data))
+
+func _on_upgrade_card_clicked(event: InputEvent, card_data: CardData):
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
+		# Vylepši kartu
+		var index = PlayerData.master_deck.find(card_data)
+		if index != -1 and card_data.upgraded_version:
+			var upgraded = card_data.upgraded_version
+			PlayerData.master_deck[index] = upgraded
+			print("Karta vylepšena: %s → %s" % [card_data.card_name, upgraded.card_name])
+			
+			pending_card_upgrade = false
+			card_removal_viewer.visible = false
+			result_panel.visible = true
+			
+			# Aktualizuj result text
+			result_text.append_text("\n[color=cyan]Vylepšena karta: %s → %s[/color]" % [
+				card_data.card_name,
+				upgraded.card_name
+			])

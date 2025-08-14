@@ -1,0 +1,157 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=15 format=3 uid="uid://dr4r7w7w2nggj"]
+
+[ext_resource type="Script" uid="uid://dlyussc7fd6oa" path="res://scripts/resources/EventChoice.gd" id="1_538nm"]
+[ext_resource type="Script" uid="uid://c1v8e64ngbfh2" path="res://scripts/resources/EventData.gd" id="2_7086b"]
+[ext_resource type="Script" uid="uid://dwuwrv4x64nh" path="res://scripts/resources/EventCost.gd" id="2_dsyw4"]
+[ext_resource type="Script" uid="uid://kiqgk2wb3ugp" path="res://scripts/resources/EventReward.gd" id="3_4x403"]
+
+[sub_resource type="Resource" id="Resource_jo7be"]
+script = ExtResource("2_dsyw4")
+gold = 45
+hp = 0
+max_hp = 0
+remove_random_card = false
+add_curse = false
+metadata/_custom_type_script = "uid://dwuwrv4x64nh"
+
+[sub_resource type="Resource" id="Resource_jl3sb"]
+script = ExtResource("3_4x403")
+gold = 0
+heal = 0
+max_hp = 0
+add_random_card = false
+card_rarity = 0
+remove_card = true
+upgrade_random_card = false
+upgrade_all_cards = false
+transform_card = false
+add_random_artifact = false
+buff_next_combat = ""
+unlock_character = ""
+trigger_event = ""
+opens_card_selection = false
+metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
+
+[sub_resource type="Resource" id="Resource_b5gok"]
+script = ExtResource("1_538nm")
+choice_text = "Očištění"
+choice_tooltip = "Odstraň kartu z balíčku."
+cost = SubResource("Resource_jo7be")
+reward = SubResource("Resource_jl3sb")
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[sub_resource type="Resource" id="Resource_l0wua"]
+script = ExtResource("2_dsyw4")
+gold = 50
+hp = 0
+max_hp = 0
+remove_random_card = false
+add_curse = false
+metadata/_custom_type_script = "uid://dwuwrv4x64nh"
+
+[sub_resource type="Resource" id="Resource_xd2xh"]
+script = ExtResource("3_4x403")
+gold = 0
+heal = 0
+max_hp = 0
+add_random_card = false
+card_rarity = 0
+remove_card = false
+upgrade_random_card = false
+upgrade_all_cards = false
+transform_card = true
+add_random_artifact = false
+buff_next_combat = ""
+unlock_character = ""
+trigger_event = ""
+opens_card_selection = false
+metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
+
+[sub_resource type="Resource" id="Resource_j3sr8"]
+script = ExtResource("1_538nm")
+choice_text = "Transmutace"
+choice_tooltip = "Proměň náhodnou kartu v jinou stejné vzácnosti."
+cost = SubResource("Resource_l0wua")
+reward = SubResource("Resource_xd2xh")
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[sub_resource type="Resource" id="Resource_b137f"]
+script = ExtResource("2_dsyw4")
+gold = 0
+hp = 30
+max_hp = 15
+remove_random_card = false
+add_curse = false
+metadata/_custom_type_script = "uid://dwuwrv4x64nh"
+
+[sub_resource type="Resource" id="Resource_dnvd4"]
+script = ExtResource("3_4x403")
+gold = 0
+heal = 0
+max_hp = 0
+add_random_card = false
+card_rarity = 0
+remove_card = false
+upgrade_random_card = false
+upgrade_all_cards = true
+transform_card = false
+add_random_artifact = false
+buff_next_combat = ""
+unlock_character = ""
+trigger_event = ""
+opens_card_selection = false
+metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
+
+[sub_resource type="Resource" id="Resource_w72xo"]
+script = ExtResource("1_538nm")
+choice_text = "Masové vylepšení"
+choice_tooltip = "Vylepší všechny karty v balíčku za cenu krve."
+cost = SubResource("Resource_b137f")
+reward = SubResource("Resource_dnvd4")
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[sub_resource type="Resource" id="Resource_v18tq"]
+script = ExtResource("1_538nm")
+choice_text = "Odejít"
+choice_tooltip = ""
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[resource]
+script = ExtResource("2_7086b")
+event_id = "mysterious_merchant"
+event_name = "Tajemný obchodník"
+description = "Podivná postava v kápi, zahalená stíny, ti beze slova nabízí své služby. Zdá se, že rozumí podstatě tvých karet."
+event_type = 1
+rarity = 1
+min_floor = 0
+max_floor = 99
+once_per_run = false
+required_gold = 0
+required_class = ""
+required_flag = ""
+choices = Array[ExtResource("1_538nm")]([SubResource("Resource_b5gok"), SubResource("Resource_j3sr8"), SubResource("Resource_w72xo"), SubResource("Resource_v18tq")])
+metadata/_custom_type_script = "uid://c1v8e64ngbfh2"

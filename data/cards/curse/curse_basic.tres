@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3 uid="uid://b6oeuimw1qq21"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_j1c2m"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_3iskh"]
+
+[resource]
+script = ExtResource("2_3iskh")
+card_id = "curse_basic"
+card_name = "Prokletí"
+card_description = "Zbytečná karta, která ti jen zabírá místo na ruce."
+cost = 1
+range_type = 0
+range_value = 1
+tags = Array[int]([4])
+rarity = 5
+effects = Array[ExtResource("1_j1c2m")]([])
+is_upgraded = false
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

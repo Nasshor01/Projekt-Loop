@@ -1,0 +1,85 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=10 format=3 uid="uid://dfp31thwcdvx1"]
+
+[ext_resource type="Script" uid="uid://dlyussc7fd6oa" path="res://scripts/resources/EventChoice.gd" id="1_xpx7f"]
+[ext_resource type="Script" uid="uid://dwuwrv4x64nh" path="res://scripts/resources/EventCost.gd" id="2_oshx2"]
+[ext_resource type="Script" uid="uid://c1v8e64ngbfh2" path="res://scripts/resources/EventData.gd" id="2_qe5uo"]
+[ext_resource type="Script" uid="uid://kiqgk2wb3ugp" path="res://scripts/resources/EventReward.gd" id="3_wb6an"]
+
+[sub_resource type="Resource" id="Resource_sgo1u"]
+script = ExtResource("2_oshx2")
+gold = 0
+hp = 0
+max_hp = 0
+remove_random_card = false
+add_curse = true
+metadata/_custom_type_script = "uid://dwuwrv4x64nh"
+
+[sub_resource type="Resource" id="Resource_7d3tk"]
+script = ExtResource("2_oshx2")
+gold = 0
+hp = 0
+max_hp = 0
+remove_random_card = false
+add_curse = true
+metadata/_custom_type_script = "uid://dwuwrv4x64nh"
+
+[sub_resource type="Resource" id="Resource_12kmc"]
+script = ExtResource("3_wb6an")
+gold = 100
+heal = 0
+max_hp = 0
+add_random_card = false
+card_rarity = 0
+remove_card = false
+upgrade_random_card = false
+upgrade_all_cards = false
+transform_card = false
+add_random_artifact = true
+buff_next_combat = ""
+unlock_character = ""
+trigger_event = ""
+opens_card_selection = false
+metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
+
+[sub_resource type="Resource" id="Resource_06ckk"]
+script = ExtResource("1_xpx7f")
+choice_text = "Sáhnout do temné vody"
+choice_tooltip = "Zaručeně získáš prokletí. 70% šance na velkou odměnu, jinak získáš další prokletí."
+cost = SubResource("Resource_sgo1u")
+reward = SubResource("Resource_12kmc")
+success_chance = 0.7
+show_success_chance = true
+failure_cost = SubResource("Resource_7d3tk")
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[sub_resource type="Resource" id="Resource_28eja"]
+script = ExtResource("1_xpx7f")
+choice_text = "Ignorovat studnu a jít dál"
+choice_tooltip = ""
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[resource]
+script = ExtResource("2_qe5uo")
+event_id = "cursed_well"
+event_name = "Prokletá studna"
+description = "Nacházíš starou, kamennou studnu. Voda v ní je nepřirozeně temná a bublá. Zdá se, že z hlubin slyšíš šepot a na dně se něco třpytí."
+event_type = 0
+rarity = 1
+min_floor = 0
+max_floor = 99
+once_per_run = false
+required_gold = 0
+required_class = ""
+required_flag = ""
+choices = Array[ExtResource("1_xpx7f")]([SubResource("Resource_06ckk"), SubResource("Resource_28eja")])
+metadata/_custom_type_script = "uid://c1v8e64ngbfh2"

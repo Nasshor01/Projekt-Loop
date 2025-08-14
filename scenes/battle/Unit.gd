@@ -188,7 +188,7 @@ func process_turn_start_statuses() -> int:
 			aura_value = aura_value * (100 + PlayerData.aura_enhancement) / 100
 			print("✨ Mistrovství aur: aura vylepšena na %d" % aura_value)
 		
-		retained_block = aura_value
+		retained_block += aura_value
 		add_block(aura_value)
 	
 	if active_statuses.has("aura_devotion"):

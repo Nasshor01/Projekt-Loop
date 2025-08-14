@@ -1,0 +1,112 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=12 format=3 uid="uid://28ubwqq3eafb"]
+
+[ext_resource type="Script" uid="uid://dlyussc7fd6oa" path="res://scripts/resources/EventChoice.gd" id="1_bdf2u"]
+[ext_resource type="Script" uid="uid://c1v8e64ngbfh2" path="res://scripts/resources/EventData.gd" id="2_bufdx"]
+[ext_resource type="Script" uid="uid://dwuwrv4x64nh" path="res://scripts/resources/EventCost.gd" id="2_lyued"]
+[ext_resource type="Script" uid="uid://kiqgk2wb3ugp" path="res://scripts/resources/EventReward.gd" id="3_4gubm"]
+
+[sub_resource type="Resource" id="Resource_mac8q"]
+script = ExtResource("2_lyued")
+gold = 0
+hp = 0
+max_hp = 0
+remove_random_card = false
+add_curse = true
+metadata/_custom_type_script = "uid://dwuwrv4x64nh"
+
+[sub_resource type="Resource" id="Resource_2sqeh"]
+script = ExtResource("3_4gubm")
+gold = 120
+heal = 0
+max_hp = 0
+add_random_card = false
+card_rarity = "common"
+remove_card = false
+upgrade_random_card = false
+upgrade_all_cards = false
+add_random_artifact = false
+buff_next_combat = ""
+unlock_character = ""
+trigger_event = ""
+metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
+
+[sub_resource type="Resource" id="Resource_6md4t"]
+script = ExtResource("1_bdf2u")
+choice_text = "[Vzít si idol]"
+choice_tooltip = "Získáš hodně zlata, ale také prokletí."
+cost = SubResource("Resource_mac8q")
+reward = SubResource("Resource_2sqeh")
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[sub_resource type="Resource" id="Resource_lyued"]
+script = ExtResource("2_lyued")
+gold = 0
+hp = 10
+max_hp = 0
+remove_random_card = false
+add_curse = false
+metadata/_custom_type_script = "uid://dwuwrv4x64nh"
+
+[sub_resource type="Resource" id="Resource_4gubm"]
+script = ExtResource("3_4gubm")
+gold = 50
+heal = 0
+max_hp = 0
+add_random_card = false
+card_rarity = "common"
+remove_card = false
+upgrade_random_card = false
+upgrade_all_cards = false
+add_random_artifact = false
+buff_next_combat = ""
+unlock_character = ""
+trigger_event = ""
+metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
+
+[sub_resource type="Resource" id="Resource_fxm4v"]
+script = ExtResource("1_bdf2u")
+choice_text = "[Pokusit se past deaktivovat]"
+choice_tooltip = ""
+reward = SubResource("Resource_4gubm")
+success_chance = 0.5
+show_success_chance = true
+failure_cost = SubResource("Resource_lyued")
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[sub_resource type="Resource" id="Resource_bt406"]
+script = ExtResource("1_bdf2u")
+choice_text = "[Nechat to být a odejít]"
+choice_tooltip = ""
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[resource]
+script = ExtResource("2_bufdx")
+event_id = "golden_idol"
+event_name = "Zlatý idol"
+description = "Vstupuješ do malé, prachem zapadané svatyně. Uprostřed na podstavci leží zářící zlatý idol. Vypadá nesmírně cenně, ale určitě je nějak chráněný."
+event_type = 0
+rarity = 1
+min_floor = 0
+max_floor = 99
+once_per_run = false
+required_gold = 0
+required_class = ""
+required_flag = ""
+choices = Array[ExtResource("1_bdf2u")]([SubResource("Resource_6md4t"), SubResource("Resource_fxm4v"), SubResource("Resource_bt406")])
+metadata/_custom_type_script = "uid://c1v8e64ngbfh2"

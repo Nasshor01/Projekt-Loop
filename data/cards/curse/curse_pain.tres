@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=3 format=3 uid="uid://dcfesejwgepnp"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_boxx2"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_bglw1"]
+
+[resource]
+script = ExtResource("2_bglw1")
+card_id = "curse_pain"
+card_name = "Prokletí: Bolest"
+card_description = "Nehratelná. Na konci tvého tahu ti způsobí 2 poškození."
+cost = 99
+range_type = 0
+range_value = 1
+tags = Array[int]([4])
+rarity = 5
+effects = Array[ExtResource("1_boxx2")]([])
+is_upgraded = false
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

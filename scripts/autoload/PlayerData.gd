@@ -158,15 +158,15 @@ func apply_passive_skills():
 		DebugLogger.log_info("Skill tree OK, nodes: %d" % active_skill_tree.skill_nodes.size(), "SKILLS")
 
 	# Načteme odemčené skilly
-	#var unlocked_ids = SaveManager.meta_progress.unlocked_skill_ids
-	#DebugLogger.log_info("Aplikuji %d odemčených skillů" % unlocked_ids.size(), "SKILLS")
+	var unlocked_ids = SaveManager.meta_progress.unlocked_skill_ids
+	DebugLogger.log_info("Aplikuji %d odemčených skillů" % unlocked_ids.size(), "SKILLS")
 	
-	var unlocked_ids = [
-		"paladin_start", "paladin_block_1", "paladin_hp_1", "righteous_anger", 
-		"swift_justice", "fortress", "divine_wrath", "blessed_recovery", 
-		"divine_protection", "sacred_thorns", "righteous_fury", "aura_mastery", 
-		"avatar_of_light"
-	]
+	#var unlocked_ids = [
+		#"paladin_start", "paladin_block_1", "paladin_hp_1", "righteous_anger", 
+		#"swift_justice", "fortress", "divine_wrath", "blessed_recovery", 
+		#"divine_protection", "sacred_thorns", "righteous_fury", "aura_mastery", 
+		#"avatar_of_light"
+	#]
 
 	DebugLogger.log_info("Aplikuji %d odemčených skillů" % unlocked_ids.size(), "SKILLS")
 	
@@ -418,3 +418,46 @@ func heal(amount: int):
 	var enhanced_amount = should_heal_enhanced(amount)
 	current_hp = min(max_hp, current_hp + enhanced_amount)
 	emit_signal("health_changed", current_hp, max_hp)
+
+func add_curse(curse_type: String = "basic"):
+	"""Přidá curse kartu do balíčku"""
+	var curse_path = "res://data/cards/curses/"
+	var curse_card: CardData
+	
+	match curse_type:
+		"basic":
+			curse_card = load(curse_path + "basic_curse.tres")
+		"weakness":
+			curse_card = load(curse_path + "curse_weakness.tres")
+		"pain":
+			curse_card = load(curse_path + "curse_pain.tres")
+		_:
+			curse_card = load(curse_path + "basic_curse.tres")
+	
+	if curse_card:
+		master_deck.append(curse_card)
+		DebugLogger.log_info("Added curse: %s" % curse_card.card_name, "CARDS")
+
+func remove_all_curses():
+	"""Odstraní všechny curse karty z balíčku"""
+	var removed_count = 0
+	var cards_to_remove = []
+	
+	for card in master_deck:
+		if card and card.tags.has(CardData.CardTag.DEBUFF) and "curse" in card.card_id.to_lower():
+			cards_to_remove.append(card)
+	
+	for card in cards_to_remove:
+		master_deck.erase(card)
+		removed_count += 1
+	
+	DebugLogger.log_info("Removed %d curse cards" % removed_count, "CARDS")
+	return removed_count
+
+func get_curse_count() -> int:
+	"""Vrátí počet curse karet v balíčku"""
+	var count = 0
+	for card in master_deck:
+		if card and card.tags.has(CardData.CardTag.DEBUFF) and "curse" in card.card_id.to_lower():
+			count += 1
+	return count

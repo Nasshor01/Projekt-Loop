@@ -1,0 +1,116 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=12 format=3 uid="uid://buvxuufj51thh"]
+
+[ext_resource type="Script" uid="uid://dlyussc7fd6oa" path="res://scripts/resources/EventChoice.gd" id="1_3a1vs"]
+[ext_resource type="Script" uid="uid://c1v8e64ngbfh2" path="res://scripts/resources/EventData.gd" id="2_dfcse"]
+[ext_resource type="Script" uid="uid://dwuwrv4x64nh" path="res://scripts/resources/EventCost.gd" id="2_lnmp2"]
+[ext_resource type="Script" uid="uid://kiqgk2wb3ugp" path="res://scripts/resources/EventReward.gd" id="3_lnmp2"]
+
+[sub_resource type="Resource" id="Resource_exfu6"]
+script = ExtResource("2_lnmp2")
+gold = 50
+hp = 0
+max_hp = 0
+remove_random_card = false
+add_curse = false
+metadata/_custom_type_script = "uid://dwuwrv4x64nh"
+
+[sub_resource type="Resource" id="Resource_6eb0f"]
+script = ExtResource("3_lnmp2")
+gold = 0
+heal = 0
+max_hp = 0
+add_random_card = false
+card_rarity = 0
+remove_card = false
+upgrade_random_card = true
+upgrade_all_cards = false
+transform_card = false
+add_random_artifact = false
+buff_next_combat = ""
+unlock_character = ""
+trigger_event = ""
+opens_card_selection = false
+metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
+
+[sub_resource type="Resource" id="Resource_3kj0s"]
+script = ExtResource("1_3a1vs")
+choice_text = "Vylepšit náhodnou kartu]"
+choice_tooltip = ""
+cost = SubResource("Resource_exfu6")
+reward = SubResource("Resource_6eb0f")
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[sub_resource type="Resource" id="Resource_45f6k"]
+script = ExtResource("2_lnmp2")
+gold = 35
+hp = 0
+max_hp = 0
+remove_random_card = false
+add_curse = false
+metadata/_custom_type_script = "uid://dwuwrv4x64nh"
+
+[sub_resource type="Resource" id="Resource_lnmp2"]
+script = ExtResource("3_lnmp2")
+gold = 0
+heal = 0
+max_hp = 0
+add_random_card = false
+card_rarity = 0
+remove_card = true
+upgrade_random_card = false
+upgrade_all_cards = false
+transform_card = false
+add_random_artifact = false
+buff_next_combat = ""
+unlock_character = ""
+trigger_event = ""
+opens_card_selection = false
+metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
+
+[sub_resource type="Resource" id="Resource_bo2o4"]
+script = ExtResource("1_3a1vs")
+choice_text = "[Odstranit kartu z balíčku]"
+choice_tooltip = ""
+cost = SubResource("Resource_45f6k")
+reward = SubResource("Resource_lnmp2")
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[sub_resource type="Resource" id="Resource_xob8p"]
+script = ExtResource("1_3a1vs")
+choice_text = "[Poděkovat a odejít]"
+choice_tooltip = ""
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[resource]
+script = ExtResource("2_dfcse")
+event_id = "traveling_blacksmith"
+event_name = "Potulný kovář"
+description = "U cesty sedí u malé polní výhně vousatý kovář. Za drobný poplatek ti nabízí své služby."
+event_type = 1
+rarity = 0
+min_floor = 0
+max_floor = 99
+once_per_run = false
+required_gold = 0
+required_class = ""
+required_flag = ""
+choices = Array[ExtResource("1_3a1vs")]([SubResource("Resource_3kj0s"), SubResource("Resource_bo2o4"), SubResource("Resource_xob8p")])
+metadata/_custom_type_script = "uid://c1v8e64ngbfh2"

@@ -1,0 +1,116 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=12 format=3 uid="uid://j1hw0ay1tfc"]
+
+[ext_resource type="Script" uid="uid://dlyussc7fd6oa" path="res://scripts/resources/EventChoice.gd" id="1_2xn56"]
+[ext_resource type="Script" uid="uid://dwuwrv4x64nh" path="res://scripts/resources/EventCost.gd" id="2_bcc2n"]
+[ext_resource type="Script" uid="uid://c1v8e64ngbfh2" path="res://scripts/resources/EventData.gd" id="2_hny0t"]
+[ext_resource type="Script" uid="uid://kiqgk2wb3ugp" path="res://scripts/resources/EventReward.gd" id="3_svt8j"]
+
+[sub_resource type="Resource" id="Resource_v0gvm"]
+script = ExtResource("2_bcc2n")
+gold = 50
+hp = 0
+max_hp = 0
+remove_random_card = false
+add_curse = false
+metadata/_custom_type_script = "uid://dwuwrv4x64nh"
+
+[sub_resource type="Resource" id="Resource_r1qsw"]
+script = ExtResource("3_svt8j")
+gold = 0
+heal = 0
+max_hp = 0
+add_random_card = false
+card_rarity = 0
+remove_card = false
+upgrade_random_card = true
+upgrade_all_cards = false
+transform_card = false
+add_random_artifact = false
+buff_next_combat = ""
+unlock_character = ""
+trigger_event = ""
+opens_card_selection = false
+metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
+
+[sub_resource type="Resource" id="Resource_voybk"]
+script = ExtResource("1_2xn56")
+choice_text = "Obětovat zlato"
+choice_tooltip = "Vylepší jednu náhodnou kartu v balíčku."
+cost = SubResource("Resource_v0gvm")
+reward = SubResource("Resource_r1qsw")
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[sub_resource type="Resource" id="Resource_t2uph"]
+script = ExtResource("2_bcc2n")
+gold = 0
+hp = 15
+max_hp = 7
+remove_random_card = false
+add_curse = false
+metadata/_custom_type_script = "uid://dwuwrv4x64nh"
+
+[sub_resource type="Resource" id="Resource_w2q4i"]
+script = ExtResource("3_svt8j")
+gold = 0
+heal = 0
+max_hp = 0
+add_random_card = false
+card_rarity = 0
+remove_card = false
+upgrade_random_card = false
+upgrade_all_cards = true
+transform_card = false
+add_random_artifact = false
+buff_next_combat = ""
+unlock_character = ""
+trigger_event = ""
+opens_card_selection = false
+metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
+
+[sub_resource type="Resource" id="Resource_vgt5d"]
+script = ExtResource("1_2xn56")
+choice_text = "Provést krvavý rituál"
+choice_tooltip = "Vylepší VŠECHNY karty v balíčku za cenu tvého zdraví."
+cost = SubResource("Resource_t2uph")
+reward = SubResource("Resource_w2q4i")
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[sub_resource type="Resource" id="Resource_prfuc"]
+script = ExtResource("1_2xn56")
+choice_text = "Odejít"
+choice_tooltip = ""
+success_chance = 1.0
+show_success_chance = true
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+metadata/_custom_type_script = "uid://dlyussc7fd6oa"
+
+[resource]
+script = ExtResource("2_hny0t")
+event_id = "wizard_altar"
+event_name = "Čarodějův oltář"
+description = "Nacházíš prastarý oltář pokrytý pulzujícími runami. Cítíš z něj syrovou magickou moc, která by mohla posílit tvé schopnosti... za správnou cenu."
+event_type = 1
+rarity = 1
+min_floor = 0
+max_floor = 99
+once_per_run = false
+required_gold = 0
+required_class = ""
+required_flag = ""
+choices = Array[ExtResource("1_2xn56")]([SubResource("Resource_voybk"), SubResource("Resource_vgt5d"), SubResource("Resource_prfuc")])
+metadata/_custom_type_script = "uid://c1v8e64ngbfh2"

@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://dn8aea8c5urnk"]
+[gd_scene load_steps=3 format=3 uid="uid://dn8aea8c5urnk"]
 
 [ext_resource type="Script" uid="uid://i74m13048qkr" path="res://scenes/events/EventScene.gd" id="1_snngf"]
+[ext_resource type="PackedScene" uid="uid://pjdtf3hky6c6" path="res://scenes/ui/CardPileViewer.tscn" id="2_xntkm"]
 
 [node name="EventScene" type="Node2D"]
 script = ExtResource("1_snngf")
@@ -75,6 +76,7 @@ theme_override_constants/separation = 15
 alignment = 1
 
 [node name="ResultPanel" type="Panel" parent="UI"]
+visible = false
 custom_minimum_size = Vector2(700, 400)
 anchors_preset = 8
 anchor_left = 0.5
@@ -116,3 +118,6 @@ custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Pokračovat"
+
+[node name="CardPileViewer" parent="UI" instance=ExtResource("2_xntkm")]
+unique_name_in_owner = true
