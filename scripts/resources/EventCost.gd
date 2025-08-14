@@ -45,8 +45,7 @@ func apply_cost():
 	if hp > 0:
 		PlayerData.take_damage(hp)
 	if max_hp > 0:
-		PlayerData.max_hp -= max_hp
-		PlayerData.current_hp = min(PlayerData.current_hp, PlayerData.max_hp)
+		PlayerData.change_max_hp(-max_hp) # Voláme novou funkci se zápornou hodnotoux_hp)
 	
 	# Odstranění karty
 	if remove_random_card and not PlayerData.master_deck.is_empty():

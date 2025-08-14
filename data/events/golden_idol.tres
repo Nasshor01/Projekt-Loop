@@ -20,14 +20,16 @@ gold = 120
 heal = 0
 max_hp = 0
 add_random_card = false
-card_rarity = "common"
+card_rarity = 0
 remove_card = false
 upgrade_random_card = false
 upgrade_all_cards = false
+transform_card = false
 add_random_artifact = false
 buff_next_combat = ""
 unlock_character = ""
 trigger_event = ""
+opens_card_selection = false
 metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
 
 [sub_resource type="Resource" id="Resource_6md4t"]
@@ -59,14 +61,16 @@ gold = 50
 heal = 0
 max_hp = 0
 add_random_card = false
-card_rarity = "common"
+card_rarity = 0
 remove_card = false
 upgrade_random_card = false
 upgrade_all_cards = false
+transform_card = false
 add_random_artifact = false
 buff_next_combat = ""
 unlock_character = ""
 trigger_event = ""
+opens_card_selection = false
 metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
 
 [sub_resource type="Resource" id="Resource_fxm4v"]

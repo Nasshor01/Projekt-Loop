@@ -461,3 +461,21 @@ func get_curse_count() -> int:
 		if card and card.tags.has(CardData.CardTag.DEBUFF) and "curse" in card.card_id.to_lower():
 			count += 1
 	return count
+
+func change_max_hp(amount: int):
+	"""
+	Bezpečně změní maximální HP hráče a zajistí aktualizaci UI.
+	'amount' může být kladné (zvýšení) i záporné (snížení).
+	"""
+	# Změníme maximální HP
+	max_hp += amount
+	
+	# Zajistíme, aby hráč neměl víc životů, než je nové maximum
+	current_hp = min(current_hp, max_hp)
+	
+	# Pokud by snížení max_hp zabilo hráče, necháme ho na 1 životě
+	if current_hp <= 0:
+		current_hp = 1
+	
+	# KLÍČOVÝ KROK: Oznámíme všem (včetně GlobalUI), že se zdraví změnilo
+	emit_signal("health_changed", current_hp, max_hp)

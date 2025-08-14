@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EventPoolData" load_steps=8 format=3 uid="uid://badiaukh13hst"]
+
+[ext_resource type="Script" uid="uid://c1v8e64ngbfh2" path="res://scripts/resources/EventData.gd" id="1_axn4n"]
+[ext_resource type="Script" uid="uid://dk5jmo4f0mewj" path="res://scripts/resources/EventPoolData.gd" id="2_3elwm"]
+[ext_resource type="Resource" uid="uid://dfp31thwcdvx1" path="res://data/events/cursed_well.tres" id="2_bbfdj"]
+[ext_resource type="Resource" uid="uid://dr4r7w7w2nggj" path="res://data/events/event_mysterious_merchant.tres" id="3_1ghdd"]
+[ext_resource type="Resource" uid="uid://28ubwqq3eafb" path="res://data/events/golden_idol.tres" id="4_xnluc"]
+[ext_resource type="Resource" uid="uid://buvxuufj51thh" path="res://data/events/traveling_blacksmith.tres" id="5_xstiq"]
+[ext_resource type="Resource" uid="uid://j1hw0ay1tfc" path="res://data/events/wizard_altar.tres" id="6_d4osh"]
+
+[resource]
+script = ExtResource("2_3elwm")
+events = Array[ExtResource("1_axn4n")]([ExtResource("2_bbfdj"), ExtResource("3_1ghdd"), ExtResource("4_xnluc"), ExtResource("5_xstiq"), ExtResource("6_d4osh")])
+metadata/_custom_type_script = "uid://dk5jmo4f0mewj"

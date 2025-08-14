@@ -1,8 +1,11 @@
-# Soubor: res://scenes/events/EventScene.gd (UPRAVENÁ VERZE PRO NOVÉ RESOURCES)
+# Soubor: res://scenes/events/EventScene.gd (KONZISTENTNÍ S OSTATNÍMI SCÉNAMI)
 extends Node2D
 
 const ChoiceButtonScene = preload("res://scenes/events/EventChoiceButton.tscn")
 const CardPileViewerScene = preload("res://scenes/ui/CardPileViewer.tscn")
+
+# Načteme si náš pool eventů stejně jako v ShopScene nebo RewardScene
+const EVENT_POOL = preload("res://data/events/all_events_pool.tres")
 
 @onready var event_panel: Panel = $UI/EventPanel
 @onready var event_title: Label = $UI/EventPanel/MarginContainer/VBoxContainer/TitleLabel
@@ -40,15 +43,66 @@ func _ready():
 	
 	continue_button.pressed.connect(_on_continue_pressed)
 	
-	current_event = EventManager.get_random_event_for_floor(PlayerData.floors_cleared)
+	# Načti event pomocí vlastního poolu a EventManager logiky
+	current_event = _get_random_event_for_floor(PlayerData.floors_cleared)
 	
 	if not current_event:
-		DebugLogger.log_error("EventScene: Nepodařilo se načíst žádný event!", "EVENT")
-		_load_fallback_event()
+		DebugLogger.log_error("EventScene: Nepodařilo se načíst žádný event pro patro %d!" % PlayerData.floors_cleared, "EVENT")
+		_show_error_message()
+		return
 	
 	display_event()
 
+func _get_random_event_for_floor(floor: int) -> EventData:
+	"""Získá náhodný event z vlastního poolu pomocí EventManager logiky"""
+	if not EVENT_POOL or not EVENT_POOL.events:
+		printerr("EventScene: Event pool neexistuje nebo je prázdný!")
+		return null
+	
+	# Použij EventManager pro filtrování
+	var available_events = EventManager.filter_events_for_floor(EVENT_POOL.events, floor)
+	
+	if available_events.is_empty():
+		printerr("EventScene: Pro patro %d nebyly nalezeny žádné dostupné eventy!" % floor)
+		EventManager.debug_available_events(EVENT_POOL.events, floor)
+		return null
+	
+	var chosen_event = available_events.pick_random()
+	
+	# Označ event jako použitý
+	EventManager.mark_event_as_used(chosen_event)
+	
+	print("EventScene: Vybrán event: %s pro patro %d" % [chosen_event.event_name, floor])
+	return chosen_event
+
+func _show_error_message():
+	"""Zobrazí chybovou zprávu místo fallback eventu"""
+	event_title.text = "CHYBA: Žádné eventy"
+	description_text.bbcode_enabled = true
+	description_text.text = "[color=red]Nepodařilo se načíst žádný event![/color]\n\nMožné příčiny:\n• Event Pool soubor neexistuje nebo je prázdný\n• Žádné eventy nejsou vhodné pro patro %d\n• Eventy mají špatně nastavené min_floor/max_floor" % PlayerData.floors_cleared
+	
+	event_image.visible = false
+	
+	# Vyčisti staré buttons
+	for child in choices_container.get_children():
+		child.queue_free()
+	choice_buttons.clear()
+	
+	# Vytvoř jen button pro návrat
+	var return_button = Button.new()
+	return_button.text = "Vrátit se na mapu"
+	choices_container.add_child(return_button)
+	return_button.pressed.connect(_on_error_continue_pressed)
+
+func _on_error_continue_pressed():
+	"""Návrat na mapu při chybě"""
+	DebugLogger.log_info("Returning to map due to event loading error", "EVENT")
+	GameManager.event_completed()
+
 func display_event():
+	if not current_event:
+		return
+		
 	event_title.text = current_event.event_name
 	
 	description_text.bbcode_enabled = true
@@ -82,7 +136,7 @@ func display_event():
 		button_instance.pressed.connect(_on_choice_made.bind(i))
 
 func _on_choice_made(choice_index: int):
-	if event_resolved:
+	if event_resolved or not current_event:
 		return
 	
 	event_resolved = true
@@ -167,23 +221,6 @@ func _on_continue_pressed():
 	
 	DebugLogger.log_info("Leaving event scene", "EVENT")
 	GameManager.event_completed()
-
-
-func _load_fallback_event():
-	current_event = EventData.new()
-	current_event.event_name = "Odpočinek"
-	current_event.description = "Našel jsi klidné místo k odpočinku."
-	current_event.event_type = EventData.EventType.BENEFIT
-	
-	var choice = EventChoice.new()
-	choice.choice_text = "Odpočinout si"
-	choice.reward = EventReward.new()
-	choice.reward.heal = 10
-	
-	var choice2 = EventChoice.new()
-	choice2.choice_text = "Pokračovat"
-	
-	current_event.choices = [choice, choice2]
 
 func _open_card_removal_screen():
 	"""Otevře obrazovku pro výběr karty k odstranění"""

@@ -48,13 +48,10 @@ func apply_reward(results_log: Array = []):
 		results_log.append("[color=green]Vyléčil jsi %d HP[/color]" % actual_heal)
 	
 	if max_hp != 0:
+		PlayerData.change_max_hp(max_hp) # Voláme novou funkci
 		if max_hp > 0:
-			PlayerData.max_hp += max_hp
-			PlayerData.current_hp += max_hp
 			results_log.append("[color=green]Získal jsi +%d Max HP![/color]" % max_hp)
 		else:
-			PlayerData.max_hp += max_hp
-			PlayerData.current_hp = min(PlayerData.current_hp, PlayerData.max_hp)
 			results_log.append("[color=red]Ztratil jsi %d Max HP[/color]" % abs(max_hp))
 	
 	# Přidání karty
