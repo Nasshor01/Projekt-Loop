@@ -31,6 +31,15 @@ const PassiveSkillUIScene = preload("res://scenes/ui/PassiveSkillUI.tscn")
 @export var show_tier_lines: bool = true
 @export var show_branch_lines: bool = true
 
+
+@export_group("Barvy Propojovacích Čar")
+## Čára mezi dvěma ODEMČENÝMI skilly.
+@export var unlocked_connection_color: Color = Color.PALE_GREEN
+## Čára mezi ODEMČENÝM a ZAMČENÝM skillem (dostupná cesta).
+@export var available_connection_color: Color = Color.INDIAN_RED
+## Čára mezi dvěma ZAMČENÝMI skilly.
+@export var locked_connection_color: Color = Color(0.5, 0.5, 0.5, 0.6)
+
 # Proměnné pro běh hry
 var active_skill_tree: PassiveSkillTreeData
 @onready var skill_nodes_container = $SkillNodes
@@ -183,24 +192,27 @@ func _draw_connections(is_editor_preview: bool):
 			line.add_point(from_pos)
 			line.add_point(to_pos)
 			
-			# Různé tloušťky podle typu propojení
-			var from_node = tree_data.skill_nodes.filter(func(n): return n.id == skill_node.id)[0]
-			var to_node = tree_data.skill_nodes.filter(func(n): return n.id == to_id_string)[0]
+			var from_node = tree_data.get_node_by_id(skill_node.id)
+			var to_node = tree_data.get_node_by_id(to_id_string)
 			
-			if from_node.tier == to_node.tier:
-				line.width = 3.0  # Horizontální propojení v rámci tieru
+			if from_node and to_node and from_node.tier == to_node.tier:
+				line.width = 3.0
 			else:
-				line.width = 5.0  # Vertikální propojení mezi tiery
+				line.width = 5.0
 			
-			var is_connection_unlocked = unlocked_ids.has(String(skill_node.id)) and unlocked_ids.has(to_id_string)
+			# --- ZMĚNA ZDE: POUŽÍVÁME NOVÉ @export PROMĚNNÉ ---
+			var from_is_unlocked = unlocked_ids.has(String(skill_node.id))
+			var to_is_unlocked = unlocked_ids.has(to_id_string)
 			
-			if is_connection_unlocked:
-				line.default_color = Color.GOLD
-			elif not is_editor_preview and (unlocked_ids.has(String(skill_node.id)) or unlocked_ids.has(to_id_string)):
-				line.default_color = Color(0.8, 0.8, 0.4, 0.7)  # Částečně dostupné
+			if from_is_unlocked and to_is_unlocked:
+				line.default_color = unlocked_connection_color
+			elif not is_editor_preview and (from_is_unlocked or to_is_unlocked):
+				line.default_color = available_connection_color
 			else:
-				line.default_color = Color(0.5, 0.5, 0.5, 0.6)
-			
+				line.default_color = locked_connection_color
+
+			# --- KONEC ZMĚNY ---
+
 			connection_lines_container.add_child(line)
 
 # --- FUNKCE PRO EDITOR ---
