@@ -1,4 +1,4 @@
-# Soubor: scenes/ui/PassiveSkillUI.gd (VYLEPŠENÁ VERZE s RichTextLabel tooltip)
+# Soubor: scenes/ui/PassiveSkillUI.gd (ZJEDNODUŠENÁ VERZE)
 @tool
 class_name PassiveSkillUI
 extends Button
@@ -7,15 +7,8 @@ signal skill_selected(skill_data: PassiveSkillNode)
 
 var skill_data: PassiveSkillNode
 @onready var icon_rect: TextureRect = $IcontRect
-# STARÝ tooltip system - ponecháme pro fallback
-@onready var tool_tip_label: RichTextLabel = $TooltipLabel
 
-# NOVÝ tooltip system s RichTextLabel
-var rich_tooltip: RichTextLabel
-var tooltip_background: PanelContainer
-var is_tooltip_visible: bool = false
-
-# BEZPEČNÉ reference - pokud uzly neexistují, vytvoříme je
+# BEZPEČNÉ reference
 var tier_label: Label
 var cost_label: Label
 
@@ -52,69 +45,6 @@ func _ready():
 	if custom_minimum_size == Vector2.ZERO:
 		custom_minimum_size = Vector2(64, 64)
 
-	# NOVÝ: Vytvoříme rich tooltip systém
-	_create_rich_tooltip()
-	
-	# Připojíme mouse eventy pro tooltip
-	mouse_entered.connect(_on_mouse_entered)
-	mouse_exited.connect(_on_mouse_exited)
-
-func _create_rich_tooltip():
-	"""Vytvoří overlay tooltip s RichTextLabel podporou"""
-	if rich_tooltip:
-		return # Už existuje
-	
-	# Vytvoříme background panel
-	tooltip_background = PanelContainer.new()
-	tooltip_background.name = "TooltipBackground"
-	tooltip_background.visible = false
-	tooltip_background.z_index = 100  # Nad vším ostatním
-	tooltip_background.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Neblokuj mouse eventy
-	
-	# Nastavíme styl background panelu
-	var style_box = StyleBoxFlat.new()
-	style_box.bg_color = Color(0.1, 0.1, 0.1, 0.9)  # Tmavě šedá s průhledností
-	style_box.border_color = Color(0.6, 0.6, 0.6, 0.8)
-	style_box.border_width_top = 2
-	style_box.border_width_bottom = 2
-	style_box.border_width_left = 2
-	style_box.border_width_right = 2
-	style_box.corner_radius_top_left = 8
-	style_box.corner_radius_top_right = 8
-	style_box.corner_radius_bottom_left = 8
-	style_box.corner_radius_bottom_right = 8
-	style_box.content_margin_top = 8
-	style_box.content_margin_bottom = 8
-	style_box.content_margin_left = 12
-	style_box.content_margin_right = 12
-	
-	tooltip_background.add_theme_stylebox_override("panel", style_box)
-	
-	# Vytvoříme RichTextLabel
-	rich_tooltip = RichTextLabel.new()
-	rich_tooltip.name = "RichTooltip"
-	rich_tooltip.bbcode_enabled = true
-	rich_tooltip.fit_content = true
-	rich_tooltip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	rich_tooltip.scroll_active = false
-	rich_tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
-	# Nastavíme maximální šířku tooltip
-	rich_tooltip.custom_minimum_size.x = 200
-	rich_tooltip.custom_minimum_size.y = 0
-	rich_tooltip.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	rich_tooltip.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	
-	# Přidáme do hierarchie
-	tooltip_background.add_child(rich_tooltip)
-	
-	# Najdeme root node (obvykle main scene nebo canvas layer)
-	var root = get_tree().current_scene
-	if not root:
-		root = get_viewport()
-	
-	root.add_child(tooltip_background)
-
 func display(data: PassiveSkillNode, is_unlocked: bool, can_unlock: bool):
 	self.skill_data = data
 	
@@ -135,13 +65,13 @@ func display(data: PassiveSkillNode, is_unlocked: bool, can_unlock: bool):
 		icon_rect.position = Vector2(margin, margin)
 		icon_rect.size = Vector2(node_size - 2*margin, node_size - 2*margin)
 	
-	# Nastavíme tier label (pokud existuje)
+	# Nastavíme tier label
 	if tier_label:
 		var tier_value = data.tier if "tier" in data else 1
 		tier_label.text = str(tier_value)
-		tier_label.visible = tier_value > 1  # Skryjeme pro tier 1
+		tier_label.visible = tier_value > 1
 	
-	# Nastavíme cost label (pokud existuje)
+	# Nastavíme cost label
 	if cost_label:
 		var cost = data.get_cost_for_tier() if data.has_method("get_cost_for_tier") else data.cost
 		cost_label.text = str(cost) if cost > 0 else ""
@@ -162,116 +92,82 @@ func display(data: PassiveSkillNode, is_unlocked: bool, can_unlock: bool):
 	if "is_starter" in data and data.is_starter and not is_unlocked:
 		_set_starter_state(data)
 	
-	# Připravíme tooltip obsah (ale nezobrazujeme ho)
-	_prepare_tooltip_content(data, is_unlocked, can_unlock)
+	# JEDNODUCHY TOOLTIP - prostý text bez BBCode
+	tooltip_text = _create_simple_tooltip(data, is_unlocked, can_unlock)
 	
 	# Připojíme signál
 	if not is_connected("pressed", _on_skill_pressed):
 		pressed.connect(_on_skill_pressed)
 
-func _prepare_tooltip_content(data: PassiveSkillNode, is_unlocked: bool, can_unlock: bool):
-	"""Připraví obsah tooltip, ale nezobrazuje ho"""
-	if not rich_tooltip:
-		return
+func _create_simple_tooltip(data: PassiveSkillNode, is_unlocked: bool, can_unlock: bool) -> String:
+	"""Vytvoří prostý tooltip text bez BBCode"""
+	var tooltip = "%s\n" % data.skill_name
+	tooltip += "%s" % data.description
 	
-	var tooltip_text = "[b][font_size=16]%s[/font_size][/b]\n" % data.skill_name
-	tooltip_text += "%s" % data.description
-	
-	# Přidáme informace o efektech (pokud existují)
+	# Přidáme informace o efektech
 	if "effects" in data and not data.effects.is_empty():
-		tooltip_text += "\n\n[color=cyan][b]Efekty:[/b][/color]"
+		tooltip += "\n\nEfekty:"
 		for effect in data.effects:
-			tooltip_text += "\n• %s" % _format_effect_description(effect)
+			tooltip += "\n• %s" % _format_effect_simple(effect)
 	
-	# Přidáme informace o tieru (pokud existuje)
+	# Přidáme informace o tieru
 	if "tier" in data:
-		tooltip_text += "\n\n[color=yellow][b]Tier %d[/b][/color]" % data.tier
+		tooltip += "\n\nTier %d" % data.tier
 	
-	# Přidáme typ uzlu (pokud existuje)
+	# Přidáme typ uzlu
 	if "node_type" in data:
 		match data.node_type:
 			PassiveSkillNode.NodeType.NOTABLE: 
-				tooltip_text += " [color=gold]• Notable[/color]"
+				tooltip += " • Notable"
 			PassiveSkillNode.NodeType.KEYSTONE: 
-				tooltip_text += " [color=red]• Keystone[/color]"
+				tooltip += " • Keystone"
 			PassiveSkillNode.NodeType.MASTERY: 
-				tooltip_text += " [color=cyan]• Mastery[/color]"
+				tooltip += " • Mastery"
 			PassiveSkillNode.NodeType.STARTER:
-				tooltip_text += " [color=lightgreen]• Starter[/color]"
+				tooltip += " • Starter"
 	
 	# Přidáme stav
-	tooltip_text += "\n"
 	if is_unlocked:
-		tooltip_text += "\n[color=green][b]✓ Odemčeno[/b][/color]"
+		tooltip += "\n\n✓ Odemčeno"
 	elif can_unlock:
 		var cost = data.get_cost_for_tier() if data.has_method("get_cost_for_tier") else data.cost
-		tooltip_text += "\n[color=yellow][b]Cena: %d bodů[/b][/color]" % cost
-		tooltip_text += "\n[color=green]Klikni pro odemčení[/color]"
+		tooltip += "\n\nCena: %d bodů" % cost
+		tooltip += "\nKlikni pro odemčení"
 	else:
-		tooltip_text += "\n[color=red][b]Zamčeno[/b][/color]"
+		tooltip += "\n\nZamčeno"
 	
-	# Nastavíme text do RichTextLabel
-	rich_tooltip.text = tooltip_text
+	return tooltip
 
-func _on_mouse_entered():
-	"""Zobrazí rich tooltip při najetí myší"""
-	if not rich_tooltip or not tooltip_background or not skill_data:
-		return
+func _format_effect_simple(effect) -> String:
+	"""Jednoduché formátování efektů bez BBCode"""
+	if not is_instance_valid(effect):
+		return "Neplatný efekt"
+		
+	if not "effect_type" in effect:
+		return "Neznámý efekt"
 	
-	is_tooltip_visible = true
-	tooltip_background.visible = true
+	var value = effect.value if "value" in effect else 0
 	
-	# Umístíme tooltip poblíž kurzoru
-	_position_tooltip()
+	if effect.effect_type == PassiveEffectData.EffectType.ADD_MAX_HP:
+		return "+%d maximálního zdraví" % value
+	elif effect.effect_type == PassiveEffectData.EffectType.ADD_STARTING_GOLD:
+		return "+%d startovního zlata" % value  
+	elif effect.effect_type == PassiveEffectData.EffectType.ADD_MAX_ENERGY:
+		return "+%d maximální energie" % value
+	elif effect.effect_type == PassiveEffectData.EffectType.GRANT_REVIVE:
+		return "Možnost oživení" if value > 0 else ""
+	elif effect.effect_type == PassiveEffectData.EffectType.ADD_CARD_DAMAGE:
+		return "+%d poškození všech karet" % value
+	elif effect.effect_type == PassiveEffectData.EffectType.ADD_RETAINED_BLOCK:
+		return "+%d startovního bloku" % value
+	else:
+		return "Speciální efekt"
 
-func _on_mouse_exited():
-	"""Skryje rich tooltip při opuštění myší"""
-	if not tooltip_background:
-		return
-	
-	is_tooltip_visible = false
-	tooltip_background.visible = false
-
-func _position_tooltip():
-	"""Umístí tooltip na správnou pozici"""
-	if not tooltip_background or not is_tooltip_visible:
-		return
-	
-	# Získáme pozici myši
-	var mouse_pos = get_global_mouse_position()
-	var viewport_size = get_viewport().size
-	
-	# Offset od kurzoru
-	var offset = Vector2(15, -10)
-	var tooltip_pos = mouse_pos + offset
-	
-	# Ujistíme se, že tooltip se vejde na obrazovku
-	await get_tree().process_frame  # Počkáme na aktualizaci velikosti
-	var tooltip_size = tooltip_background.size
-	
-	# Zkontrolujeme pravý okraj
-	if tooltip_pos.x + tooltip_size.x > viewport_size.x:
-		tooltip_pos.x = mouse_pos.x - tooltip_size.x - 15
-	
-	# Zkontrolujeme spodní okraj
-	if tooltip_pos.y + tooltip_size.y > viewport_size.y:
-		tooltip_pos.y = mouse_pos.y - tooltip_size.y + 10
-	
-	# Zkontrolujeme horní okraj
-	if tooltip_pos.y < 0:
-		tooltip_pos.y = 10
-	
-	# Zkontrolujeme levý okraj
-	if tooltip_pos.x < 0:
-		tooltip_pos.x = 10
-	
-	tooltip_background.position = tooltip_pos
-
-# Zbytek kódu zůstává stejný...
+# Visual effects a styling - ZJEDNODUŠENÉ
 func _set_unlocked_state(data: PassiveSkillNode):
 	var color = data.get_node_color() if data.has_method("get_node_color") else Color.WHITE
 	modulate = color
-	_add_visual_effects(data, true)
+	_add_visual_effects(data)
 
 func _set_can_unlock_state(data: PassiveSkillNode):
 	disabled = false
@@ -287,7 +183,7 @@ func _set_starter_state(data: PassiveSkillNode):
 	modulate = Color("aaddff")  # Světle modrá pro starter
 	_add_pulse_effect()
 
-func _add_visual_effects(data: PassiveSkillNode, is_unlocked: bool):
+func _add_visual_effects(data: PassiveSkillNode):
 	if not "node_type" in data:
 		return
 		
@@ -299,7 +195,6 @@ func _add_visual_effects(data: PassiveSkillNode, is_unlocked: bool):
 			_add_pulse_effect()
 		PassiveSkillNode.NodeType.MASTERY:
 			_add_glow_effect(Color.CYAN)
-			_add_rotate_effect()
 
 func _add_glow_effect(glow_color: Color = Color.YELLOW):
 	add_theme_color_override("font_outline_color", glow_color)
@@ -310,11 +205,6 @@ func _add_pulse_effect():
 	tween.set_loops()
 	tween.tween_property(self, "scale", Vector2(1.1, 1.1), 1.0)
 	tween.tween_property(self, "scale", Vector2(1.0, 1.0), 1.0)
-
-func _add_rotate_effect():
-	var tween = create_tween()
-	tween.set_loops()
-	tween.tween_property(self, "rotation", 2 * PI, 8.0)
 
 func _remove_visual_effects():
 	var tweens = get_tree().get_processed_tweens()
@@ -327,41 +217,11 @@ func _remove_visual_effects():
 	remove_theme_color_override("font_outline_color")
 	remove_theme_constant_override("outline_size")
 
-func _format_effect_description(effect) -> String:
-	if not is_instance_valid(effect):
-		return "Neplatný efekt"
-		
-	if not "effect_type" in effect:
-		return "Neznámý efekt"
-	
-	var value = effect.value if "value" in effect else 0
-	
-	# Používáme BBCode formátování pro lepší vzhled
-	if effect.effect_type == PassiveEffectData.EffectType.ADD_MAX_HP:
-		return "[color=lightgreen]+%d[/color] maximálního zdraví" % value
-	elif effect.effect_type == PassiveEffectData.EffectType.ADD_STARTING_GOLD:
-		return "[color=gold]+%d[/color] startovního zlata" % value  
-	elif effect.effect_type == PassiveEffectData.EffectType.ADD_MAX_ENERGY:
-		return "[color=lightblue]+%d[/color] maximální energie" % value
-	elif effect.effect_type == PassiveEffectData.EffectType.GRANT_REVIVE:
-		return "[color=yellow]Možnost oživení[/color]" if value > 0 else ""
-	elif effect.effect_type == PassiveEffectData.EffectType.ADD_CARD_DAMAGE:
-		return "[color=orange]+%d[/color] poškození všech karet" % value
-	elif effect.effect_type == PassiveEffectData.EffectType.ADD_RETAINED_BLOCK:
-		return "[color=lightblue]+%d[/color] startovního bloku" % value
-	else:
-		return "[color=purple]Speciální efekt[/color]"
-
 func _on_skill_pressed():
 	if skill_data:
 		emit_signal("skill_selected", skill_data)
 
-# Cleanup při odstranění
-func _exit_tree():
-	if tooltip_background and is_instance_valid(tooltip_background):
-		tooltip_background.queue_free()
-
-# Override _draw zůstává stejný
+# Custom kreslení různých tvarů uzlů
 func _draw():
 	if not skill_data or not "node_type" in skill_data:
 		return

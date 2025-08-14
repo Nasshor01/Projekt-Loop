@@ -91,10 +91,7 @@ mouse_target = true
 
 [node name="SubViewport" type="SubViewport" parent="MarginContainer/VBoxContainer/HSplitContainer/RightPanel/SubViewportContainer"]
 handle_input_locally = false
-size = Vector2i(2, 2)
+size = Vector2i(912, 500)
 render_target_update_mode = 4
 
 [node name="PassiveSkillTree" parent="MarginContainer/VBoxContainer/HSplitContainer/RightPanel/SubViewportContainer/SubViewport" instance=ExtResource("3_pbubs")]
-unlocked_connection_color = null
-available_connection_color = null
-locked_connection_color = null
