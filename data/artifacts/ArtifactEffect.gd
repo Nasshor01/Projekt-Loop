@@ -33,25 +33,39 @@ func _apply_effect() -> bool:
 			if target_unit and target_unit.has_method("change_max_hp"):
 				target_unit.change_max_hp(artifact_data.get_effective_value())
 				return true
+			elif target_unit == null:
+				PlayerData.change_max_hp(artifact_data.get_effective_value())
+				return true
 				
 		ArtifactsData.EffectType.GAIN_BLOCK:
+			var block_amount = artifact_data.get_effective_value()
+			print("🛡️ Pokouším se přidat %d bloku z %s..." % [block_amount, artifact_data.artifact_name])
+			
 			if target_unit and target_unit.has_method("add_block"):
-				target_unit.add_block(artifact_data.get_effective_value())
+				target_unit.add_block(block_amount)
+				print("🛡️ %s přidal %d bloku!" % [artifact_data.artifact_name, block_amount])
 				return true
+			else:
+				print("❌ GAIN_BLOCK failed - target: %s" % str(target_unit))
+				return false
 				
 		ArtifactsData.EffectType.GAIN_ENERGY:
 			if PlayerData:
 				PlayerData.gain_energy(artifact_data.get_effective_value())
+				print("⚡ %s přidal %d energie!" % [artifact_data.artifact_name, artifact_data.get_effective_value()])
 				return true
 				
 		ArtifactsData.EffectType.HEAL_HP:
 			if target_unit and target_unit.has_method("heal"):
 				target_unit.heal(artifact_data.get_effective_value())
 				return true
+			else:
+				return false
 				
 		ArtifactsData.EffectType.DRAW_CARDS:
 			if PlayerData:
-				PlayerData.draw_cards(artifact_data.get_effective_value())
+				var cards_drawn = PlayerData.draw_cards(artifact_data.get_effective_value())
+				print("🃏 %s dobral %d karet!" % [artifact_data.artifact_name, cards_drawn])
 				return true
 				
 		ArtifactsData.EffectType.DEAL_DAMAGE:
@@ -65,25 +79,32 @@ func _apply_effect() -> bool:
 				return true
 				
 		ArtifactsData.EffectType.THORNS_DAMAGE:
-			# Tento efekt se aplikuje pasivně v Unit.gd
-			return true
+			var attacker = context.get("attacker")
+			var thorns_damage = artifact_data.get_effective_value()
+			
+			print("🌹 Pokouším se aplikovat %d thorns damage z %s..." % [thorns_damage, artifact_data.artifact_name])
+			print("🌹 Attacker: %s" % str(attacker))
+			
+			if is_instance_valid(attacker) and attacker.has_method("take_damage"):
+				print("🌹 %s vrací %d poškození útočníkovi!" % [artifact_data.artifact_name, thorns_damage])
+				attacker.take_damage(thorns_damage)
+				return true
+			else:
+				print("❌ THORNS_DAMAGE failed - attacker invalid")
+				return false
 			
 		ArtifactsData.EffectType.EXTRA_TURN_DRAW:
 			if PlayerData:
-				# Přidá extra dobírání na začátku tahu
 				PlayerData.starting_hand_size += artifact_data.get_effective_value()
 				return true
 				
 		ArtifactsData.EffectType.RETAIN_ENERGY:
 			if PlayerData:
-				# Ponechá část energie mezi tahy
 				var energy_to_retain = min(artifact_data.get_effective_value(), PlayerData.current_energy)
-				# Toto by se aplikovalo v reset_energy() funkci
 				PlayerData.set_meta("retained_energy", energy_to_retain)
 				return true
 				
 		ArtifactsData.EffectType.DUPLICATE_CARD:
-			# Duplikuje poslední zahranou kartu
 			if context.has("card") and context.card is CardData:
 				var card_to_duplicate = context.card
 				PlayerData.current_hand.append(card_to_duplicate)
@@ -91,7 +112,6 @@ func _apply_effect() -> bool:
 				return true
 				
 		ArtifactsData.EffectType.REDUCE_HAND_SIZE:
-			# Sníží velikost ruky
 			var cards_to_discard = artifact_data.get_effective_value()
 			var actual_discarded = 0
 			while actual_discarded < cards_to_discard and not PlayerData.current_hand.is_empty():
@@ -103,7 +123,6 @@ func _apply_effect() -> bool:
 			return true
 			
 		ArtifactsData.EffectType.ENERGY_LOSS:
-			# Ztratí energii
 			if PlayerData:
 				var energy_to_lose = min(artifact_data.get_effective_value(), PlayerData.current_energy)
 				PlayerData.current_energy -= energy_to_lose
@@ -112,7 +131,6 @@ func _apply_effect() -> bool:
 				return true
 			
 		_:
-			# Pro custom efekty použijeme starý systém s effect_id
 			return _apply_custom_effect()
 	
 	return false

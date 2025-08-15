@@ -25,20 +25,23 @@ var last_attacker: Unit = null
 @onready var _sprite_node: Sprite2D = $Sprite2D
 @onready var _intent_ui: Control = $IntentUI
 
+# OPRAVENÁ FUNKCE V Unit.gd
 func _ready():
 	if unit_data:
 		if unit_data.faction == UnitData.Faction.PLAYER:
-			# Nastavení zdraví hráče
 			current_health = PlayerData.current_hp
 			
-			# JEDINÁ LOGIKA PRO BLOK: Načteme finální hodnotu z Globálního Štítu
-			retained_block = PlayerData.global_shield
-			current_block = retained_block
+			# ODDĚLENÉ SYSTÉMY BLOKU:
+			retained_block = PlayerData.starting_retained_block  # Jen z passivních skillů
+			current_block = retained_block + PlayerData.global_shield  # Global shield se přičítá separátně
 			
-			print("🛡️ Načten Globální Štít: startovní blok pro tento souboj je %d" % current_block)
+			# PŘIDEJ DO SKUPIN PRO ARTEFAKTY
+			add_to_group("player")
+			add_to_group("units")
 			
 		else: # Pro nepřátele
 			current_health = unit_data.max_health
+			add_to_group("units")
 			
 	# Zbytek funkce pro nastavení grafiky a klikání
 	if _sprite_node and unit_data.sprite_texture:
@@ -98,30 +101,29 @@ func attack(target: Node2D) -> void:
 	await target.take_damage(damage)
 
 func take_damage(amount: int) -> void:
-	# NOVÉ: Trigger damage taken artefakty na začátku
-	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/ArtifactManager"):
-		ArtifactManager.on_damage_taken(amount, get_last_attacker())
+	print("💥 %s dostává %d poškození..." % [unit_data.unit_name, amount])
 	
-	# THORNS DAMAGE - jen nový systém
-	if unit_data.faction == UnitData.Faction.PLAYER:
+	# TRIGGER DAMAGE TAKEN ARTEFAKTY PŘED zpracováním poškození
+	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/ArtifactManager"):
+		print("🔔 Spouštím ON_DAMAGE_TAKEN artefakty pro %d poškození..." % amount)
 		var attacker = get_last_attacker()
-		if is_instance_valid(attacker):
-			# NOVÝ SYSTÉM - skills + artifacts thorns kombinace
-			var skill_thorns = PlayerData.get_thorns_damage()
-			var artifact_thorns = 0
-			if has_node("/root/ArtifactManager"):
-				artifact_thorns = ArtifactManager.get_thorns_damage()
-			
-			var total_thorns = skill_thorns + artifact_thorns
-			if total_thorns > 0:
-				print("🌹 Celkové trny vracejí %d poškození!" % total_thorns)
-				await attacker.take_damage(total_thorns)
+		print("🔔 Last attacker: %s" % str(attacker))
+		
+		var damage_results = ArtifactManager.on_damage_taken(amount, attacker)
+		
+		if damage_results.size() > 0:
+			print("✅ Spuštěno %d ON_DAMAGE_TAKEN artefaktů:" % damage_results.size())
+			for result in damage_results:
+				print("   - %s: %s" % [result["artifact"].artifact_name, "úspěch" if result["success"] else "selhání"])
+		else:
+			print("❌ Žádné ON_DAMAGE_TAKEN artefakty se nespustily")
 
 	var damage_to_deal = amount
 	var absorbed_by_block = min(amount, current_block)
 	
 	if absorbed_by_block > 0:
 		_show_floating_text(absorbed_by_block, "block_loss")
+		print("🛡️ Blok absorboval %d poškození" % absorbed_by_block)
 
 	current_block -= absorbed_by_block
 	damage_to_deal -= absorbed_by_block
@@ -134,6 +136,8 @@ func take_damage(amount: int) -> void:
 	if damage_to_deal > 0:
 		current_health -= damage_to_deal
 		_show_floating_text(damage_to_deal, "damage")
+		print("💔 %s ztratil %d HP (zůstává: %d)" % [unit_data.unit_name, damage_to_deal, current_health])
+		
 		if current_health < 0:
 			current_health = 0
 		
@@ -142,7 +146,12 @@ func take_damage(amount: int) -> void:
 	
 	_update_stats_and_emit_signal()
 	
+	# NOVÉ: Zkontroluj conditional artefakty po změně zdraví!
+	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/ArtifactManager"):
+		ArtifactManager.check_conditional_artifacts()
+	
 	if current_health <= 0:
+		print("💀 %s zemřel!" % unit_data.unit_name)
 		_die()
 
 func reset_for_new_turn():

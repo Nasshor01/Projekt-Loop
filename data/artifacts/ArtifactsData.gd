@@ -126,12 +126,24 @@ func add_stack():
 	return false
 
 func get_effective_value() -> int:
-	"""Vrátí efektivní hodnotu s ohledem na stacky"""
-	return primary_value * current_stacks
+	"""Vrátí efektivní hodnotu s ohledem na stacky a procenta"""
+	var base_value = primary_value * current_stacks
+	
+	# NOVÉ: Pokud je percentage_based, počítej z max HP
+	if percentage_based and PlayerData:
+		return (PlayerData.max_hp * base_value) / 100
+	
+	return base_value
 
+# A stejně i pro secondary_value:
 func get_effective_secondary_value() -> int:
-	"""Vrátí efektivní vedlejší hodnotu s ohledem na stacky"""
-	return secondary_value * current_stacks
+	"""Vrátí efektivní vedlejší hodnotu s ohledem na stacky a procenta"""
+	var base_value = secondary_value * current_stacks
+	
+	if percentage_based and PlayerData:
+		return (PlayerData.max_hp * base_value) / 100
+	
+	return base_value
 
 func check_condition(context: Dictionary = {}) -> bool:
 	"""Zkontroluje, jestli je splněna podmínka pro aktivaci"""

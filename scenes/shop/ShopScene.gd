@@ -42,6 +42,7 @@ func _generate_shop_inventory():
 	for child in items_grid.get_children():
 		child.queue_free()
 
+	# KARTY - zůstávají stejné (karty se dají vždy koupit)
 	var available_cards = SHOP_CARD_POOL.cards.duplicate()
 	available_cards.shuffle()
 	var cards_to_sell = available_cards.slice(0, 3)
@@ -58,7 +59,6 @@ func _generate_shop_inventory():
 			var shop_item_ui = ShopItemUIScene.instantiate()
 			var original_price = CARD_PRICES.get(card_data.rarity, 50)
 			
-			# Použijeme novou, jedinou funkci "setup_item"
 			if items_on_sale.has(card_data):
 				shop_item_ui.setup_item(card_data, items_on_sale[card_data], true, original_price)
 			else:
@@ -67,13 +67,21 @@ func _generate_shop_inventory():
 			items_grid.add_child(shop_item_ui)
 			shop_item_ui.item_purchased.connect(_on_item_purchased)
 
-	# Artefakty (zůstávají stejné, jen pro přehlednost)
-	var available_artifacts = SHOP_ARTIFACT_POOL.artifacts.duplicate()
+	# ARTEFAKTY - NOVÉ: Filtrujeme dostupné artefakty
+	var all_artifacts = SHOP_ARTIFACT_POOL.artifacts.duplicate()
+	var available_artifacts = get_available_artifacts(all_artifacts)
+	
 	if not available_artifacts.is_empty():
 		var artifact_to_sell = available_artifacts.pick_random()
 		if is_instance_valid(artifact_to_sell):
 			var shop_item_ui = ShopItemUIScene.instantiate()
-			# Použijeme novou funkci i zde
+			
+			# Zobrazíme stack info v názvu
+			var stack_info = PlayerData.get_artifact_stack_info(artifact_to_sell.artifact_name)
+			if stack_info != "Nový":
+				artifact_to_sell = artifact_to_sell.duplicate()  # Duplikujeme aby jsme mohli změnit název
+				artifact_to_sell.artifact_name += " [%s]" % stack_info
+			
 			shop_item_ui.setup_item(artifact_to_sell, ARTIFACT_PRICE)
 			items_grid.add_child(shop_item_ui)
 			shop_item_ui.item_purchased.connect(_on_item_purchased)
@@ -95,18 +103,34 @@ func _on_item_purchased(item_data: Resource, button_node: Button):
 	if PlayerData.spend_gold(cost):
 		var item_name = item_data.get("card_name") or item_data.get("artifact_name")
 		print("Koupeno: ", item_name)
-		button_node.disabled = true
-		button_node.text = "Koupeno"
 
 		if item_data is CardData:
 			PlayerData.master_deck.append(item_data)
+			button_node.disabled = true
+			button_node.text = "Koupeno"
 		elif item_data is ArtifactsData:
-			PlayerData.add_artifact(item_data)
+			# OPRAVENO: Používáme novou add_artifact funkci
+			if PlayerData.add_artifact(item_data):
+				button_node.disabled = true
+				button_node.text = "Koupeno"
+				print("✅ Artefakt úspěšně koupen!")
+			else:
+				# Tohle by se nemělo stát díky filtrování, ale pro jistotu
+				print("❌ Chyba: Nemůžeš koupit tento artefakt!")
+				# Vrátíme zlato
+				PlayerData.add_gold(cost)
 	else:
 		print("Nedostatek zlata!")
 
-
-# --- Ostatní funkce (od _on_leave_button_input níže) zůstávají beze změny ---
+func get_available_artifacts(artifact_pool: Array) -> Array:
+	"""Filtruje artefakty které hráč může získat"""
+	var available = []
+	
+	for artifact in artifact_pool:
+		if PlayerData.can_gain_artifact(artifact):
+			available.append(artifact)
+	
+	return available
 
 func _on_leave_button_input(event: InputEvent):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.is_pressed():

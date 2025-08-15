@@ -417,30 +417,83 @@ func draw_cards(amount: int) -> int:
 	DebugLogger.log_debug("Cards drawn: %d, Hand size: %d" % [cards_drawn_count, current_hand.size()], "CARDS")
 	return cards_drawn_count
 
-func add_artifact(artifact_data: ArtifactsData):
-	if not artifacts.has(artifact_data):
-		# Zkusíme stacknout existující artefakt
-		var existing_artifact = _find_stackable_artifact(artifact_data)
-		if existing_artifact and existing_artifact.add_stack():
-			print("Artefakt '%s' stacknut! Nový stack: %d/%d" % [
-				existing_artifact.artifact_name, 
-				existing_artifact.current_stacks, 
-				existing_artifact.max_stacks
-			])
+func add_artifact(new_artifact: ArtifactsData) -> bool:
+	"""Přidá artefakt s kontrolou stackování - vrací true pokud úspěšný"""
+	
+	# Najdeme existující artefakt se stejným názvem
+	var existing_artifact = find_artifact_by_name(new_artifact.artifact_name)
+	
+	if existing_artifact:
+		# Pokud artefakt už existuje
+		if existing_artifact.max_stacks > 1:
+			# Artefakt se dá stackovat
+			if existing_artifact.add_stack():
+				print("✅ Přidán stack pro %s (%d/%d)" % [existing_artifact.artifact_name, existing_artifact.current_stacks, existing_artifact.max_stacks])
+				emit_signal("artifacts_changed")
+				
+				# OPRAVA: Aplikuj passive skills i při stackování!
+				if existing_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:
+					apply_passive_skills()
+				
+				return true
+			else:
+				print("❌ %s je už na maximálních stackech!" % existing_artifact.artifact_name)
+				return false
 		else:
-			artifacts.append(artifact_data)
-			print("Nový artefakt získán: %s" % artifact_data.artifact_name)
+			# Artefakt se nedá stackovat
+			print("❌ %s už vlastníš a nedá se stackovat!" % existing_artifact.artifact_name)
+			return false
+	else:
+		# Nový artefakt - jednoduše přidáme
+		artifacts.append(new_artifact)
+		print("✅ Získán nový artefakt: %s" % new_artifact.artifact_name)
 		
 		DebugLogger.log_info("Artifact gained: %s (effect: %s)" % [
-			artifact_data.artifact_name,
-			str(artifact_data.effect_type)
+			new_artifact.artifact_name,
+			str(new_artifact.effect_type)
 		], "ARTIFACTS")
 		DebugLogger.log_artifacts()
 		emit_signal("artifacts_changed")
 		
 		# Aktualizuj aplikované efekty pokud jde o passive artefakt
-		if artifact_data.trigger_type == ArtifactsData.TriggerType.PASSIVE:
+		if new_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:
 			apply_passive_skills()
+		
+		return true
+
+func find_artifact_by_name(artifact_name: String) -> ArtifactsData:
+	"""Najde artefakt podle jména"""
+	for artifact in artifacts:
+		if artifact.artifact_name == artifact_name:
+			return artifact
+	return null
+
+func has_artifact(artifact_name: String) -> bool:
+	"""Zkontroluje, jestli už artefakt vlastním"""
+	return find_artifact_by_name(artifact_name) != null
+
+func can_gain_artifact(artifact) -> bool:
+	"""Zkontroluje, jestli můžu získat artefakt (pro filtrování v obchodech)"""
+	var existing = find_artifact_by_name(artifact.artifact_name)
+	
+	if not existing:
+		return true  # Nový artefakt - můžu získat
+	
+	if existing.max_stacks > 1 and existing.current_stacks < existing.max_stacks:
+		return true  # Existující stackovatelný artefakt s volnými stacky
+	
+	return false  # Už mám a nedá se stackovat nebo je na max stackech
+
+func get_artifact_stack_info(artifact_name: String) -> String:
+	"""Vrátí info o stackech pro UI"""
+	var existing = find_artifact_by_name(artifact_name)
+	if not existing:
+		return "Nový"
+	
+	if existing.max_stacks > 1:
+		return "Stack +1 (%d/%d)" % [existing.current_stacks + 1, existing.max_stacks]
+	else:
+		return "Už vlastníš"
 
 # V PlayerData.gd - NOVÁ POMOCNÁ FUNKCE:
 func _find_stackable_artifact(new_artifact: ArtifactsData) -> ArtifactsData:

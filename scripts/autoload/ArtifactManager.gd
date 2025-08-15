@@ -65,14 +65,46 @@ func on_combat_start():
 	return results
 
 func on_turn_start():
+	print("🔔 ArtifactManager: Spouštím START_OF_TURN artefakty...")
+	
+	var player_unit = _get_player_unit()
+	print("🎯 Nalezený player unit: %s" % str(player_unit))
+	
+	if player_unit:
+		print("🎯 Player unit má add_block: %s" % str(player_unit.has_method("add_block")))
+	
 	var context = {
 		"current_hp": PlayerData.current_hp,
 		"max_hp": PlayerData.max_hp,
 		"current_energy": PlayerData.current_energy,
 		"hand_size": PlayerData.current_hand.size(),
-		"target": _get_player_unit()
+		"target": player_unit
 	}
-	return trigger_artifacts(ArtifactsData.TriggerType.START_OF_TURN, context)
+	
+	print("🔮 START_OF_TURN context:")
+	print("   - Target: %s" % str(context["target"]))
+	print("   - HP: %d/%d" % [context["current_hp"], context["max_hp"]])
+	print("   - Energy: %d" % context["current_energy"])
+	
+	var results = trigger_artifacts(ArtifactsData.TriggerType.START_OF_TURN, context)
+	
+	if results.size() > 0:
+		print("✅ Spuštěno %d START_OF_TURN artefaktů:" % results.size())
+		for result in results:
+			print("   - %s: %s" % [result["artifact"].artifact_name, "úspěch" if result["success"] else "selhání"])
+	else:
+		print("❌ Žádné START_OF_TURN artefakty se nespustily")
+		
+		# DEBUG: Zjisti proč se nespustily
+		if _triggered_artifacts.has(ArtifactsData.TriggerType.START_OF_TURN):
+			var start_artifacts = _triggered_artifacts[ArtifactsData.TriggerType.START_OF_TURN]
+			print("📊 START_OF_TURN artefakty v cache: %d" % start_artifacts.size())
+			for artifact in start_artifacts:
+				print("   - %s (can_trigger: %s)" % [artifact.artifact_name, str(artifact.can_trigger())])
+		else:
+			print("📊 Žádné START_OF_TURN artefakty v cache")
+	
+	return results
 
 func on_turn_end():
 	var context = {
@@ -92,6 +124,9 @@ func on_card_played(card_data: CardData):
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_CARD_PLAYED, context)
 
 func on_damage_taken(amount: int, attacker: Node2D = null):
+	print("🔔 ArtifactManager: ON_DAMAGE_TAKEN trigger s %d poškozením" % amount)
+	print("🔔 Attacker: %s" % str(attacker))
+	
 	var context = {
 		"damage_amount": amount,
 		"attacker": attacker,
@@ -99,7 +134,31 @@ func on_damage_taken(amount: int, attacker: Node2D = null):
 		"current_hp": PlayerData.current_hp,
 		"max_hp": PlayerData.max_hp
 	}
-	return trigger_artifacts(ArtifactsData.TriggerType.ON_DAMAGE_TAKEN, context)
+	
+	print("🔮 ON_DAMAGE_TAKEN context:")
+	print("   - Damage: %d" % context["damage_amount"])
+	print("   - Attacker: %s" % str(context["attacker"]))
+	print("   - Target: %s" % str(context["target"]))
+	
+	var results = trigger_artifacts(ArtifactsData.TriggerType.ON_DAMAGE_TAKEN, context)
+	
+	if results.size() > 0:
+		print("✅ Spuštěno %d ON_DAMAGE_TAKEN artefaktů:" % results.size())
+		for result in results:
+			print("   - %s: %s" % [result["artifact"].artifact_name, "úspěch" if result["success"] else "selhání"])
+	else:
+		print("❌ Žádné ON_DAMAGE_TAKEN artefakty se nespustily")
+		
+		# DEBUG: Zjisti proč se nespustily
+		if _triggered_artifacts.has(ArtifactsData.TriggerType.ON_DAMAGE_TAKEN):
+			var damage_artifacts = _triggered_artifacts[ArtifactsData.TriggerType.ON_DAMAGE_TAKEN]
+			print("📊 ON_DAMAGE_TAKEN artefakty v cache: %d" % damage_artifacts.size())
+			for artifact in damage_artifacts:
+				print("   - %s (can_trigger: %s)" % [artifact.artifact_name, str(artifact.can_trigger())])
+		else:
+			print("📊 Žádné ON_DAMAGE_TAKEN artefakty v cache")
+	
+	return results
 
 func on_damage_dealt(amount: int, target: Node2D, was_critical: bool = false):
 	var context = {
@@ -136,8 +195,32 @@ func on_block_gained(amount: int):
 
 func _get_player_unit() -> Node2D:
 	var current_scene = get_tree().current_scene
+	
+	print("🔍 Hledám player unit...")
+	
+	# Metoda 1: Přímá metoda get_player_unit()
 	if current_scene and current_scene.has_method("get_player_unit"):
-		return current_scene.get_player_unit()
+		var player = current_scene.get_player_unit()
+		if player != null:
+			print("✅ Player nalezen metodou 1: %s" % str(player))
+			return player
+	
+	# Metoda 2: Hledání podle skupiny "player"
+	var players = get_tree().get_nodes_in_group("player")
+	if players.size() > 0:
+		print("✅ Player nalezen metodou 2: %s" % str(players[0]))
+		return players[0] as Node2D
+	
+	# Metoda 3: Hledání podle faction v Unit nódech
+	var all_units = get_tree().get_nodes_in_group("units")
+	for unit in all_units:
+		if unit.has_method("get_unit_data"):
+			var unit_data = unit.get_unit_data()
+			if unit_data and unit_data.faction == UnitData.Faction.PLAYER:
+				print("✅ Player nalezen metodou 3: %s" % str(unit))
+				return unit as Node2D
+	
+	print("❌ Player unit nebyl nalezen!")
 	return null
 
 func _get_enemy_count() -> int:
@@ -252,3 +335,25 @@ func on_draw_cards(cards_drawn: int, total_requested: int):
 		"target": _get_player_unit()
 	}
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_DRAW_CARDS, context)
+
+func check_conditional_artifacts():
+	"""Zkontroluje a spustí conditional artefakty podle aktuálního stavu"""
+	var context = {
+		"current_hp": PlayerData.current_hp,
+		"max_hp": PlayerData.max_hp,
+		"current_energy": PlayerData.current_energy,
+		"hand_size": PlayerData.current_hand.size(),
+		"target": _get_player_unit()
+	}
+	
+	print("🔮 Kontroluji conditional artefakty...")
+	print("   - HP: %d/%d (%d%%)" % [context["current_hp"], context["max_hp"], context["current_hp"] * 100 / context["max_hp"]])
+	
+	var results = trigger_artifacts(ArtifactsData.TriggerType.CONDITIONAL, context)
+	
+	if results.size() > 0:
+		print("✅ Aktivováno %d conditional artefaktů:" % results.size())
+		for result in results:
+			print("   - %s: %s" % [result["artifact"].artifact_name, result["description"]])
+	
+	return results

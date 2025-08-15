@@ -18,8 +18,8 @@ func set_artifact(data: ArtifactsData):
 	if artifact_data and artifact_data.texture:
 		self.texture = artifact_data.texture
 		
-		# OPRAVENÝ TOOLTIP - bez BBCode, prostý text
-		tooltip_text = "%s\n%s" % [artifact_data.artifact_name, artifact_data.description]
+		# OPRAVENÝ TOOLTIP - používáme get_formatted_description() místo description
+		tooltip_text = "%s\n%s" % [artifact_data.artifact_name, artifact_data.get_formatted_description()]
 		
 		# Pokud chceš stacky v tooltipu
 		if artifact_data.max_stacks > 1:

@@ -89,6 +89,7 @@ offset_right = 1024.0
 offset_bottom = 448.0
 
 [node name="WinButton" type="Button" parent="CanvasLayer"]
+visible = false
 offset_left = 1032.0
 offset_top = 72.0
 offset_right = 1124.0

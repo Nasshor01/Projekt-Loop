@@ -173,23 +173,16 @@ func start_player_turn():
 	
 	PlayerData.reset_energy()
 	
-	# NOVÉ: Trigger start of turn artefakty
-	if has_node("/root/ArtifactManager"):
-		var artifact_results = ArtifactManager.on_turn_start()
-		for result in artifact_results:
-			print("Artefakt aktivován: %s" % result.description)
-	
 	if is_instance_valid(_player_unit_node):
 		_player_unit_node.reset_for_new_turn()
 		
+		# PŘESUNUTÉ: START_OF_TURN artefakty se spouštějí AŽ PO resetu
+		if has_node("/root/ArtifactManager"):
+			ArtifactManager.on_turn_start()
+		
 		if _is_first_turn:
-			# NOVÉ: Trigger start of combat artefakty
 			if has_node("/root/ArtifactManager"):
-				var combat_results = ArtifactManager.on_combat_start()
-				for result in combat_results:
-					print("Combat artefakt aktivován: %s" % result.description)
-			
-			# STARÝ KÓD SMAZÁN - artefakty se teď řeší přes ArtifactManager
+				ArtifactManager.on_combat_start()
 			_is_first_turn = false
 		
 		var extra_draw = _player_unit_node.process_turn_start_statuses()
@@ -203,6 +196,16 @@ func start_player_turn():
 			
 	set_enemy_intents()
 	battle_grid_instance.show_danger_zone(_enemy_units)
+
+# Přidejte debug do signálu stats_changed
+func _on_unit_stats_changed(unit_node: Node2D):
+	print("🟠 DEBUG: _on_unit_stats_changed() volána pro unit: %s" % str(unit_node))
+	if is_instance_valid(unit_node) and unit_node == _player_unit_node:
+		print("🟠 DEBUG: Je to player unit, volám player_info_panel.update_stats()")
+		player_info_panel.update_stats(unit_node)
+		print("🟠 DEBUG: player_info_panel.update_stats() dokončeno")
+	else:
+		print("🟠 DEBUG: Není to player unit nebo není valid")
 
 func _draw_next_card_in_queue():
 	if _is_drawing_cards: return # Zabráníme spuštění, pokud už běží
@@ -259,11 +262,16 @@ func start_enemy_turn():
 	_current_battle_state = BattleState.ENEMY_TURN
 	end_turn_button.disabled = true
 	
+	# ===== PŘIDEJ TOTO =====
 	# NOVÉ: Trigger end of turn artefakty
 	if has_node("/root/ArtifactManager"):
+		print("🔮 Spouštím END_OF_TURN artefakty...")
 		var artifact_results = ArtifactManager.on_turn_end()
-		for result in artifact_results:
-			print("End turn artefakt aktivován: %s" % result.description)
+		if artifact_results.size() > 0:
+			print("✅ Aktivováno %d END_OF_TURN artefaktů:" % artifact_results.size())
+			for result in artifact_results:
+				print("   - %s: %s" % [result["artifact"].artifact_name, result["description"]])
+	# ===== KONEC PŘIDANÉ ČÁSTI =====
 	
 	battle_grid_instance.hide_danger_zone()
 	
@@ -626,9 +634,7 @@ func _reset_player_selection():
 		battle_grid_instance.hide_danger_zone()
 	_player_action_state = PlayerActionState.IDLE
 
-func _on_unit_stats_changed(unit_node: Node2D):
-	if is_instance_valid(unit_node) and unit_node == _player_unit_node:
-		player_info_panel.update_stats(unit_node)
+
 
 func _on_draw_pile_clicked(): card_pile_viewer.show_cards(PlayerData.draw_pile)
 func _on_discard_pile_clicked(): card_pile_viewer.show_cards(PlayerData.discard_pile)
