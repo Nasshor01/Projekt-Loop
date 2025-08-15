@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://r5o6s8wwkf3"
-path="res://.godot/imported/4.png-46b5a1f69f9bf9e95ac52d082fdcd04c.ctex"
+uid="uid://boj6kqdha18vm"
+path="res://.godot/imported/rozbitý štít-1.png.png-48fce359e2e1fa8b9d8f26b79e5a5e59.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/icons/Artifacts/4.png"
-dest_files=["res://.godot/imported/4.png-46b5a1f69f9bf9e95ac52d082fdcd04c.ctex"]
+source_file="res://art/icons/Artifacts/rozbitý štít-1.png.png"
+dest_files=["res://.godot/imported/rozbitý štít-1.png.png-48fce359e2e1fa8b9d8f26b79e5a5e59.ctex"]
 
 [params]
 

@@ -26,6 +26,7 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="Control" type="Control" parent="MarginContainer/MainLayout/TopRow"]
+custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -39,6 +40,7 @@ text = "Zlato: 100"
 [node name="GoldIcon" type="TextureRect" parent="MarginContainer/MainLayout/TopRow/GoldDisplay"]
 layout_mode = 2
 texture = ExtResource("2_f4cv4")
+stretch_mode = 5
 
 [node name="BottomLeft" type="PanelContainer" parent="MarginContainer/MainLayout"]
 layout_mode = 2

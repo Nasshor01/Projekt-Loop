@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3 uid="uid://glnnfop1v5ll"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_64gqc"]
+[ext_resource type="Texture2D" uid="uid://dkonv6bkg6mmc" path="res://art/icons/Artifacts/berserkova zuřivost-1.png.png" id="2_wxfd4"]
+
+[resource]
+script = ExtResource("1_64gqc")
+artifact_name = "Berserkerova zuřivost"
+description = "Když máš méně než 50% HP, tvé karty způsobí {value} extra poškození."
+texture = ExtResource("2_wxfd4")
+artifact_type = 2
+trigger_type = 13
+effect_type = 2
+primary_value = 3
+secondary_value = 0
+percentage_based = false
+max_stacks = 1
+current_stacks = 1
+uses_per_combat = -1
+current_uses = 0
+condition_type = ""
+condition_value = 0
+custom_effect_id = ""
+effect_description = ""
+metadata/_custom_type_script = "uid://cojmro6kj47du"

@@ -173,15 +173,23 @@ func start_player_turn():
 	
 	PlayerData.reset_energy()
 	
+	# NOVÉ: Trigger start of turn artefakty
+	if has_node("/root/ArtifactManager"):
+		var artifact_results = ArtifactManager.on_turn_start()
+		for result in artifact_results:
+			print("Artefakt aktivován: %s" % result.description)
+	
 	if is_instance_valid(_player_unit_node):
 		_player_unit_node.reset_for_new_turn()
 		
 		if _is_first_turn:
-			# --- OPRAVENO ZDE ---
-			for artifact in PlayerData.artifacts:
-				if artifact.effect_id == "start_of_combat_block":
-					_player_unit_node.add_block(artifact.value)
-					print("Artefakt '%s' přidal hráči %d blocku." % [artifact.artifact_name, artifact.value])
+			# NOVÉ: Trigger start of combat artefakty
+			if has_node("/root/ArtifactManager"):
+				var combat_results = ArtifactManager.on_combat_start()
+				for result in combat_results:
+					print("Combat artefakt aktivován: %s" % result.description)
+			
+			# STARÝ KÓD SMAZÁN - artefakty se teď řeší přes ArtifactManager
 			_is_first_turn = false
 		
 		var extra_draw = _player_unit_node.process_turn_start_statuses()
@@ -251,6 +259,12 @@ func start_enemy_turn():
 	_current_battle_state = BattleState.ENEMY_TURN
 	end_turn_button.disabled = true
 	
+	# NOVÉ: Trigger end of turn artefakty
+	if has_node("/root/ArtifactManager"):
+		var artifact_results = ArtifactManager.on_turn_end()
+		for result in artifact_results:
+			print("End turn artefakt aktivován: %s" % result.description)
+	
 	battle_grid_instance.hide_danger_zone()
 	
 	if is_instance_valid(_player_unit_node):
@@ -258,9 +272,8 @@ func start_enemy_turn():
 
 	_reset_player_selection()
 	
-	# Spustíme animaci odhození. Zbytek logiky se provede po jejím dokončení.
 	player_hand_ui_instance.discard_hand_animated(discard_pile_button.global_position)
-
+	
 func _on_hand_discard_animation_finished():
 	# Tato funkce se zavolá, až když animace odhození skončí.
 	PlayerData.discard_hand()
@@ -310,20 +323,23 @@ func _on_player_died(unit_node: Node2D):
 	GameManager.battle_finished(false)
 
 func _on_enemy_died(enemy_node: Node2D):
+	# NOVÉ: Trigger enemy death artefakty před všemi ostatní logikou
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager.on_enemy_death(enemy_node)
+	
 	DebugLogger.log_enemy_action(enemy_node.unit_data.unit_name, "died", {"remaining_enemies": _enemy_units.size() - 1})
 	if _enemy_units.has(enemy_node):
 		_enemy_units.erase(enemy_node)
 	
 	battle_grid_instance.remove_object_by_instance(enemy_node)
 
-	# --- PŘIDANÁ ČÁST PRO ANIMACI A SMAZÁNÍ ---
 	var tween = create_tween()
 	tween.tween_property(enemy_node, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(enemy_node.queue_free)
-	# --- KONEC PŘIDANÉ ČÁSTI ---
 
 	if _enemy_units.is_empty():
 		end_battle_as_victory()
+
 
 func spawn_enemy_units():
 	if not encounter_data:
@@ -391,7 +407,6 @@ func try_play_card(card: CardData, initial_target: Node2D) -> void:
 	_is_action_processing = true
 	var card_played_successfully = false
 	
-	# Uložíme si referenci na kartu, kterou hrajeme
 	var card_ui_to_remove = _selected_card_ui
 	
 	for effect_data in card.effects:
@@ -400,9 +415,15 @@ func try_play_card(card: CardData, initial_target: Node2D) -> void:
 			card_played_successfully = true
 			for target_unit in targets:
 				if is_instance_valid(target_unit):
-					_apply_single_effect(effect_data, target_unit) # Už zde není await
+					_apply_single_effect(effect_data, target_unit)
 					
 	if card_played_successfully:
+		# NOVÉ: Trigger on card played artefakty
+		if has_node("/root/ArtifactManager"):
+			var artifact_results = ArtifactManager.on_card_played(card)
+			for result in artifact_results:
+				print("Card play artefakt aktivován: %s" % result.description)
+		
 		var has_exhaust_effect = card.effects.any(func(e): return e.effect_type == CardEffectData.EffectType.EXHAUST)
 		if has_exhaust_effect:
 			PlayerData.add_card_to_exhaust_pile(card)
@@ -410,7 +431,6 @@ func try_play_card(card: CardData, initial_target: Node2D) -> void:
 			PlayerData.add_card_to_discard_pile(card)
 		PlayerData.current_hand.erase(card)
 		
-		# OPRAVA: Odstraníme vizuální kartu a seřadíme zbytek
 		if is_instance_valid(card_ui_to_remove):
 			card_ui_to_remove.queue_free()
 		player_hand_ui_instance._request_arrange()
@@ -450,30 +470,40 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 	match effect.effect_type:
 		CardEffectData.EffectType.DEAL_DAMAGE:
 			if target.has_method("take_damage"):
-				
-				# --- ZAČÁTEK LOGIKY PRO VÝPOČET POŠKOZENÍ ---
-				
-				# 1. Získáme základní poškození z karty
 				var damage_to_deal = effect.value
-
-				# 2. Přidáme bonus z pasivních skillů (např. "Spravedlivý hněv")
+				
+				# Existující bonus z skillů
 				damage_to_deal += PlayerData.global_card_damage_bonus
-
-				# 3. Zkusíme "hodit kostkou" na kritický zásah
-				if PlayerData.get_critical_chance() > 0:
+				
+				# NOVÉ: Přidej conditional bonusy z artefaktů
+				if has_node("/root/ArtifactManager"):
+					var context = {
+						"current_hp": PlayerData.current_hp,
+						"max_hp": PlayerData.max_hp,
+						"current_energy": PlayerData.current_energy
+					}
+					damage_to_deal += ArtifactManager.get_card_damage_bonus(context)
+				
+				# Critical hit logic s artefakt bonusy
+				var total_crit_chance = PlayerData.get_critical_chance()
+				if has_node("/root/ArtifactManager"):
+					total_crit_chance += ArtifactManager.get_critical_chance()
+				
+				var is_critical = false
+				if total_crit_chance > 0:
 					var crit_roll = randi_range(1, 100)
-					if crit_roll <= PlayerData.get_critical_chance():
-						# KRITICKÝ ZÁSAH! Zdvojnásobíme poškození.
+					if crit_roll <= total_crit_chance:
 						damage_to_deal *= 2
+						is_critical = true
 						print("💥 KRITICKÝ ZÁSAH! Poškození: %d" % damage_to_deal)
-						# Zobrazíme speciální plovoucí text
 						if is_instance_valid(_player_unit_node):
 							_player_unit_node._show_floating_text(damage_to_deal, "critical")
 				
-				# 4. Až teď, po všech výpočtech, aplikujeme finální poškození na cíl
 				target.take_damage(damage_to_deal)
 				
-				# --- KONEC LOGIKY ---
+				# NOVÉ: Trigger damage dealt artefakty
+				if has_node("/root/ArtifactManager"):
+					ArtifactManager.on_damage_dealt(damage_to_deal, target, is_critical)
 
 		CardEffectData.EffectType.GAIN_BLOCK:
 			if target.has_method("add_block"): target.add_block(effect.value)
@@ -504,6 +534,7 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 			if is_instance_valid(_player_unit_node) and target.has_method("take_damage"):
 				var damage = _player_unit_node.current_block * 2
 				target.take_damage(damage)
+
 
 func process_enemy_actions() -> void:
 	_is_action_processing = true
@@ -717,3 +748,12 @@ func _setup_camera_boundaries():
 	camera_2d.limit_left = 0 - horizontal_padding; camera_2d.limit_top = 0 - top_padding
 	camera_2d.limit_right = grid_pixel_width + horizontal_padding
 	camera_2d.limit_bottom = grid_pixel_height + bottom_padding
+
+func get_player_unit() -> Node2D:
+	return _player_unit_node
+
+func get_enemy_count() -> int:
+	return _enemy_units.size()
+
+func get_all_enemies() -> Array:
+	return _enemy_units

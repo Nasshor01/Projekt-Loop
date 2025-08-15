@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3 uid="uid://v73jgkjtk5jh"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_0duya"]
+[ext_resource type="Texture2D" uid="uid://cw1ol5ckb84up" path="res://art/icons/Artifacts/fenixovo pero-1.png.png" id="2_2g7nl"]
+
+[resource]
+script = ExtResource("1_0duya")
+artifact_name = "Fénixovo pero"
+description = "Jednou za souboj: když tvé zdraví klesne pod 25%, vyléč se na 50% HP."
+texture = ExtResource("2_2g7nl")
+artifact_type = 2
+trigger_type = 13
+effect_type = 8
+primary_value = 50
+secondary_value = 0
+percentage_based = true
+max_stacks = 1
+current_stacks = 1
+uses_per_combat = 1
+current_uses = 0
+condition_type = "health_below"
+condition_value = 25
+custom_effect_id = ""
+effect_description = ""
+metadata/_custom_type_script = "uid://cojmro6kj47du"

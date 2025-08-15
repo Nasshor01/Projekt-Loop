@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bi6hs7eqy1svp"
-path="res://.godot/imported/100.png-dbe3936391004dfb941b954315baf804.ctex"
+uid="uid://dgiforssmt3vo"
+path="res://.godot/imported/koruna krále-1.png.png-f94ae86dd5c85a48d58d28a7243c0f11.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/icons/Artifacts/100.png"
-dest_files=["res://.godot/imported/100.png-dbe3936391004dfb941b954315baf804.ctex"]
+source_file="res://art/icons/Artifacts/koruna krále-1.png.png"
+dest_files=["res://.godot/imported/koruna krále-1.png.png-f94ae86dd5c85a48d58d28a7243c0f11.ctex"]
 
 [params]
 

@@ -161,15 +161,6 @@ func apply_passive_skills():
 	var unlocked_ids = SaveManager.meta_progress.unlocked_skill_ids
 	DebugLogger.log_info("Aplikuji %d odemčených skillů" % unlocked_ids.size(), "SKILLS")
 	
-	#var unlocked_ids = [
-		#"paladin_start", "paladin_block_1", "paladin_hp_1", "righteous_anger", 
-		#"swift_justice", "fortress", "divine_wrath", "blessed_recovery", 
-		#"divine_protection", "sacred_thorns", "righteous_fury", "aura_mastery", 
-		#"avatar_of_light"
-	#]
-
-	DebugLogger.log_info("Aplikuji %d odemčených skillů" % unlocked_ids.size(), "SKILLS")
-	
 	# 4. Projdeme odemčené skilly a aplikujeme jejich EFEKTY
 	for skill_id in unlocked_ids:
 		var skill_node = active_skill_tree.get_node_by_id(skill_id)
@@ -231,6 +222,25 @@ func apply_passive_skills():
 					block_on_card_play += effect_data.value
 					print("  + %d blok za kartu (nyní %d)" % [effect_data.value, block_on_card_play])
 	
+	# NOVÉ: Aplikuj bonusy z artefaktů
+	if has_node("/root/ArtifactManager"):
+		max_hp += ArtifactManager.get_max_hp_bonus()
+		max_energy += ArtifactManager.get_max_energy_bonus()
+		global_card_damage_bonus += ArtifactManager.get_card_damage_bonus()
+		
+		var heal_bonus = ArtifactManager.get_heal_bonus()
+		if heal_bonus > 0:
+			double_healing_bonus += heal_bonus
+		
+		var block_bonus = ArtifactManager.get_block_bonus()
+		if block_bonus > 0:
+			starting_retained_block += block_bonus
+		
+		critical_chance += ArtifactManager.get_critical_chance()
+		thorns_damage += ArtifactManager.get_thorns_damage()
+		
+		print("=== ARTEFAKT BONUSY APLIKOVÁNY ===")
+	
 	current_hp = max_hp
 	# Loguj finální staty
 	DebugLogger.log_info("Finální staty po aplikaci skillů:", "SKILLS")
@@ -238,10 +248,9 @@ func apply_passive_skills():
 	DebugLogger.log_info("  Crit: %d%%, Heal/turn: %d, Thorns: %d" % [critical_chance, heal_end_of_turn, thorns_damage], "SKILLS")
 	
 	DebugLogger.end_performance_timer("apply_passive_skills")
-	DebugLogger.log_skill_tree_state()  # Kompletní stav stromu
+	DebugLogger.log_skill_tree_state()
 	
 	emit_signal("health_changed", current_hp, max_hp)
-	
 	
 func initialize_player(p_class, p_subclass):
 	print("=== INICIALIZACE HRÁČE ===")
@@ -322,19 +331,34 @@ func reset_battle_stats():
 func reset_energy():
 	current_energy = max_energy
 	
-	for artifact in artifacts:
-		if artifact.effect_id == "extra_energy_per_turn":
-			current_energy += artifact.value
-			print("Artefakt '%s' přidal hráči %d energii." % [artifact.artifact_name, artifact.value])
+	# SMAZÁNO: Starý artefakt systém
+	# for artifact in artifacts:
+	#     if artifact.effect_id == "extra_energy_per_turn":
+	#         current_energy += artifact.value
+	#         print("Artefakt '%s' přidal hráči %d energii." % [artifact.artifact_name, artifact.value])
+	
+	# Bonus energie z artefaktů se teď řeší automaticky přes ArtifactManager
+	# START_OF_TURN trigger přidá energii když je potřeba
 	
 	emit_signal("energy_changed", current_energy)
-
 func spend_energy(amount: int) -> bool:
 	if current_energy >= amount:
 		current_energy -= amount
+		
+		# NOVÉ: Trigger energy spent artefakty
+		if has_node("/root/ArtifactManager"):
+			var context = {
+				"energy_spent": amount,
+				"current_energy": current_energy,
+				"max_energy": max_energy,
+				"target": null  # Bude nastaveno v ArtifactManager
+			}
+			ArtifactManager.trigger_artifacts(ArtifactsData.TriggerType.ON_ENERGY_SPENT, context)
+		
 		emit_signal("energy_changed", current_energy)
 		return true
 	return false
+
 
 func gain_energy(amount: int):
 	current_energy += amount
@@ -380,19 +404,52 @@ func draw_cards(amount: int) -> int:
 			cards_drawn_count += 1
 			DebugLogger.log_debug("Drew: %s" % drawn_card.card_name, "CARDS")
 	
+	# NOVÉ: Trigger draw cards artefakty pokud jsme něco dobrali
+	if cards_drawn_count > 0 and has_node("/root/ArtifactManager"):
+		var context = {
+			"cards_drawn": cards_drawn_count,
+			"total_cards_requested": amount,
+			"hand_size": current_hand.size(),
+			"target": null  # Bude nastaveno v ArtifactManager
+		}
+		ArtifactManager.trigger_artifacts(ArtifactsData.TriggerType.ON_DRAW_CARDS, context)
+	
 	DebugLogger.log_debug("Cards drawn: %d, Hand size: %d" % [cards_drawn_count, current_hand.size()], "CARDS")
 	return cards_drawn_count
 
 func add_artifact(artifact_data: ArtifactsData):
 	if not artifacts.has(artifact_data):
-		artifacts.append(artifact_data)
-		DebugLogger.log_info("Artifact gained: %s (effect: %s, value: %d)" % [
+		# Zkusíme stacknout existující artefakt
+		var existing_artifact = _find_stackable_artifact(artifact_data)
+		if existing_artifact and existing_artifact.add_stack():
+			print("Artefakt '%s' stacknut! Nový stack: %d/%d" % [
+				existing_artifact.artifact_name, 
+				existing_artifact.current_stacks, 
+				existing_artifact.max_stacks
+			])
+		else:
+			artifacts.append(artifact_data)
+			print("Nový artefakt získán: %s" % artifact_data.artifact_name)
+		
+		DebugLogger.log_info("Artifact gained: %s (effect: %s)" % [
 			artifact_data.artifact_name,
-			artifact_data.effect_id,
-			artifact_data.value
+			str(artifact_data.effect_type)
 		], "ARTIFACTS")
-		DebugLogger.log_artifacts()  # Loguj všechny artefakty
+		DebugLogger.log_artifacts()
 		emit_signal("artifacts_changed")
+		
+		# Aktualizuj aplikované efekty pokud jde o passive artefakt
+		if artifact_data.trigger_type == ArtifactsData.TriggerType.PASSIVE:
+			apply_passive_skills()
+
+# V PlayerData.gd - NOVÁ POMOCNÁ FUNKCE:
+func _find_stackable_artifact(new_artifact: ArtifactsData) -> ArtifactsData:
+	for existing in artifacts:
+		if (existing.artifact_name == new_artifact.artifact_name and 
+			existing.max_stacks > 1 and 
+			existing.current_stacks < existing.max_stacks):
+			return existing
+	return null
 
 func remove_artifact(artifact_data: ArtifactsData):
 	if artifacts.has(artifact_data):

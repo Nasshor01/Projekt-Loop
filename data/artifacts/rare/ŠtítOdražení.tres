@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3 uid="uid://343v3ujpwn46"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_twhck"]
+[ext_resource type="Texture2D" uid="uid://bhw7iei0j0txf" path="res://art/icons/Artifacts/štít odražení-1.png.png" id="2_1321a"]
+
+[resource]
+script = ExtResource("1_twhck")
+artifact_name = "štít odražení"
+description = "Pokaždé když utrpíš poškození, útočník utrpí {value} poškození zpět."
+texture = ExtResource("2_1321a")
+artifact_type = 2
+trigger_type = 5
+effect_type = 10
+primary_value = 4
+secondary_value = 0
+percentage_based = false
+max_stacks = 1
+current_stacks = 1
+uses_per_combat = -1
+current_uses = 0
+condition_type = ""
+condition_value = 0
+custom_effect_id = ""
+effect_description = ""
+metadata/_custom_type_script = "uid://cojmro6kj47du"

@@ -72,33 +72,50 @@ func attack(target: Node2D) -> void:
 	# NOVÉ: Aplikuj bonus poškození z karet pro hráče
 	if unit_data.faction == UnitData.Faction.PLAYER:
 		damage += PlayerData.global_card_damage_bonus
+		
+		# NOVÉ: Přidej conditional bonusy z artefaktů
+		if has_node("/root/ArtifactManager"):
+			var context = {
+				"current_hp": PlayerData.current_hp,
+				"max_hp": PlayerData.max_hp,
+				"current_energy": PlayerData.current_energy
+			}
+			damage += ArtifactManager.get_card_damage_bonus(context)
 	
-	# NOVÉ: Zkontroluj kritický zásah pro hráče
-	if unit_data.faction == UnitData.Faction.PLAYER and PlayerData.get_critical_chance() > 0:
-		var crit_roll = randi_range(1, 100)
-		if crit_roll <= PlayerData.get_critical_chance():
-			damage *= 2
-			_show_floating_text(damage, "critical")
-			print("💥 KRITICKÝ ZÁSAH! %d poškození" % damage)
+	# NOVÉ: Zkontroluj kritický zásah pro hráče (skills + artifacts)
+	if unit_data.faction == UnitData.Faction.PLAYER:
+		var total_crit_chance = PlayerData.get_critical_chance()
+		if has_node("/root/ArtifactManager"):
+			total_crit_chance += ArtifactManager.get_critical_chance()
+		
+		if total_crit_chance > 0:
+			var crit_roll = randi_range(1, 100)
+			if crit_roll <= total_crit_chance:
+				damage *= 2
+				_show_floating_text(damage, "critical")
+				print("💥 KRITICKÝ ZÁSAH! %d poškození" % damage)
 	
 	await target.take_damage(damage)
 
 func take_damage(amount: int) -> void:
-	# NOVÉ: Aplikuj thorns damage pro hráče
+	# NOVÉ: Trigger damage taken artefakty na začátku
+	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/ArtifactManager"):
+		ArtifactManager.on_damage_taken(amount, get_last_attacker())
+	
+	# THORNS DAMAGE - jen nový systém
 	if unit_data.faction == UnitData.Faction.PLAYER:
 		var attacker = get_last_attacker()
 		if is_instance_valid(attacker):
-			# Starý artefakt thorns
-			for artifacts in PlayerData.artifacts:
-				if artifacts.effect_id == "thorns_damage":
-					print("Artefakt '%s' vrací %d poškození." % [artifacts.artifact_name, artifacts.value])
-					await attacker.take_damage(artifacts.value)
-			
-			# NOVÉ: Skill thorns damage
+			# NOVÝ SYSTÉM - skills + artifacts thorns kombinace
 			var skill_thorns = PlayerData.get_thorns_damage()
-			if skill_thorns > 0:
-				print("🌹 Svaté trny vracejí %d poškození!" % skill_thorns)
-				await attacker.take_damage(skill_thorns)
+			var artifact_thorns = 0
+			if has_node("/root/ArtifactManager"):
+				artifact_thorns = ArtifactManager.get_thorns_damage()
+			
+			var total_thorns = skill_thorns + artifact_thorns
+			if total_thorns > 0:
+				print("🌹 Celkové trny vracejí %d poškození!" % total_thorns)
+				await attacker.take_damage(total_thorns)
 
 	var damage_to_deal = amount
 	var absorbed_by_block = min(amount, current_block)
@@ -109,7 +126,6 @@ func take_damage(amount: int) -> void:
 	current_block -= absorbed_by_block
 	damage_to_deal -= absorbed_by_block
 	
-	# Pokud se spotřeboval i permanentní blok, snížíme ho
 	retained_block = min(retained_block, current_block)
 	
 	if absorbed_by_block > 0 and damage_to_deal > 0:
@@ -128,8 +144,6 @@ func take_damage(amount: int) -> void:
 	
 	if current_health <= 0:
 		_die()
-	
-	
 
 func reset_for_new_turn():
 	# Dočasný blok zmizí, ale permanentní základ zůstane
@@ -291,13 +305,16 @@ func _die():
 	emit_signal("died", self)
 
 func heal(amount: int):
-	# NOVÉ: Aplikuj enhanced healing
-	var enhanced_amount = PlayerData.should_heal_enhanced(amount) if unit_data.faction == UnitData.Faction.PLAYER else amount
+	# NOVÉ: Aplikuj artefakt healing bonusy
+	var enhanced_amount = amount
+	if unit_data.faction == UnitData.Faction.PLAYER:
+		if has_node("/root/ArtifactManager"):
+			enhanced_amount += ArtifactManager.get_heal_bonus()
+		enhanced_amount = PlayerData.should_heal_enhanced(enhanced_amount)
 	
-	# OPRAVA: Použij správné max HP pro hráče
 	var max_health_target = unit_data.max_health
 	if unit_data.faction == UnitData.Faction.PLAYER:
-		max_health_target = PlayerData.max_hp  # <-- TOTO CHYBĚLO!
+		max_health_target = PlayerData.max_hp
 	
 	var health_to_restore = min(enhanced_amount, max_health_target - current_health)
 	current_health += health_to_restore
@@ -306,18 +323,29 @@ func heal(amount: int):
 	if unit_data.faction == UnitData.Faction.PLAYER and health_to_restore > 0:
 		PlayerData.heal(health_to_restore)
 		
+		# NOVÉ: Trigger heal artefakty
+		if has_node("/root/ArtifactManager"):
+			ArtifactManager.on_heal(health_to_restore)
+		
 	_update_stats_and_emit_signal()
 
 func add_block(amount: int):
-	# NOVÉ: Aplikuj block on card play bonus
-	var bonus_block = 0
+	# NOVÉ: Aplikuj artefakt block bonusy
+	var total_block = amount
 	if unit_data.faction == UnitData.Faction.PLAYER:
-		bonus_block = PlayerData.process_block_on_card_play()
+		if has_node("/root/ArtifactManager"):
+			total_block += ArtifactManager.get_block_bonus()
+		total_block += PlayerData.process_block_on_card_play()
 	
-	var total_block = amount + bonus_block
 	current_block += total_block
 	_show_floating_text(total_block, "block_gain")
+	
+	# NOVÉ: Trigger block gained artefakty
+	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/ArtifactManager"):
+		ArtifactManager.on_block_gained(total_block)
+	
 	_update_stats_and_emit_signal()
+
 
 func get_unit_data() -> UnitData: return unit_data
 

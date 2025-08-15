@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3 uid="uid://bnqlphfjrx6un"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_qwet2"]
+[ext_resource type="Texture2D" uid="uid://chu3g2dusyj4a" path="res://art/icons/Artifacts/mana krystal-1.png.png" id="2_qwet2"]
+
+[resource]
+script = ExtResource("1_qwet2")
+artifact_name = "Mana Krystal"
+description = "Na začátku každého tahu získáš {value} energie navíc."
+texture = ExtResource("2_qwet2")
+artifact_type = 1
+trigger_type = 2
+effect_type = 6
+primary_value = 1
+secondary_value = 0
+percentage_based = false
+max_stacks = 2
+current_stacks = 1
+uses_per_combat = -1
+current_uses = 0
+condition_type = ""
+condition_value = 0
+custom_effect_id = ""
+effect_description = ""
+metadata/_custom_type_script = "uid://cojmro6kj47du"

@@ -4,6 +4,9 @@ extends HBoxContainer
 const ArtifactIconScene = preload("res://scenes/ui/ArtifactIcon.tscn")
 
 func _ready():
+	# Nastavíme mezery mezi ikonami
+	add_theme_constant_override("separation", 4)
+	
 	PlayerData.artifacts_changed.connect(update_artifacts_display)
 	update_artifacts_display()
 

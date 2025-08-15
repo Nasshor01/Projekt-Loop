@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3 uid="uid://s7its2p1eh0f"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_k4xv0"]
+[ext_resource type="Texture2D" uid="uid://j2jgfjj1bnas" path="res://art/icons/Artifacts/opasek bojoníka-1.png.png" id="2_bxug3"]
+
+[resource]
+script = ExtResource("1_k4xv0")
+artifact_name = "Bojovníkův náramek"
+description = "Na začátku každého tahu získáš {value} bloku."
+texture = ExtResource("2_bxug3")
+artifact_type = 1
+trigger_type = 2
+effect_type = 5
+primary_value = 3
+secondary_value = 3
+percentage_based = false
+max_stacks = 1
+current_stacks = 1
+uses_per_combat = -1
+current_uses = 0
+condition_type = ""
+condition_value = 0
+custom_effect_id = ""
+effect_description = ""
+metadata/_custom_type_script = "uid://cojmro6kj47du"

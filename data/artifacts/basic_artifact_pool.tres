@@ -1,12 +1,15 @@
-[gd_resource type="Resource" script_class="ArtifactPool" load_steps=6 format=3 uid="uid://bxfpuy4faq7sq"]
+[gd_resource type="Resource" script_class="ArtifactPool" load_steps=9 format=3 uid="uid://bxfpuy4faq7sq"]
 
 [ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_ixhu3"]
+[ext_resource type="Resource" uid="uid://bnqlphfjrx6un" path="res://data/artifacts/uncommon/ManaKrystal.tres" id="2_8afg2"]
 [ext_resource type="Script" uid="uid://o3lg5niqen4s" path="res://data/artifacts/ArtifactPool.gd" id="2_fvhm7"]
-[ext_resource type="Resource" uid="uid://bnqlphfjrx6un" path="res://data/artifacts/basic/ManaKrystal.tres" id="2_wa1ei"]
-[ext_resource type="Resource" uid="uid://343v3ujpwn46" path="res://data/artifacts/basic/OstnatýNáhrdelník.tres" id="3_wdv7w"]
-[ext_resource type="Resource" uid="uid://dxn6ltx2ptai" path="res://data/artifacts/basic/VálečnickáHelma.tres" id="4_7vcwk"]
+[ext_resource type="Resource" uid="uid://glnnfop1v5ll" path="res://data/artifacts/rare/BerserkerovaZuřivost.tres" id="3_k5j4k"]
+[ext_resource type="Resource" uid="uid://v73jgkjtk5jh" path="res://data/artifacts/rare/FénixovoPero.tres" id="4_m64m1"]
+[ext_resource type="Resource" uid="uid://b2mjbuhqkgfby" path="res://data/artifacts/common/ZdravéJablko.tres" id="4_wa1ei"]
+[ext_resource type="Resource" uid="uid://343v3ujpwn46" path="res://data/artifacts/rare/ŠtítOdražení.tres" id="5_y5xlw"]
+[ext_resource type="Resource" uid="uid://s7its2p1eh0f" path="res://data/artifacts/uncommon/BojovníkůvNáramek.tres" id="6_vb5ki"]
 
 [resource]
 script = ExtResource("2_fvhm7")
-artifacts = Array[ExtResource("1_ixhu3")]([ExtResource("2_wa1ei"), ExtResource("3_wdv7w"), ExtResource("4_7vcwk")])
+artifacts = Array[ExtResource("1_ixhu3")]([ExtResource("4_wa1ei"), ExtResource("3_k5j4k"), ExtResource("4_m64m1"), ExtResource("5_y5xlw"), ExtResource("6_vb5ki"), ExtResource("2_8afg2")])
 metadata/_custom_type_script = "uid://o3lg5niqen4s"

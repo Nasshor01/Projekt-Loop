@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b2prchllgr7uu"
-path="res://.godot/imported/54.png-f469b5ecf8ce73263686b0b0e256522d.ctex"
+uid="uid://chu3g2dusyj4a"
+path="res://.godot/imported/mana krystal-1.png.png-edfe7f15e954abd391637ba9be4b8668.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/icons/Artifacts/54.png"
-dest_files=["res://.godot/imported/54.png-f469b5ecf8ce73263686b0b0e256522d.ctex"]
+source_file="res://art/icons/Artifacts/mana krystal-1.png.png"
+dest_files=["res://.godot/imported/mana krystal-1.png.png-edfe7f15e954abd391637ba9be4b8668.ctex"]
 
 [params]
 

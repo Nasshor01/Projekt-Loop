@@ -287,11 +287,11 @@ func log_deck_state():
 		log_debug("Cards in hand:", "DECK")
 		for card in PlayerData.current_hand:
 			if is_instance_valid(card):
-				# ----- ZDE JE OPRAVA -----
+				# OPRAVENO: Používáme správné properties
 				log_debug("  - %s (Cost: %d)" % [card.card_name, card.cost], "DECK")
-				# -------------------------
 
 	log_info("=== END DECK STATE ===", "DECK")
+
 
 func log_artifacts():
 	"""Loguje všechny artefakty hráče"""
@@ -302,10 +302,17 @@ func log_artifacts():
 	log_info("=== ARTIFACTS (%d) ===" % PlayerData.artifacts.size(), "ARTIFACTS")
 	for artifact in PlayerData.artifacts:
 		if is_instance_valid(artifact):
-			log_info("- %s: %s (value: %d)" % [
+			# OPRAVENO: Používáme nové properties
+			var effect_name = "UNKNOWN"
+			if artifact.effect_type >= 0 and artifact.effect_type < ArtifactsData.EffectType.size():
+				effect_name = ArtifactsData.EffectType.keys()[artifact.effect_type]
+			
+			log_info("- %s: %s (value: %d, stacks: %d/%d)" % [
 				artifact.artifact_name,
-				artifact.effect_id,
-				artifact.value
+				effect_name,
+				artifact.primary_value,
+				artifact.current_stacks,
+				artifact.max_stacks
 			], "ARTIFACTS")
 	log_info("=== END ARTIFACTS ===", "ARTIFACTS")
 
