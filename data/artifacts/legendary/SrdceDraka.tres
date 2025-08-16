@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3 uid="uid://dleb020dpkyxt"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_u1lwa"]
+[ext_resource type="Texture2D" uid="uid://d0bv8ordwkbk7" path="res://art/icons/Artifacts/dračí srdce-1.png.png" id="2_2udoi"]
+
+[resource]
+script = ExtResource("1_u1lwa")
+artifact_name = "Srdce draka"
+description = "Na začátku prvních 2 tahů souboje získáš blok rovný svým maximálním životům. Maximální zdraví -10."
+texture = ExtResource("2_2udoi")
+artifact_type = 3
+trigger_type = 2
+effect_type = 5
+primary_value = 100
+secondary_value = -10
+percentage_based = false
+max_stacks = 1
+current_stacks = 1
+uses_per_combat = -1
+current_uses = 0
+condition_type = ""
+condition_value = 0
+custom_effect_id = "dragon_heart_combo"
+effect_description = ""
+metadata/_custom_type_script = "uid://cojmro6kj47du"

@@ -30,6 +30,7 @@ const AIController = preload("res://scripts/EnemyAIController.gd")
 @onready var win_button: Button = $CanvasLayer/WinButton
 @onready var battle_grid_instance: BattleGrid = $BattleGrid
 @onready var camera_2d: Camera2D = $Camera2D
+@onready var turn_counter_label: Label = $CanvasLayer/TurnCounterLabel
 
 @export var camera_speed = 1.0
 @export var camera_zoom_speed = 0.1
@@ -54,6 +55,8 @@ var _is_action_processing: bool = false
 var _cards_to_draw_queue: int = 0
 var _is_drawing_cards: bool = false
 var _is_first_turn: bool = true
+var _current_turn_number: int = 0
+var _is_extra_turn: bool = false
 
 func _ready():
 	DebugLogger.log_info("Battle scene loaded", "BATTLE")
@@ -152,7 +155,10 @@ func confirm_player_spawn(at_position: Vector2i):
 	spawn_enemy_units()
 	_place_terrain_features()
 	
-	# Už zde neaplikujeme artefakty, přesunuli jsme to
+	# NOVÉ: Reset artefaktů na začátku souboje (PŘED prvním tahem)
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager.on_combat_start()
+	
 	call_deferred("start_player_turn")
 
 
@@ -171,19 +177,45 @@ func start_player_turn():
 	_current_battle_state = BattleState.PROCESSING
 	end_turn_button.disabled = true
 	
+	# NOVÉ: Počítání tahů (pouze pro normální tahy, ne extra)
+	if not _is_extra_turn:
+		_current_turn_number += 1
+		_update_turn_display()
+		print("🔄 Tah číslo: %d" % _current_turn_number)
+	else:
+		print("⚡ EXTRA TAH!")
+		_is_extra_turn = false  # Reset pro příští tah
+	
 	PlayerData.reset_energy()
+	PlayerData.reset_adrenaline_tracking()
 	
 	if is_instance_valid(_player_unit_node):
 		_player_unit_node.reset_for_new_turn()
 		
-		# PŘESUNUTÉ: START_OF_TURN artefakty se spouštějí AŽ PO resetu
+		# START_OF_TURN artefakty
 		if has_node("/root/ArtifactManager"):
 			ArtifactManager.on_turn_start()
 		
-		if _is_first_turn:
-			if has_node("/root/ArtifactManager"):
-				ArtifactManager.on_combat_start()
-			_is_first_turn = false
+		# NOVÉ: Zkontroluj conditional artefakty (pro Časový krystal)
+		if has_node("/root/ArtifactManager"):
+			var context = {
+				"current_turn": _current_turn_number,
+				"turn_number": _current_turn_number,
+				"target": _player_unit_node
+			}
+			var conditional_results = ArtifactManager.check_conditional_artifacts_with_context(context)
+			
+			# Zkontroluj jestli se aktivoval extra tah
+			for result in conditional_results:
+				if result["artifact"].custom_effect_id == "extra_turn":
+					_is_extra_turn = true
+					print("🔮 Časový krystal aktivován! Budeš mít extra tah!")
+		
+		# SMAŽ TOTO - už se volá v confirm_player_spawn():
+		# if _is_first_turn:
+		#	if has_node("/root/ArtifactManager"):
+		#		ArtifactManager.on_combat_start()
+		#	_is_first_turn = false
 		
 		var extra_draw = _player_unit_node.process_turn_start_statuses()
 		_cards_to_draw_queue = starting_hand_size + extra_draw
@@ -196,6 +228,41 @@ func start_player_turn():
 			
 	set_enemy_intents()
 	battle_grid_instance.show_danger_zone(_enemy_units)
+
+func _update_turn_display():
+	"""Aktualizuje zobrazení čísla tahu"""
+	if is_instance_valid(turn_counter_label):
+		turn_counter_label.text = "Tah: %d" % _current_turn_number
+
+func start_extra_turn():
+	"""Spustí PLNOHODNOTNÝ extra tah hráče"""
+	print("⚡ SPOUŠTÍM EXTRA TAH!")
+	_is_extra_turn = false  # Reset flag
+	
+	# 1. ODHOĎ SOUČASNÉ KARTY (jako konec normálního tahu)
+	print("🗂️ Odhazuji současné karty...")
+	PlayerData.discard_hand()
+	player_hand_ui_instance.clear_hand()  # Vyčisti UI
+	_update_pile_counts()
+	
+	# 2. RESETUJ ENERGII
+	PlayerData.reset_energy()
+	
+	# 3. RESETUJ POHYB JEDNOTKY (KLÍČOVÉ!)
+	if is_instance_valid(_player_unit_node):
+		print("🚶 Resetuji pohyb pro extra tah...")
+		_player_unit_node.reset_for_new_turn()  # Toto resetuje pohyb!
+	
+	# 4. DOBÍREJ NOVÉ KARTY (normální množství)
+	_cards_to_draw_queue = starting_hand_size
+	_draw_next_card_in_queue()
+	
+	# 5. NASTAV SPRÁVNÝ STAV
+	_current_battle_state = BattleState.PLAYER_TURN
+	end_turn_button.disabled = false
+	
+	print("✅ Extra tah připraven - pohyb resetován, karty vyměněny!")
+
 
 # Přidejte debug do signálu stats_changed
 func _on_unit_stats_changed(unit_node: Node2D):
@@ -262,8 +329,15 @@ func start_enemy_turn():
 	_current_battle_state = BattleState.ENEMY_TURN
 	end_turn_button.disabled = true
 	
-	# ===== PŘIDEJ TOTO =====
-	# NOVÉ: Trigger end of turn artefakty
+	# Zkontroluj jestli má být extra tah
+	if _is_extra_turn:
+		print("🔄 Místo enemy tahu bude extra player tah!")
+		# Malá pauza pro efekt
+		var timer = get_tree().create_timer(1.0)
+		timer.timeout.connect(start_extra_turn)
+		return
+	
+	# END_OF_TURN artefakty
 	if has_node("/root/ArtifactManager"):
 		print("🔮 Spouštím END_OF_TURN artefakty...")
 		var artifact_results = ArtifactManager.on_turn_end()
@@ -271,7 +345,6 @@ func start_enemy_turn():
 			print("✅ Aktivováno %d END_OF_TURN artefaktů:" % artifact_results.size())
 			for result in artifact_results:
 				print("   - %s: %s" % [result["artifact"].artifact_name, result["description"]])
-	# ===== KONEC PŘIDANÉ ČÁSTI =====
 	
 	battle_grid_instance.hide_danger_zone()
 	
@@ -416,6 +489,9 @@ func try_play_card(card: CardData, initial_target: Node2D) -> void:
 	var card_played_successfully = false
 	
 	var card_ui_to_remove = _selected_card_ui
+	
+	if card.card_id == "adrenaline" or card.card_id == "adrenaline+":
+		PlayerData.track_adrenaline_card_played()
 	
 	for effect_data in card.effects:
 		var targets = _get_targets_for_effect(effect_data, initial_target)

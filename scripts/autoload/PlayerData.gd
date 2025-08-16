@@ -40,6 +40,9 @@ var energy_on_kill: int = 0
 var block_on_card_play: int = 0
 var global_shield: int = 0
 
+var adrenaline_cards_this_turn: int = 0
+var has_adrenaline_addiction: bool = false
+
 func get_current_node() -> MapNodeResource:
 	if not path_taken.is_empty():
 		floors_cleared = path_taken.size()
@@ -431,6 +434,10 @@ func add_artifact(new_artifact: ArtifactsData) -> bool:
 				print("✅ Přidán stack pro %s (%d/%d)" % [existing_artifact.artifact_name, existing_artifact.current_stacks, existing_artifact.max_stacks])
 				emit_signal("artifacts_changed")
 				
+				# OPRAVA: Refresh ArtifactManager cache
+				if has_node("/root/ArtifactManager"):
+					ArtifactManager._refresh_artifact_cache()
+				
 				# OPRAVA: Aplikuj passive skills i při stackování!
 				if existing_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:
 					apply_passive_skills()
@@ -444,9 +451,15 @@ func add_artifact(new_artifact: ArtifactsData) -> bool:
 			print("❌ %s už vlastníš a nedá se stackovat!" % existing_artifact.artifact_name)
 			return false
 	else:
-		# Nový artefakt - jednoduše přidáme
+		# Nový artefakt - přidáme ho
 		artifacts.append(new_artifact)
 		print("✅ Získán nový artefakt: %s" % new_artifact.artifact_name)
+		
+		# NOVÉ: Speciální handling pro Srdce draka - jednorázové snížení HP
+		if new_artifact.artifact_name == "Srdce draka":
+			print("🐉 SRDCE DRAKA: Jednorázové snížení max HP o 10")
+			change_max_hp(-10)  # Sníží max HP o 10
+			print("💔 Max HP sníženo z %d na %d" % [max_hp + 10, max_hp])
 		
 		DebugLogger.log_info("Artifact gained: %s (effect: %s)" % [
 			new_artifact.artifact_name,
@@ -455,9 +468,16 @@ func add_artifact(new_artifact: ArtifactsData) -> bool:
 		DebugLogger.log_artifacts()
 		emit_signal("artifacts_changed")
 		
+		# OPRAVA: Refresh ArtifactManager cache
+		if has_node("/root/ArtifactManager"):
+			ArtifactManager._refresh_artifact_cache()
+		
 		# Aktualizuj aplikované efekty pokud jde o passive artefakt
 		if new_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:
 			apply_passive_skills()
+		
+		# OPRAVA: Zajisti UI aktualizaci
+		emit_signal("health_changed", current_hp, max_hp)
 		
 		return true
 
@@ -589,3 +609,49 @@ func change_max_hp(amount: int):
 	
 	# KLÍČOVÝ KROK: Oznámíme všem (včetně GlobalUI), že se zdraví změnilo
 	emit_signal("health_changed", current_hp, max_hp)
+
+func track_adrenaline_card_played():
+	"""Volá se při zahrání Adrenalin karty"""
+	adrenaline_cards_this_turn += 1
+	print("🏃 Adrenalin karta zahrána, celkem tento tah: %d" % adrenaline_cards_this_turn)
+	
+	# Pokud hráč zahrál 4+ Adrenalin karet za tah a ještě nemá addiction
+	if adrenaline_cards_this_turn >= 4 and not has_adrenaline_addiction:
+		_trigger_adrenaline_addiction()
+
+func reset_adrenaline_tracking():
+	"""Volá se na začátku nového tahu"""
+	adrenaline_cards_this_turn = 0
+
+func _trigger_adrenaline_addiction():
+	"""Přidá secret punishment artefakt"""
+	print("💉 AKTIVACE: Příliš mnoho adrenalinu! Získáváš závislost...")
+	
+	# Vytvoř secret artefakt
+	var addiction_artifact = _create_adrenaline_addiction_artifact()
+	
+	# Přidej ho (bez možnosti odmítnutí)
+	add_artifact(addiction_artifact)
+	has_adrenaline_addiction = true
+	
+	# Můžeš přidat i vizuální efekt nebo zprávu hráči
+	print("⚠️ Získal jsi SECRET ARTEFAKT: Závislost na adrenalinu!")
+
+func _create_adrenaline_addiction_artifact() -> ArtifactsData:
+	"""Vytvoří secret punishment artefakt"""
+	var artifact = ArtifactsData.new()
+	
+	artifact.artifact_name = "Závislost na adrenalinu"
+	artifact.description = "Na začátku každého tahu ztratíš 1 energii a utrpíš 1 poškození. (SECRET)"
+	artifact.artifact_type = ArtifactsData.ArtifactType.CURSED
+	artifact.trigger_type = ArtifactsData.TriggerType.START_OF_TURN
+	artifact.effect_type = ArtifactsData.EffectType.ENERGY_LOSS
+	artifact.primary_value = 1  # Ztráta energie
+	artifact.secondary_value = 1  # Poškození
+	artifact.max_stacks = 1
+	artifact.custom_effect_id = "adrenaline_addiction"
+	
+	# Nastav speciální texturu nebo použij existující
+	# artifact.texture = load("res://textures/artifacts/secret_addiction.png")
+	
+	return artifact

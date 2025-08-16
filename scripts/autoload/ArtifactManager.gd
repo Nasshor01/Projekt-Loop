@@ -16,7 +16,15 @@ func _refresh_artifact_cache():
 	_passive_artifacts.clear()
 	_triggered_artifacts.clear()
 	
+	print("🔧 DEBUG: Refreshing artifact cache...")
+	
 	for artifact in PlayerData.artifacts:
+		print("🔧 DEBUG: Artefakt '%s' má trigger_type: %d (%s)" % [
+			artifact.artifact_name, 
+			artifact.trigger_type,
+			_get_trigger_type_name(artifact.trigger_type)
+		])
+		
 		if artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:
 			_passive_artifacts.append(artifact)
 		else:
@@ -24,6 +32,25 @@ func _refresh_artifact_cache():
 			if not _triggered_artifacts.has(trigger):
 				_triggered_artifacts[trigger] = []
 			_triggered_artifacts[trigger].append(artifact)
+			print("🔧 DEBUG: Přidán do cache pro trigger %d" % trigger)
+
+func _get_trigger_type_name(trigger_type: int) -> String:
+	match trigger_type:
+		0: return "PASSIVE"
+		1: return "START_OF_COMBAT"  
+		2: return "START_OF_TURN"
+		3: return "END_OF_TURN"
+		4: return "ON_CARD_PLAYED"
+		5: return "ON_DAMAGE_TAKEN"
+		6: return "ON_DAMAGE_DEALT"
+		7: return "ON_BLOCK_GAINED"
+		8: return "ON_HEAL"
+		9: return "ON_ENEMY_DEATH"
+		10: return "ON_HEALTH_LOW"
+		11: return "ON_ENERGY_SPENT"
+		12: return "ON_DRAW_CARDS"
+		13: return "CONDITIONAL"
+		_: return "UNKNOWN"
 
 func trigger_artifacts(trigger_type: ArtifactsData.TriggerType, context: Dictionary = {}) -> Array:
 	var results = []
@@ -59,9 +86,40 @@ func get_conditional_bonus(effect_type: ArtifactsData.EffectType, context: Dicti
 	return total_bonus
 
 func on_combat_start():
-	var results = trigger_artifacts(ArtifactsData.TriggerType.START_OF_COMBAT)
+	print("🔔 ArtifactManager: Spouštím START_OF_COMBAT artefakty...")
+	
+	# NOVÉ: Reset Srdce draka counteru na začátku NOVÉHO souboje
 	for artifact in PlayerData.artifacts:
-		artifact.reset_for_new_combat()
+		if artifact.custom_effect_id == "dragon_heart_combo":
+			artifact.set_meta("uses_this_combat", 0)
+			print("🐉 Srdce draka: Reset počítadla pro nový souboj")
+	
+	# OPRAVA: Vynucené refreshnutí cache
+	_refresh_artifact_cache()
+	
+	# DEBUG: Zkontroluj cache
+	if _triggered_artifacts.has(ArtifactsData.TriggerType.START_OF_COMBAT):
+		var combat_artifacts = _triggered_artifacts[ArtifactsData.TriggerType.START_OF_COMBAT]
+		print("📊 START_OF_COMBAT artefakty v cache: %d" % combat_artifacts.size())
+		for artifact in combat_artifacts:
+			print("   - %s (can_trigger: %s)" % [artifact.artifact_name, str(artifact.can_trigger())])
+	else:
+		print("📊 Žádné START_OF_COMBAT artefakty v cache")
+	
+	var results = trigger_artifacts(ArtifactsData.TriggerType.START_OF_COMBAT)
+	
+	if results.size() > 0:
+		print("✅ Spuštěno %d START_OF_COMBAT artefaktů:" % results.size())
+		for result in results:
+			print("   - %s: %s" % [result["artifact"].artifact_name, "úspěch" if result["success"] else "selhání"])
+	else:
+		print("❌ Žádné START_OF_COMBAT artefakty se nespustily")
+	
+	# Reset ostatních artefaktů (kromě Srdce draka)
+	for artifact in PlayerData.artifacts:
+		if artifact.custom_effect_id != "dragon_heart_combo":
+			artifact.reset_for_new_combat()
+	
 	return results
 
 func on_turn_start():
@@ -101,6 +159,10 @@ func on_turn_start():
 			print("📊 START_OF_TURN artefakty v cache: %d" % start_artifacts.size())
 			for artifact in start_artifacts:
 				print("   - %s (can_trigger: %s)" % [artifact.artifact_name, str(artifact.can_trigger())])
+				# DEBUG pro Srdce draka
+				if artifact.artifact_name == "Srdce draka":
+					var uses_this_combat = artifact.get_meta("uses_this_combat", 0)
+					print("     🐉 Použití v tomto souboji: %d/2" % uses_this_combat)
 		else:
 			print("📊 Žádné START_OF_TURN artefakty v cache")
 	
@@ -264,6 +326,19 @@ func get_artifact_count() -> int:
 
 func handle_custom_effect(artifact: ArtifactsData, context: Dictionary = {}) -> bool:
 	match artifact.custom_effect_id:
+		"adrenaline_addiction":
+			# Secret punishment efekt
+			var player = _get_player_unit()
+			if player:
+				# Ztráta energie (už se řeší automaticky přes ENERGY_LOSS)
+				
+				# Dodatečné poškození
+				var damage = artifact.secondary_value
+				if player.has_method("take_damage"):
+					player.take_damage(damage)
+					print("💉 Závislost na adrenalinu: -%d HP!" % damage)
+			return true
+
 		"block_per_enemy":
 			# Dračí šupina: blok za živé nepřátele
 			var block_amount = _get_enemy_count() * artifact.get_effective_value()
@@ -273,18 +348,53 @@ func handle_custom_effect(artifact: ArtifactsData, context: Dictionary = {}) -> 
 			return true
 			
 		"dragon_heart_combo":
-			# Srdce draka: blok = max HP, ale -10 max HP
+			# Srdce draka: blok podle aktuálních max HP (jen první 2 tahy)
+			print("🐉 SRDCE DRAKA KONTROLA...")
+
+			# Zkontroluj, kolikrát už byl použit v tomto souboji
+			var uses_this_combat = artifact.get_meta("uses_this_combat", 0)
+			var max_uses_per_combat = 2
+			
+			print("🐉 Debug: uses_this_combat = %d, max_uses = %d" % [uses_this_combat, max_uses_per_combat])
+			
+			if uses_this_combat >= max_uses_per_combat:
+				print("🐉 Srdce draka už bylo použito %d/%d krát v tomto souboji" % [uses_this_combat, max_uses_per_combat])
+				return false
+
+			print("🐉 SRDCE DRAKA AKTIVOVÁNO! (použití %d/%d)" % [uses_this_combat + 1, max_uses_per_combat])
+
 			var player = _get_player_unit()
-			if player:
-				PlayerData.change_max_hp(artifact.secondary_value)  # -10 HP
-				var block_amount = PlayerData.max_hp  # 100% current max HP
-				if player.has_method("add_block"):
-					player.add_block(block_amount)
-			return true
+			if not player:
+				print("❌ Player unit nenalezen!")
+				return false
+
+			# Spočítej blok z AKTUÁLNÍCH max HP
+			var current_max_hp = PlayerData.max_hp
+			var block_amount = current_max_hp  # 100% aktuálních max HP
+			print("🐉 Aktuální max HP: %d, přidávám %d bloku" % [current_max_hp, block_amount])
+
+			# Přidej blok
+			if player.has_method("add_block"):
+				player.add_block(block_amount)
+				print("🛡️ Srdce draka: Přidán blok %d" % block_amount)
+				
+				# Zvyš počítadlo použití v tomto souboji
+				var new_uses = uses_this_combat + 1
+				artifact.set_meta("uses_this_combat", new_uses)
+				print("🐉 Debug: Nastavuji uses_this_combat na %d" % new_uses)
+				
+				# Pokud to bylo poslední použití, informuj hráče
+				if new_uses >= max_uses_per_combat:
+					print("💔 Srdce draka: Síla se vyčerpala pro zbytek souboje!")
+				
+				return true
+			else:
+				print("❌ Player nemá add_block metodu!")
+				return false
 			
 		"cursed_ring_combo":
 			# Prokletý prsten: +15 max HP (jednorázově), -1 energie každý tah
-			if not artifact.has_property("hp_bonus_applied"):
+			if not artifact.has_meta("hp_bonus_applied"):
 				PlayerData.change_max_hp(artifact.secondary_value)  # +15 HP
 				artifact.set_meta("hp_bonus_applied", true)
 			# -1 energie se aplikuje normálně přes ENERGY_LOSS
@@ -314,9 +424,16 @@ func handle_custom_effect(artifact: ArtifactsData, context: Dictionary = {}) -> 
 			print("⚔️ Meč nekonečna: +%d poškození za zabití!" % artifact.get_effective_value())
 			return true
 		
+		"extra_turn":
+			# Časový krystal efekt - označí že bude extra tah
+			print("🔮 Časový krystal: Extra tah bude aktivován!")
+			# Efekt se realizuje v BattleScene, zde jen vracíme true
+			return true
+		
 		_:
 			print("Neznámý custom efekt: %s" % artifact.custom_effect_id)
 			return false
+
 
 func on_energy_spent(amount: int):
 	var context = {
@@ -350,6 +467,33 @@ func check_conditional_artifacts():
 	print("   - HP: %d/%d (%d%%)" % [context["current_hp"], context["max_hp"], context["current_hp"] * 100 / context["max_hp"]])
 	
 	var results = trigger_artifacts(ArtifactsData.TriggerType.CONDITIONAL, context)
+	
+	if results.size() > 0:
+		print("✅ Aktivováno %d conditional artefaktů:" % results.size())
+		for result in results:
+			print("   - %s: %s" % [result["artifact"].artifact_name, result["description"]])
+	
+	return results
+
+func check_conditional_artifacts_with_context(context: Dictionary = {}) -> Array:
+	"""Zkontroluje conditional artefakty s custom contextem"""
+	# Přidej základní context
+	var full_context = {
+		"current_hp": PlayerData.current_hp,
+		"max_hp": PlayerData.max_hp,
+		"current_energy": PlayerData.current_energy,
+		"hand_size": PlayerData.current_hand.size(),
+		"target": _get_player_unit()
+	}
+	
+	# Zkombinuj s custom contextem
+	for key in context:
+		full_context[key] = context[key]
+	
+	print("🔮 Kontroluji conditional artefakty s contextem...")
+	print("   - Turn: %d" % full_context.get("current_turn", 0))
+	
+	var results = trigger_artifacts(ArtifactsData.TriggerType.CONDITIONAL, full_context)
 	
 	if results.size() > 0:
 		print("✅ Aktivováno %d conditional artefaktů:" % results.size())

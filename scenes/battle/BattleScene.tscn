@@ -89,12 +89,21 @@ offset_right = 1024.0
 offset_bottom = 448.0
 
 [node name="WinButton" type="Button" parent="CanvasLayer"]
-visible = false
 offset_left = 1032.0
 offset_top = 72.0
 offset_right = 1124.0
 offset_bottom = 93.0
 text = "Okamžitá výhra"
+
+[node name="TurnCounterLabel" type="Label" parent="CanvasLayer"]
+offset_left = 1032.0
+offset_top = 112.0
+offset_right = 1128.0
+offset_bottom = 160.0
+theme_override_font_sizes/font_size = 24
+text = "Tah: 1"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="DevConsole" parent="." instance=ExtResource("8_5282s")]
 visible = false

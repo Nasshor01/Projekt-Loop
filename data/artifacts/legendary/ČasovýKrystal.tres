@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3 uid="uid://coeg0sqxlo6uq"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_x28o6"]
+[ext_resource type="Texture2D" uid="uid://bivcrso8kixyo" path="res://art/icons/Artifacts/časový krystal-1.png.png" id="2_mb1jc"]
+
+[resource]
+script = ExtResource("1_x28o6")
+artifact_name = "Časový Krystal"
+description = "Každý 3. tah tohoto souboje dostaneš extra tah."
+texture = ExtResource("2_mb1jc")
+artifact_type = 3
+trigger_type = 13
+effect_type = 27
+primary_value = 1
+secondary_value = 0
+percentage_based = false
+max_stacks = 1
+current_stacks = 1
+uses_per_combat = -1
+current_uses = 0
+condition_type = "turn_number"
+condition_value = 3
+custom_effect_id = "extra_turn"
+effect_description = ""
+metadata/_custom_type_script = "uid://cojmro6kj47du"

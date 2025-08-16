@@ -20,6 +20,6 @@ func _gui_input(event: InputEvent):
 func display_artifact(data: ArtifactsData):
 	artifact_data = data
 	name_label.text = data.artifact_name
-	description_label.text = data.description
+	description_label.text = data.get_formatted_description()
 	if data.texture:
 		icon.texture = data.texture

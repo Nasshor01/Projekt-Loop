@@ -117,6 +117,10 @@ func use_artifact():
 func reset_for_new_combat():
 	"""Resetuje artefakt pro nový souboj"""
 	current_uses = 0
+	
+	# OPRAVA: Srdce draka (START_OF_TURN) se neresetuje každý tah!
+	# Counter se resetuje jen při skutečně novém souboji
+	# Necháme prázdné - Srdce draka si drží counter po celý souboj
 
 func add_stack():
 	"""Přidá stack artefaktu, pokud je to možné"""
@@ -171,6 +175,21 @@ func check_condition(context: Dictionary = {}) -> bool:
 		"enemies_alive":
 			var enemy_count = context.get("enemy_count", 0)
 			return enemy_count >= condition_value
+		# === PŘIDEJ TYTO DVĚ NOVÉ CASE VĚTVE: ===
+		"turn_number":
+			var current_turn = context.get("current_turn", 0)
+			var turn_number = context.get("turn_number", 0)  # Fallback
+			var turn = max(current_turn, turn_number)
+			# Aktivuj každý N-tý tah (3., 6., 9., ...)
+			return turn > 0 and (turn % condition_value) == 0
+		"critical_hit":
+			var was_critical = context.get("critical_hit", false)
+			return was_critical
+			
+		"start_of_combat":
+			var is_first_turn = context.get("is_first_turn", false)
+			return is_first_turn
+		# === KONEC NOVÝCH CASE VĚTVÍ ===
 		_:
 			return true
 

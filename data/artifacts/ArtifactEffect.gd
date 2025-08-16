@@ -38,9 +38,13 @@ func _apply_effect() -> bool:
 				return true
 				
 		ArtifactsData.EffectType.GAIN_BLOCK:
+			# NOVÉ: Pokud má custom efekt, použij ten místo standardního
+			if not artifact_data.custom_effect_id.is_empty():
+				print("🔧 GAIN_BLOCK s custom efektem: %s" % artifact_data.custom_effect_id)
+				return _apply_custom_effect()
 			var block_amount = artifact_data.get_effective_value()
 			print("🛡️ Pokouším se přidat %d bloku z %s..." % [block_amount, artifact_data.artifact_name])
-			
+	
 			if target_unit and target_unit.has_method("add_block"):
 				target_unit.add_block(block_amount)
 				print("🛡️ %s přidal %d bloku!" % [artifact_data.artifact_name, block_amount])
@@ -140,6 +144,11 @@ func _apply_custom_effect() -> bool:
 	if artifact_data.custom_effect_id.is_empty():
 		return false
 		
-	# Zde můžeme implementovat custom logiku
-	print("Aplikuji custom efekt: %s" % artifact_data.custom_effect_id)
-	return true
+	print("🔧 Aplikuji custom efekt: %s" % artifact_data.custom_effect_id)
+	
+	# OPRAVA: Přímý přístup na autoload ArtifactManager
+	if ArtifactManager:
+		return ArtifactManager.handle_custom_effect(artifact_data, context)
+	else:
+		print("❌ ArtifactManager nenalezen!")
+		return false

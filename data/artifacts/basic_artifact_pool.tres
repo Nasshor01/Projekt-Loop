@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ArtifactPool" load_steps=9 format=3 uid="uid://bxfpuy4faq7sq"]
+[gd_resource type="Resource" script_class="ArtifactPool" load_steps=12 format=3 uid="uid://bxfpuy4faq7sq"]
 
 [ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_ixhu3"]
 [ext_resource type="Resource" uid="uid://bnqlphfjrx6un" path="res://data/artifacts/uncommon/ManaKrystal.tres" id="2_8afg2"]
@@ -8,8 +8,11 @@
 [ext_resource type="Resource" uid="uid://b2mjbuhqkgfby" path="res://data/artifacts/common/ZdravéJablko.tres" id="4_wa1ei"]
 [ext_resource type="Resource" uid="uid://343v3ujpwn46" path="res://data/artifacts/rare/ŠtítOdražení.tres" id="5_y5xlw"]
 [ext_resource type="Resource" uid="uid://s7its2p1eh0f" path="res://data/artifacts/uncommon/BojovníkůvNáramek.tres" id="6_vb5ki"]
+[ext_resource type="Resource" uid="uid://c0t3gp0m2f34q" path="res://data/artifacts/legendary/OkoPravdy.tres" id="8_vb5ki"]
+[ext_resource type="Resource" uid="uid://dleb020dpkyxt" path="res://data/artifacts/legendary/SrdceDraka.tres" id="9_n5yvg"]
+[ext_resource type="Resource" uid="uid://coeg0sqxlo6uq" path="res://data/artifacts/legendary/ČasovýKrystal.tres" id="10_6c16b"]
 
 [resource]
 script = ExtResource("2_fvhm7")
-artifacts = Array[ExtResource("1_ixhu3")]([ExtResource("4_wa1ei"), ExtResource("3_k5j4k"), ExtResource("4_m64m1"), ExtResource("5_y5xlw"), ExtResource("6_vb5ki"), ExtResource("2_8afg2")])
+artifacts = Array[ExtResource("1_ixhu3")]([ExtResource("4_wa1ei"), ExtResource("3_k5j4k"), ExtResource("4_m64m1"), ExtResource("5_y5xlw"), ExtResource("6_vb5ki"), ExtResource("2_8afg2"), ExtResource("8_vb5ki"), ExtResource("9_n5yvg"), ExtResource("10_6c16b")])
 metadata/_custom_type_script = "uid://o3lg5niqen4s"

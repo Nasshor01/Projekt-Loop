@@ -1,3 +1,4 @@
+Label
 PanelContainer
 RichTextLabel
 Button
@@ -5,7 +6,6 @@ VBoxContainer
 MarginContainer
 Panel
 TextureRect
-Label
 ColorRect
 CanvasLayer
 SubViewport
