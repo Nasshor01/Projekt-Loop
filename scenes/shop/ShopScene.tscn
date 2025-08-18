@@ -2,7 +2,9 @@
 
 [ext_resource type="Script" uid="uid://f1bfi2viwtrk" path="res://scenes/shop/ShopScene.gd" id="1_y0td3"]
 [ext_resource type="PackedScene" uid="uid://pjdtf3hky6c6" path="res://scenes/ui/CardPileViewer.tscn" id="2_d8mpu"]
-[ext_resource type="Texture2D" uid="uid://dnip28myu7q4x" path="res://art/icons/7.png" id="2_xu4g4"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_b06mc"]
+load_path = "res://.godot/imported/7.png-8fb326b4ca66f10fa35311330301ec04.ctex"
 
 [node name="ShopScene" type="Node2D"]
 script = ExtResource("1_y0td3")
@@ -50,7 +52,7 @@ text = "Zlato: 100"
 
 [node name="GoldIcon" type="TextureRect" parent="CanvasLayer/MainContainer/VBoxContainer/Header/GoldDisplay/HBoxContainer"]
 layout_mode = 2
-texture = ExtResource("2_xu4g4")
+texture = SubResource("CompressedTexture2D_b06mc")
 
 [node name="ItemsPanel" type="PanelContainer" parent="CanvasLayer/MainContainer/VBoxContainer"]
 custom_minimum_size = Vector2(500, 400)

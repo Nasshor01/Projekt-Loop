@@ -2,7 +2,9 @@
 
 [ext_resource type="Script" uid="uid://x2hd3fytxgbm" path="res://scenes/ui/GlobalUI.gd" id="1_f4cv4"]
 [ext_resource type="PackedScene" uid="uid://cu6oy5nwloafr" path="res://scenes/ui/PlayerArtifactsUI.tscn" id="1_y6ips"]
-[ext_resource type="Texture2D" uid="uid://dnip28myu7q4x" path="res://art/icons/7.png" id="2_f4cv4"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_b06mc"]
+load_path = "res://.godot/imported/7.png-8fb326b4ca66f10fa35311330301ec04.ctex"
 
 [node name="GlobalUI" type="CanvasLayer"]
 script = ExtResource("1_f4cv4")
@@ -39,7 +41,7 @@ text = "Zlato: 100"
 
 [node name="GoldIcon" type="TextureRect" parent="MarginContainer/MainLayout/TopRow/GoldDisplay"]
 layout_mode = 2
-texture = ExtResource("2_f4cv4")
+texture = SubResource("CompressedTexture2D_b06mc")
 stretch_mode = 5
 
 [node name="BottomLeft" type="PanelContainer" parent="MarginContainer/MainLayout"]

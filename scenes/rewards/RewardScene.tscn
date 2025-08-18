@@ -1,7 +1,9 @@
 [gd_scene load_steps=3 format=3 uid="uid://cdkaugeoudrqa"]
 
 [ext_resource type="Script" uid="uid://4evnmm0nmlqh" path="res://scenes/rewards/RewardScene.gd" id="1_4cy2o"]
-[ext_resource type="Texture2D" uid="uid://dnip28myu7q4x" path="res://art/icons/7.png" id="2_1jct0"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_b06mc"]
+load_path = "res://.godot/imported/7.png-8fb326b4ca66f10fa35311330301ec04.ctex"
 
 [node name="RewardScene" type="PanelContainer"]
 custom_minimum_size = Vector2(800, 550)
@@ -38,7 +40,7 @@ alignment = 1
 
 [node name="GoldIcon" type="TextureRect" parent="VBoxContainer/GoldRewardDisplay"]
 layout_mode = 2
-texture = ExtResource("2_1jct0")
+texture = SubResource("CompressedTexture2D_b06mc")
 
 [node name="GoldLabel" type="Label" parent="VBoxContainer/GoldRewardDisplay"]
 layout_mode = 2

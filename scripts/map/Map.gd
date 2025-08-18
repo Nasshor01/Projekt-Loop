@@ -23,17 +23,29 @@ var elite_encounters = [
 var boss_encounters = ["res://data/encounters/boss_battle.tres"]
 
 var node_textures = {
-	MapNodeResource.NodeType.MONSTER: preload("res://art/sprites/map/icons/monster.png"),
-	MapNodeResource.NodeType.ELITE: preload("res://art/sprites/map/icons/elite.png"),
-	MapNodeResource.NodeType.EVENT: preload("res://art/sprites/map/icons/unknown.png"),
-	MapNodeResource.NodeType.REST: preload("res://art/sprites/map/icons/bonfire.png"),
-	MapNodeResource.NodeType.SHOP: preload("res://art/sprites/map/icons/shop.png"),
-	MapNodeResource.NodeType.TREASURE: preload("res://art/sprites/map/icons/chest.png"),
-	MapNodeResource.NodeType.BOSS: preload("res://art/sprites/map/icons/boss.png")
+	MapNodeResource.NodeType.MONSTER: preload("res://art/sprites/map/icon/monster.png"),
+	MapNodeResource.NodeType.ELITE: preload("res://art/sprites/map/icon/elite.png"),
+	MapNodeResource.NodeType.EVENT: preload("res://art/sprites/map/icon/event.png"),
+	MapNodeResource.NodeType.REST: preload("res://art/sprites/map/icon/campfire.png"),
+	MapNodeResource.NodeType.SHOP: preload("res://art/sprites/map/icon/shop.png"),
+	MapNodeResource.NodeType.TREASURE: preload("res://art/sprites/map/icon/chest.png"),
+	MapNodeResource.NodeType.BOSS: preload("res://art/sprites/map/icon/boss.png")
 }
 
 var map_data: MapData
 var map_nodes_visual: Dictionary = {}
+
+var node_names = {
+	MapNodeResource.NodeType.MONSTER: "Běžný souboj",
+	MapNodeResource.NodeType.ELITE: "Elitní souboj",
+	MapNodeResource.NodeType.EVENT: "Událost",
+	MapNodeResource.NodeType.REST: "Odpočinek",
+	MapNodeResource.NodeType.SHOP: "Obchod",
+	MapNodeResource.NodeType.TREASURE: "Poklad",
+	MapNodeResource.NodeType.BOSS: "Boss"
+}
+
+@onready var legend_container = $CanvasLayer/LegendPanel/LegendContainer
 
 @onready var generator_node = $MapGenerator
 @onready var connections_container = $Connections
@@ -50,6 +62,7 @@ func _ready():
 	random_seed_button.pressed.connect(_on_generate_random_seed_pressed)
 	dev_console.command_submitted.connect(_on_dev_command)
 	initialize_map()
+	_setup_legend()
 
 func _on_generate_random_seed_pressed():
 	# Funkce pro tlačítko náhodného seedu
@@ -108,8 +121,21 @@ func _render_map_visuals():
 		if node_textures.has(node_data.type):
 			var sprite = map_node_instance.get_node("Sprite2D")
 			sprite.texture = node_textures[node_data.type]
-			if node_data.type == MapNodeResource.NodeType.BOSS: sprite.scale = Vector2(0.5, 0.5)
-		
+			
+			# --- ZMĚNA ZDE ---
+			# Rozšířené nastavení velikosti pro různé typy uzlů
+			match node_data.type:
+				MapNodeResource.NodeType.BOSS:
+					sprite.scale = Vector2(0.17, 0.17)      # Velký boss
+				MapNodeResource.NodeType.REST:
+					sprite.scale = Vector2(0.04, 0.04)      # Campfire je o něco větší
+				MapNodeResource.NodeType.SHOP:
+					sprite.scale = Vector2(0.028, 0.028)    # Obchod je o něco menší
+				_: # Znak _ znamená "pro všechny ostatní případy"
+					# Výchozí velikost pro ostatní ikony (Monster, Elite, Event, atd.)
+					sprite.scale = Vector2(0.03125, 0.03125)
+			# --- KONEC ZMĚNY ---
+
 		map_node_instance.node_clicked.connect(_on_map_node_clicked)
 		
 		map_node_instance.node_hovered.connect(_on_map_node_hovered)
@@ -307,12 +333,37 @@ func _setup_camera():
 	camera.limit_top = int(final_rect.position.y)
 	camera.limit_right = int(final_rect.end.x)
 	camera.limit_bottom = int(final_rect.end.y)
+
 func _unhandled_input(event: InputEvent):
-	if get_viewport().gui_get_focus_owner(): return
+	# Pokud má fokus nějaký UI element, neděláme nic
+	if get_viewport().gui_get_focus_owner(): 
+		return
+	
+	# Zoom kolečkem myši
 	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_WHEEL_UP: camera.zoom = camera.zoom.move_toward(Vector2(0.5, 0.5), 0.1)
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN: camera.zoom = camera.zoom.move_toward(Vector2(3.0, 3.0), 0.1)
-	if event is InputEventMouseMotion and event.button_mask & MOUSE_BUTTON_MASK_MIDDLE: camera.position -= event.relative / camera.zoom
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			# Přiblížení - zvětšíme zoom
+			camera.zoom = camera.zoom * 1.1
+			camera.zoom = camera.zoom.clamp(Vector2(0.3, 0.3), Vector2(3.0, 3.0))
+			
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			# Oddálení - zmenšíme zoom  
+			camera.zoom = camera.zoom * 0.9
+			camera.zoom = camera.zoom.clamp(Vector2(0.3, 0.3), Vector2(3.0, 3.0))
+	
+	# Pohyb kamery pomocí tažení myší
+	elif event is InputEventMouseMotion:
+		# Pohyb pomocí STŘEDNÍHO tlačítka myši (kolečko)
+		if event.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
+			camera.position -= event.relative / camera.zoom
+		
+		# ALTERNATIVNĚ: Pohyb pomocí PRAVÉHO tlačítka myši
+		elif event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
+			camera.position -= event.relative / camera.zoom
+
+		# ALTERNATIVNĚ: Pohyb pomocí LEVÉHO tlačítka myši
+		elif event.button_mask & MOUSE_BUTTON_MASK_LEFT:
+			camera.position -= event.relative / camera.zoom
 
 func _on_map_node_hovered(map_node: MapNode):
 	# Vytvoříme krátkou animaci, která uzel zvětší. 
@@ -376,3 +427,46 @@ func _execute_goto_command(args: Array):
 	_update_highlighting()
 	
 	dev_console.log_success("Přesun dokončen. Můžeš si vybrat jakýkoliv uzel na patře %d." % target_floor)
+
+
+func _setup_legend():
+	# Smažeme staré položky
+	for child in legend_container.get_children():
+		child.queue_free()
+	
+	# Počkáme jeden frame, aby se změny projevily
+	await get_tree().process_frame
+
+	# Projdeme všechny typy uzlů (VČETNĚ BOSSE!)
+	for node_type in node_names:
+		# Vytvoříme řádek jako HBoxContainer
+		var row = HBoxContainer.new()
+		row.custom_minimum_size = Vector2(200, 40)
+		
+		# Vytvoříme ikonku jako TextureButton (místo TextureRect)
+		var icon = TextureButton.new()
+		icon.texture_normal = node_textures[node_type]
+		icon.custom_minimum_size = Vector2(32, 32)
+		icon.ignore_texture_size = true
+		icon.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+		icon.disabled = true  # Zakážeme klikání, ale ikonka zůstane vidět
+		
+		# Vytvoříme popisek
+		var label = Label.new()
+		label.text = " " + node_names[node_type]
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		
+		# Sestavíme řádek
+		row.add_child(icon)
+		row.add_child(label)
+		
+		# Přidáme malou mezeru mezi ikonkou a textem
+		row.add_theme_constant_override("separation", 8)
+		
+		# Přidáme řádek do legendy
+		legend_container.add_child(row)
+		
+		print("Přidána legenda pro: ", node_names[node_type])
+
+	print("Legenda dokončena s ", legend_container.get_child_count(), " položkami")
