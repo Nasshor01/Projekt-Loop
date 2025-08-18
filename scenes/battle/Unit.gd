@@ -405,3 +405,35 @@ func _show_floating_text(amount: int, type: String):
 	instance.position = Vector2(0, -80)
 	
 	instance.start(text_to_display, color)
+
+func show_status_text(text_to_show: String, color_type: String):
+	"""
+	Zobrazí plovoucí text s PŘEDEM naformátovaným stringem.
+	Na rozdíl od _show_floating_text nepracuje s číslem, ale s hotovým textem.
+	"""
+	var instance = FloatingTextScene.instantiate()
+	var color: Color
+
+	# Získáme barvu podle typu, stejně jako v původní funkci
+	match color_type:
+		"damage":
+			color = Color.CRIMSON
+		"heal":
+			color = Color.PALE_GREEN
+		"block_gain":
+			color = Color.LIGHT_SKY_BLUE
+		"block_loss":
+			color = Color.SLATE_GRAY
+		"critical":
+			color = Color.ORANGE
+		"curse":  # Přidáme barvu pro 'curse', kterou posíláš z ArtifactManageru
+			color = Color.PURPLE
+		_:
+			color = Color.WHITE # Výchozí barva
+
+	# Přidáme uzel a nastavíme mu pozici
+	add_child(instance)
+	instance.position = Vector2(0, -80)
+
+	# Spustíme animaci s hotovým textem a barvou
+	instance.start(text_to_show, color)

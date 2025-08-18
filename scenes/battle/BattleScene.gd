@@ -79,6 +79,8 @@ func _ready():
 	player_hand_ui_instance.card_draw_animation_finished.connect(_on_card_draw_animation_finished)
 	player_hand_ui_instance.hand_discard_animation_finished.connect(_on_hand_discard_animation_finished)
 	
+	ArtifactManager.overdose_warning_triggered.connect(_on_overdose_warning)
+	
 	_setup_camera_boundaries()
 	battle_grid_instance.set_camera(camera_2d)
 	_generate_grid_from_shape()
@@ -189,6 +191,10 @@ func start_player_turn():
 	PlayerData.reset_energy()
 	PlayerData.reset_adrenaline_tracking()
 	
+	# Pokud má závislost, zobraz připomenutí
+	if PlayerData.has_adrenaline_addiction:
+		_show_floating_notification("💉 Závislost aktivní (limit: 2 Adrenaliny)", Color.PURPLE)
+	
 	if is_instance_valid(_player_unit_node):
 		_player_unit_node.reset_for_new_turn()
 		
@@ -210,12 +216,6 @@ func start_player_turn():
 				if result["artifact"].custom_effect_id == "extra_turn":
 					_is_extra_turn = true
 					print("🔮 Časový krystal aktivován! Budeš mít extra tah!")
-		
-		# SMAŽ TOTO - už se volá v confirm_player_spawn():
-		# if _is_first_turn:
-		#	if has_node("/root/ArtifactManager"):
-		#		ArtifactManager.on_combat_start()
-		#	_is_first_turn = false
 		
 		var extra_draw = _player_unit_node.process_turn_start_statuses()
 		_cards_to_draw_queue = starting_hand_size + extra_draw
@@ -490,8 +490,18 @@ func try_play_card(card: CardData, initial_target: Node2D) -> void:
 	
 	var card_ui_to_remove = _selected_card_ui
 	
+	# SLEDOVÁNÍ ADRENALIN KARET
 	if card.card_id == "adrenaline" or card.card_id == "adrenaline+":
 		PlayerData.track_adrenaline_card_played()
+		
+		# Vizuální feedback podle stavu
+		if PlayerData.has_adrenaline_addiction:
+			# Má závislost - ukáž kolikátý adrenalin
+			_show_adrenaline_counter(PlayerData.adrenaline_cards_this_turn)
+		else:
+			# Nemá závislost - varuj před získáním
+			if PlayerData.adrenaline_cards_this_turn == 3:
+				_show_addiction_warning()
 	
 	for effect_data in card.effects:
 		var targets = _get_targets_for_effect(effect_data, initial_target)
@@ -502,7 +512,7 @@ func try_play_card(card: CardData, initial_target: Node2D) -> void:
 					_apply_single_effect(effect_data, target_unit)
 					
 	if card_played_successfully:
-		# NOVÉ: Trigger on card played artefakty
+		# DŮLEŽITÉ: Trigger artefaktů PO trackování ale PŘED aplikací efektů
 		if has_node("/root/ArtifactManager"):
 			var artifact_results = ArtifactManager.on_card_played(card)
 			for result in artifact_results:
@@ -525,7 +535,65 @@ func try_play_card(card: CardData, initial_target: Node2D) -> void:
 
 	_is_action_processing = false
 	_reset_player_selection()
+
+# NOVÁ FUNKCE - zobrazení počítadla adrenalinů
+func _show_adrenaline_counter(count: int):
+	"""Zobrazí počítadlo adrenalinů při závislosti"""
+	var color = Color.YELLOW
+	var text = "Adrenalin %d/2" % count
 	
+	if count > 2:
+		color = Color.RED
+		text = "💀 PŘEDÁVKOVÁNÍ! (%d)" % count
+	elif count == 2:
+		color = Color.ORANGE
+		text = "⚠️ Adrenalin %d/2 - LIMIT!" % count
+	
+	_show_floating_notification(text, color)
+
+# NOVÁ FUNKCE - varování před závislostí
+func _show_addiction_warning():
+	"""Varování před získáním závislosti"""
+	var text = "⚠️ VAROVÁNÍ: Další Adrenalin = ZÁVISLOST!"
+	_show_floating_notification(text, Color.ORANGE)
+
+# NOVÁ FUNKCE - pomocná pro notifikace
+func _show_floating_notification(text: String, color: Color):
+	"""Pomocná funkce pro zobrazení notifikací"""
+	var label = Label.new()
+	label.text = text
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_font_size_override("font_size", 24)
+	label.add_theme_color_override("font_shadow_color", Color.BLACK)
+	label.add_theme_constant_override("shadow_offset_x", 2)
+	label.add_theme_constant_override("shadow_offset_y", 2)
+	
+	var canvas_layer = $CanvasLayer
+	if canvas_layer:
+		canvas_layer.add_child(label)
+		label.position = Vector2(get_viewport().size.x / 2 - 200, 150)
+		
+		var tween = create_tween()
+		label.modulate.a = 0
+		label.scale = Vector2(0.5, 0.5)
+		
+		# Fade in + scale up
+		tween.tween_property(label, "modulate:a", 1.0, 0.2)
+		tween.tween_property(label, "scale", Vector2(1.2, 1.2), 0.2).set_trans(Tween.TRANS_BACK)
+		tween.tween_property(label, "scale", Vector2(1.0, 1.0), 0.1)
+		
+		# Hold
+		tween.tween_interval(1.5)
+		
+		# Fade out
+		tween.tween_property(label, "modulate:a", 0.0, 0.5)
+		tween.tween_callback(label.queue_free)
+
+func _on_overdose_warning():
+	"""Tato funkce se spustí, když ArtifactManager vyšle signál."""
+	var text = "⚠️ VAROVÁNÍ: Další Adrenalin způsobí PŘEDÁVKOVÁNÍ!"
+	_show_floating_notification(text, Color.ORANGE)
+
 func _on_unit_selected_on_grid(unit_node: Unit):
 	if _current_battle_state != BattleState.PLAYER_TURN: return
 	if unit_node.unit_data.faction == UnitData.Faction.PLAYER and unit_node.can_move():

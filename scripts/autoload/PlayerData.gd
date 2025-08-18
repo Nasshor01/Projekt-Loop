@@ -42,6 +42,7 @@ var global_shield: int = 0
 
 var adrenaline_cards_this_turn: int = 0
 var has_adrenaline_addiction: bool = false
+var adrenaline_overdose_this_turn: bool = false #na překročení limitu
 
 func get_current_node() -> MapNodeResource:
 	if not path_taken.is_empty():
@@ -615,26 +616,38 @@ func track_adrenaline_card_played():
 	adrenaline_cards_this_turn += 1
 	print("🏃 Adrenalin karta zahrána, celkem tento tah: %d" % adrenaline_cards_this_turn)
 	
-	# Pokud hráč zahrál 4+ Adrenalin karet za tah a ještě nemá addiction
-	if adrenaline_cards_this_turn >= 4 and not has_adrenaline_addiction:
+	#pokud má závislost: kontrola limitu
+	if has_adrenaline_addiction:
+		if adrenaline_cards_this_turn > 2:
+			adrenaline_overdose_this_turn = true
+			print("předávkování! překročen limit 2 adrenalinů za tah")
+	
+	#pokud nemá závislost: kontrola zda muže získat
+	elif adrenaline_cards_this_turn >=4:
 		_trigger_adrenaline_addiction()
+	
 
 func reset_adrenaline_tracking():
 	"""Volá se na začátku nového tahu"""
 	adrenaline_cards_this_turn = 0
+	adrenaline_overdose_this_turn = false
 
 func _trigger_adrenaline_addiction():
 	"""Přidá secret punishment artefakt"""
 	print("💉 AKTIVACE: Příliš mnoho adrenalinu! Získáváš závislost...")
 	
-	# Vytvoř secret artefakt
-	var addiction_artifact = _create_adrenaline_addiction_artifact()
+	var addiction_artifact = load("res://data/artifacts/curse/adrenaline_addiction.tres")
 	
-	# Přidej ho (bez možnosti odmítnutí)
+	if not addiction_artifact:
+		print("artefakt nenalezen, vytváří se záložní")
+		addiction_artifact = _create_adrenaline_addiction_artifact()
+	else:
+		addiction_artifact = addiction_artifact.duplicate()
+	
+	# Přidej artefakt
 	add_artifact(addiction_artifact)
 	has_adrenaline_addiction = true
 	
-	# Můžeš přidat i vizuální efekt nebo zprávu hráči
 	print("⚠️ Získal jsi SECRET ARTEFAKT: Závislost na adrenalinu!")
 
 func _create_adrenaline_addiction_artifact() -> ArtifactsData:
@@ -651,7 +664,5 @@ func _create_adrenaline_addiction_artifact() -> ArtifactsData:
 	artifact.max_stacks = 1
 	artifact.custom_effect_id = "adrenaline_addiction"
 	
-	# Nastav speciální texturu nebo použij existující
-	# artifact.texture = load("res://textures/artifacts/secret_addiction.png")
 	
 	return artifact

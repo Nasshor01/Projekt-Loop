@@ -4,6 +4,7 @@ extends Node
 signal artifact_triggered(artifact_name: String, effect_description: String)
 signal artifact_gained(artifact: ArtifactsData)
 signal artifact_lost(artifact: ArtifactsData)
+signal overdose_warning_triggered()
 
 var _passive_artifacts: Array[ArtifactsData] = []
 var _triggered_artifacts: Dictionary = {}
@@ -178,11 +179,17 @@ func on_turn_end():
 	return trigger_artifacts(ArtifactsData.TriggerType.END_OF_TURN, context)
 
 func on_card_played(card_data: CardData):
+	"""Volá se při zahrání jakékoliv karty"""
 	var context = {
 		"card": card_data,
 		"card_cost": card_data.cost,
+		"card_id": card_data.card_id,
+		"card_name": card_data.card_name,
 		"target": _get_player_unit()
 	}
+	
+	print("🎴 Card played trigger: %s (ID: %s)" % [card_data.card_name, card_data.card_id])
+	
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_CARD_PLAYED, context)
 
 func on_damage_taken(amount: int, attacker: Node2D = null):
@@ -326,17 +333,69 @@ func get_artifact_count() -> int:
 
 func handle_custom_effect(artifact: ArtifactsData, context: Dictionary = {}) -> bool:
 	match artifact.custom_effect_id:
-		"adrenaline_addiction":
-			# Secret punishment efekt
+		"adrenaline_addiction_advanced":
+			# Zkontroluj jestli je to Adrenalin karta
+			var card = context.get("card")
+			if not card:
+				return false
+			
+			var card_id = card.card_id if card else ""
+			if card_id != "adrenaline" and card_id != "adrenaline+":
+				return false  # Není to adrenalin
+			
+			print("💉 Závislost aktivována - zpracovávám Adrenalin...")
+			
 			var player = _get_player_unit()
-			if player:
-				# Ztráta energie (už se řeší automaticky přes ENERGY_LOSS)
+			if not player:
+				return false
+			
+			# Zjisti kolikátý adrenalin to je tento tah
+			var adrenaline_count = PlayerData.adrenaline_cards_this_turn
+			var damage = 0
+			var energy_loss = 0
+			var message = ""
+			
+			if adrenaline_count <= 2:
+				# Normální postih (1. nebo 2. adrenalin)
+				damage = artifact.primary_value        # 2 HP
+				energy_loss = artifact.secondary_value # 1 energie
+				message = "Závislost (%d/2)" % adrenaline_count
+			else:
+				# PŘEDÁVKOVÁNÍ! (3+ adrenalin)
+				damage = 5      # Větší damage
+				energy_loss = 2 # Větší ztráta energie
+				message = "💀 PŘEDÁVKOVÁNÍ!"
 				
-				# Dodatečné poškození
-				var damage = artifact.secondary_value
-				if player.has_method("take_damage"):
-					player.take_damage(damage)
-					print("💉 Závislost na adrenalinu: -%d HP!" % damage)
+				# Extra efekt při předávkování
+				if player.has_method("apply_status"):
+					player.apply_status("vulnerable", 2)  # +50% damage na 2 tahy
+					print("💀 Předávkování způsobilo Zranitelnost!")
+			
+			# Aplikuj damage
+			if player.has_method("take_damage"):
+				player.take_damage(damage)
+				print("💉 Závislost: -%d HP" % damage)
+			
+			# Odeber energii
+			if energy_loss > 0:
+				# Nemůžeme jít pod 0
+				var energy_to_lose = min(energy_loss, PlayerData.current_energy)
+				PlayerData.current_energy -= energy_to_lose
+				PlayerData.emit_signal("energy_changed", PlayerData.current_energy)
+				print("💉 Závislost: -%d energie" % energy_to_lose)
+			
+			# Vizuální feedback
+			if player.has_method("_show_floating_text"):
+				var text = "%s: -%d HP, -%d EN" % [message, damage, energy_loss]
+				var color = "curse" if adrenaline_count > 2 else "damage"
+				player.show_status_text(text, color)
+			
+			# Varování pro další použití
+			if adrenaline_count == 2:
+				print("⚠️ VAROVÁNÍ: Další Adrenalin způsobí PŘEDÁVKOVÁNÍ!")
+				# Můžeš přidat vizuální varování
+				_show_overdose_warning()
+			
 			return true
 
 		"block_per_enemy":
@@ -501,3 +560,8 @@ func check_conditional_artifacts_with_context(context: Dictionary = {}) -> Array
 			print("   - %s: %s" % [result["artifact"].artifact_name, result["description"]])
 	
 	return results
+
+func _show_overdose_warning():
+	"""Vysílá signál, že se má zobrazit varování před předávkováním."""
+	print("SIGNAL EMITTED: overdose_warning_triggered") # Pro ladění
+	emit_signal("overdose_warning_triggered")
