@@ -401,8 +401,17 @@ func _show_floating_text(amount: int, type: String):
 			text_to_display = "CRIT! -" + str(amount)
 			color = Color.ORANGE
 	
-	add_child(instance)
-	instance.position = Vector2(0, -80)
+	# OPRAVA: Přidej do parent místo do jednotky
+	var parent = get_parent()
+	if parent:
+		parent.add_child(instance)
+		# OPRAVA: Použij global_position jednotky
+		instance.global_position = global_position + Vector2(0, -80)
+		instance.z_index = 100  # Zajisti viditelnost nad ostatními prvky
+	else:
+		# Fallback
+		add_child(instance)
+		instance.position = Vector2(0, -80)
 	
 	instance.start(text_to_display, color)
 
@@ -414,7 +423,7 @@ func show_status_text(text_to_show: String, color_type: String):
 	var instance = FloatingTextScene.instantiate()
 	var color: Color
 
-	# Získáme barvu podle typu, stejně jako v původní funkci
+	# Získáme barvu podle typu
 	match color_type:
 		"damage":
 			color = Color.CRIMSON
@@ -426,14 +435,19 @@ func show_status_text(text_to_show: String, color_type: String):
 			color = Color.SLATE_GRAY
 		"critical":
 			color = Color.ORANGE
-		"curse":  # Přidáme barvu pro 'curse', kterou posíláš z ArtifactManageru
+		"curse":
 			color = Color.PURPLE
 		_:
-			color = Color.WHITE # Výchozí barva
+			color = Color.WHITE
 
-	# Přidáme uzel a nastavíme mu pozici
-	add_child(instance)
-	instance.position = Vector2(0, -80)
+	# OPRAVA: Stejná logika jako v _show_floating_text
+	var parent = get_parent()
+	if parent:
+		parent.add_child(instance)
+		instance.global_position = global_position + Vector2(0, -80)
+		instance.z_index = 100
+	else:
+		add_child(instance)
+		instance.position = Vector2(0, -80)
 
-	# Spustíme animaci s hotovým textem a barvou
 	instance.start(text_to_show, color)

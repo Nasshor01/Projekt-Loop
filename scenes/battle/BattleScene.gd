@@ -179,7 +179,15 @@ func start_player_turn():
 	_current_battle_state = BattleState.PROCESSING
 	end_turn_button.disabled = true
 	
-	# NOVÉ: Počítání tahů (pouze pro normální tahy, ne extra)
+	# ✅ KRITICKÉ: Reset adrenaline tracking MUSÍ být PRVNÍ!
+	PlayerData.reset_adrenaline_tracking()
+	print("🔄 Reset adrenaline tracking pro nový tah")
+	
+	# ✅ Pokud má závislost, zobraz připomenutí HNED po resetu
+	if PlayerData.has_adrenaline_addiction:
+		_show_floating_notification("💉 Závislost aktivní (limit: 2 Adrenaliny)", Color.PURPLE)
+	
+	# ✅ TEPRVE POTOM počítání tahů (pouze pro normální tahy, ne extra)
 	if not _is_extra_turn:
 		_current_turn_number += 1
 		_update_turn_display()
@@ -188,12 +196,8 @@ func start_player_turn():
 		print("⚡ EXTRA TAH!")
 		_is_extra_turn = false  # Reset pro příští tah
 	
+	# ✅ A pak reset energie až po adrenaline tracking
 	PlayerData.reset_energy()
-	PlayerData.reset_adrenaline_tracking()
-	
-	# Pokud má závislost, zobraz připomenutí
-	if PlayerData.has_adrenaline_addiction:
-		_show_floating_notification("💉 Závislost aktivní (limit: 2 Adrenaliny)", Color.PURPLE)
 	
 	if is_instance_valid(_player_unit_node):
 		_player_unit_node.reset_for_new_turn()

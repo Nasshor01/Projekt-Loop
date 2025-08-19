@@ -4,7 +4,6 @@
 [ext_resource type="PackedScene" uid="uid://cu6oy5nwloafr" path="res://scenes/ui/PlayerArtifactsUI.tscn" id="1_y6ips"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_b06mc"]
-load_path = "res://.godot/imported/7.png-8fb326b4ca66f10fa35311330301ec04.ctex"
 
 [node name="GlobalUI" type="CanvasLayer"]
 script = ExtResource("1_f4cv4")

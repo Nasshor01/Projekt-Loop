@@ -6,13 +6,13 @@
 [resource]
 script = ExtResource("1_j2scc")
 artifact_name = "Adrenalinová závislost"
-description = "Při zahrání Adrenalin karty: -2 hp a -1 energie. Můžeš zahrát max 2 Adrenaliny za tah, jinak -5hp a -2 energie [color=red]SECRET CURSE[/color]"
+description = "Můžeš zahrát max 2 Adrenaliny za tah bez postihu. 3+ Adrenalin = -5 HP, -2 energie a Zranitelnost."
 texture = ExtResource("2_1rm4d")
 artifact_type = 4
 trigger_type = 4
 effect_type = 27
-primary_value = 2
-secondary_value = 1
+primary_value = 5
+secondary_value = 2
 percentage_based = false
 max_stacks = 1
 current_stacks = 1

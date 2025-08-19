@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://4evnmm0nmlqh" path="res://scenes/rewards/RewardScene.gd" id="1_4cy2o"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_b06mc"]
-load_path = "res://.godot/imported/7.png-8fb326b4ca66f10fa35311330301ec04.ctex"
 
 [node name="RewardScene" type="PanelContainer"]
 custom_minimum_size = Vector2(800, 550)
