@@ -23,13 +23,10 @@ layout_mode = 2
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="PriceLabel" type="RichTextLabel" parent="MarginContainer/VBoxContainer/HBoxContainer"]
-clip_contents = false
-custom_minimum_size = Vector2(75, 0)
+[node name="PriceLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(200, 40)
 layout_mode = 2
-bbcode_enabled = true
 text = "Cena:100"
-scroll_active = false
 horizontal_alignment = 1
 vertical_alignment = 1
 
