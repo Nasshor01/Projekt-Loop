@@ -421,66 +421,48 @@ func draw_cards(amount: int) -> int:
 	DebugLogger.log_debug("Cards drawn: %d, Hand size: %d" % [cards_drawn_count, current_hand.size()], "CARDS")
 	return cards_drawn_count
 
-func add_artifact(new_artifact: ArtifactsData) -> bool:
-	"""Přidá artefakt s kontrolou stackování - vrací true pokud úspěšný"""
+# Soubor: scripts/autoload/PlayerData.gd
+
+func add_artifact(new_artifact_resource: ArtifactsData) -> bool:
+	"""Přidá artefakt s kontrolou stackování. Vrací true, pokud byl úspěšně přidán/stacknut."""
+	if not is_instance_valid(new_artifact_resource):
+		printerr("Pokus o přidání nevalidního artefaktu!")
+		return false
 	
-	# Najdeme existující artefakt se stejným názvem
+	# Vytvoříme si kopii, abychom neupravovali původní soubor .tres
+	var new_artifact = new_artifact_resource.duplicate()
+
 	var existing_artifact = find_artifact_by_name(new_artifact.artifact_name)
-	
+
 	if existing_artifact:
-		# Pokud artefakt už existuje
-		if existing_artifact.max_stacks > 1:
-			# Artefakt se dá stackovat
-			if existing_artifact.add_stack():
-				print("✅ Přidán stack pro %s (%d/%d)" % [existing_artifact.artifact_name, existing_artifact.current_stacks, existing_artifact.max_stacks])
-				emit_signal("artifacts_changed")
-				
-				# OPRAVA: Refresh ArtifactManager cache
-				if has_node("/root/ArtifactManager"):
-					ArtifactManager._refresh_artifact_cache()
-				
-				# OPRAVA: Aplikuj passive skills i při stackování!
-				if existing_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:
-					apply_passive_skills()
-				
-				return true
-			else:
-				print("❌ %s je už na maximálních stackech!" % existing_artifact.artifact_name)
-				return false
+		# Artefakt již existuje, zkusíme přidat stack
+		if existing_artifact.is_stackable and existing_artifact.current_stacks < existing_artifact.max_stacks:
+			existing_artifact.current_stacks += 1
+			print("✅ Přidán stack pro %s (%d/%d)" % [
+				existing_artifact.artifact_name, 
+				existing_artifact.current_stacks, 
+				existing_artifact.max_stacks
+			])
 		else:
-			# Artefakt se nedá stackovat
-			print("❌ %s už vlastníš a nedá se stackovat!" % existing_artifact.artifact_name)
-			return false
+			print("❌ %s již vlastníš a nelze ho stackovat (nebo je na max)." % new_artifact.artifact_name)
+			return false # Nelze přidat
 	else:
-		# Nový artefakt - přidáme ho
+		# Jedná se o úplně nový artefakt
 		artifacts.append(new_artifact)
 		print("✅ Získán nový artefakt: %s" % new_artifact.artifact_name)
-		
-		# NOVÉ: Speciální handling pro Srdce draka - jednorázové snížení HP
-		if new_artifact.artifact_name == "Srdce draka":
-			print("🐉 SRDCE DRAKA: Jednorázové snížení max HP o 10")
-			change_max_hp(-10)  # Sníží max HP o 10
-			print("💔 Max HP sníženo z %d na %d" % [max_hp + 10, max_hp])
-		
-		DebugLogger.log_info("Artifact gained: %s (effect: %s)" % [
-			new_artifact.artifact_name,
-			str(new_artifact.effect_type)
-		], "ARTIFACTS")
-		DebugLogger.log_artifacts()
-		emit_signal("artifacts_changed")
-		
-		# OPRAVA: Refresh ArtifactManager cache
-		if has_node("/root/ArtifactManager"):
-			ArtifactManager._refresh_artifact_cache()
-		
-		# Aktualizuj aplikované efekty pokud jde o passive artefakt
-		if new_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:
-			apply_passive_skills()
-		
-		# OPRAVA: Zajisti UI aktualizaci
-		emit_signal("health_changed", current_hp, max_hp)
-		
-		return true
+
+	# Společná logika po úspěšném přidání/stackování
+	emit_signal("artifacts_changed")
+	
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager._refresh_artifact_cache()
+
+	# Pokud je artefakt pasivní, musíme přepočítat staty
+	if new_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:
+		apply_passive_skills()
+
+	emit_signal("health_changed", current_hp, max_hp) # Pro jistotu, kdyby pasivka měnila HP
+	return true
 
 func find_artifact_by_name(artifact_name: String) -> ArtifactsData:
 	"""Najde artefakt podle jména"""

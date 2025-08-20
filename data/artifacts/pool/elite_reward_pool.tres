@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ArtifactPool" load_steps=3 format=3 uid="uid://c8nx6ewkyi5u8"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_bu6c6"]
+[ext_resource type="Script" uid="uid://o3lg5niqen4s" path="res://data/artifacts/ArtifactPool.gd" id="2_w4msy"]
+
+[resource]
+script = ExtResource("2_w4msy")
+artifacts = Array[ExtResource("1_bu6c6")]([])
+metadata/_custom_type_script = "uid://o3lg5niqen4s"

@@ -88,13 +88,21 @@ enum EffectType {
 @export var secondary_value: int = 0    # Vedlejší hodnota (pro složitější efekty)
 @export var percentage_based: bool = false  # Je efekt procentuální?
 
-## NOVÉ: Podmínky a omezení
-@export var max_stacks: int = 1         # Kolikrát se může efekt stackovat
-@export var current_stacks: int = 1     # Aktuální počet stacků
+@export_group("Podmínky a Vlastnosti")
+## Použití a limity
 @export var uses_per_combat: int = -1   # Počet použití za souboj (-1 = neomezeně)
-@export var current_uses: int = 0       # Aktuální počet použití
+@export var current_uses: int = 0       # Aktuální počet použití v tomto souboji
+
+## Stohování (Stacking)
+@export var is_stackable: bool = false   # Je tento artefakt stohovatelný?
+@export var max_stacks: int = 1          # Maximální počet stacků (pokud je stohovatelný)
+@export var current_stacks: int = 1      # Aktuální počet stacků
+
+## Synergie
+@export var synergy_set_id: String = ""  # ID sady pro synergii (např. "GolemPart", "Magnetic")
 
 ## Podmíněné efekty
+@export_group("Podmínky spuštění") # Tímto oddělíme další sekci v inspektoru
 @export var condition_type: String = "" # Typ podmínky (např. "health_below", "energy_above")
 @export var condition_value: int = 0    # Hodnota podmínky
 
