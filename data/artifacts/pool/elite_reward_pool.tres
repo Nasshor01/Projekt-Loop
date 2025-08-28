@@ -1,9 +1,15 @@
-[gd_resource type="Resource" script_class="ArtifactPool" load_steps=3 format=3 uid="uid://c8nx6ewkyi5u8"]
+[gd_resource type="Resource" script_class="ArtifactPool" load_steps=9 format=3 uid="uid://c8nx6ewkyi5u8"]
 
 [ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_bu6c6"]
+[ext_resource type="Resource" uid="uid://glnnfop1v5ll" path="res://data/artifacts/rare/BerserkerovaZuřivost.tres" id="2_l0wkw"]
 [ext_resource type="Script" uid="uid://o3lg5niqen4s" path="res://data/artifacts/ArtifactPool.gd" id="2_w4msy"]
+[ext_resource type="Resource" uid="uid://v73jgkjtk5jh" path="res://data/artifacts/rare/FénixovoPero.tres" id="3_12qhp"]
+[ext_resource type="Resource" uid="uid://343v3ujpwn46" path="res://data/artifacts/rare/ŠtítOdražení.tres" id="4_cw8ij"]
+[ext_resource type="Resource" uid="uid://s7its2p1eh0f" path="res://data/artifacts/uncommon/BojovníkůvNáramek.tres" id="5_pws6p"]
+[ext_resource type="Resource" uid="uid://bnqlphfjrx6un" path="res://data/artifacts/uncommon/ManaKrystal.tres" id="6_l5n6d"]
+[ext_resource type="Resource" uid="uid://b2mjbuhqkgfby" path="res://data/artifacts/common/ZdravéJablko.tres" id="7_n0kqm"]
 
 [resource]
 script = ExtResource("2_w4msy")
-artifacts = Array[ExtResource("1_bu6c6")]([])
+artifacts = Array[ExtResource("1_bu6c6")]([ExtResource("2_l0wkw"), ExtResource("3_12qhp"), ExtResource("4_cw8ij"), ExtResource("5_pws6p"), ExtResource("6_l5n6d"), ExtResource("7_n0kqm")])
 metadata/_custom_type_script = "uid://o3lg5niqen4s"

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3 uid="uid://ylui03celjpu"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_8tkrk"]
+[ext_resource type="Texture2D" uid="uid://dbfs080ykxf7a" path="res://art/icons/Artifacts/záhadná kostka-1.png.png" id="2_8tkrk"]
+
+[resource]
+script = ExtResource("1_8tkrk")
+artifact_name = "Záhadná kostka"
+description = "Na začátku každého tahu: 50% šance na získání 2 energie nebo ztrátu 1 energie.mného."
+texture = ExtResource("2_8tkrk")
+artifact_type = 6
+trigger_type = 2
+effect_type = 27
+primary_value = 0
+secondary_value = 0
+percentage_based = false
+uses_per_combat = -1
+current_uses = 0
+is_stackable = false
+max_stacks = 1
+current_stacks = 1
+synergy_set_id = ""
+condition_type = ""
+condition_value = 0
+custom_effect_id = "random_energy"
+effect_description = ""
+metadata/_custom_type_script = "uid://cojmro6kj47du"

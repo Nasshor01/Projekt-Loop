@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="ArtifactPool" load_steps=3 format=3 uid="uid://jbtydrv1vw8f"]
+[gd_resource type="Resource" script_class="ArtifactPool" load_steps=4 format=3 uid="uid://jbtydrv1vw8f"]
 
 [ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_im3bo"]
+[ext_resource type="Resource" uid="uid://druhunscao2y1" path="res://data/artifacts/boss/infinity_sword.tres" id="2_3ee07"]
 [ext_resource type="Script" uid="uid://o3lg5niqen4s" path="res://data/artifacts/ArtifactPool.gd" id="2_4d0pq"]
 
 [resource]
 script = ExtResource("2_4d0pq")
-artifacts = Array[ExtResource("1_im3bo")]([])
+artifacts = Array[ExtResource("1_im3bo")]([ExtResource("2_3ee07")])
 metadata/_custom_type_script = "uid://o3lg5niqen4s"

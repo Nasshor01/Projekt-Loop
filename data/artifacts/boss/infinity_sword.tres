@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3 uid="uid://druhunscao2y1"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_f0shn"]
+[ext_resource type="Texture2D" uid="uid://c4edmcn8qd13n" path="res://art/icons/Artifacts/meč nekonečna-1.png.png" id="2_gtamx"]
+
+[resource]
+script = ExtResource("1_f0shn")
+artifact_name = "Meč nekonečna"
+description = "Za každého zabitého nepřítele získáš +1 poškození karet (tento souboj).
+
+"
+texture = ExtResource("2_gtamx")
+artifact_type = 5
+trigger_type = 9
+effect_type = 2
+primary_value = 1
+secondary_value = 0
+percentage_based = false
+uses_per_combat = -1
+current_uses = 0
+is_stackable = false
+max_stacks = 1
+current_stacks = 1
+synergy_set_id = ""
+condition_type = ""
+condition_value = 0
+custom_effect_id = "scaling_damage"
+effect_description = ""
+metadata/_custom_type_script = "uid://cojmro6kj47du"

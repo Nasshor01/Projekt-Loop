@@ -48,6 +48,9 @@ layout_mode = 2
 layout_mode = 2
 alignment = 1
 
+[node name="ArtifactContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
 [node name="SkipButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 text = "přeskočit"

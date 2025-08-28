@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="ArtifactPool" load_steps=3 format=3 uid="uid://bumu12gcxwb5l"]
+[gd_resource type="Resource" script_class="ArtifactPool" load_steps=4 format=3 uid="uid://bumu12gcxwb5l"]
 
 [ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_2temo"]
 [ext_resource type="Script" uid="uid://o3lg5niqen4s" path="res://data/artifacts/ArtifactPool.gd" id="2_ce84o"]
+[ext_resource type="Resource" uid="uid://ylui03celjpu" path="res://data/artifacts/event/mystery_dice.tres" id="2_yf4p5"]
 
 [resource]
 script = ExtResource("2_ce84o")
-artifacts = Array[ExtResource("1_2temo")]([])
+artifacts = Array[ExtResource("1_2temo")]([ExtResource("2_yf4p5")])
 metadata/_custom_type_script = "uid://o3lg5niqen4s"

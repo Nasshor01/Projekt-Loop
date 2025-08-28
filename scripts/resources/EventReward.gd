@@ -1,7 +1,9 @@
-# Soubor: res://scripts/resources/EventReward.gd
-
+# Soubor: res://scripts/resources/EventReward.gd (KOMPLETNÍ VERZE)
 class_name EventReward
 extends Resource
+
+# --- Přidáme si nahoře preload poolu ---
+const EVENT_ARTIFACT_POOL = preload("res://data/artifacts/pool/event_reward_pool.tres")
 
 @export_group("Základní Odměny")
 @export var gold: int = 0
@@ -20,8 +22,9 @@ extends Resource
 @export var transform_card: bool = false  # Promění kartu v jinou stejné rarity
 
 @export_group("Artefakty")
-@export var add_artifact: ArtifactsData = null
-@export var add_random_artifact: bool = false
+@export var add_artifact: ArtifactsData = null # Odměna konkrétního artefaktu
+@export var add_random_basic_artifact: bool = false # Přejmenováno z add_random_artifact
+@export var add_random_event_artifact: bool = false # NOVÁ MOŽNOST
 
 @export_group("Speciální")
 @export var buff_next_combat: String = ""
@@ -29,7 +32,6 @@ extends Resource
 @export var trigger_event: String = ""
 @export var opens_card_selection: bool = false  # Otevře výběr karet jako reward screen
 
-# Pro card removal screen
 var pending_card_removal: bool = false
 var pending_card_upgrade: bool = false
 
@@ -89,25 +91,31 @@ func apply_reward(results_log: Array = []):
 	if transform_card:
 		_transform_random_card(results_log)
 	
-	# Artefakty
+	# --- ZMĚNA V SEKCI PRO ARTEFAKTY ---
 	if add_artifact:
-		PlayerData.add_artifact(add_artifact)
-		results_log.append("[color=orange]Získal jsi artefakt: %s[/color]" % add_artifact.artifact_name)
+		if PlayerData.add_artifact(add_artifact):
+			results_log.append("[color=orange]Získal jsi artefakt: %s[/color]" % add_artifact.artifact_name)
 	
-	if add_random_artifact:
-		var random_artifact = _get_random_artifact()
-		if random_artifact:
-			PlayerData.add_artifact(random_artifact)
-			results_log.append("[color=orange]Získal jsi artefakt: %s[/color]" % random_artifact.artifact_name)
+	if add_random_basic_artifact:
+		var random_artifact = _get_random_basic_artifact()
+		if random_artifact and PlayerData.add_artifact(random_artifact):
+			results_log.append("[color=orange]Získal jsi náhodný artefakt: %s[/color]" % random_artifact.artifact_name)
 	
-	# Speciální
+	if add_random_event_artifact:
+		var available = EVENT_ARTIFACT_POOL.artifacts.filter(func(art): return PlayerData.can_gain_artifact(art))
+		if not available.is_empty():
+			var event_artifact = available.pick_random()
+			if PlayerData.add_artifact(event_artifact):
+				results_log.append("[color=gold]Získal jsi speciální artefakt: %s[/color]" % event_artifact.artifact_name)
+	# --- KONEC ZMĚN ---
+	
+	# Speciální akce
 	if buff_next_combat != "":
 		EventManager.add_combat_buff(buff_next_combat)
 		results_log.append("[color=blue]Získal jsi bonus pro příští souboj![/color]")
 	
 	if opens_card_selection:
 		results_log.append("[color=cyan]Vyber si kartu...[/color]")
-		# Toto by mělo otevřít reward screen s kartami
 
 func _upgrade_random_card(results_log: Array):
 	"""Vylepší náhodnou kartu v balíčku"""
@@ -175,7 +183,6 @@ func _transform_random_card(results_log: Array):
 
 func _get_random_card_by_rarity(rarity: CardData.CardRarity) -> CardData:
 	"""Získá náhodnou kartu podle rarity"""
-	# Načti pool karet
 	var card_pool = load("res://data/cards/reward_card_pool.tres")
 	if not card_pool:
 		return null
@@ -190,13 +197,17 @@ func _get_random_card_by_rarity(rarity: CardData.CardRarity) -> CardData:
 	
 	return filtered_cards.pick_random()
 
-func _get_random_artifact() -> ArtifactsData:
-	"""Získá náhodný artefakt"""
-	var artifact_pool = load("res://data/artifacts/basic_artifact_pool.tres")
+func _get_random_basic_artifact() -> ArtifactsData:
+	"""Získá náhodný artefakt z běžného poolu (např. ze shopu)"""
+	var artifact_pool = load("res://data/artifacts/pool/shop_pool.tres")
 	if not artifact_pool or artifact_pool.artifacts.is_empty():
 		return null
 	
-	return artifact_pool.artifacts.pick_random()
+	var available = artifact_pool.artifacts.filter(func(art): return PlayerData.can_gain_artifact(art))
+	if not available.is_empty():
+		return available.pick_random()
+	
+	return null
 
 func get_reward_description() -> String:
 	"""Vrátí textový popis odměny"""
@@ -224,8 +235,10 @@ func get_reward_description() -> String:
 		parts.append("Proměna karty")
 	if add_artifact:
 		parts.append("Artefakt: %s" % add_artifact.artifact_name)
-	if add_random_artifact:
+	if add_random_basic_artifact:
 		parts.append("Náhodný artefakt")
+	if add_random_event_artifact:
+		parts.append("[color=gold]Náhodný speciální artefakt[/color]")
 	
 	if parts.is_empty():
 		return "Žádná odměna"
