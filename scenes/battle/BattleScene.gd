@@ -14,7 +14,7 @@ const SHAPE_DIAMOND = [
 ]
 
 const UnitScene = preload("res://scenes/battle/Unit.tscn")
-const AIController = preload("res://scripts/EnemyAIController.gd")
+const AIController = preload("res://scripts/ai/EnemyAIController.gd")
 
 @export var encounter_data: EncounterData
 
@@ -29,7 +29,7 @@ const AIController = preload("res://scripts/EnemyAIController.gd")
 @onready var energy_label: Label = $CanvasLayer/EnergyLabel
 @onready var win_button: Button = $CanvasLayer/WinButton
 @onready var battle_grid_instance: BattleGrid = $BattleGrid
-@onready var camera_2d: Camera2D = $Camera2D
+@export var camera_2d: Camera2D
 @onready var turn_counter_label: Label = $CanvasLayer/TurnCounterLabel
 
 @export var camera_speed = 1.0
@@ -48,9 +48,13 @@ var _current_battle_state: BattleState = BattleState.SETUP
 
 var _selected_card_ui: Control = null
 var _selected_card_data: CardData = null
-var _player_unit_node: Node2D = null
-var _selected_unit: Node2D = null
-var _enemy_units: Array[Node2D] = []
+# =================================================================
+#pohyby a ai enemy
+var _player_unit_node: Unit = null
+var _selected_unit: Unit = null
+var _enemy_units: Array[Unit] = []
+# =================================================================
+
 var _is_action_processing: bool = false
 var _cards_to_draw_queue: int = 0
 var _is_drawing_cards: bool = false
@@ -694,50 +698,60 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 
 func process_enemy_actions() -> void:
 	_is_action_processing = true
-	var ai_controller = AIController.new()
+   
+	_enemy_units.sort_custom(func(a, b): return a.global_position.y < b.global_position.y)
+	var player_units_array: Array = [_player_unit_node]
+
 	for enemy_unit in _enemy_units:
 		if not is_instance_valid(enemy_unit): continue
+   	
 		enemy_unit.hide_intent()
-		var action = ai_controller.get_next_action(enemy_unit, [_player_unit_node], battle_grid_instance)
-		
+   	
+		var ai_instance = null
+		if is_instance_valid(enemy_unit.unit_data) and is_instance_valid(enemy_unit.unit_data.ai_script):
+			ai_instance = enemy_unit.unit_data.ai_script.new()
+   	
+		if not ai_instance:
+			printerr("CHYBA: Nepřítel '%s' nemá přiřazený AI skript!" % enemy_unit.unit_data.unit_name)
+			continue
+
+		var action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
+   	
 		match action.type:
-			AIController.AIAction.ActionType.ATTACK:
-				await enemy_unit.attack(action.target_unit)
-				
-			AIController.AIAction.ActionType.MOVE:
+			EnemyAIBase.AIAction.ActionType.ATTACK:
+				await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+   			
+			EnemyAIBase.AIAction.ActionType.MOVE:
 				if enemy_unit.can_move():
 					enemy_unit.use_move_action()
 					var path = action.move_path
-					
+   				
 					if path.size() > 1:
 						var move_dist = min(path.size() - 1, enemy_unit.get_current_movement_range())
 						var final_target_pos = path[move_dist]
-						
-						# <<< ZDE JE NOVÁ LOGIKA PRO NEPŘÍTELE A BAHNO >>>
-						# Projdeme naplánovanou cestu a zkontrolujeme, jestli nevede přes bahno.
+   					
 						for i in range(1, move_dist + 1):
 							var path_cell = path[i]
 							var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(path_cell)
 							if is_instance_valid(terrain_on_cell) and terrain_on_cell.terrain_name == "Mud":
-								# Našli jsme bahno! Toto bude nový cíl a pohyb zde končí.
 								final_target_pos = path_cell
-								break # Ukončíme cyklus, našli jsme první bahnité pole na cestě.
-						
-						# Přesuneme nepřítele na finální pozici (buď původní, nebo na bahno).
+								break
+   					
 						battle_grid_instance.remove_object_by_instance(enemy_unit)
 						battle_grid_instance.place_object_on_cell(enemy_unit, final_target_pos, true)
-						
-						# Aplikujeme efekt terénu z cílového políčka (což je teď bahno).
+   					
 						var target_terrain = battle_grid_instance.get_terrain_on_cell(final_target_pos)
 						if is_instance_valid(target_terrain):
 							enemy_unit.process_terrain_effects(target_terrain)
-							
+   						
 						await get_tree().create_timer(0.4).timeout
-						
-						# Po přesunu zkusíme znovu zaútočit, jestli je hráč v dosahu.
-						var attack_action = ai_controller.get_next_action(enemy_unit, [_player_unit_node], battle_grid_instance)
-						if attack_action.type == AIController.AIAction.ActionType.ATTACK:
-							await enemy_unit.attack(attack_action.target_unit)
+   					
+						var post_move_action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
+						if post_move_action.type == EnemyAIBase.AIAction.ActionType.ATTACK:
+							await enemy_unit.attack(post_move_action.target_unit, post_move_action.damage_multiplier)
+   		
+			EnemyAIBase.AIAction.ActionType.PASS:
+				pass
 
 		enemy_unit.process_turn_end_statuses()
 
@@ -835,9 +849,9 @@ func set_enemy_intents():
 			if enemy_unit.get_unit_data(): damage = enemy_unit.get_unit_data().attack_damage
 			enemy_unit.show_intent(damage)
 
-func _spawn_unit(unit_data: UnitData, grid_pos: Vector2i) -> Node2D:
+func _spawn_unit(unit_data: UnitData, grid_pos: Vector2i) -> Unit:
 	if not unit_data: return null
-	var unit_instance = UnitScene.instantiate()
+	var unit_instance: Unit = UnitScene.instantiate()
 	unit_instance.unit_data = unit_data
 	if battle_grid_instance.place_object_on_cell(unit_instance, grid_pos):
 		return unit_instance

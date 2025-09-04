@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="EncounterData" load_steps=5 format=3 uid="uid://do8jijg8l5foi"]
+[gd_resource type="Resource" script_class="EncounterData" load_steps=7 format=3 uid="uid://do8jijg8l5foi"]
 
 [ext_resource type="Script" uid="uid://tp0lo3xqiiqb" path="res://data/encounters/EncounterEntry.gd" id="1_26wve"]
 [ext_resource type="Script" uid="uid://dq86v2djx6q1m" path="res://data/encounters/EncounterData.gd" id="2_r3hgi"]
 [ext_resource type="Resource" uid="uid://ds5yll3ypahx0" path="res://data/units/skeleton.tres" id="2_tgirs"]
+[ext_resource type="Resource" uid="uid://dpvw5641josu6" path="res://data/units/skeleton_archer.tres" id="3_tgirs"]
 
 [sub_resource type="Resource" id="Resource_yodov"]
 script = ExtResource("1_26wve")
@@ -10,8 +11,14 @@ unit_data = ExtResource("2_tgirs")
 grid_position = Vector2i(7, 3)
 metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
 
+[sub_resource type="Resource" id="Resource_m4j1u"]
+script = ExtResource("1_26wve")
+unit_data = ExtResource("3_tgirs")
+grid_position = Vector2i(0, 0)
+metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
+
 [resource]
 script = ExtResource("2_r3hgi")
 encounter_type = 0
-enemies = Array[ExtResource("1_26wve")]([SubResource("Resource_yodov")])
+enemies = Array[ExtResource("1_26wve")]([SubResource("Resource_yodov"), SubResource("Resource_m4j1u")])
 metadata/_custom_type_script = "uid://dq86v2djx6q1m"

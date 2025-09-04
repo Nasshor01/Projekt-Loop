@@ -1,5 +1,6 @@
-[gd_resource type="Resource" script_class="UnitData" load_steps=3 format=3 uid="uid://bwcnlfqbgp22j"]
+[gd_resource type="Resource" script_class="UnitData" load_steps=4 format=3 uid="uid://bwcnlfqbgp22j"]
 
+[ext_resource type="Script" uid="uid://burukbn5db8gj" path="res://scripts/ai/FighterAI.gd" id="1_4yqwc"]
 [ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_c8k7v"]
 [ext_resource type="Texture2D" uid="uid://be776u8yj0svu" path="res://art/sprites/units/Orc.png" id="2_ni66a"]
 
@@ -14,4 +15,5 @@ attack_damage = 10
 movement_range = 1
 attack_range = 1
 sprite_texture = ExtResource("2_ni66a")
+ai_script = ExtResource("1_4yqwc")
 metadata/_custom_type_script = "uid://celcfyrl033bg"

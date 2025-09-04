@@ -1,5 +1,6 @@
-[gd_resource type="Resource" script_class="UnitData" load_steps=3 format=3 uid="uid://cinytm63bvwah"]
+[gd_resource type="Resource" script_class="UnitData" load_steps=4 format=3 uid="uid://cinytm63bvwah"]
 
+[ext_resource type="Script" uid="uid://burukbn5db8gj" path="res://scripts/ai/FighterAI.gd" id="1_lkkoe"]
 [ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_s5pp1"]
 [ext_resource type="Texture2D" uid="uid://b3ophvnb4ra66" path="res://art/sprites/units/Boss_DemonGirl.png" id="2_75lmh"]
 
@@ -14,4 +15,5 @@ attack_damage = 17
 movement_range = 3
 attack_range = 1
 sprite_texture = ExtResource("2_75lmh")
+ai_script = ExtResource("1_lkkoe")
 metadata/_custom_type_script = "uid://celcfyrl033bg"

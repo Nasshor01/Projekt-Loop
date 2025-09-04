@@ -22,6 +22,11 @@ var has_used_base_move: bool = false
 var extra_moves: int = 0
 var last_attacker: Unit = null
 
+#---------------------------------------------
+#pro enemy AI
+var is_aiming: bool = false # Pro mechaniku Archera
+#---------------------------------------------
+
 @onready var _sprite_node: Sprite2D = $Sprite2D
 @onready var _intent_ui: Control = $IntentUI
 
@@ -65,12 +70,13 @@ func set_last_attacker(attacker: Unit):
 func get_last_attacker() -> Unit:
 	return last_attacker
 
-func attack(target: Node2D) -> void:
+func attack(target: Node2D, damage_multiplier: float = 1.0) -> void:
 	if not is_instance_valid(target) or not target.has_method("take_damage"): return
 	if target.has_method("set_last_attacker"):
 		target.set_last_attacker(self)
 	
-	var damage = unit_data.attack_damage
+	# Použij základní poškození a aplikuj multiplikátor z AI
+	var damage = int(unit_data.attack_damage * damage_multiplier)
 	
 	# NOVÉ: Aplikuj bonus poškození z karet pro hráče
 	if unit_data.faction == UnitData.Faction.PLAYER:
@@ -174,6 +180,20 @@ func reset_for_new_turn():
 		print("💚 Požehnaná obnova: +%d HP" % heal_amount)
 	
 	_update_stats_and_emit_signal()
+
+func set_aiming(state: bool):
+	is_aiming = state
+	if is_aiming:
+		# Přidej status pro zobrazení v UI
+		apply_status("aiming", 250, 999) # 250% damage, "nekonečné" trvání
+		show_status_text("Míří!", "critical")
+		print("🎯 %s se zaměřuje..." % unit_data.unit_name)
+	else:
+		# Odstraň status při výstřelu
+		if active_statuses.has("aiming"):
+			active_statuses.erase("aiming")
+			_update_stats_and_emit_signal()
+		print("🎯 %s přestal mířit" % unit_data.unit_name)
 
 func can_move() -> bool:
 	return not has_used_base_move or extra_moves > 0
