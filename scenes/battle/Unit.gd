@@ -107,7 +107,6 @@ func attack(target: Node2D, damage_multiplier: float = 1.0) -> void:
 	await target.take_damage(damage)
 
 func take_damage(amount: int) -> void:
-	print("💥 %s dostává %d poškození..." % [unit_data.unit_name, amount])
 	
 	# TRIGGER DAMAGE TAKEN ARTEFAKTY PŘED zpracováním poškození
 	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/ArtifactManager"):

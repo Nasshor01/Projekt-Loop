@@ -169,7 +169,6 @@ func confirm_player_spawn(at_position: Vector2i):
 
 
 func spawn_player_unit_at(grid_pos: Vector2i):
-	print("DEBUG před spawnem: PlayerData.current_hp = %d, max_hp = %d" % [PlayerData.current_hp, PlayerData.max_hp])
 	if PlayerData.selected_subclass and PlayerData.selected_subclass.specific_unit_data:
 		_player_unit_node = _spawn_unit(PlayerData.selected_subclass.specific_unit_data, grid_pos)
 		if is_instance_valid(_player_unit_node):
@@ -185,7 +184,6 @@ func start_player_turn():
 	
 	# ✅ KRITICKÉ: Reset adrenaline tracking MUSÍ být PRVNÍ!
 	PlayerData.reset_adrenaline_tracking()
-	print("🔄 Reset adrenaline tracking pro nový tah")
 	
 	# ✅ Pokud má závislost, zobraz připomenutí HNED po resetu
 	if PlayerData.has_adrenaline_addiction:
@@ -195,9 +193,7 @@ func start_player_turn():
 	if not _is_extra_turn:
 		_current_turn_number += 1
 		_update_turn_display()
-		print("🔄 Tah číslo: %d" % _current_turn_number)
 	else:
-		print("⚡ EXTRA TAH!")
 		_is_extra_turn = false  # Reset pro příští tah
 	
 	# ✅ A pak reset energie až po adrenaline tracking
@@ -248,7 +244,6 @@ func start_extra_turn():
 	_is_extra_turn = false  # Reset flag
 	
 	# 1. ODHOĎ SOUČASNÉ KARTY (jako konec normálního tahu)
-	print("🗂️ Odhazuji současné karty...")
 	PlayerData.discard_hand()
 	player_hand_ui_instance.clear_hand()  # Vyčisti UI
 	_update_pile_counts()
@@ -258,7 +253,6 @@ func start_extra_turn():
 	
 	# 3. RESETUJ POHYB JEDNOTKY (KLÍČOVÉ!)
 	if is_instance_valid(_player_unit_node):
-		print("🚶 Resetuji pohyb pro extra tah...")
 		_player_unit_node.reset_for_new_turn()  # Toto resetuje pohyb!
 	
 	# 4. DOBÍREJ NOVÉ KARTY (normální množství)
@@ -269,18 +263,12 @@ func start_extra_turn():
 	_current_battle_state = BattleState.PLAYER_TURN
 	end_turn_button.disabled = false
 	
-	print("✅ Extra tah připraven - pohyb resetován, karty vyměněny!")
 
 
 # Přidejte debug do signálu stats_changed
 func _on_unit_stats_changed(unit_node: Node2D):
-	print("🟠 DEBUG: _on_unit_stats_changed() volána pro unit: %s" % str(unit_node))
 	if is_instance_valid(unit_node) and unit_node == _player_unit_node:
-		print("🟠 DEBUG: Je to player unit, volám player_info_panel.update_stats()")
 		player_info_panel.update_stats(unit_node)
-		print("🟠 DEBUG: player_info_panel.update_stats() dokončeno")
-	else:
-		print("🟠 DEBUG: Není to player unit nebo není valid")
 
 func _draw_next_card_in_queue():
 	if _is_drawing_cards: return # Zabráníme spuštění, pokud už běží
@@ -339,7 +327,6 @@ func start_enemy_turn():
 	
 	# Zkontroluj jestli má být extra tah
 	if _is_extra_turn:
-		print("🔄 Místo enemy tahu bude extra player tah!")
 		# Malá pauza pro efekt
 		var timer = get_tree().create_timer(1.0)
 		timer.timeout.connect(start_extra_turn)
@@ -347,7 +334,6 @@ func start_enemy_turn():
 	
 	# END_OF_TURN artefakty
 	if has_node("/root/ArtifactManager"):
-		print("🔮 Spouštím END_OF_TURN artefakty...")
 		var artifact_results = ArtifactManager.on_turn_end()
 		if artifact_results.size() > 0:
 			print("✅ Aktivováno %d END_OF_TURN artefaktů:" % artifact_results.size())

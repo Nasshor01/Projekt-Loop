@@ -14,20 +14,10 @@ func set_camera_limits(grid_width: int, grid_height: int, cell_size: Vector2):
 	limit_bottom = int(map_size_pixels.y)
 
 func _unhandled_input(event: InputEvent):
-	# TEST 1: Vypíše se toto při POUHÉM pohybu myší?
-	if event is InputEventMouseMotion:
-		print("Detekován pohyb myši. Maska tlačítek: ", event.button_mask)
 
 	# POHYB KAMERY
 	if event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_MIDDLE or event.button_mask & MOUSE_BUTTON_MASK_RIGHT):
-		# TEST 2: Vypíše se toto, když hýbete myší se stisknutým pravým tlačítkem?
-		print("!!! TÁHNUTÍ KAMERY AKTIVNÍ !!!")
 		position -= event.relative / zoom * speed
-
-	# ZOOMOVÁNÍ KAMERY
-	if event is InputEventMouseButton:
-		# TEST 3: Toto by se mělo vypsat při kliknutí nebo točení kolečkem.
-		print("Detekováno tlačítko myši: ", event.button_index)
 		
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
 			var new_zoom_value = zoom / (1 + zoom_speed)

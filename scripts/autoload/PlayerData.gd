@@ -52,7 +52,6 @@ func get_current_node() -> MapNodeResource:
 
 func start_new_run_state():
 	EventManager.start_new_run()
-	print("=== START NEW RUN STATE ===")
 	
 	# 1. Resetujeme balíček na startovní
 	master_deck.clear()
@@ -63,7 +62,6 @@ func start_new_run_state():
 		elif "subclass_id" in selected_subclass and selected_subclass.subclass_id != "":
 			subclass_name = selected_subclass.subclass_id
 		
-		print("Načítám startovní balíček z: %s" % subclass_name)
 		
 		if "starting_deck" in selected_subclass:
 			for entry in selected_subclass.starting_deck:
@@ -71,14 +69,12 @@ func start_new_run_state():
 					for i in range(entry.count):
 						master_deck.append(entry.card)
 		
-		print("Startovní balíček obsahuje %d karet" % master_deck.size())
 		global_shield = 0
 	# 2. Aplikujeme pasivní skilly, které mohou změnit startovní staty
 	apply_passive_skills()
 	
 	# 2.5 KRITICKÁ OPRAVA - zajisti plné HP po aplikaci skillů
-	current_hp = max_hp  # <-- PŘIDEJ TENTO ŘÁDEK
-	print("DEBUG: Po aplikaci skillů - current_hp: %d, max_hp: %d" % [current_hp, max_hp])
+	current_hp = max_hp 
 
 	# 3. Připravíme bojové balíčky a zbytek
 	reset_battle_stats()
@@ -91,7 +87,6 @@ func start_new_run_state():
 	emit_signal("gold_changed", gold)
 	emit_signal("health_changed", current_hp, max_hp)
 	
-	print("=== RUN STATE INICIALIZOVÁN ===")
 	
 	# 5. VYSLAT SIGNÁL PRO VŠECHNY, KTEŘÍ ČEKAJÍ
 	emit_signal("player_state_initialized")
@@ -101,11 +96,6 @@ func start_ng_plus_state():
 	path_taken.clear()
 	floors_cleared = 0
 	
-	print("--- STAV PRO NG+ ---")
-	print("  - Ponecháno zlata: %d" % gold)
-	print("  - Ponecháno artefaktů: %d" % artifacts.size())
-	print("  - Ponecháno karet v balíčku: %d" % master_deck.size())
-	print("--------------------")
 	
 	reset_battle_stats()
 	
@@ -116,7 +106,6 @@ func start_ng_plus_state():
 func apply_passive_skills():
 	DebugLogger.log_info("=== APPLYING PASSIVE SKILLS ===", "SKILLS")
 	DebugLogger.start_performance_timer("apply_passive_skills")
-	print("=== APLIKACE PASIVNÍCH SKILLŮ ===")
 	
 	# 1. Resetujeme všechny hodnoty na úplný základ
 	max_hp = 50
