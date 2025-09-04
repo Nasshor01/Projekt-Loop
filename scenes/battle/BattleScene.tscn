@@ -9,11 +9,13 @@
 [ext_resource type="PackedScene" uid="uid://pjdtf3hky6c6" path="res://scenes/ui/CardPileViewer.tscn" id="6_q8wks"]
 [ext_resource type="PackedScene" uid="uid://ckvi6eu1vd02a" path="res://scenes/ui/DevConsole.tscn" id="8_5282s"]
 
-[node name="BattleScene" type="Node2D"]
+[node name="BattleScene" type="Node2D" node_paths=PackedStringArray("camera_2d")]
 script = ExtResource("1_vd1me")
 encounter_data = ExtResource("2_q8wks")
+camera_2d = NodePath("Camera2D")
 
 [node name="Camera2D" type="Camera2D" parent="."]
+unique_name_in_owner = true
 position = Vector2(576, 324)
 
 [node name="BattleGrid" parent="." instance=ExtResource("2_t3o3d")]

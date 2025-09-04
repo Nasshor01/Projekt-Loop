@@ -268,7 +268,7 @@ func hide_player_spawn_points():
 func is_cell_a_valid_spawn_point(cell: Vector2i) -> bool:
 	return _player_spawn_cells.has(cell)
 
-func show_danger_zone(enemy_units: Array[Node2D]):
+func show_danger_zone(enemy_units: Array[Unit]):
 	_danger_cells.clear()
 	var danger_dict = {}
 	for enemy in enemy_units:
@@ -297,3 +297,28 @@ func show_danger_zone(enemy_units: Array[Node2D]):
 func hide_danger_zone():
 	_danger_cells.clear()
 	queue_redraw()
+
+func get_line(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
+	var line_points: Array[Vector2i] = []
+	var x0 = from_cell.x; var y0 = from_cell.y
+	var x1 = to_cell.x; var y1 = to_cell.y
+	
+	var dx = abs(x1 - x0)
+	var dy = -abs(y1 - y0)
+	var sx = 1 if x0 < x1 else -1
+	var sy = 1 if y0 < y1 else -1
+	var err = dx + dy
+	
+	while true:
+		line_points.append(Vector2i(x0, y0))
+		if x0 == x1 and y0 == y1:
+			break
+		var e2 = 2 * err
+		if e2 >= dy:
+			err += dy
+			x0 += sx
+		if e2 <= dx:
+			err += dx
+			y0 += sy
+			
+	return line_points
