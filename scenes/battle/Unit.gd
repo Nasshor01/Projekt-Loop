@@ -25,6 +25,9 @@ var last_attacker: Unit = null
 #---------------------------------------------
 #pro enemy AI
 var is_aiming: bool = false # Pro mechaniku Archera
+# NOVÉ PROMĚNNÉ PRO BERSERKER AI:
+var turns_without_reaching_player: int = 0
+var is_permanently_enraged: bool = false
 #---------------------------------------------
 
 @onready var _sprite_node: Sprite2D = $Sprite2D
@@ -287,6 +290,12 @@ func process_turn_end_statuses():
 
 func get_current_movement_range() -> int:
 	var current_range = unit_data.movement_range
+	
+	# Kontrola podle AI scriptu
+	if unit_data.ai_script and unit_data.ai_script.resource_path.contains("BerserkerAI"):
+		current_range = 2  # Berserkerová logika - omezený pohyb
+	
+	# Ostatní statusy (slow atd.)
 	if active_statuses.has("Slow"):
 		current_range += active_statuses["Slow"].value
 	

@@ -1,13 +1,13 @@
 # ===================================================================
 # Soubor: res://scripts/ai/EnemyAIBase.gd
-# POPIS: Základní třída pro všechny enemy AI - opravená pro typovou kompatibilitu
+# POPIS: Základní třída pro všechny enemy AI - s přidanou RUSH akcí
 # ===================================================================
 class_name EnemyAIBase
 extends RefCounted
 
 # Vnitřní třída pro akce AI
 class AIAction:
-	enum ActionType { ATTACK, MOVE, SPECIAL, PASS }
+	enum ActionType { ATTACK, MOVE, SPECIAL, PASS, RUSH }  # PŘIDÁNO: RUSH
 	var type: ActionType
 	var target_unit: Unit = null
 	var move_path: Array[Vector2i] = []
@@ -97,4 +97,13 @@ func create_special_action(data: Dictionary = {}) -> AIAction:
 	var action = AIAction.new()
 	action.type = AIAction.ActionType.SPECIAL
 	action.special_data = data
+	return action
+
+# NOVÁ FUNKCE: Vytvoří RUSH akci
+func create_rush_action(target: Unit, path: Array[Vector2i], multiplier: float = 3.0) -> AIAction:
+	var action = AIAction.new()
+	action.type = AIAction.ActionType.RUSH
+	action.target_unit = target
+	action.move_path = path
+	action.damage_multiplier = multiplier
 	return action

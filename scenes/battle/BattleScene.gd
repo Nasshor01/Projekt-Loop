@@ -417,9 +417,14 @@ func _on_enemy_died(enemy_node: Node2D):
 
 
 func spawn_enemy_units():
+	print("=== DEBUG: SPAWNING ENEMIES ===")
+	
 	if not encounter_data:
 		printerr("BattleScene: Chybí EncounterData!")
 		return
+
+	print("Encounter data: %s" % encounter_data.resource_path)
+	print("Počet nepřátel: %d" % encounter_data.enemies.size())
 
 	var all_active_cells = battle_grid_instance._active_cells.keys()
 	var player_cell = Vector2i.ZERO
@@ -439,21 +444,40 @@ func spawn_enemy_units():
 		if is_walkable and not is_occupied:
 			available_spawn_cells.append(cell)
 
-	for enemy_entry in encounter_data.enemies:
-		if not enemy_entry is EncounterEntry or not enemy_entry.unit_data: continue
+	print("Dostupných spawn pozic: %d" % available_spawn_cells.size())
+
+	for i in range(encounter_data.enemies.size()):
+		var enemy_entry = encounter_data.enemies[i]
+		print("=== SPAWNING ENEMY %d ===" % (i + 1))
+		
+		if not enemy_entry or not enemy_entry.unit_data:
+			print("CHYBA: Nevalidní enemy entry!")
+			continue
+			
+		print("Enemy data:")
+		print("  - unit_name: %s" % enemy_entry.unit_data.unit_name)
+		print("  - max_health: %d" % enemy_entry.unit_data.max_health)
+		print("  - ai_script: %s" % str(enemy_entry.unit_data.ai_script))
 		
 		if available_spawn_cells.is_empty():
-			printerr("Nedostatek volných pozic pro spawn nepřátel!")
+			printerr("Nedostatek spawn pozic!")
 			break
 			
 		var random_pos = available_spawn_cells.pick_random()
 		available_spawn_cells.erase(random_pos)
+		print("  - spawn pozice: %s" % str(random_pos))
 
 		var enemy_node = _spawn_unit(enemy_entry.unit_data, random_pos)
 		if is_instance_valid(enemy_node):
+			print("  ✅ Enemy spawnován!")
 			_enemy_units.append(enemy_node)
 			enemy_node.died.connect(_on_enemy_died)
 			enemy_node.stats_changed.connect(_on_unit_stats_changed)
+		else:
+			print("  ❌ Spawn selhal!")
+	
+	print("=== SPAWN DOKONČEN ===")
+	print("Celkem nepřátel: %d" % _enemy_units.size())
 
 func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: CardData):
 	if _current_battle_state != BattleState.PLAYER_TURN: return
@@ -683,29 +707,67 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 
 
 func process_enemy_actions() -> void:
+	print("=== DEBUG: PROCESSING ENEMY ACTIONS ===")
+	print("Počet nepřátel k zpracování: %d" % _enemy_units.size())
+	
 	_is_action_processing = true
    
 	_enemy_units.sort_custom(func(a, b): return a.global_position.y < b.global_position.y)
 	var player_units_array: Array = [_player_unit_node]
 
-	for enemy_unit in _enemy_units:
-		if not is_instance_valid(enemy_unit): continue
+	for enemy_index in range(_enemy_units.size()):
+		var enemy_unit = _enemy_units[enemy_index]
+		print("=== PROCESSING ENEMY %d ===" % (enemy_index + 1))
+		
+		if not is_instance_valid(enemy_unit):
+			print("CHYBA: Enemy unit není validní!")
+			continue
+			
+		print("Enemy: %s" % enemy_unit.unit_data.unit_name)
+		print("HP: %d/%d" % [enemy_unit.current_health, enemy_unit.unit_data.max_health])
+		print("AI script: %s" % str(enemy_unit.unit_data.ai_script))
    	
 		enemy_unit.hide_intent()
    	
 		var ai_instance = null
 		if is_instance_valid(enemy_unit.unit_data) and is_instance_valid(enemy_unit.unit_data.ai_script):
 			ai_instance = enemy_unit.unit_data.ai_script.new()
-   	
-		if not ai_instance:
-			printerr("CHYBA: Nepřítel '%s' nemá přiřazený AI skript!" % enemy_unit.unit_data.unit_name)
+			print("✅ AI instance vytvořen")
+		else:
+			print("❌ AI script chybí nebo není validní!")
 			continue
 
 		var action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
+		print("AI akce: %s" % action.type)
    	
 		match action.type:
 			EnemyAIBase.AIAction.ActionType.ATTACK:
 				await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+			
+			EnemyAIBase.AIAction.ActionType.RUSH:
+				print("⚡ ZPRACOVÁVÁM BERSERKER RUSH!")
+				
+				if enemy_unit.can_move():
+					enemy_unit.use_move_action()
+					var path = action.move_path
+					
+					if path.size() > 1:
+						var final_target_pos = path[-1]
+						
+						battle_grid_instance.remove_object_by_instance(enemy_unit)
+						battle_grid_instance.place_object_on_cell(enemy_unit, final_target_pos, true)
+						
+						var target_terrain = battle_grid_instance.get_terrain_on_cell(final_target_pos)
+						if is_instance_valid(target_terrain):
+							enemy_unit.process_terrain_effects(target_terrain)
+						
+						await get_tree().create_timer(0.4).timeout
+						
+						if is_instance_valid(action.target_unit) and can_attack_target(enemy_unit, action.target_unit, battle_grid_instance):
+							print("💥 BERSERKER RUSH ÚTOK! %.1fx damage!" % action.damage_multiplier)
+							await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+						else:
+							print("⚠️ Berserker rush se nedostal do dosahu pro útok.")
    			
 			EnemyAIBase.AIAction.ActionType.MOVE:
 				if enemy_unit.can_move():
@@ -716,8 +778,9 @@ func process_enemy_actions() -> void:
 						var move_dist = min(path.size() - 1, enemy_unit.get_current_movement_range())
 						var final_target_pos = path[move_dist]
    					
-						for i in range(1, move_dist + 1):
-							var path_cell = path[i]
+						# Kontrola pro bahno a další terény
+						for terrain_check_index in range(1, move_dist + 1):
+							var path_cell = path[terrain_check_index]
 							var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(path_cell)
 							if is_instance_valid(terrain_on_cell) and terrain_on_cell.terrain_name == "Mud":
 								final_target_pos = path_cell
@@ -738,12 +801,23 @@ func process_enemy_actions() -> void:
    		
 			EnemyAIBase.AIAction.ActionType.PASS:
 				pass
+			
+			EnemyAIBase.AIAction.ActionType.SPECIAL:
+				print("Speciální akce: %s" % action.special_data)
 
 		enemy_unit.process_turn_end_statuses()
 
 	await get_tree().create_timer(0.5).timeout
 	_is_action_processing = false
 	start_player_turn()
+
+# Pomocná funkce pro kontrolu útočného dosahu (přidej ji do BattleScene)
+func can_attack_target(attacker: Unit, target: Unit, battle_grid: BattleGrid) -> bool:
+	if not is_instance_valid(attacker) or not is_instance_valid(target):
+		return false
+	
+	var distance = battle_grid.get_distance(attacker.grid_position, target.grid_position)
+	return distance <= attacker.unit_data.attack_range
 
 func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node2D) -> Array[Node2D]:
 	var targets: Array[Node2D] = []
