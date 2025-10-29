@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CardPool" load_steps=19 format=3 uid="uid://bds5ehyjkcmrh"]
+[gd_resource type="Resource" script_class="CardPool" load_steps=20 format=3 uid="uid://bds5ehyjkcmrh"]
 
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="1_64q7c"]
 [ext_resource type="Resource" uid="uid://wi3ebnuo0l4i" path="res://data/cards/paladin/aura_of_devotion.tres" id="2_37cnp"]
@@ -18,8 +18,9 @@
 [ext_resource type="Resource" uid="uid://cblfwkybymy36" path="res://data/cards/everyone/heavy_strike.tres" id="15_csy1g"]
 [ext_resource type="Resource" uid="uid://cirhhgn2eiphr" path="res://data/cards/everyone/fortify.tres" id="16_jq452"]
 [ext_resource type="Resource" uid="uid://3n2gxev54dwm" path="res://data/cards/everyone/adrenaline.tres" id="17_dr8gb"]
+[ext_resource type="Resource" uid="uid://drxshlnb32t3" path="res://data/cards/everyone/init.tres" id="18_a1fgp"]
 
 [resource]
 script = ExtResource("2_jyy6m")
-cards = Array[ExtResource("1_64q7c")]([ExtResource("2_37cnp"), ExtResource("3_a1fgp"), ExtResource("4_c5o5i"), ExtResource("5_ongme"), ExtResource("6_3qalh"), ExtResource("7_ckgmk"), ExtResource("8_48d8g"), ExtResource("9_kll14"), ExtResource("10_niwc4"), ExtResource("11_6cu60"), ExtResource("12_leeat"), ExtResource("13_2g124"), ExtResource("14_cdcew"), ExtResource("15_csy1g"), ExtResource("16_jq452"), ExtResource("17_dr8gb")])
+cards = Array[ExtResource("1_64q7c")]([ExtResource("2_37cnp"), ExtResource("3_a1fgp"), ExtResource("4_c5o5i"), ExtResource("5_ongme"), ExtResource("6_3qalh"), ExtResource("7_ckgmk"), ExtResource("8_48d8g"), ExtResource("9_kll14"), ExtResource("10_niwc4"), ExtResource("11_6cu60"), ExtResource("12_leeat"), ExtResource("13_2g124"), ExtResource("14_cdcew"), ExtResource("15_csy1g"), ExtResource("16_jq452"), ExtResource("17_dr8gb"), ExtResource("18_a1fgp")])
 metadata/_custom_type_script = "uid://3bea2wcsbe2e"

@@ -20,7 +20,9 @@ var active_statuses: Dictionary = {}
 
 var has_used_base_move: bool = false
 var extra_moves: int = 0
+var _has_acted_this_turn: bool = false
 var last_attacker: Unit = null
+
 
 #---------------------------------------------
 #pro enemy AI
@@ -479,3 +481,43 @@ func show_status_text(text_to_show: String, color_type: String):
 		instance.position = Vector2(0, -80)
 
 	instance.start(text_to_show, color)
+
+func start_turn() -> int:
+	"""
+	Volá se, když TurnManager zahájí tah této jednotky.
+	Resetuje akce a zpracuje statusy na začátku tahu.
+	Vrací počet karet k dobrání navíc (pouze pro hráče).
+	"""
+	print("--- %s ZAČÍNÁ TAH ---" % unit_data.unit_name)
+	
+	# Resetuj akci (tuto proměnnou jsi přidal v kroku 1)
+	_has_acted_this_turn = false 
+
+	# Volání tvých stávajících funkcí:
+	# Tato funkce už resetuje tvůj pohyb ('has_used_base_move' a 'extra_moves')
+	reset_for_new_turn() 
+	
+	# Tato funkce zpracuje statusy a vrátí extra líznutí
+	var extra_draw = process_turn_start_statuses()
+	
+	return extra_draw
+
+func end_turn():
+	"""
+	Volá se, když jednotka ukončí svůj tah.
+	Zpracuje statusy na konci tahu.
+	"""
+	print("--- %s KONČÍ TAH ---" % unit_data.unit_name)
+	
+	# Volání tvé stávající funkce:
+	process_turn_end_statuses()
+
+func can_act() -> bool:
+	"""Může jednotka ještě provést akci (zahrát kartu) v tomto tahu?"""
+	# Poznámka: Vaše stávající 'can_move()' je v pořádku, tu měnit nemusíme.
+	return not _has_acted_this_turn
+
+func use_action():
+	"""Označí, že jednotka využila svou akci v tomto tahu."""
+	_has_acted_this_turn = true
+	print("%s použil akci (zahrál kartu)." % unit_data.unit_name)

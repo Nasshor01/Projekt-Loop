@@ -14,6 +14,7 @@ max_health = 25
 attack_damage = 3
 movement_range = 3
 attack_range = 1
+initiative = 13
 sprite_texture = ExtResource("2_hk6eh")
 ai_script = ExtResource("1_hk6eh")
 metadata/_custom_type_script = "uid://celcfyrl033bg"

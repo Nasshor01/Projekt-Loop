@@ -70,6 +70,13 @@ func _ready():
 	victory_label.visible = false
 	enemy_info_panel.hide_panel()
 	card_pile_viewer.hide()
+	
+	if has_node("/root/TurnManager"):
+		TurnManager.round_started.connect(_on_round_started)
+		TurnManager.turn_started.connect(_on_turn_started)
+		TurnManager.combat_ended.connect(_on_combat_ended)
+	else:
+		printerr("CHYBA: TurnManager není dostupný!")
 
 	PlayerData.reset_battle_stats()
 	PlayerData.energy_changed.connect(_on_energy_changed)
@@ -147,13 +154,167 @@ func _unhandled_input(event: InputEvent):
 			get_viewport().set_input_as_handled()
 
 
+# ===== NOVÉ FUNKCE PRO INICIATIVNÍ SYSTÉM =====
+
+func _on_round_started(round_number: int):
+	"""Volá se na začátku každého kola"""
+	_current_turn_number = round_number
+	_update_turn_display()
+	print("=== KOLO %d ===" % round_number)
+
+func _on_turn_started(unit: Unit):
+	"""Volá se když je na řadě další jednotka"""
+	if not is_instance_valid(unit):
+		TurnManager.next_turn()
+		return
+	
+	# Zavolej start_turn na jednotce
+	var extra_draw = unit.start_turn()
+	
+	# Rozhodní, zda jde o hráče nebo AI
+	if unit.unit_data.faction == UnitData.Faction.PLAYER:
+		_start_player_initiative_turn(unit, extra_draw)
+	else:
+		_start_enemy_initiative_turn(unit)
+
+func _start_player_initiative_turn(player_unit: Unit, extra_draw: int = 0):
+	"""Zahájí tah hráče v iniciativním systému"""
+	_current_battle_state = BattleState.PROCESSING
+	end_turn_button.disabled = true
+	
+	# Reset adrenaline tracking
+	PlayerData.reset_adrenaline_tracking()
+	
+	if PlayerData.has_adrenaline_addiction:
+		_show_floating_notification("💉 Závislost aktivní (limit: 2 Adrenaliny)", Color.PURPLE)
+	
+	# Reset energie
+	PlayerData.reset_energy()
+	
+	# START_OF_TURN artefakty
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager.on_turn_start()
+	
+	# Dober karty
+	_cards_to_draw_queue = starting_hand_size + extra_draw
+	_draw_next_card_in_queue()
+	
+	# Zobraz AI záměry
+	set_enemy_intents()
+	battle_grid_instance.show_danger_zone(_enemy_units)
+
+func _start_enemy_initiative_turn(enemy_unit: Unit):
+	"""Zahájí tah nepřítele v iniciativním systému"""
+	_current_battle_state = BattleState.ENEMY_TURN
+	end_turn_button.disabled = true
+	
+	battle_grid_instance.hide_danger_zone()
+	enemy_unit.hide_intent()
+	
+	await _process_single_enemy_action(enemy_unit)
+	
+	# Zavolej end_turn na jednotce
+	enemy_unit.end_turn()
+	
+	# Přejdi na další tah
+	TurnManager.next_turn()
+
+func _process_single_enemy_action(enemy_unit: Unit):
+	"""Zpracuje akci jednoho nepřítele"""
+	if not is_instance_valid(enemy_unit):
+		return
+	
+	var player_units_array: Array = [_player_unit_node]
+	
+	var ai_instance = null
+	if is_instance_valid(enemy_unit.unit_data) and is_instance_valid(enemy_unit.unit_data.ai_script):
+		ai_instance = enemy_unit.unit_data.ai_script.new()
+	else:
+		return
+	
+	var action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
+	
+	match action.type:
+		EnemyAIBase.AIAction.ActionType.ATTACK:
+			await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+		
+		EnemyAIBase.AIAction.ActionType.RUSH:
+			if enemy_unit.can_move():
+				enemy_unit.use_move_action()
+				var path = action.move_path
+				
+				if path.size() > 1:
+					var final_target_pos = path[-1]
+					
+					battle_grid_instance.remove_object_by_instance(enemy_unit)
+					battle_grid_instance.place_object_on_cell(enemy_unit, final_target_pos, true)
+					
+					var target_terrain = battle_grid_instance.get_terrain_on_cell(final_target_pos)
+					if is_instance_valid(target_terrain):
+						enemy_unit.process_terrain_effects(target_terrain)
+					
+					await get_tree().create_timer(0.4).timeout
+					
+					if is_instance_valid(action.target_unit) and can_attack_target(enemy_unit, action.target_unit, battle_grid_instance):
+						await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+		
+		EnemyAIBase.AIAction.ActionType.MOVE:
+			if enemy_unit.can_move():
+				enemy_unit.use_move_action()
+				var path = action.move_path
+				
+				if path.size() > 1:
+					var move_dist = min(path.size() - 1, enemy_unit.get_current_movement_range())
+					var final_target_pos = path[move_dist]
+					
+					for terrain_check_index in range(1, move_dist + 1):
+						var path_cell = path[terrain_check_index]
+						var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(path_cell)
+						if is_instance_valid(terrain_on_cell) and terrain_on_cell.terrain_name == "Mud":
+							final_target_pos = path_cell
+							break
+					
+					battle_grid_instance.remove_object_by_instance(enemy_unit)
+					battle_grid_instance.place_object_on_cell(enemy_unit, final_target_pos, true)
+					
+					var target_terrain = battle_grid_instance.get_terrain_on_cell(final_target_pos)
+					if is_instance_valid(target_terrain):
+						enemy_unit.process_terrain_effects(target_terrain)
+					
+					await get_tree().create_timer(0.4).timeout
+					
+					var post_move_action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
+					if post_move_action.type == EnemyAIBase.AIAction.ActionType.ATTACK:
+						await enemy_unit.attack(post_move_action.target_unit, post_move_action.damage_multiplier)
+		
+		EnemyAIBase.AIAction.ActionType.PASS:
+			pass
+	
+	await get_tree().create_timer(0.3).timeout
+
+func _on_combat_ended(player_won: bool):
+	"""Volá se když TurnManager ukončí souboj"""
+	_current_battle_state = BattleState.BATTLE_OVER
+	
+	if player_won:
+		end_battle_as_victory()
+	else:
+		GameManager.battle_finished(false)
+
 # NOVÉ A UPRAVENÉ FUNKCE PRO START HRY
 func start_player_spawn_selection():
 	_current_battle_state = BattleState.AWAITING_PLAYER_SPAWN
 	var spawn_points = battle_grid_instance.get_player_spawn_points(3) # Zobrazí pozice v prvních 3 sloupcích
 	battle_grid_instance.show_player_spawn_points(spawn_points)
 	end_turn_button.disabled = true
-	
+
+func _start_combat_with_turn_manager(units_to_start: Array[Unit]):
+	"""Zahájí souboj s TurnManagerem."""
+	if has_node("/root/TurnManager"):
+		TurnManager.start_combat(units_to_start)
+	else:
+		printerr("BattleScene: TurnManager není dostupný pro start_combat!")
+
 func confirm_player_spawn(at_position: Vector2i):
 	battle_grid_instance.hide_player_spawn_points()
 	
@@ -164,8 +325,23 @@ func confirm_player_spawn(at_position: Vector2i):
 	# NOVÉ: Reset artefaktů na začátku souboje (PŘED prvním tahem)
 	if has_node("/root/ArtifactManager"):
 		ArtifactManager.on_combat_start()
+
+	# ===== OPRAVA ZDE: Definice 'all_units' =====
+	# Musíme shromáždit všechny jednotky, abychom je mohli předat TurnManageru
+	var all_units: Array[Unit] = []
+	if is_instance_valid(_player_unit_node):
+		all_units.append(_player_unit_node)
+	all_units.append_array(_enemy_units) # Přidá všechny nepřátele
 	
-	call_deferred("start_player_turn")
+	# (Poznámka: Signály 'died' už připojujete ve funkcích
+	# spawn_player_unit_at a spawn_enemy_units, což je v pořádku)
+	# ==============================================
+
+	# ===== Zahájení souboje přes TurnManager =====
+	# Předáme pouze validní jednotky
+	var valid_units = all_units.filter(func(u): return is_instance_valid(u)) 
+	call_deferred("_start_combat_with_turn_manager", valid_units)
+	# ====================================================
 
 
 func spawn_player_unit_at(grid_pos: Vector2i):
@@ -174,64 +350,10 @@ func spawn_player_unit_at(grid_pos: Vector2i):
 		if is_instance_valid(_player_unit_node):
 			_player_unit_node.unit_selected.connect(_on_unit_selected_on_grid)
 			_player_unit_node.stats_changed.connect(_on_unit_stats_changed)
-			_player_unit_node.died.connect(_on_player_died)
+			_player_unit_node.died.connect(_on_unit_died)
 
 
 
-func start_player_turn():
-	_current_battle_state = BattleState.PROCESSING
-	end_turn_button.disabled = true
-	
-	# ✅ KRITICKÉ: Reset adrenaline tracking MUSÍ být PRVNÍ!
-	PlayerData.reset_adrenaline_tracking()
-	
-	# ✅ Pokud má závislost, zobraz připomenutí HNED po resetu
-	if PlayerData.has_adrenaline_addiction:
-		_show_floating_notification("💉 Závislost aktivní (limit: 2 Adrenaliny)", Color.PURPLE)
-	
-	# ✅ TEPRVE POTOM počítání tahů (pouze pro normální tahy, ne extra)
-	if not _is_extra_turn:
-		_current_turn_number += 1
-		_update_turn_display()
-	else:
-		_is_extra_turn = false  # Reset pro příští tah
-	
-	# ✅ A pak reset energie až po adrenaline tracking
-	PlayerData.reset_energy()
-	
-	if is_instance_valid(_player_unit_node):
-		_player_unit_node.reset_for_new_turn()
-		
-		# START_OF_TURN artefakty
-		if has_node("/root/ArtifactManager"):
-			ArtifactManager.on_turn_start()
-		
-		# NOVÉ: Zkontroluj conditional artefakty (pro Časový krystal)
-		if has_node("/root/ArtifactManager"):
-			var context = {
-				"current_turn": _current_turn_number,
-				"turn_number": _current_turn_number,
-				"target": _player_unit_node
-			}
-			var conditional_results = ArtifactManager.check_conditional_artifacts_with_context(context)
-			
-			# Zkontroluj jestli se aktivoval extra tah
-			for result in conditional_results:
-				if result["artifact"].custom_effect_id == "extra_turn":
-					_is_extra_turn = true
-					print("🔮 Časový krystal aktivován! Budeš mít extra tah!")
-		
-		var extra_draw = _player_unit_node.process_turn_start_statuses()
-		_cards_to_draw_queue = starting_hand_size + extra_draw
-		_draw_next_card_in_queue()
-	
-	for unit in _enemy_units:
-		if is_instance_valid(unit):
-			unit.reset_for_new_turn()
-			unit.process_turn_start_statuses()
-			
-	set_enemy_intents()
-	battle_grid_instance.show_danger_zone(_enemy_units)
 
 func _update_turn_display():
 	"""Aktualizuje zobrazení čísla tahu"""
@@ -321,46 +443,18 @@ func _finish_drawing_hand():
 	_current_battle_state = BattleState.PLAYER_TURN
 	end_turn_button.disabled = false
 
-func start_enemy_turn():
-	_current_battle_state = BattleState.ENEMY_TURN
-	end_turn_button.disabled = true
-	
-	# Zkontroluj jestli má být extra tah
-	if _is_extra_turn:
-		# Malá pauza pro efekt
-		var timer = get_tree().create_timer(1.0)
-		timer.timeout.connect(start_extra_turn)
-		return
-	
-	# END_OF_TURN artefakty
-	if has_node("/root/ArtifactManager"):
-		var artifact_results = ArtifactManager.on_turn_end()
-		if artifact_results.size() > 0:
-			print("✅ Aktivováno %d END_OF_TURN artefaktů:" % artifact_results.size())
-			for result in artifact_results:
-				print("   - %s: %s" % [result["artifact"].artifact_name, result["description"]])
-	
-	battle_grid_instance.hide_danger_zone()
-	
-	if is_instance_valid(_player_unit_node):
-		_player_unit_node.process_turn_end_statuses()
 
-	_reset_player_selection()
-	
-	player_hand_ui_instance.discard_hand_animated(discard_pile_button.global_position)
-	
 func _on_hand_discard_animation_finished():
-	# Tato funkce se zavolá, až když animace odhození skončí.
 	PlayerData.discard_hand()
 	_update_pile_counts()
 	
-	var timer = get_tree().create_timer(0.5)
-	timer.timeout.connect(process_enemy_actions)
-# Starou funkci _update_hand_ui() SMAŽTE NEBO ZAKOMENTUJTE, již není potřeba.
-# func _update_hand_ui():
-# 	player_hand_ui_instance.clear_hand()
-# 	for card_data in PlayerData.current_hand: player_hand_ui_instance.add_card_to_hand(card_data)
-# 	_update_pile_counts()
+	# ===== UPRAVENO: Přejdi na další tah =====
+	var timer = get_tree().create_timer(0.3)
+	timer.timeout.connect(func():
+		if has_node("/root/TurnManager"):
+			TurnManager.next_turn()
+	)
+	# =========================================
 
 func end_battle_as_victory():
 	_current_battle_state = BattleState.BATTLE_OVER
@@ -376,44 +470,42 @@ func end_battle_as_victory():
 func _on_win_button_pressed():
 	end_battle_as_victory()
 
-func _on_player_died(unit_node: Node2D):
-	# Logika pro oživení (tuto část už máš správně)
-	if PlayerData.has_revive:
-		print("!!! BOŽSKÁ OCHRANA AKTIVOVÁNA !!!")
-		PlayerData.has_revive = false
-		var heal_amount = PlayerData.max_hp / 2
-		if is_instance_valid(unit_node) and unit_node.has_method("heal"):
-			unit_node.heal(heal_amount)
-		return
-
-	# --- PŘIDANÁ ČÁST PRO ANIMACI DEFINITIVNÍ SMRTI ---
-	# Pokud nemáme oživení, spustíme animaci zmizení před koncem hry.
+func _on_unit_died(unit_node: Node2D):
+	"""Zpracuje smrt jednotky"""
+	print("=== Jednotka zemřela: %s ===" % unit_node.unit_data.unit_name)
+	
+	# Zpracuj oživení hráče
+	if unit_node == _player_unit_node:
+		if PlayerData.has_revive:
+			print("!!! BOŽSKÁ OCHRANA AKTIVOVÁNA !!!")
+			PlayerData.has_revive = false
+			var heal_amount = PlayerData.max_hp / 2
+			if unit_node.has_method("heal"):
+				unit_node.heal(heal_amount)
+			return
+	
+	# Trigger enemy death artefakty
+	if unit_node.unit_data.faction == UnitData.Faction.ENEMY:
+		if has_node("/root/ArtifactManager"):
+			ArtifactManager.on_enemy_death(unit_node)
+	
+	# Odeber ze seznamu
+	if _enemy_units.has(unit_node):
+		_enemy_units.erase(unit_node)
+	
+	battle_grid_instance.remove_object_by_instance(unit_node)
+	
+	# Animace zmizení
 	var tween = create_tween()
 	tween.tween_property(unit_node, "modulate:a", 0.0, 0.5)
-	# --- KONEC PŘIDANÉ ČÁSTI ---
-
-	# Logika pro konec hry (tato část už je správně)
-	DebugLogger.log_critical("PLAYER DIED! HP: %d, Floor: %d" % [PlayerData.current_hp, PlayerData.floors_cleared], "BATTLE")
-	_current_battle_state = BattleState.BATTLE_OVER
-	GameManager.battle_finished(false)
-
-func _on_enemy_died(enemy_node: Node2D):
-	# NOVÉ: Trigger enemy death artefakty před všemi ostatní logikou
-	if has_node("/root/ArtifactManager"):
-		ArtifactManager.on_enemy_death(enemy_node)
 	
-	DebugLogger.log_enemy_action(enemy_node.unit_data.unit_name, "died", {"remaining_enemies": _enemy_units.size() - 1})
-	if _enemy_units.has(enemy_node):
-		_enemy_units.erase(enemy_node)
+	# ===== UPRAVENO: Odregistruj až PO animaci =====
+	await tween.finished
 	
-	battle_grid_instance.remove_object_by_instance(enemy_node)
-
-	var tween = create_tween()
-	tween.tween_property(enemy_node, "modulate:a", 0.0, 0.5)
-	tween.tween_callback(enemy_node.queue_free)
-
-	if _enemy_units.is_empty():
-		end_battle_as_victory()
+	if has_node("/root/TurnManager"):
+		TurnManager.unregister_unit(unit_node)
+	
+	unit_node.queue_free()
 
 
 func spawn_enemy_units():
@@ -471,7 +563,7 @@ func spawn_enemy_units():
 		if is_instance_valid(enemy_node):
 			print("  ✅ Enemy spawnován!")
 			_enemy_units.append(enemy_node)
-			enemy_node.died.connect(_on_enemy_died)
+			enemy_node.died.connect(_on_unit_died)
 			enemy_node.stats_changed.connect(_on_unit_stats_changed)
 		else:
 			print("  ❌ Spawn selhal!")
@@ -504,7 +596,11 @@ func try_play_card(card: CardData, initial_target: Node2D) -> void:
 		return
 
 	_is_action_processing = true
-	var card_played_successfully = false
+	var card_played_successfully = true
+	if card_played_successfully:
+	# ===== PŘIDÁNO: Označ akci =====
+		if is_instance_valid(_player_unit_node):
+			_player_unit_node.use_action()
 	
 	var card_ui_to_remove = _selected_card_ui
 	
@@ -704,112 +800,11 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 			if is_instance_valid(_player_unit_node) and target.has_method("take_damage"):
 				var damage = _player_unit_node.current_block * 2
 				target.take_damage(damage)
-
-
-func process_enemy_actions() -> void:
-	print("=== DEBUG: PROCESSING ENEMY ACTIONS ===")
-	print("Počet nepřátel k zpracování: %d" % _enemy_units.size())
-	
-	_is_action_processing = true
-   
-	_enemy_units.sort_custom(func(a, b): return a.global_position.y < b.global_position.y)
-	var player_units_array: Array = [_player_unit_node]
-
-	for enemy_index in range(_enemy_units.size()):
-		var enemy_unit = _enemy_units[enemy_index]
-		print("=== PROCESSING ENEMY %d ===" % (enemy_index + 1))
 		
-		if not is_instance_valid(enemy_unit):
-			print("CHYBA: Enemy unit není validní!")
-			continue
-			
-		print("Enemy: %s" % enemy_unit.unit_data.unit_name)
-		print("HP: %d/%d" % [enemy_unit.current_health, enemy_unit.unit_data.max_health])
-		print("AI script: %s" % str(enemy_unit.unit_data.ai_script))
-   	
-		enemy_unit.hide_intent()
-   	
-		var ai_instance = null
-		if is_instance_valid(enemy_unit.unit_data) and is_instance_valid(enemy_unit.unit_data.ai_script):
-			ai_instance = enemy_unit.unit_data.ai_script.new()
-			print("✅ AI instance vytvořen")
-		else:
-			print("❌ AI script chybí nebo není validní!")
-			continue
+		CardEffectData.EffectType.MODIFY_INITIATIVE_NEXT_ROUND:
+			if has_node("/root/TurnManager") and is_instance_valid(target):
+				TurnManager.modify_base_initiative(target, effect.value)
 
-		var action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
-		print("AI akce: %s" % action.type)
-   	
-		match action.type:
-			EnemyAIBase.AIAction.ActionType.ATTACK:
-				await enemy_unit.attack(action.target_unit, action.damage_multiplier)
-			
-			EnemyAIBase.AIAction.ActionType.RUSH:
-				print("⚡ ZPRACOVÁVÁM BERSERKER RUSH!")
-				
-				if enemy_unit.can_move():
-					enemy_unit.use_move_action()
-					var path = action.move_path
-					
-					if path.size() > 1:
-						var final_target_pos = path[-1]
-						
-						battle_grid_instance.remove_object_by_instance(enemy_unit)
-						battle_grid_instance.place_object_on_cell(enemy_unit, final_target_pos, true)
-						
-						var target_terrain = battle_grid_instance.get_terrain_on_cell(final_target_pos)
-						if is_instance_valid(target_terrain):
-							enemy_unit.process_terrain_effects(target_terrain)
-						
-						await get_tree().create_timer(0.4).timeout
-						
-						if is_instance_valid(action.target_unit) and can_attack_target(enemy_unit, action.target_unit, battle_grid_instance):
-							print("💥 BERSERKER RUSH ÚTOK! %.1fx damage!" % action.damage_multiplier)
-							await enemy_unit.attack(action.target_unit, action.damage_multiplier)
-						else:
-							print("⚠️ Berserker rush se nedostal do dosahu pro útok.")
-   			
-			EnemyAIBase.AIAction.ActionType.MOVE:
-				if enemy_unit.can_move():
-					enemy_unit.use_move_action()
-					var path = action.move_path
-   				
-					if path.size() > 1:
-						var move_dist = min(path.size() - 1, enemy_unit.get_current_movement_range())
-						var final_target_pos = path[move_dist]
-   					
-						# Kontrola pro bahno a další terény
-						for terrain_check_index in range(1, move_dist + 1):
-							var path_cell = path[terrain_check_index]
-							var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(path_cell)
-							if is_instance_valid(terrain_on_cell) and terrain_on_cell.terrain_name == "Mud":
-								final_target_pos = path_cell
-								break
-   					
-						battle_grid_instance.remove_object_by_instance(enemy_unit)
-						battle_grid_instance.place_object_on_cell(enemy_unit, final_target_pos, true)
-   					
-						var target_terrain = battle_grid_instance.get_terrain_on_cell(final_target_pos)
-						if is_instance_valid(target_terrain):
-							enemy_unit.process_terrain_effects(target_terrain)
-   						
-						await get_tree().create_timer(0.4).timeout
-   					
-						var post_move_action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
-						if post_move_action.type == EnemyAIBase.AIAction.ActionType.ATTACK:
-							await enemy_unit.attack(post_move_action.target_unit, post_move_action.damage_multiplier)
-   		
-			EnemyAIBase.AIAction.ActionType.PASS:
-				pass
-			
-			EnemyAIBase.AIAction.ActionType.SPECIAL:
-				print("Speciální akce: %s" % action.special_data)
-
-		enemy_unit.process_turn_end_statuses()
-
-	await get_tree().create_timer(0.5).timeout
-	_is_action_processing = false
-	start_player_turn()
 
 # Pomocná funkce pro kontrolu útočného dosahu (přidej ji do BattleScene)
 func can_attack_target(attacker: Unit, target: Unit, battle_grid: BattleGrid) -> bool:
@@ -861,7 +856,25 @@ func _reset_player_selection():
 func _on_draw_pile_clicked(): card_pile_viewer.show_cards(PlayerData.draw_pile)
 func _on_discard_pile_clicked(): card_pile_viewer.show_cards(PlayerData.discard_pile)
 func _on_end_turn_button_pressed():
-	if _current_battle_state == BattleState.PLAYER_TURN: start_enemy_turn()
+	if _current_battle_state != BattleState.PLAYER_TURN:
+		return
+	
+	# ===== UPRAVENO PRO INICIATIVNÍ SYSTÉM =====
+	_current_battle_state = BattleState.PROCESSING
+	end_turn_button.disabled = true
+	
+	# Zavolej end_turn na hráči
+	if is_instance_valid(_player_unit_node):
+		_player_unit_node.end_turn()
+	
+	# END_OF_TURN artefakty
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager.on_turn_end()
+	
+	# Odhoď karty
+	player_hand_ui_instance.discard_hand_animated(discard_pile_button.global_position)
+	# ============================================
+
 func _on_energy_changed(new_amount: int):
 	energy_label.text = "Energie: " + str(new_amount)
 
@@ -903,11 +916,34 @@ func _update_pile_counts():
 
 
 func set_enemy_intents():
+	"""Zobrazí záměry nepřátel (jejich budoucí akce)"""
 	for enemy_unit in _enemy_units:
-		if is_instance_valid(enemy_unit) and enemy_unit.has_method("show_intent"):
-			var damage = 0
-			if enemy_unit.get_unit_data(): damage = enemy_unit.get_unit_data().attack_damage
-			enemy_unit.show_intent(damage)
+		if not is_instance_valid(enemy_unit):
+			continue
+		
+		if not enemy_unit.has_method("show_intent"):
+			continue
+		
+		# ===== UPRAVENO: Získej akci z AI =====
+		var player_units_array: Array = [_player_unit_node]
+		
+		var ai_instance = null
+		if is_instance_valid(enemy_unit.unit_data) and is_instance_valid(enemy_unit.unit_data.ai_script):
+			ai_instance = enemy_unit.unit_data.ai_script.new()
+		else:
+			continue
+		
+		var action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
+		
+		# Zobraz záměr podle typu akce
+		match action.type:
+			EnemyAIBase.AIAction.ActionType.ATTACK, EnemyAIBase.AIAction.ActionType.RUSH:
+				var damage = enemy_unit.unit_data.attack_damage
+				if action.damage_multiplier != 1.0:
+					damage = int(damage * action.damage_multiplier)
+				enemy_unit.show_intent(damage)
+			_:
+				enemy_unit.hide_intent()
 
 func _spawn_unit(unit_data: UnitData, grid_pos: Vector2i) -> Unit:
 	if not unit_data: return null

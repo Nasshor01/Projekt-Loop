@@ -18,6 +18,7 @@ enum Faction {
 @export var attack_damage: int = 2
 @export var movement_range: int = 3
 @export var attack_range: int = 1
+@export var initiative: int = 10  # ===== PŘIDÁNO: Iniciativa pro tahový systém =====
 
 @export var sprite_texture: Texture2D
 

@@ -28,6 +28,7 @@ GameManager="*res://scripts/autoload/GameManager.gd"
 SystemDebug="*res://scripts/debug/SystemDebug.gd"
 EventManager="*res://scripts/autoload/EventManager.gd"
 ArtifactManager="*res://scripts/autoload/ArtifactManager.gd"
+TurnManager="*res://scripts/autoload/TurnManager.gd"
 
 [display]
 
