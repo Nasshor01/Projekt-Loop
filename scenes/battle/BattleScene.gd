@@ -802,8 +802,10 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 				target.take_damage(damage)
 		
 		CardEffectData.EffectType.MODIFY_INITIATIVE_NEXT_ROUND:
-			if has_node("/root/TurnManager") and is_instance_valid(target):
-				TurnManager.modify_base_initiative(target, effect.value)
+			if has_node("/root/TurnManager") and is_instance_valid(target) and target is Unit:
+				TurnManager.modify_initiative_next_round(target, effect.value)
+			else:
+				printerr("Efekt MODIFY_INITIATIVE nelze aplikovat na ", target)
 
 
 # Pomocná funkce pro kontrolu útočného dosahu (přidej ji do BattleScene)

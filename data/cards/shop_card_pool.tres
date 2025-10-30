@@ -18,7 +18,8 @@
 [ext_resource type="Resource" uid="uid://cblfwkybymy36" path="res://data/cards/everyone/heavy_strike.tres" id="15_csy1g"]
 [ext_resource type="Resource" uid="uid://cirhhgn2eiphr" path="res://data/cards/everyone/fortify.tres" id="16_jq452"]
 [ext_resource type="Resource" uid="uid://3n2gxev54dwm" path="res://data/cards/everyone/adrenaline.tres" id="17_dr8gb"]
-[ext_resource type="Resource" uid="uid://drxshlnb32t3" path="res://data/cards/everyone/init.tres" id="18_a1fgp"]
+[ext_resource type="Resource" uid="uid://drxshlnb32t3" path="res://data/cards/everyone/quick_step.tres" id="18_a1fgp"]
+
 
 [resource]
 script = ExtResource("2_jyy6m")

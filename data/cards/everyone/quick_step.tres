@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="Resource_vx7ho"]
 script = ExtResource("1_vx7ho")
 effect_type = 12
-value = 10
+value = 5
 string_value = ""
 target_type = 0
 area_of_effect_type = 0
@@ -16,14 +16,14 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_i7eq0")
-card_id = "init"
-card_name = "iniciativa"
-card_description = "zrychli se na příští tah"
+card_id = "quick_step"
+card_name = "Rychlý krok"
+card_description = "Zvyš svou iniciativu o 5 pro příští kolo."
 cost = 1
 range_type = 1
-range_value = 1
+range_value = 0
 tags = Array[int]([8])
-rarity = 0
+rarity = 1
 effects = Array[ExtResource("1_vx7ho")]([SubResource("Resource_vx7ho")])
 is_upgraded = false
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

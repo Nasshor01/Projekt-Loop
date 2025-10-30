@@ -13,22 +13,17 @@ var _turn_order: Array[Unit] = []
 var _current_turn_index: int = 0
 var _round_number: int = 0
 var _is_combat_active: bool = false
+var _initiative_modifiers: Dictionary = {}
 
 func start_combat(all_units: Array[Unit]):
 	"""Inicializuje souboj se všemi jednotkami"""
 	print("=== TurnManager: START COMBAT ===")
 	
-	_combatants.clear()
+	reset()
 	_combatants = all_units.duplicate()
-	_round_number = 0
-	_current_turn_index = 0
 	_is_combat_active = true
 	
 	print("TurnManager: Zaregistrováno %d jednotek" % _combatants.size())
-	
-	# Vypočítej pořadí tahů pro první kolo
-	_calculate_turn_order()
-	
 	# Zahaj první kolo
 	_start_new_round()
 
@@ -39,13 +34,23 @@ func _calculate_turn_order():
 	
 	# Seřaď podle iniciativy (vyšší = dřív)
 	_turn_order.sort_custom(func(a: Unit, b: Unit):
-		var init_a = a.unit_data.initiative if a.unit_data else 0
-		var init_b = b.unit_data.initiative if b.unit_data else 0
+		
+		# ZÁKLADNÍ INICIATIVA (neměnná)
+		var base_init_a = a.unit_data.initiative if a.unit_data else 0
+		var base_init_b = b.unit_data.initiative if b.unit_data else 0
+		
+		# DOČASNÝ BONUS (z karet z minulého kola)
+		var mod_a = _initiative_modifiers.get(a.get_instance_id(), 0)
+		var mod_b = _initiative_modifiers.get(b.get_instance_id(), 0)
+		
+		# CELKOVÁ INICIATIVA (pro toto kolo)
+		var init_a = base_init_a + mod_a
+		var init_b = base_init_b + mod_b
 		
 		# Remíza - hráč má prioritu
 		if init_a == init_b:
 			var is_a_player = a.unit_data.faction == UnitData.Faction.PLAYER
-			var is_b_player = b.unit_data.faction == UnitData.Faction.PLAYER
+			# var is_b_player = b.unit_data.faction == UnitData.Faction.PLAYER # Není potřeba
 			return is_a_player  # Hráč má přednost
 		
 		return init_a > init_b  # Vyšší iniciativa je dřív
@@ -54,8 +59,9 @@ func _calculate_turn_order():
 	print("TurnManager: Pořadí tahů pro kolo %d:" % _round_number)
 	for i in range(_turn_order.size()):
 		var unit = _turn_order[i]
-		var init = unit.unit_data.initiative if unit.unit_data else 0
-		print("  %d. %s (Init: %d)" % [i + 1, unit.unit_data.unit_name, init])
+		var base_init = unit.unit_data.initiative if unit.unit_data else 0
+		var mod = _initiative_modifiers.get(unit.get_instance_id(), 0)
+		print("  %d. %s (Základ: %d, Bonus: %d, Celkem: %d)" % [i + 1, unit.unit_data.unit_name, base_init, mod, base_init + mod])
 
 func _start_new_round():
 	"""Zahájí nové kolo"""
@@ -64,6 +70,12 @@ func _start_new_round():
 	
 	print("=== TurnManager: KOLO %d ===" % _round_number)
 	
+	# 1. Vypočítej pořadí pro toto kolo (bonusy z minulého kola stále platí)
+	_calculate_turn_order()
+	
+	# 2. IHNED PO VÝPOČTU bonusy smaž (aby neplatily pro příští kolo)
+	_initiative_modifiers.clear()
+
 	emit_signal("round_started", _round_number)
 	
 	_start_next_unit_turn()
@@ -73,14 +85,12 @@ func _start_next_unit_turn():
 	if not _is_combat_active:
 		return
 	
-	# Zkontroluj podmínky konce souboje
 	if _check_combat_end():
 		return
 	
 	# Pokud jsme prošli všechny jednotky, zahaj nové kolo
 	if _current_turn_index >= _turn_order.size():
-		_calculate_turn_order()  # Přepočítej pro nové kolo
-		call_deferred("_start_new_round")
+		call_deferred("_start_new_round") # Toto volání zde zůstává
 		return
 	
 	var current_unit = _turn_order[_current_turn_index]
@@ -178,22 +188,24 @@ func get_turn_order() -> Array[Unit]:
 	"""Vrátí aktuální pořadí tahů (pro UI)"""
 	return _turn_order.duplicate()
 
-func modify_base_initiative(unit: Unit, change: int):
-	"""Upraví základní iniciativu jednotky (pro karty)"""
+func modify_initiative_next_round(unit: Unit, change: int):
+	"""
+	Upraví iniciativu jednotky POUZE pro příští kolo.
+	Ukládá bonus do dočasného slovníku.
+	"""
 	if not is_instance_valid(unit) or not unit.unit_data:
 		return
 	
-	# POZNÁMKA: Toto mění hodnotu v runtime, ne v .tres souboru
-	unit.unit_data.initiative += change
+	# Změníme ukládání do dictionary, ne do unit_data
+	var unit_id = unit.get_instance_id()
+	var current_mod = _initiative_modifiers.get(unit_id, 0)
+	_initiative_modifiers[unit_id] = current_mod + change
 	
-	print("TurnManager: Iniciativa %s změněna o %d (nová: %d)" % [
+	print("TurnManager: Iniciativa %s bude v PŘÍŠTÍM KOLE změněna o %d (Nový modifikátor: %d)" % [
 		unit.unit_data.unit_name,
 		change,
-		unit.unit_data.initiative
+		_initiative_modifiers[unit_id] # Vypíše celkový bonus
 	])
-	
-	# Přepočítej pořadí pro příští kolo
-	# (aktuální kolo se nemění)
 
 func is_combat_active() -> bool:
 	return _is_combat_active
@@ -202,6 +214,7 @@ func reset():
 	"""Reset pro nový souboj"""
 	_combatants.clear()
 	_turn_order.clear()
+	_initiative_modifiers.clear()
 	_current_turn_index = 0
 	_round_number = 0
 	_is_combat_active = false

@@ -20,7 +20,8 @@
 [ext_resource type="Resource" uid="uid://qtmmceitmyel" path="res://data/cards/paladin/purging_burst.tres" id="17_43t0k"]
 [ext_resource type="Resource" uid="uid://svmsprb7o3cv" path="res://data/cards/paladin/shield_bash.tres" id="18_mdtlh"]
 [ext_resource type="Resource" uid="uid://c4s0mkx36b14w" path="res://data/cards/paladin/smite.tres" id="19_fx5sd"]
-[ext_resource type="Resource" uid="uid://drxshlnb32t3" path="res://data/cards/everyone/init.tres" id="20_lu7jt"]
+[ext_resource type="Resource" uid="uid://drxshlnb32t3" path="res://data/cards/everyone/quick_step.tres" id="20_lu7jt"]
+
 
 [resource]
 script = ExtResource("2_l42lv")
