@@ -4,13 +4,15 @@
 # ===================================================================
 extends EnemyAIBase
 
-const MAX_MOVEMENT_RANGE = 2 # Berserker má omezený pohyb na 2 pole
-const RUSH_TRIGGER_TURN = 3 # Po 3 kolech bez dosažení hráče aktivuje rush
+const MAX_MOVEMENT_RANGE = 1 # Berserker má omezený pohyb na 1 pole
+const RAGE_TURNS_REQUIRED = 5 # Po 5 kolech bez dosažení hráče aktivuje rush
 const RUSH_DAMAGE_MULTIPLIER = 3.0 # 300% damage při rush útoku
 
 
 func get_next_action(enemy_unit: Unit, all_player_units: Array, battle_grid: BattleGrid) -> AIAction:
-	print("=== BERSERKER AI VOLÁN ===")
+	# Použijeme NOVÉ názvy proměnných
+	print("=== BERSERKER AI VOLÁN (V2) ===")
+	print("DEBUG: Konstanta limitu frustrace je: %d" % RAGE_TURNS_REQUIRED) # Nový debug výpis
 	
 	var player_unit = find_closest_player(enemy_unit, all_player_units)
 	if not is_instance_valid(player_unit):
@@ -18,85 +20,55 @@ func get_next_action(enemy_unit: Unit, all_player_units: Array, battle_grid: Bat
 		return create_pass_action()
 
 	var distance_to_player = battle_grid.get_distance(enemy_unit.grid_position, player_unit.grid_position)
+	# Použijeme NOVÝ název proměnné z Unit.gd
 	print("📍 Berserker pozice: %s, Player pozice: %s, Vzdálenost: %d" % [enemy_unit.grid_position, player_unit.grid_position, distance_to_player])
-	print("⏰ Turns bez dosažení: %d, Rage mode: %s" % [enemy_unit.turns_without_reaching_player, enemy_unit.is_permanently_enraged])
+	print("⏰ Frustrace: %d, Rage mode: %s" % [enemy_unit.berserker_frustration, enemy_unit.is_permanently_enraged])
 	
-	# === PERMANENTNÍ RAGE MODE PO 3 KOLECH ===
-	if enemy_unit.turns_without_reaching_player >= RUSH_TRIGGER_TURN:
+	# Zjistíme, jestli se už může zbláznit (použijeme NOVÉ názvy)
+	if enemy_unit.berserker_frustration >= RAGE_TURNS_REQUIRED:
+		if not enemy_unit.is_permanently_enraged: # Vypíše hlášku jen jednou
+			print("🔥 BERSERKER VSTUPUJE DO PERMANENTNÍHO RAGE MÓDU!")
+			enemy_unit.show_status_text("ZUŘIVOST!", "critical")
 		enemy_unit.is_permanently_enraged = true
-		print("🔥 BERSERKER VSTUPUJE DO PERMANENTNÍHO RAGE MÓDU!")
 	
-	# === RUSH KONTROLA (v rage mode) ===
+	
+	# === LOGIKA ROZHODOVÁNÍ ===
+
+	# 1. KONTROLA RUSH ÚTOKU
 	if enemy_unit.is_permanently_enraged:
-		# Zkontroluj, zda je hráč na stejné linii nebo sloupci
 		var same_line = (enemy_unit.grid_position.x == player_unit.grid_position.x)
 		var same_column = (enemy_unit.grid_position.y == player_unit.grid_position.y)
-		
-		print("🔍 Same line: %s, Same column: %s" % [same_line, same_column])
+		print("🔍 Rage Check: Same line: %s, Same column: %s" % [same_line, same_column])
 		
 		if same_line or same_column:
-			print("💥 BERSERKER RUSH! Na stejné linii/sloupci - ÚTOK!")
-			
-			# Najdi nejkratší cestu k hráči s neomezeným pohybem
 			var rush_path = find_rush_path_to_player(enemy_unit, player_unit, battle_grid)
 			if not rush_path.is_empty():
-				print("⚡ Berserker se řítí k hráči s %.1fx damage!" % RUSH_DAMAGE_MULTIPLIER)
+				print("💥 BERSERKER RUSH! %.1fx damage!" % RUSH_DAMAGE_MULTIPLIER)
 				return create_rush_action(player_unit, rush_path, RUSH_DAMAGE_MULTIPLIER)
 			else:
-				print("❌ Rush path nenalezen!")
-	
-	# === NORMÁLNÍ LOGIKA ===
-	
-	# 1. Může zaútočit?
+				print("❌ Rage: Rush path nenalezen (někdo blokuje?).")
+		else:
+			print("🔥 V Rage, ale není na linii pro RUSH.")
+
+	# 2. KONTROLA BĚŽNÉHO ÚTOKU
 	if can_attack_target(enemy_unit, player_unit, battle_grid):
 		var damage_multiplier = 1.0
-		
-		# V rage mode útočí se zvýšeným damage
 		if enemy_unit.is_permanently_enraged:
 			damage_multiplier = RUSH_DAMAGE_MULTIPLIER
 			print("🔥 BERSERKER RAGE ÚTOK! %.1fx damage!" % damage_multiplier)
 		else:
 			print("⚔️ Berserker útočí!")
 		
-		# Reset počítadla při úspěšném útoku
-		enemy_unit.turns_without_reaching_player = 0
-		print("✅ RESET frustrace - úspěšný útok!")
 		return create_attack_action(player_unit, damage_multiplier)
-		
-	# 2. Nemůže útočit, pokusí se přiblížit (s omezeným pohybem)
+
+	# 3. POHYB
 	var path_to_player = find_limited_path_to_player(enemy_unit, player_unit, battle_grid)
 	if not path_to_player.is_empty():
-		# Zkontroluj, zda se dostane do útočného dosahu
-		var final_position = path_to_player[-1]
-		var new_distance = battle_grid.get_distance(final_position, player_unit.grid_position)
-		
-		print("📊 Po pohybu: final_pos=%s, new_distance=%d, attack_range=%d" % [final_position, new_distance, enemy_unit.unit_data.attack_range])
-		
-		# Reset frustraci pouze pokud se dostane do útočného dosahu (1 pole)
-		if new_distance <= enemy_unit.unit_data.attack_range:
-			enemy_unit.turns_without_reaching_player = 0
-			print("✅ RESET frustrace - dosažen útočný dosah!")
-		else:
-			# POUZE pokud ještě není v rage mode
-			if not enemy_unit.is_permanently_enraged:
-				enemy_unit.turns_without_reaching_player += 1
-				print("⬆️ ZVÝŠENA frustrace na: %d" % enemy_unit.turns_without_reaching_player)
-			else:
-				print("🔥 V RAGE MODE - frustrace se nezvyšuje")
-		
-		var status_text = "RAGE" if enemy_unit.is_permanently_enraged else "normál"
-		print("🚶 Berserker se pohybuje (%s, kol bez dosažení: %d, vzdálenost: %d)" % [status_text, enemy_unit.turns_without_reaching_player, new_distance])
+		print("🚶 Berserker se pohybuje.")
 		return create_move_action(path_to_player)
-		
-	# 3. Nemůže se pohnout - zvyš počítadlo frustrace (jen pokud není v rage)
-	if not enemy_unit.is_permanently_enraged:
-		enemy_unit.turns_without_reaching_player += 1
-		print("⬆️ ZVÝŠENA frustrace (nemůže se pohnout) na: %d" % enemy_unit.turns_without_reaching_player)
-	else:
-		print("🔥 V RAGE MODE - frustrace se nezvyšuje")
-	
-	var status_text = "RAGE" if enemy_unit.is_permanently_enraged else "frustrace"
-	print("⏳ Berserker čeká! (%s, kol bez dosažení: %d)" % [status_text, enemy_unit.turns_without_reaching_player])
+
+	# 4. PASS
+	print("⏳ Berserker čeká!")
 	return create_pass_action()
 
 func find_limited_path_to_player(from_unit: Unit, to_unit: Unit, battle_grid: BattleGrid) -> Array[Vector2i]:

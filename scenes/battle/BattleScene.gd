@@ -232,6 +232,7 @@ func _process_single_enemy_action(enemy_unit: Unit):
 	else:
 		return
 	
+	# Získáme akci POUZE JEDNOU
 	var action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
 	
 	match action.type:
@@ -255,6 +256,7 @@ func _process_single_enemy_action(enemy_unit: Unit):
 					
 					await get_tree().create_timer(0.4).timeout
 					
+					# Útok po RUSH (pokud je cíl platný)
 					if is_instance_valid(action.target_unit) and can_attack_target(enemy_unit, action.target_unit, battle_grid_instance):
 						await enemy_unit.attack(action.target_unit, action.damage_multiplier)
 		
@@ -283,14 +285,30 @@ func _process_single_enemy_action(enemy_unit: Unit):
 					
 					await get_tree().create_timer(0.4).timeout
 					
-					var post_move_action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
-					if post_move_action.type == EnemyAIBase.AIAction.ActionType.ATTACK:
-						await enemy_unit.attack(post_move_action.target_unit, post_move_action.damage_multiplier)
+					# !!! ODSTRANĚNO VNOŘENÉ VOLÁNÍ AI !!!
+					# var post_move_action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
+					# if post_move_action.type == EnemyAIBase.AIAction.ActionType.ATTACK:
+					# 	await enemy_unit.attack(post_move_action.target_unit, post_move_action.damage_multiplier)
 		
 		EnemyAIBase.AIAction.ActionType.PASS:
 			pass
 	
-	await get_tree().create_timer(0.3).timeout
+	
+	# ===== ZDE JE NOVÁ LOGIKA POČÍTÁNÍ FRUSTRACE =====
+	# Zkontrolujeme, zda AI má skript Berserkera, než začneme počítat
+	if is_instance_valid(enemy_unit.unit_data.ai_script) and "BerserkerAI" in enemy_unit.unit_data.ai_script.resource_path:
+		
+		# Pokud akce byla útok NEBO rush, resetuj frustraci
+		if action.type == EnemyAIBase.AIAction.ActionType.ATTACK or action.type == EnemyAIBase.AIAction.ActionType.RUSH:
+			enemy_unit.berserker_frustration = 0
+			print("✅ [BattleScene] Frustrace resetována (útok proveden).")
+		
+		# Pokud to byl pohyb nebo pass (a AI ještě není v rage), zvyšíme frustraci
+		# POZNÁMKA: Pokud chcete, aby se frustrace zvyšovala i v RAGE módu (pokud se netrefí),
+		# odstraňte podmínku 'and not enemy_unit.is_permanently_enraged'
+		elif (action.type == EnemyAIBase.AIAction.ActionType.MOVE or action.type == EnemyAIBase.AIAction.ActionType.PASS):
+			enemy_unit.berserker_frustration += 1
+			print("⬆️ [BattleScene] Frustrace zvýšena na: %d (bez útoku)." % enemy_unit.berserker_frustration)
 
 func _on_combat_ended(player_won: bool):
 	"""Volá se když TurnManager ukončí souboj"""

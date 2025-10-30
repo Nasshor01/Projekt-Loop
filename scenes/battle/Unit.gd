@@ -28,7 +28,7 @@ var last_attacker: Unit = null
 #pro enemy AI
 var is_aiming: bool = false # Pro mechaniku Archera
 # NOVÉ PROMĚNNÉ PRO BERSERKER AI:
-var turns_without_reaching_player: int = 0
+var berserker_frustration: int = 0
 var is_permanently_enraged: bool = false
 #---------------------------------------------
 
