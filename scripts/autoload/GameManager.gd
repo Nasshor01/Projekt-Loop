@@ -14,7 +14,6 @@ var shop_scene = "res://scenes/shop/ShopScene.tscn"
 var rest_scene = "res://scenes/camp/RestScene.tscn"
 var global_ui_scene = preload("res://scenes/ui/GlobalUI.tscn")
 var event_scene = "res://scenes/events/EventScene.tscn"
-var how_to_play_scene = "res://scenes/ui/HowToPlay.tscn"
 
 var current_scene: Node = null
 var current_seed: int
@@ -80,6 +79,7 @@ func start_new_game_plus(seed = null):
 		current_seed = seed
 	
 	print("Zahajuji NOVÝ BĚH+ se seedem: ", current_seed)
+	PlayerData.ng_plus_level += 1
 	
 	has_saved_camera_state = false
 	current_map_data = null
@@ -142,9 +142,6 @@ func go_to_main_menu():
 
 func go_to_character_select():
 	_change_scene(character_select_scene)
-
-func go_to_how_to_play():
-	_change_scene(how_to_play_scene)
 
 func go_to_run_prep_screen(p_class: ClassData, p_subclass: SubclassData):
 	selected_class_data = p_class

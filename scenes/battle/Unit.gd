@@ -38,6 +38,8 @@ var is_permanently_enraged: bool = false
 # OPRAVENÁ FUNKCE V Unit.gd
 func _ready():
 	if unit_data:
+		unit_data = unit_data.duplicate()
+
 		if unit_data.faction == UnitData.Faction.PLAYER:
 			current_health = PlayerData.current_hp
 			
@@ -50,6 +52,11 @@ func _ready():
 			add_to_group("units")
 			
 		else: # Pro nepřátele
+			if PlayerData.ng_plus_level > 0:
+				var multiplier = 1.0 + (PlayerData.ng_plus_level * 0.5)
+				unit_data.max_health = int(unit_data.max_health * multiplier)
+				unit_data.attack_damage = int(unit_data.attack_damage * multiplier)
+
 			current_health = unit_data.max_health
 			add_to_group("units")
 			

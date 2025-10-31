@@ -43,6 +43,7 @@ var global_shield: int = 0
 var adrenaline_cards_this_turn: int = 0
 var has_adrenaline_addiction: bool = false
 var adrenaline_overdose_this_turn: bool = false #na překročení limitu
+var ng_plus_level: int = 0 # 0 = normal, 1 = NG+, 2 = NG+2, etc.
 
 func get_current_node() -> MapNodeResource:
 	if not path_taken.is_empty():
@@ -52,6 +53,7 @@ func get_current_node() -> MapNodeResource:
 
 func start_new_run_state():
 	EventManager.start_new_run()
+	ng_plus_level = 0
 	
 	# 1. Resetujeme balíček na startovní
 	master_deck.clear()
