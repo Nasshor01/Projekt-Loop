@@ -20,7 +20,17 @@ var active_statuses: Dictionary = {}
 
 var has_used_base_move: bool = false
 var extra_moves: int = 0
+var _has_acted_this_turn: bool = false
 var last_attacker: Unit = null
+
+
+#---------------------------------------------
+#pro enemy AI
+var is_aiming: bool = false # Pro mechaniku Archera
+# NOVÉ PROMĚNNÉ PRO BERSERKER AI:
+var berserker_frustration: int = 0
+var is_permanently_enraged: bool = false
+#---------------------------------------------
 
 @onready var _sprite_node: Sprite2D = $Sprite2D
 @onready var _intent_ui: Control = $IntentUI
@@ -28,6 +38,8 @@ var last_attacker: Unit = null
 # OPRAVENÁ FUNKCE V Unit.gd
 func _ready():
 	if unit_data:
+		unit_data = unit_data.duplicate()
+
 		if unit_data.faction == UnitData.Faction.PLAYER:
 			current_health = PlayerData.current_hp
 			
@@ -40,6 +52,11 @@ func _ready():
 			add_to_group("units")
 			
 		else: # Pro nepřátele
+			if PlayerData.ng_plus_level > 0:
+				var multiplier = 1.0 + (PlayerData.ng_plus_level * 0.5)
+				unit_data.max_health = int(unit_data.max_health * multiplier)
+				unit_data.attack_damage = int(unit_data.attack_damage * multiplier)
+
 			current_health = unit_data.max_health
 			add_to_group("units")
 			
@@ -65,12 +82,13 @@ func set_last_attacker(attacker: Unit):
 func get_last_attacker() -> Unit:
 	return last_attacker
 
-func attack(target: Node2D) -> void:
+func attack(target: Node2D, damage_multiplier: float = 1.0) -> void:
 	if not is_instance_valid(target) or not target.has_method("take_damage"): return
 	if target.has_method("set_last_attacker"):
 		target.set_last_attacker(self)
 	
-	var damage = unit_data.attack_damage
+	# Použij základní poškození a aplikuj multiplikátor z AI
+	var damage = int(unit_data.attack_damage * damage_multiplier)
 	
 	# NOVÉ: Aplikuj bonus poškození z karet pro hráče
 	if unit_data.faction == UnitData.Faction.PLAYER:
@@ -101,7 +119,6 @@ func attack(target: Node2D) -> void:
 	await target.take_damage(damage)
 
 func take_damage(amount: int) -> void:
-	print("💥 %s dostává %d poškození..." % [unit_data.unit_name, amount])
 	
 	# TRIGGER DAMAGE TAKEN ARTEFAKTY PŘED zpracováním poškození
 	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/ArtifactManager"):
@@ -174,6 +191,20 @@ func reset_for_new_turn():
 		print("💚 Požehnaná obnova: +%d HP" % heal_amount)
 	
 	_update_stats_and_emit_signal()
+
+func set_aiming(state: bool):
+	is_aiming = state
+	if is_aiming:
+		# Přidej status pro zobrazení v UI
+		apply_status("aiming", 250, 999) # 250% damage, "nekonečné" trvání
+		show_status_text("Míří!", "critical")
+		print("🎯 %s se zaměřuje..." % unit_data.unit_name)
+	else:
+		# Odstraň status při výstřelu
+		if active_statuses.has("aiming"):
+			active_statuses.erase("aiming")
+			_update_stats_and_emit_signal()
+		print("🎯 %s přestal mířit" % unit_data.unit_name)
 
 func can_move() -> bool:
 	return not has_used_base_move or extra_moves > 0
@@ -268,6 +299,12 @@ func process_turn_end_statuses():
 
 func get_current_movement_range() -> int:
 	var current_range = unit_data.movement_range
+	
+	# Kontrola podle AI scriptu
+	if unit_data.ai_script and unit_data.ai_script.resource_path.contains("BerserkerAI"):
+		current_range = 2  # Berserkerová logika - omezený pohyb
+	
+	# Ostatní statusy (slow atd.)
 	if active_statuses.has("Slow"):
 		current_range += active_statuses["Slow"].value
 	
@@ -451,3 +488,43 @@ func show_status_text(text_to_show: String, color_type: String):
 		instance.position = Vector2(0, -80)
 
 	instance.start(text_to_show, color)
+
+func start_turn() -> int:
+	"""
+	Volá se, když TurnManager zahájí tah této jednotky.
+	Resetuje akce a zpracuje statusy na začátku tahu.
+	Vrací počet karet k dobrání navíc (pouze pro hráče).
+	"""
+	print("--- %s ZAČÍNÁ TAH ---" % unit_data.unit_name)
+	
+	# Resetuj akci (tuto proměnnou jsi přidal v kroku 1)
+	_has_acted_this_turn = false 
+
+	# Volání tvých stávajících funkcí:
+	# Tato funkce už resetuje tvůj pohyb ('has_used_base_move' a 'extra_moves')
+	reset_for_new_turn() 
+	
+	# Tato funkce zpracuje statusy a vrátí extra líznutí
+	var extra_draw = process_turn_start_statuses()
+	
+	return extra_draw
+
+func end_turn():
+	"""
+	Volá se, když jednotka ukončí svůj tah.
+	Zpracuje statusy na konci tahu.
+	"""
+	print("--- %s KONČÍ TAH ---" % unit_data.unit_name)
+	
+	# Volání tvé stávající funkce:
+	process_turn_end_statuses()
+
+func can_act() -> bool:
+	"""Může jednotka ještě provést akci (zahrát kartu) v tomto tahu?"""
+	# Poznámka: Vaše stávající 'can_move()' je v pořádku, tu měnit nemusíme.
+	return not _has_acted_this_turn
+
+func use_action():
+	"""Označí, že jednotka využila svou akci v tomto tahu."""
+	_has_acted_this_turn = true
+	print("%s použil akci (zahrál kartu)." % unit_data.unit_name)

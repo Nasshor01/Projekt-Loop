@@ -1,6 +1,4 @@
-# ===================================================================
 # Soubor: res://data/units/UnitData.gd
-# ===================================================================
 class_name UnitData
 extends Resource
 
@@ -20,9 +18,14 @@ enum Faction {
 @export var attack_damage: int = 2
 @export var movement_range: int = 3
 @export var attack_range: int = 1
-# max_action_points bylo odstraněno
+@export var initiative: int = 10  # ===== PŘIDÁNO: Iniciativa pro tahový systém =====
 
 @export var sprite_texture: Texture2D
+
+# ===== PŘIDANÁ PROMĚNNÁ =====
+@export var ai_script: Script = null
+# ==============================
+
 
 func _init(p_id: String = "", p_name: String = "Jednotka", p_max_health: int = 10, p_sprite: Texture2D = null):
 	unit_id = p_id

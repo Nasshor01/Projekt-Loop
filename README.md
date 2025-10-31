@@ -10,35 +10,80 @@ Hra již nyní obsahuje robustní základ, na kterém stavím další funkce:
 
 * **🎲 Procedurálně generovaná mapa:** Každá hra je jedinečná díky náhodně generované mapě s různými cestami a typy uzlů (souboje, elity, boss, odpočinek, poklad, obchod, náhodné události).
 
-* **⚔️ Taktický bojový systém:** Souboje probíhají na přehledné mřížce. Hráč každý tah dobírá karty a využívá energii k jejich zahrání. Nepřátelé jsou řízeni vlastní umělou inteligencí.
+* **⚔️ Taktický soubojový systém (Iniciativa):** Jádro hry. Souboje již neprobíhají na kola (hráč/AI), ale využívají **dynamický iniciativní systém** (inspirovaný *Baldur's Gate* nebo *HoMM*). Pořadí tahů všech jednotek (hráče i nepřátel) je na začátku kola určeno jejich statistikou iniciativy, což otevírá dveře pro nové taktické možnosti a karty ovlivňující rychlost.
 
-* **🃏 Dynamický systém karet:** Jádrem hry je propracovaný systém karet a balíčků. Hráč začíná se základním balíčkem a postupně jej vylepšuje. Karty mají definovanou cenu, efekty a jsou rozděleny na obecné a třídní.
+* **🗺️ Bojiště 2.0 (Základ implementován):** Souboje probíhají na přehledné mřížce. Základní systém pro **taktické překážky** (kameny, bahno) a vizuální zpětná vazba (plovoucí čísla poškození/léčení) je hotov.
 
-* **🛡️ Systém tříd a jednotek:** Hra je postavena na systému unikátních herních tříd. Aktuálně je nejvíce rozpracován **Paladin** se specifickou sadou karet. Nepřátelských jednotek je již nyní celá řada, od goblinů po silné bossy.
+* **🃏 Dynamický systém karet:** Propracovaný systém karet a balíčků. Hráč začíná se základním balíčkem a postupně jej vylepšuje. Karty mají definovanou cenu, efekty a jsou rozděleny na obecné a třídní.
 
-* **🔄 Herní smyčka:** Základní cyklus hry (Mapa -> Souboj -> Odměna) je plně funkční a poskytuje základ pro kompletní herní zážitek.
+* **🛡️ Systém tříd a jednotek:** Hra je postavena na systému unikátních herních tříd. Aktuálně je plně hratelný **Paladin** se specifickou sadou karet. Nepřátelských jednotek je již nyní celá řada.
 
-## Aktuální Roadmapa (srpen – prosinec 2025)
+* **🔄 Meta-progrese (Základ implementován):** Po každém průchodu hrou hráč získává zkušenosti (XP), zvyšuje úroveň své postavy a získává body, které může investovat do **permanentního stromu pasivních dovedností** (Skill Tree), což zajišťuje pocit postupu i po neúspěšném "runu".
 
-Mám jasně daný plán, jak hru posunout od funkčního prototypu k plnohodnotnému zážitku. **Prioritou číslo jedna je dokončení single-player módu.**
+* **💾 Systém ukládání (Částečně implementován):** Hra si již nyní pamatuje základní meta-progres (XP, odemčené skilly). Základ pro ukládání stavu rozehrané hry ("runu") je položen.
 
-### Fáze 1: Vylepšení Hratelnosti a Základů (srpen – polovina října)
-**Cíl:** Mít plně hratelný "run" s klíčovými komfortními funkcemi a taktickou hloubkou.
-- **Bojiště 2.0:** Vylepšení bojiště o vizualizaci plošných útoků (AoE), taktické překážky a vizuální zpětnou vazbu (plovoucí čísla poškození/léčení).
-- **Systém ukládání a načítání:** Možnost uložit a načíst rozehranou hru.
-- **Základy Meta-progrese:** Přidání permanentní měny ("Střepy Věčnosti"), kterou hráč získává po každém průchodu hrou.
+### **Roadmapa Vývoje: Projekt "Loop" (Stav: Základní systémy implementovány)**
 
-### Fáze 2: Obsahová Exploze (polovina října – listopad)
-**Cíl:** Naplnit hru obsahem pro zajištění vysoké znovuhratelnosti.
-- **Druhá hratelná třída:** Implementace kompletní nové třídy (např. **Mág -> Elementalista**) s unikátními kartami a herním stylem.
-- **Nové Karty a Artefakty:** Rozšíření počtu karet a přidání prvních ~15-20 artefaktů, které zásadně mění hru.
-- **Nové Nepřátelské Frakce:** Vytvoření první tematické skupiny nepřátel ("Zrezivělá Pevnost") s 15-20 novými jednotkami.
+---
 
-### Fáze 3: Leštění a Příprava na Veřejnost (prosinec)
-**Cíl:** Přeměnit funkční prototyp na hru, která působí jako ucelený a profesionální produkt.
-- **Vizuální a Zvukový "Juice":** Přidání základních zvukových efektů, hudby a jednoduchých animací pro lepší pocit z hraní.
-- **Hlavní Menu:** Vytvoření hlavní nabídky a sjednocení uživatelského rozhraní.
-- **Příprava Dema:** Vytvoření a odladění demoverze (první akt) pro budoucí prezentaci, například na **Steam Next Festu**.
+#### **Fáze 1: Vyšperkování Jádra (Core Polish)**
 
+**Cíl:** Přeměnit funkční, ale "hrubé" systémy na plynulý a srozumitelný herní zážitek.
+
+1.  **Iniciativní systém 1.1 (UI/UX):**
+    * **Priorita:** Vytvořit vizuální "timeline" (časovou osu), kde hráč jasně uvidí pořadí tahů všech jednotek v aktuálním kole.
+    * Implementovat vizuální zvýraznění ("highlight") jednotky, která je právě na tahu.
+    * Přidat karty a efekty, které aktivně manipulují s iniciativou (např. "Zrychlení", "Zpomalení", "Ochromení").
+
+2.  **Dokončení Herní Smyčky (Game Loop):**
+    * Implementovat přechod po poražení bosse (Akt 1) zpět do hlavního menu.
+    * Připravit strukturu pro "Akt 2" (vyšší obtížnost, noví nepřátelé).
+    * Plně implementovat načítání uložené hry (nejen meta-progresu, ale i rozehraného "runu" na mapě).
+
+3.  **Vylepšení Meta-progrese:**
+    * Navrhnout a implementovat první kompletní **Skill Tree** pro Paladina.
+    * Vybalancovat získávání XP za souboje, elity a bossy.
+    * Vytvořit UI v hlavním menu pro prohlížení a utrácení skill pointů.
+
+---
+
+#### **Fáze 2: Exploze Obsahu (Content Explosion)**
+
+**Cíl:** Naplnit hotové systémy obsahem a zajistit vysokou znovuhratelnost. Díky data-driven designu lze postupovat rychle.
+
+1.  **Druhá Hratelná Třída (Priorita):**
+    * Plně implementovat druhou hratelnou třídu, např. **Trapper** nebo **Vrah Duší** (Soul Reaper), včetně:
+        * Unikátní pasivní schopnosti.
+        * Sada ~30-40 startovních a odemykatelných karet.
+        * Vlastní Skill Tree pro meta-progresi.
+
+2.  **Rozšíření Nepřátel (Frakce):**
+    * Vytvořit první ucelenou nepřátelskou frakci (např. "Zrezivělá Pevnost" nebo "Nemrtví").
+    * Implementovat **specifické AI** pro různé role nepřátel (Archer, Berserker, Healer, Monk), aby se chovali chytřeji a odlišně.
+
+3.  **Unikátní Bossové:**
+    * Přepracovat stávajícího bosse (nebo vytvořit nového) tak, aby měl unikátní mechaniky (nejen více HP a DMG).
+    * Například: Boss, který mění terén, vyvolává pomocníky, nebo má fázový souboj.
+
+4.  **Rozšíření Poolu Karet a Artefaktů:**
+    * Doplnit pool neutrálních karet a artefaktů (~30-40 artefaktů celkem), aby byly synergie mezi třídami.
+
+---
+
+#### **Fáze 3: Leštění a Příprava na Veřejnost (Polish & Public)**
+
+**Cíl:** Připravit hru na první veřejné demo (např. pro Steam Next Fest).
+
+1.  **Finální UI/UX "Juice":**
+    * Sjednotit vizuální styl všech menu (hlavní menu, odměny, obchod, mapa).
+    * Přidat klíčové zvukové efekty (zahrání karty, zásah, smrt jednotky, kliknutí na tlačítko).
+    * Implementovat základní hudební smyčky (pro mapu, běžný souboj, boss souboj).
+
+2.  **Balancování a Testování:**
+    * Intenzivní testování a ladění obtížnosti, cen karet, síly nepřátel a odměn.
+
+3.  **Příprava Dema:**
+    * Vytvořit ořezanou verzi hry (např. pouze první Akt s jednou hratelnou třídou) a odladit ji pro veřejné vydání.
 ## Vzdálenější Budoucnost: Kooperativní Mód
 Po dokončení single-playeru je mou velkou ambicí vytvořit unikátní kooperativní mód pro dva hráče, který bude postaven na sdíleném riziku a speciálních mechanikách, jako je **Fúze Artefaktů**.
+

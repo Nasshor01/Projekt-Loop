@@ -1,4 +1,4 @@
-# Soubor: res://scenes/shop/ShopItemUI.gd (OPRAVENÁ VERZE S FUNGUJÍCÍMI CENAMI)
+# Soubor: res://scenes/shop/ShopItemUI.gd (Optimalizovaná verze)
 extends PanelContainer
 class_name ShopItemUI
 
@@ -17,77 +17,49 @@ var original_price: int = 0
 var ui_nodes_ready: bool = false
 
 func _ready():
-	print("ShopItemUI: _ready() volán")
 	ui_nodes_ready = true
 	
 	# Zkontrolujeme, jestli máme všechny potřebné uzly
 	if not is_instance_valid(price_label):
 		printerr("ShopItemUI: PriceLabel nebyl nalezen!")
-	else:
-		print("ShopItemUI: PriceLabel nalezen")
 	
-	if not is_instance_valid(sale_label):
-		printerr("ShopItemUI: SaleLabel nebyl nalezen!")
-	else:
-		print("ShopItemUI: SaleLabel nalezen a skrývám ho")
+	if is_instance_valid(sale_label):
 		sale_label.visible = false
-	
-	if not is_instance_valid(buy_button):
-		printerr("ShopItemUI: BuyButton nebyl nalezen!")
 	else:
-		print("ShopItemUI: BuyButton nalezen a připojujem signál")
+		printerr("ShopItemUI: SaleLabel nebyl nalezen!")
+	
+	if is_instance_valid(buy_button):
 		buy_button.pressed.connect(_on_buy_button_pressed)
-	
-	# Pokud už máme data, zobrazíme je
-	if is_instance_valid(item_data):
-		print("ShopItemUI: Mám data, volám _update_display()")
-		_update_display()
 	else:
-		print("ShopItemUI: Ještě nemám data")
+		printerr("ShopItemUI: BuyButton nebyl nalezen!")
+	
+	# Pokud už máme data při inicializaci, zobrazíme je
+	if is_instance_valid(item_data):
+		_update_display()
 
 func setup_item(p_item_data: Resource, p_cost: int, p_is_on_sale: bool = false, p_original_price: int = 0):
 	"""Nastaví data pro shop item a aktualizuje display"""
-	print("ShopItemUI: setup_item() volán s cenou %d, sleva: %s" % [p_cost, p_is_on_sale])
-	
 	self.item_data = p_item_data
 	self.purchase_cost = p_cost
 	self.is_on_sale = p_is_on_sale
 	self.original_price = p_original_price
 	
-	# Debug info o item_data
-	if item_data:
-		var item_name = "Unknown"
-		if "card_name" in item_data:
-			item_name = item_data.card_name
-		elif "artifact_name" in item_data:
-			item_name = item_data.artifact_name
-		print("ShopItemUI: Nastavuji item: %s" % item_name)
-	
 	# Pokud jsou UI uzly připravené, hned aktualizujeme display
 	if ui_nodes_ready:
-		print("ShopItemUI: UI uzly připravené, volám _update_display()")
 		_update_display()
-	else:
-		print("ShopItemUI: UI uzly ještě nejsou připravené")
 
 func _update_display():
 	"""Aktualizuje celý vzhled shop itemu"""
-	print("ShopItemUI: _update_display() volán")
-	
 	if not ui_nodes_ready:
-		print("ShopItemUI: UI uzly nejsou připravené!")
+		printerr("ShopItemUI: Pokus o update UI předtím, než jsou uzly připravené.")
 		return
 		
 	if not is_instance_valid(item_data):
-		print("ShopItemUI: item_data není validní!")
+		printerr("ShopItemUI: Pokus o update UI bez validních item_data.")
 		return
 	
-	print("ShopItemUI: Zobrazuji obsah a cenu")
-	
-	# Zobrazíme obsah (kartu nebo artefakt)
+	# Zobrazíme obsah (kartu nebo artefakt) a nastavíme cenu
 	_display_item_content()
-	
-	# Nastavíme cenu
 	_update_price_display()
 
 func _display_item_content():
@@ -119,15 +91,10 @@ func _update_price_display():
 		printerr("ShopItemUI: 'PriceLabel' nebyl nalezen!")
 		return
 	
-	# DEBUGOVACÍ VÝPISY
-	print("ShopItemUI: Nastavuji cenu %d, sleva: %s" % [purchase_cost, is_on_sale])
-	
-	# Zajistíme viditelnost
 	price_label.visible = true
-	price_label.modulate = Color.WHITE
 	
 	if is_on_sale and original_price > 0:
-		# Sleva - zobrazíme jen novou cenu s "SLEVA!"
+		# Sleva
 		price_label.text = "SLEVA: %d (původně %d)" % [purchase_cost, original_price]
 		price_label.modulate = Color.GREEN
 		
@@ -136,14 +103,12 @@ func _update_price_display():
 			sale_label.visible = true
 			sale_label.modulate = Color.RED
 	else:
-		# Normální cena - obyčejný text
+		# Normální cena
 		price_label.text = "Cena: %d" % purchase_cost
 		price_label.modulate = Color.WHITE
 		
 		if is_instance_valid(sale_label):
 			sale_label.visible = false
-	
-	print("ShopItemUI: Text nastavený na: '%s'" % price_label.text)
 
 func _on_buy_button_pressed():
 	"""Zpracuje stisknutí tlačítka koupit"""

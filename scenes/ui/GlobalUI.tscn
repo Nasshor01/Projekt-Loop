@@ -10,7 +10,7 @@ script = ExtResource("1_f4cv4")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 offset_right = 741.0
-offset_bottom = 99.0
+offset_bottom = 126.0
 theme_override_constants/margin_left = 15
 theme_override_constants/margin_top = 15
 theme_override_constants/margin_right = 15

@@ -8,7 +8,7 @@ const MAX_BACKUP_FILES = 3
 var log_file_path: String
 var log_file: FileAccess
 var session_start_time: String
-var log_level: LogLevel = LogLevel.DEBUG
+@export var log_level: LogLevel = LogLevel.INFO
 
 enum LogLevel {
 	DEBUG,

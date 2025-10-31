@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="SubclassData" load_steps=10 format=3 uid="uid://bqaye7oh04v8p"]
+[gd_resource type="Resource" script_class="SubclassData" load_steps=12 format=3 uid="uid://bqaye7oh04v8p"]
 
 [ext_resource type="Resource" uid="uid://dbgquedjcu78p" path="res://data/classes/Tank.tres" id="1_6n481"]
 [ext_resource type="Script" uid="uid://v4pp2wfp7qoh" path="res://data/classes/SubclassData.gd" id="1_pmeaw"]
@@ -6,6 +6,7 @@
 [ext_resource type="Resource" uid="uid://big4b3x4pngq" path="res://data/units/paladin_unit.tres" id="3_4jb1q"]
 [ext_resource type="Script" uid="uid://erb1281erb63" path="res://scripts/DeckEntry.gd" id="4_4jb1q"]
 [ext_resource type="Resource" uid="uid://bvg4ywjpmslod" path="res://data/cards/everyone/defend.tres" id="6_a0158"]
+[ext_resource type="Resource" uid="uid://drxshlnb32t3" path="res://data/cards/everyone/quick_step.tres" id="8_snyqr"]
 [ext_resource type="Resource" uid="uid://cw6mp8no12cmq" path="res://data/cards/everyone/quick_strike.tres" id="10_t6x5h"]
 
 [sub_resource type="Resource" id="Resource_3ylp1"]
@@ -20,13 +21,19 @@ card = ExtResource("10_t6x5h")
 count = 3
 metadata/_custom_type_script = "uid://erb1281erb63"
 
+[sub_resource type="Resource" id="Resource_72t25"]
+script = ExtResource("4_4jb1q")
+card = ExtResource("8_snyqr")
+count = 1
+metadata/_custom_type_script = "uid://erb1281erb63"
+
 [resource]
 script = ExtResource("1_pmeaw")
 subclass_id = "paladin"
 subclass_name = "paladin"
 description = "Svatý bojovník"
 parent_class = ExtResource("1_6n481")
-starting_deck = Array[ExtResource("4_4jb1q")]([SubResource("Resource_3ylp1"), SubResource("Resource_snyqr")])
+starting_deck = Array[ExtResource("4_4jb1q")]([SubResource("Resource_3ylp1"), SubResource("Resource_snyqr"), SubResource("Resource_72t25")])
 specific_unit_data = ExtResource("3_4jb1q")
 passive_skill_tree = ExtResource("2_3ylp1")
 metadata/_custom_type_script = "uid://v4pp2wfp7qoh"

@@ -58,6 +58,7 @@ func update_stats(unit_node: Node2D):
 	_update_status_display(unit_node)
 
 func _update_status_display(unit_node: Node2D):
+	# Vymaž staré statusy
 	for child in status_effects_list.get_children():
 		child.queue_free()
 		
@@ -67,10 +68,27 @@ func _update_status_display(unit_node: Node2D):
 		
 	status_effects_list.visible = true
 	
+	# Zobraz každý status s příslušnou ikonou a popisem
 	for status_id in unit_node.active_statuses:
 		var status_data = unit_node.active_statuses[status_id]
 		var status_label = Label.new()
-		status_label.text = "%s: %d" % [status_id.capitalize(), status_data.value]
+		
+		# Speciální zobrazení pro různé typy statusů
+		match status_id:
+			"aiming":
+				status_label.text = "🎯 Míří (+%d%% dmg)" % (status_data.value - 100)
+				status_label.add_theme_color_override("font_color", Color.ORANGE)
+			"aura_devotion":
+				status_label.text = "✨ Aura oddanosti (+%d blok)" % status_data.value
+				status_label.add_theme_color_override("font_color", Color.LIGHT_BLUE)
+			"aura_devotion_plus":
+				status_label.text = "✨ Aura oddanosti+ (+%d blok)" % status_data.value  
+				status_label.add_theme_color_override("font_color", Color.CYAN)
+			_:
+				# Výchozí zobrazení
+				var display_name = status_id.replace("_", " ").capitalize()
+				status_label.text = "%s: %d" % [display_name, status_data.value]
+		
 		status_effects_list.add_child(status_label)
 
 func hide_panel():

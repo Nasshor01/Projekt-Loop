@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=4 format=3 uid="uid://dpvw5641josu6"]
+
+[ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_4hpl7"]
+[ext_resource type="Script" uid="uid://cwwyxbmck5wj7" path="res://scripts/ai/ArcherAI.gd" id="1_8h8d2"]
+[ext_resource type="Texture2D" uid="uid://clt8xxj5vhbq" path="res://art/sprites/units/skeleton_archer.png" id="3_m102x"]
+
+[resource]
+script = ExtResource("1_4hpl7")
+unit_id = "unique_unit_id"
+unit_name = "Skeleton archer"
+description = "obyčejný kostlivec ale pozor! ON má luk a šípy!"
+faction = 1
+max_health = 15
+attack_damage = 6
+movement_range = 2
+attack_range = 5
+initiative = 18
+sprite_texture = ExtResource("3_m102x")
+ai_script = ExtResource("1_8h8d2")
+metadata/_custom_type_script = "uid://celcfyrl033bg"

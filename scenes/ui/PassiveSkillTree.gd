@@ -68,10 +68,10 @@ func _refresh_tree():
 # --- NOVÉ FUNKCE PRO GENEROVÁNÍ ---
 
 func _generate_and_preview_paladin():
-	print("Generujem Paladin skill tree...")
+
 	preview_tree_data = SkillTreeGenerator.generate_paladin_tree()
 	_draw_editor_preview()
-	print("Hotovo! Paladin tree vygenerován.")
+
 
 # --- VYLEPŠENÉ FUNKCE ---
 
@@ -219,17 +219,11 @@ func _draw_connections(is_editor_preview: bool):
 
 func _draw_editor_preview():
 	_clear_view()
-	if not is_instance_valid(preview_tree_data):
-		print("Editor náhled: Není přiřazen 'Preview Tree Data'.")
-		return
-	
-	print("Kreslím náhled stromu v editoru...")
 	_generate_skill_nodes(true)
 	_draw_background_lines()
 	_draw_connections(true)
 
 func _save_positions_to_resources():
-	print("Ukládám pozice uzlů...")
 	var saved_count = 0
 	for skill_ui_node in skill_nodes_container.get_children():
 		var skill_data: PassiveSkillNode = skill_ui_node.skill_data
@@ -241,7 +235,6 @@ func _save_positions_to_resources():
 			ResourceSaver.save(skill_data)
 			saved_count += 1
 	
-	print("Uloženo %d změn pozic." % saved_count)
 	_draw_editor_preview()
 
 # --- LOGIKA ODEMYKÁNÍ ---

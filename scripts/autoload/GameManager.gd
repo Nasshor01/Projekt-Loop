@@ -14,6 +14,7 @@ var shop_scene = "res://scenes/shop/ShopScene.tscn"
 var rest_scene = "res://scenes/camp/RestScene.tscn"
 var global_ui_scene = preload("res://scenes/ui/GlobalUI.tscn")
 var event_scene = "res://scenes/events/EventScene.tscn"
+var how_to_play_scene = "res://scenes/ui/HowToPlay.tscn"
 
 var current_scene: Node = null
 var current_seed: int
@@ -27,6 +28,7 @@ var last_battle_gold_reward: int = 0
 var last_run_xp_earned: int = 0
 var scene_container: Node = null
 var last_run_was_victory: bool = false
+var _is_post_boss_reward: bool = false
 
 var selected_class_data: ClassData = null
 var selected_subclass_data: SubclassData = null
@@ -57,6 +59,7 @@ func start_new_run(seed = null):
 	else:
 		current_seed = seed
 	
+	_is_post_boss_reward = false
 	# NOVÉ DEBUG LOGOVÁNÍ
 	DebugLogger.log_info("=== STARTING NEW RUN ===", "GAME_FLOW")
 	DebugLogger.log_info("Seed: %d" % current_seed, "GAME_FLOW")
@@ -79,6 +82,7 @@ func start_new_game_plus(seed = null):
 		current_seed = seed
 	
 	print("Zahajuji NOVÝ BĚH+ se seedem: ", current_seed)
+	PlayerData.ng_plus_level += 1
 	
 	has_saved_camera_state = false
 	current_map_data = null
@@ -99,7 +103,7 @@ func start_battle(encounter: EncounterData):
 	current_encounter = encounter
 	_change_scene(battle_scene)
 
-func battle_finished(player_won: bool):
+func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -1):
 	DebugLogger.log_info("=== BATTLE FINISHED ===", "BATTLE")
 	DebugLogger.log_battle_event("battle_result", {
 		"won": player_won,
@@ -111,11 +115,27 @@ func battle_finished(player_won: bool):
 	DebugLogger.log_artifacts()
 	
 	if player_won:
+		if final_hp != -1:
+			PlayerData.current_hp = final_hp
+		if final_shield != -1:
+			PlayerData.global_shield = final_shield
+			print("GLOBÁLNÍ ŠTÍT uložen, nová hodnota: %d" % PlayerData.global_shield)
+
+		var gained_xp = current_encounter.xp_reward
+		if PlayerData.ng_plus_level > 0:
+			gained_xp = int(gained_xp * (1.0 + (PlayerData.ng_plus_level * 0.2)))
+		PlayerData.current_run_xp += gained_xp
+		DebugLogger.log_info("XP gained from encounter: %d (Total this run: %d)" % [gained_xp, PlayerData.current_run_xp], "PROGRESSION")
+
+		if is_instance_valid(current_encounter) and current_encounter.encounter_type == EncounterData.EncounterType.BOSS:
+			_is_post_boss_reward = true
+			last_run_was_victory = true
+
 		_prepare_battle_rewards()
 		_change_scene(reward_scene)
 	else:
 		last_run_was_victory = false
-		last_run_xp_earned = PlayerData.floors_cleared * 10
+		last_run_xp_earned = PlayerData.current_run_xp
 		SaveManager.add_xp(last_run_xp_earned)
 		
 		DebugLogger.log_info("XP earned: %d" % last_run_xp_earned, "PROGRESSION")
@@ -128,6 +148,9 @@ func go_to_main_menu():
 
 func go_to_character_select():
 	_change_scene(character_select_scene)
+
+func go_to_how_to_play():
+	_change_scene(how_to_play_scene)
 
 func go_to_run_prep_screen(p_class: ClassData, p_subclass: SubclassData):
 	selected_class_data = p_class
@@ -144,8 +167,17 @@ func go_to_run_prep_screen(p_class: ClassData, p_subclass: SubclassData):
 	_change_scene(run_prep_scene)
 
 func reward_chosen():
-	print("Odměna vybrána, vracím se na mapu.")
-	_change_scene(map_scene)
+	if _is_post_boss_reward:
+		print("Odměna po bossovi vybrána, přecházím na obrazovku konce.")
+		_is_post_boss_reward = false
+		last_run_xp_earned = PlayerData.current_run_xp
+		SaveManager.add_xp(last_run_xp_earned)
+		DebugLogger.log_info("XP earned: %d" % last_run_xp_earned, "PROGRESSION")
+		DebugLogger.log_meta_progress()
+		_change_scene(end_of_run_scene)
+	else:
+		print("Odměna vybrána, vracím se na mapu.")
+		_change_scene(map_scene)
 
 func show_treasure_node():
 	print("Hráč vstoupil na pole s pokladem.")
@@ -283,10 +315,16 @@ func _prepare_battle_rewards():
 	
 	elif encounter_type == EncounterData.EncounterType.BOSS:
 		if is_instance_valid(BOSS_ARTIFACT_POOL) and BOSS_ARTIFACT_POOL.artifacts != null and not BOSS_ARTIFACT_POOL.artifacts.is_empty():
-			var available = BOSS_ARTIFACT_POOL.artifacts.filter(func(art): return PlayerData.can_gain_artifact(art))
-			available.shuffle()
-			var choices_count = min(3, available.size())
-			artifact_reward = available.slice(0, choices_count)
+			var available_boss_artifacts = BOSS_ARTIFACT_POOL.artifacts.filter(func(art): return PlayerData.can_gain_artifact(art))
+			if not available_boss_artifacts.is_empty():
+				available_boss_artifacts.shuffle()
+				var choices_count = min(3, available_boss_artifacts.size())
+				artifact_reward = available_boss_artifacts.slice(0, choices_count)
+			else:
+				print("INFO: Hráč již vlastní všechny boss artefakty. Nabízím náhradní elite artefakt.")
+				var fallback_artifact = _get_random_elite_artifact()
+				if fallback_artifact:
+					artifact_reward = [fallback_artifact]
 		else:
 			print("VAROVÁNÍ: BOSS_ARTIFACT_POOL je prázdný nebo neexistuje")
 	

@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="EncounterData" load_steps=10 format=3 uid="uid://dyby4gipep36g"]
+[gd_resource type="Resource" script_class="EncounterData" load_steps=11 format=3 uid="uid://dyby4gipep36g"]
 
 [ext_resource type="Script" uid="uid://tp0lo3xqiiqb" path="res://data/encounters/EncounterEntry.gd" id="1_3ppqm"]
 [ext_resource type="Resource" uid="uid://ds5yll3ypahx0" path="res://data/units/skeleton.tres" id="2_8dp5v"]
+[ext_resource type="Resource" uid="uid://dpvw5641josu6" path="res://data/units/skeleton_archer.tres" id="3_8dp5v"]
 [ext_resource type="Script" uid="uid://dq86v2djx6q1m" path="res://data/encounters/EncounterData.gd" id="3_dlu8r"]
 
 [sub_resource type="Resource" id="Resource_yodov"]
@@ -24,24 +25,25 @@ metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
 
 [sub_resource type="Resource" id="Resource_dlu8r"]
 script = ExtResource("1_3ppqm")
-unit_data = ExtResource("2_8dp5v")
+unit_data = ExtResource("3_8dp5v")
 grid_position = Vector2i(7, 3)
 metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
 
 [sub_resource type="Resource" id="Resource_xsouq"]
 script = ExtResource("1_3ppqm")
-unit_data = ExtResource("2_8dp5v")
+unit_data = ExtResource("3_8dp5v")
 grid_position = Vector2i(7, 4)
 metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
 
 [sub_resource type="Resource" id="Resource_n5rls"]
 script = ExtResource("1_3ppqm")
-unit_data = ExtResource("2_8dp5v")
+unit_data = ExtResource("3_8dp5v")
 grid_position = Vector2i(7, 5)
 metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
 
 [resource]
 script = ExtResource("3_dlu8r")
 encounter_type = 1
+xp_reward = 35
 enemies = Array[ExtResource("1_3ppqm")]([SubResource("Resource_yodov"), SubResource("Resource_3ppqm"), SubResource("Resource_8dp5v"), SubResource("Resource_dlu8r"), SubResource("Resource_xsouq"), SubResource("Resource_n5rls")])
 metadata/_custom_type_script = "uid://dq86v2djx6q1m"

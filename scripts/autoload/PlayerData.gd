@@ -23,6 +23,7 @@ var current_hp: int = 50
 var artifacts: Array[ArtifactsData] = []
 var gold: int = 0
 var floors_cleared: int = 0
+var current_run_xp: int = 0
 var path_taken: Array[MapNodeResource] = []
 var active_skill_tree = null
 var has_revive: bool = false
@@ -43,6 +44,7 @@ var global_shield: int = 0
 var adrenaline_cards_this_turn: int = 0
 var has_adrenaline_addiction: bool = false
 var adrenaline_overdose_this_turn: bool = false #na překročení limitu
+var ng_plus_level: int = 0 # 0 = normal, 1 = NG+, 2 = NG+2, etc.
 
 func get_current_node() -> MapNodeResource:
 	if not path_taken.is_empty():
@@ -52,7 +54,7 @@ func get_current_node() -> MapNodeResource:
 
 func start_new_run_state():
 	EventManager.start_new_run()
-	print("=== START NEW RUN STATE ===")
+	ng_plus_level = 0
 	
 	# 1. Resetujeme balíček na startovní
 	master_deck.clear()
@@ -63,7 +65,6 @@ func start_new_run_state():
 		elif "subclass_id" in selected_subclass and selected_subclass.subclass_id != "":
 			subclass_name = selected_subclass.subclass_id
 		
-		print("Načítám startovní balíček z: %s" % subclass_name)
 		
 		if "starting_deck" in selected_subclass:
 			for entry in selected_subclass.starting_deck:
@@ -71,27 +72,25 @@ func start_new_run_state():
 					for i in range(entry.count):
 						master_deck.append(entry.card)
 		
-		print("Startovní balíček obsahuje %d karet" % master_deck.size())
 		global_shield = 0
 	# 2. Aplikujeme pasivní skilly, které mohou změnit startovní staty
 	apply_passive_skills()
 	
 	# 2.5 KRITICKÁ OPRAVA - zajisti plné HP po aplikaci skillů
-	current_hp = max_hp  # <-- PŘIDEJ TENTO ŘÁDEK
-	print("DEBUG: Po aplikaci skillů - current_hp: %d, max_hp: %d" % [current_hp, max_hp])
+	current_hp = max_hp 
 
 	# 3. Připravíme bojové balíčky a zbytek
 	reset_battle_stats()
 	path_taken.clear()
 	artifacts.clear()
 	floors_cleared = 0
+	current_run_xp = 0
 	
 	# 4. Oznámíme UI, jaký je finální stav
 	emit_signal("artifacts_changed")
 	emit_signal("gold_changed", gold)
 	emit_signal("health_changed", current_hp, max_hp)
 	
-	print("=== RUN STATE INICIALIZOVÁN ===")
 	
 	# 5. VYSLAT SIGNÁL PRO VŠECHNY, KTEŘÍ ČEKAJÍ
 	emit_signal("player_state_initialized")
@@ -100,12 +99,8 @@ func start_ng_plus_state():
 	current_hp = max_hp
 	path_taken.clear()
 	floors_cleared = 0
+	current_run_xp = 0
 	
-	print("--- STAV PRO NG+ ---")
-	print("  - Ponecháno zlata: %d" % gold)
-	print("  - Ponecháno artefaktů: %d" % artifacts.size())
-	print("  - Ponecháno karet v balíčku: %d" % master_deck.size())
-	print("--------------------")
 	
 	reset_battle_stats()
 	
@@ -116,7 +111,6 @@ func start_ng_plus_state():
 func apply_passive_skills():
 	DebugLogger.log_info("=== APPLYING PASSIVE SKILLS ===", "SKILLS")
 	DebugLogger.start_performance_timer("apply_passive_skills")
-	print("=== APLIKACE PASIVNÍCH SKILLŮ ===")
 	
 	# 1. Resetujeme všechny hodnoty na úplný základ
 	max_hp = 50
