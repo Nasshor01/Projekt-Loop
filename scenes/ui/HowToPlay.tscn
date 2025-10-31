@@ -1,0 +1,51 @@
+[gd_scene load_steps=2 format=3 uid="uid://d1y2x3k4y5b6c"]
+
+[ext_resource type="Script" path="res://scenes/ui/HowToPlay.gd" id="1_a1b2c"]
+
+[node name="HowToPlay" type="CanvasLayer"]
+script = ExtResource("1_a1b2c")
+
+[node name="Panel" type="Panel" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -150.0
+offset_right = 200.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "Jak hrát"
+horizontal_alignment = 1
+
+[node name="RichTextLabel" type="RichTextLabel" parent="Panel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "[b]Cíl hry:[/b] Dostaň se na konec mapy a poraz bosse.
+
+[b]Soubojový systém:[/b] Jednotky s vyšší iniciativou útočí dříve.
+
+[b]Karty a energie:[/b] Karty stojí energii, která se na začátku tahu obnovuje.
+
+[b]Základní pojmy:[/b]
+- [b]Block:[/b] Brnění, které absorbuje poškození.
+- [b]Strength:[/b] Síla, která zvyšuje poškození."
+
+[node name="CloseButton" type="Button" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "Zavřít"

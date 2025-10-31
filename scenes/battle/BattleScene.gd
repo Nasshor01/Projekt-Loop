@@ -15,6 +15,7 @@ const SHAPE_DIAMOND = [
 
 const UnitScene = preload("res://scenes/battle/Unit.tscn")
 const AIController = preload("res://scripts/ai/EnemyAIController.gd")
+const VictoryScreenScene = preload("res://scenes/ui/VictoryScreen.tscn")
 
 @export var encounter_data: EncounterData
 
@@ -477,13 +478,20 @@ func _on_hand_discard_animation_finished():
 func end_battle_as_victory():
 	_current_battle_state = BattleState.BATTLE_OVER
 	if is_instance_valid(_player_unit_node):
-		# UPOZORNĚNÍ: Přímé nastavování current_hp obejde náš nový signál.
-		# Prozatím to necháme, ale do budoucna by bylo lepší mít
-		# funkci PlayerData.set_health(), která signál také vyšle.
 		PlayerData.current_hp = _player_unit_node.current_health
 		PlayerData.global_shield = _player_unit_node.current_block
 		print("GLOBÁLNÍ ŠTÍT uložen, nová hodnota: %d" % PlayerData.global_shield)
+
+	var victory_screen = VictoryScreenScene.instantiate()
+	add_child(victory_screen)
+	victory_screen.play_again_pressed.connect(_on_play_again_pressed)
+	victory_screen.main_menu_pressed.connect(_on_main_menu_pressed)
+
+func _on_play_again_pressed():
 	GameManager.battle_finished(true)
+
+func _on_main_menu_pressed():
+	get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")
 
 func _on_win_button_pressed():
 	end_battle_as_victory()
