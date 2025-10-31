@@ -6,7 +6,7 @@ extends PanelContainer
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 
 func _ready():
-	if not close_button.is_pressed.is_connected(hide):
+	if not close_button.pressed.is_connected(hide):
 		close_button.pressed.connect(hide)
 
 func show_cards(cards: Array):
