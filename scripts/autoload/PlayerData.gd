@@ -23,6 +23,7 @@ var current_hp: int = 50
 var artifacts: Array[ArtifactsData] = []
 var gold: int = 0
 var floors_cleared: int = 0
+var current_run_xp: int = 0
 var path_taken: Array[MapNodeResource] = []
 var active_skill_tree = null
 var has_revive: bool = false
@@ -83,6 +84,7 @@ func start_new_run_state():
 	path_taken.clear()
 	artifacts.clear()
 	floors_cleared = 0
+	current_run_xp = 0
 	
 	# 4. Oznámíme UI, jaký je finální stav
 	emit_signal("artifacts_changed")
@@ -97,6 +99,7 @@ func start_ng_plus_state():
 	current_hp = max_hp
 	path_taken.clear()
 	floors_cleared = 0
+	current_run_xp = 0
 	
 	
 	reset_battle_stats()

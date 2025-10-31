@@ -13,5 +13,6 @@ metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
 [resource]
 script = ExtResource("2_rtk84")
 encounter_type = 2
+xp_reward = 125
 enemies = Array[ExtResource("1_3imfq")]([SubResource("Resource_3buoe")])
 metadata/_custom_type_script = "uid://dq86v2djx6q1m"

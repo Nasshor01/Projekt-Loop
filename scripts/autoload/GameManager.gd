@@ -121,19 +121,23 @@ func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -
 			PlayerData.global_shield = final_shield
 			print("GLOBÁLNÍ ŠTÍT uložen, nová hodnota: %d" % PlayerData.global_shield)
 
+		var gained_xp = current_encounter.xp_reward
+		if PlayerData.ng_plus_level > 0:
+			gained_xp = int(gained_xp * (1.0 + (PlayerData.ng_plus_level * 0.2)))
+		PlayerData.current_run_xp += gained_xp
+		DebugLogger.log_info("XP gained from encounter: %d (Total this run: %d)" % [gained_xp, PlayerData.current_run_xp], "PROGRESSION")
+
 		if is_instance_valid(current_encounter) and current_encounter.encounter_type == EncounterData.EncounterType.BOSS:
 			_is_post_boss_reward = true
 			last_run_was_victory = true
-			last_run_xp_earned = PlayerData.floors_cleared * 15 # Bonus XP for victory
-			SaveManager.add_xp(last_run_xp_earned)
-			DebugLogger.log_info("XP earned after victory: %d" % last_run_xp_earned, "PROGRESSION")
 
 		_prepare_battle_rewards()
 		_change_scene(reward_scene)
 	else:
 		last_run_was_victory = false
-		last_run_xp_earned = PlayerData.floors_cleared * 10
-		SaveManager.add_xp(last_run_xp_earned)
+
+	last_run_xp_earned = PlayerData.current_run_xp
+	SaveManager.add_xp(last_run_xp_earned)
 		
 		DebugLogger.log_info("XP earned: %d" % last_run_xp_earned, "PROGRESSION")
 		DebugLogger.log_meta_progress()

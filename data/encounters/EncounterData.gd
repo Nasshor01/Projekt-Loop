@@ -11,6 +11,7 @@ enum EncounterType {
 
 # PŘIDÁNO: Exportovaná proměnná pro nastavení typu v editoru
 @export var encounter_type: EncounterType = EncounterType.NORMAL
+@export var xp_reward: int = 10
 
 # Pole jednotlivých nepřátel v tomto souboji
 @export var enemies: Array[EncounterEntry] = []
