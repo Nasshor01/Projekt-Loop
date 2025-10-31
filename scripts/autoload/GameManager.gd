@@ -135,9 +135,8 @@ func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -
 		_change_scene(reward_scene)
 	else:
 		last_run_was_victory = false
-
-	last_run_xp_earned = PlayerData.current_run_xp
-	SaveManager.add_xp(last_run_xp_earned)
+		last_run_xp_earned = PlayerData.current_run_xp
+		SaveManager.add_xp(last_run_xp_earned)
 		
 		DebugLogger.log_info("XP earned: %d" % last_run_xp_earned, "PROGRESSION")
 		DebugLogger.log_meta_progress()
@@ -171,6 +170,10 @@ func reward_chosen():
 	if _is_post_boss_reward:
 		print("Odměna po bossovi vybrána, přecházím na obrazovku konce.")
 		_is_post_boss_reward = false
+		last_run_xp_earned = PlayerData.current_run_xp
+		SaveManager.add_xp(last_run_xp_earned)
+		DebugLogger.log_info("XP earned: %d" % last_run_xp_earned, "PROGRESSION")
+		DebugLogger.log_meta_progress()
 		_change_scene(end_of_run_scene)
 	else:
 		print("Odměna vybrána, vracím se na mapu.")
