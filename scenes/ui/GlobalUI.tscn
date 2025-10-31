@@ -1,54 +1,106 @@
-[gd_scene load_steps=4 format=3 uid="uid://igmyfibd5goq"]
+[gd_scene load_steps=5 format=3 uid="uid://igmyfibd5goq"]
 
-[ext_resource type="Script" uid="uid://x2hd3fytxgbm" path="res://scenes/ui/GlobalUI.gd" id="1_f4cv4"]
-[ext_resource type="PackedScene" uid="uid://cu6oy5nwloafr" path="res://scenes/ui/PlayerArtifactsUI.tscn" id="1_y6ips"]
+[ext_resource type="Script" path="res://scenes/ui/GlobalUI.gd" id="1_f4cv4"]
+[ext_resource type="PackedScene" uid="uid://cu6oy5nwloafr" path="res://scenes/ui/PlayerArtifactsUI.tscn" id="2_z3wfs"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_z18a7"]
+bg_color = Color(0, 0, 0, 0.501961)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.8, 0.8, 0.8, 0.75)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_b06mc"]
 
 [node name="GlobalUI" type="CanvasLayer"]
 script = ExtResource("1_f4cv4")
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
-offset_right = 741.0
-offset_bottom = 126.0
-theme_override_constants/margin_left = 15
-theme_override_constants/margin_top = 15
-theme_override_constants/margin_right = 15
-theme_override_constants/margin_bottom = 15
+[node name="MainPanel" type="PanelContainer" parent="."]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 80.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_z18a7")
 
-[node name="MainLayout" type="VBoxContainer" parent="MarginContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="MainPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 10
+
+[node name="MainLayout" type="HBoxContainer" parent="MainPanel/MarginContainer"]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="TopRow" type="HBoxContainer" parent="MarginContainer/MainLayout"]
+[node name="LeftSection" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout"]
 layout_mode = 2
+alignment = 1
 
-[node name="PlayerArtifactsUI" parent="MarginContainer/MainLayout/TopRow" instance=ExtResource("1_y6ips")]
+[node name="HPDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/LeftSection"]
 layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
 
-[node name="Control" type="Control" parent="MarginContainer/MainLayout/TopRow"]
-custom_minimum_size = Vector2(0, 64)
+[node name="HPLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/LeftSection/HPDisplay"]
+layout_mode = 2
+text = "HP: 50/50"
+
+[node name="CenterSection" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 30
+alignment = 1
 
-[node name="GoldDisplay" type="HBoxContainer" parent="MarginContainer/MainLayout/TopRow"]
+[node name="GoldDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
 layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
 
-[node name="GoldLabel" type="Label" parent="MarginContainer/MainLayout/TopRow/GoldDisplay"]
-layout_mode = 2
-text = "Zlato: 100"
-
-[node name="GoldIcon" type="TextureRect" parent="MarginContainer/MainLayout/TopRow/GoldDisplay"]
+[node name="GoldIcon" type="TextureRect" parent="MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay"]
 layout_mode = 2
 texture = SubResource("CompressedTexture2D_b06mc")
 stretch_mode = 5
 
-[node name="BottomLeft" type="PanelContainer" parent="MarginContainer/MainLayout"]
+[node name="GoldLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay"]
+layout_mode = 2
+text = "Zlato: 100"
+
+[node name="FloorDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="FloorLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/CenterSection/FloorDisplay"]
+layout_mode = 2
+text = "Patro: 1"
+
+[node name="NGPlusDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="NGPlusLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/CenterSection/NGPlusDisplay"]
+layout_mode = 2
+text = "NG+: 0"
+
+[node name="RightSection" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout"]
+layout_mode = 2
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="PlayerArtifactsUI" parent="MainPanel/MarginContainer/MainLayout/RightSection" instance=ExtResource("2_z3wfs")]
 layout_mode = 2
 
-[node name="HPDisplay" type="HBoxContainer" parent="MarginContainer/MainLayout/BottomLeft"]
+[node name="DeckButton" type="Button" parent="MainPanel/MarginContainer/MainLayout/RightSection"]
 layout_mode = 2
+text = "Balíček (30)"
 
-[node name="HPLabel" type="Label" parent="MarginContainer/MainLayout/BottomLeft/HPDisplay"]
+[node name="MenuButton" type="Button" parent="MainPanel/MarginContainer/MainLayout/RightSection"]
 layout_mode = 2
-text = "HP: 50/50"
+text = "Menu"

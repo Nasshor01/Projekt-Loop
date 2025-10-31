@@ -1,22 +1,35 @@
-# Soubor: res://scenes/ui/GlobalUI.gd (OPRAVENÁ VERZE)
 extends CanvasLayer
 
-# --- OPRAVENÉ CESTY PODLE TVÉHO SCREENSHOTU ---
-@onready var gold_label: Label = $MarginContainer/MainLayout/TopRow/GoldDisplay/GoldLabel
-# Cesta nyní vede přímo k samotnému HP labelu
-@onready var hp_label: Label = $MarginContainer/MainLayout/BottomLeft/HPDisplay/HPLabel
-# Cesta ke kontejneru, který budeme skrývat (ten se jmenuje BottomLeft)
-@onready var hp_container: PanelContainer = $MarginContainer/MainLayout/BottomLeft
+@onready var hp_label: Label = $MainPanel/MarginContainer/MainLayout/LeftSection/HPDisplay/HPLabel
+@onready var gold_label: Label = $MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay/GoldLabel
+@onready var floor_label: Label = $MainPanel/MarginContainer/MainLayout/CenterSection/FloorDisplay/FloorLabel
+@onready var ng_plus_label: Label = $MainPanel/MarginContainer/MainLayout/CenterSection/NGPlusDisplay/NGPlusLabel
+@onready var deck_button: Button = $MainPanel/MarginContainer/MainLayout/RightSection/DeckButton
+@onready var menu_button: Button = $MainPanel/MarginContainer/MainLayout/RightSection/MenuButton
 
 
 func _ready():
-	# Připojíme se na signály z PlayerData
-	PlayerData.gold_changed.connect(_on_gold_changed)
+	# Připojení na signály z PlayerData
 	PlayerData.health_changed.connect(_on_health_changed)
+	PlayerData.gold_changed.connect(_on_gold_changed)
+	PlayerData.floor_changed.connect(_on_floor_changed)
+	PlayerData.ng_plus_changed.connect(_on_ng_plus_changed)
 
-	# Ihned po vytvoření nastavíme správné počáteční hodnoty
-	_on_gold_changed(PlayerData.gold)
+	# Připojení tlačítek
+	deck_button.pressed.connect(_on_deck_button_pressed)
+	menu_button.pressed.connect(_on_menu_button_pressed)
+
+	# Nastavení počátečních hodnot
 	_on_health_changed(PlayerData.current_hp, PlayerData.max_hp)
+	_on_gold_changed(PlayerData.gold)
+	_on_floor_changed(PlayerData.floors_cleared)
+	_on_ng_plus_changed(PlayerData.ng_plus_level)
+	_update_deck_button()
+
+
+func _on_health_changed(new_hp: int, new_max_hp: int):
+	if is_instance_valid(hp_label):
+		hp_label.text = "HP: %d/%d" % [new_hp, new_max_hp]
 
 
 func _on_gold_changed(new_amount: int):
@@ -24,17 +37,30 @@ func _on_gold_changed(new_amount: int):
 		gold_label.text = "Zlato: %d" % new_amount
 
 
-func _on_health_changed(new_hp: int, new_max_hp: int):
-	# Nyní máme přímý odkaz na hp_label, takže je to jednodušší a bezpečnější
-	if is_instance_valid(hp_label):
-		hp_label.text = "HP: %d/%d" % [new_hp, new_max_hp]
+func _on_floor_changed(new_floor: int):
+	if is_instance_valid(floor_label):
+		# Přidáme +1, protože floors_cleared je 0 na prvním patře
+		floor_label.text = "Patro: %d" % (new_floor + 1)
 
 
-func show_hp():
-	if is_instance_valid(hp_container):
-		hp_container.show()
+func _on_ng_plus_changed(new_level: int):
+	if is_instance_valid(ng_plus_label):
+		if new_level > 0:
+			ng_plus_label.text = "NG+ %d" % new_level
+		else:
+			ng_plus_label.text = "Normal"
 
 
-func hide_hp():
-	if is_instance_valid(hp_container):
-		hp_container.hide()
+func _update_deck_button():
+	if is_instance_valid(deck_button):
+		deck_button.text = "Balíček (%d)" % PlayerData.master_deck.size()
+
+
+func _on_deck_button_pressed():
+	print("Tlačítko 'Balíček' bylo stisknuto. Zde se otevře obrazovka s balíčkem.")
+	# TODO: Implementovat zobrazení balíčku karet
+
+
+func _on_menu_button_pressed():
+	print("Tlačítko 'Menu' bylo stisknuto. Zde se otevře hlavní menu.")
+	# TODO: Implementovat zobrazení menu

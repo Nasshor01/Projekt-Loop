@@ -7,6 +7,8 @@ signal artifacts_changed
 signal gold_changed(new_amount)
 signal health_changed(new_hp, new_max_hp)
 signal player_state_initialized
+signal floor_changed(new_floor)
+signal ng_plus_changed(new_level)
 
 # --- Proměnné pro jeden "run" ---
 var selected_class = null
@@ -21,8 +23,16 @@ var max_energy: int = 3
 var max_hp: int = 50
 var current_hp: int = 50
 var artifacts: Array[ArtifactsData] = []
-var gold: int = 0
-var floors_cleared: int = 0
+var gold: int = 0:
+	set(value):
+		if gold != value:
+			gold = value
+			emit_signal("gold_changed", gold)
+var floors_cleared: int = 0:
+	set(value):
+		if floors_cleared != value:
+			floors_cleared = value
+			emit_signal("floor_changed", floors_cleared)
 var current_run_xp: int = 0
 var path_taken: Array[MapNodeResource] = []
 var active_skill_tree = null
@@ -44,11 +54,15 @@ var global_shield: int = 0
 var adrenaline_cards_this_turn: int = 0
 var has_adrenaline_addiction: bool = false
 var adrenaline_overdose_this_turn: bool = false #na překročení limitu
-var ng_plus_level: int = 0 # 0 = normal, 1 = NG+, 2 = NG+2, etc.
+var ng_plus_level: int = 0:
+	set(value):
+		if ng_plus_level != value:
+			ng_plus_level = value
+			emit_signal("ng_plus_changed", ng_plus_level)
 
 func get_current_node() -> MapNodeResource:
 	if not path_taken.is_empty():
-		floors_cleared = path_taken.size()
+		self.floors_cleared = path_taken.size()
 		return path_taken.back()
 	return null
 
@@ -88,7 +102,7 @@ func start_new_run_state():
 	
 	# 4. Oznámíme UI, jaký je finální stav
 	emit_signal("artifacts_changed")
-	emit_signal("gold_changed", gold)
+	self.gold = gold # Trigger the setter
 	emit_signal("health_changed", current_hp, max_hp)
 	
 	
@@ -106,7 +120,8 @@ func start_ng_plus_state():
 	
 	emit_signal("health_changed", current_hp, max_hp)
 	emit_signal("artifacts_changed")
-	emit_signal("gold_changed", gold)
+	self.gold = gold
+	self.ng_plus_level = ng_plus_level # re-emit ng+ level
 
 func apply_passive_skills():
 	DebugLogger.log_info("=== APPLYING PASSIVE SKILLS ===", "SKILLS")
@@ -507,13 +522,11 @@ func remove_artifact(artifact_data: ArtifactsData):
 		emit_signal("artifacts_changed")
 
 func add_gold(amount: int):
-	gold += amount
-	emit_signal("gold_changed", gold)
+	self.gold += amount
 
 func spend_gold(amount: int) -> bool:
-	if gold >= amount:
-		gold -= amount
-		emit_signal("gold_changed", gold)
+	if self.gold >= amount:
+		self.gold -= amount
 		return true
 	return false
 
