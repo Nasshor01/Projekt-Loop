@@ -1,0 +1,49 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8ybgxi0pnlk8"]
+
+[ext_resource type="Script" path="res://scenes/ui/PopupMenu.gd" id="1_abcde"]
+
+[node name="PopupMenu" type="PanelContainer"]
+offset_right = 150.0
+offset_bottom = 200.0
+script = ExtResource("1_abcde")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="RestartRunButton" type="Button" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Restartovat run"
+
+[node name="SaveRunButton" type="Button" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Uložit run"
+
+[node name="BackToCharSelectButton" type="Button" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Zpět na výběr postavy"
+
+[node name="SaveAndQuitButton" type="Button" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Uložit a ukončit"
+
+[node name="BackToMenuButton" type="Button" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Zpět do hlavního menu"
+
+[node name="CloseButton" type="Button" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Zavřít"

@@ -661,3 +661,14 @@ func _create_adrenaline_addiction_artifact() -> ArtifactsData:
 	
 	
 	return artifact
+
+func emit_deck_changed():
+	deck_changed.emit()
+
+func emit_all_signals():
+	health_changed.emit(current_hp, max_hp)
+	gold_changed.emit(gold)
+	deck_changed.emit()
+	floor_changed.emit(floors_cleared)
+	ng_plus_changed.emit(ng_plus_level)
+	artifacts_changed.emit()

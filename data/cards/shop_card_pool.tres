@@ -20,6 +20,7 @@
 [ext_resource type="Resource" uid="uid://3n2gxev54dwm" path="res://data/cards/everyone/adrenaline.tres" id="17_dr8gb"]
 [ext_resource type="Resource" uid="uid://drxshlnb32t3" path="res://data/cards/everyone/quick_step.tres" id="18_a1fgp"]
 
+
 [resource]
 script = ExtResource("2_jyy6m")
 cards = Array[ExtResource("1_64q7c")]([ExtResource("2_37cnp"), ExtResource("3_a1fgp"), ExtResource("4_c5o5i"), ExtResource("5_ongme"), ExtResource("6_3qalh"), ExtResource("7_ckgmk"), ExtResource("8_48d8g"), ExtResource("9_kll14"), ExtResource("10_niwc4"), ExtResource("11_6cu60"), ExtResource("12_leeat"), ExtResource("13_2g124"), ExtResource("14_cdcew"), ExtResource("15_csy1g"), ExtResource("16_jq452"), ExtResource("17_dr8gb"), ExtResource("18_a1fgp")])
