@@ -15,8 +15,6 @@ func setup(p_xp_earned: int, p_run_was_a_victory: bool):
 	self.xp_earned = p_xp_earned
 	self.run_was_a_victory = p_run_was_a_victory
 
-# PŘIDÁNO: Funkce _ready() se zavolá AUTOMATICKY AŽ POTÉ, co jsou všechny @onready var načtené
-func _ready():
 	# Zobrazíme správné texty
 	if run_was_a_victory:
 		result_label.text = "VÍTĚZSTVÍ!"
@@ -31,6 +29,10 @@ func _ready():
 	# Připojíme signály k tlačítkům
 	play_again_button.pressed.connect(_on_play_again_pressed)
 	end_run_button.pressed.connect(GameManager.go_to_main_menu)
+
+# PŘIDÁNO: Funkce _ready() se zavolá AUTOMATICKY AŽ POTÉ, co jsou všechny @onready var načtené
+func _ready():
+	pass
 
 func _on_play_again_pressed():
 	# Podle výsledku běhu zavoláme správnou funkci
