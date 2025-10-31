@@ -25,7 +25,7 @@ func display_deck(deck: Array[CardData]):
 	for card_name in card_counts:
 		var card_info = card_counts[card_name]
 		var card_instance = card_scene.instantiate()
-		card_instance.init(card_info["data"])
+		card_instance.load_card(card_info["data"])
 
 		# Přidáme label s počtem karet
 		var count_label = Label.new()
