@@ -85,6 +85,7 @@ func _ready():
 	player_hand_ui_instance.card_hover_ended.connect(_on_card_hover_ended)
 	draw_pile_button.pile_clicked.connect(_on_draw_pile_clicked)
 	discard_pile_button.pile_clicked.connect(_on_discard_pile_clicked)
+	win_button.pressed.connect(_on_win_button_pressed)
 	
 	player_hand_ui_instance.card_draw_animation_finished.connect(_on_card_draw_animation_finished)
 	player_hand_ui_instance.hand_discard_animation_finished.connect(_on_hand_discard_animation_finished)
@@ -1026,3 +1027,18 @@ func get_enemy_count() -> int:
 
 func get_all_enemies() -> Array:
 	return _enemy_units
+
+
+func _on_win_button_pressed():
+	end_battle_as_victory()
+
+func end_battle_as_victory():
+	_current_battle_state = BattleState.BATTLE_OVER
+	if is_instance_valid(_player_unit_node):
+		# UPOZORNĚNÍ: Přímé nastavování current_hp obejde náš nový signál.
+		# Prozatím to necháme, ale do budoucna by bylo lepší mít
+		# funkci PlayerData.set_health(), která signál také vyšle.
+		PlayerData.current_hp = _player_unit_node.current_health
+		PlayerData.global_shield = _player_unit_node.current_block
+		print("GLOBÁLNÍ ŠTÍT uložen, nová hodnota: %d" % PlayerData.global_shield)
+	GameManager.battle_finished(true)

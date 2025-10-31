@@ -111,3 +111,4 @@ vertical_alignment = 1
 visible = false
 
 [connection signal="pressed" from="CanvasLayer/EndTurnButton" to="." method="_on_end_turn_button_pressed"]
+[connection signal="pressed" from="CanvasLayer/WinButton" to="." method="_on_win_button_pressed"]
