@@ -26,10 +26,11 @@ func _ready():
 		play_again_button.text = "Hrát znovu"
 		
 	xp_label.text = "Získáno XP: %d" % xp_earned
+	end_run_button.text = "Main Menu"
 	
 	# Připojíme signály k tlačítkům
 	play_again_button.pressed.connect(_on_play_again_pressed)
-	end_run_button.pressed.connect(GameManager.go_to_character_select)
+	end_run_button.pressed.connect(GameManager.go_to_main_menu)
 
 func _on_play_again_pressed():
 	# Podle výsledku běhu zavoláme správnou funkci
