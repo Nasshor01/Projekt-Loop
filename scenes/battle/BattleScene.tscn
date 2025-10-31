@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://dvvvw8dvuaf0n" path="res://scenes/ui/PlayerHandUI.tscn" id="3_rjp4h"]
 [ext_resource type="PackedScene" uid="uid://bykx7qci4fkvl" path="res://scenes/battle/UnitInfoPanel.tscn" id="4_t3o3d"]
 [ext_resource type="PackedScene" uid="uid://csfa8idl8266g" path="res://scenes/ui/DeckPileUI.tscn" id="5_nabc4"]
-[ext_resource type="PackedScene" uid="uid://pjdtf3hky6c6" path="res://scenes/ui/CardPileViewer.tscn" id="6_q8wks"]
+[ext_resource type="PackedScene" uid="uid://b5ybgxi0pnlk7" path="res://scenes/ui/CardPileViewer.tscn" id="6_q8wks"]
 [ext_resource type="PackedScene" uid="uid://ckvi6eu1vd02a" path="res://scenes/ui/DevConsole.tscn" id="8_5282s"]
 
 [node name="BattleScene" type="Node2D" node_paths=PackedStringArray("camera_2d")]

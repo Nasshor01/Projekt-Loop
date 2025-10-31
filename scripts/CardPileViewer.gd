@@ -1,38 +1,23 @@
-# ===================================================================
-# Soubor: res://scenes/ui/CardPileViewer.gd
-# ===================================================================
 extends PanelContainer
+
+@onready var grid_container = %GridContainer
+@onready var close_button = %CloseButton
 
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 
-@onready var grid_container: GridContainer = $MarginContainer/VBoxContainer/ScrollContainer/GridContainer
-@onready var close_button: Button = $MarginContainer/VBoxContainer/HBoxContainer/Control/CloseButton
-
 func _ready():
-	visible = false
-	if is_instance_valid(close_button):
+	if not close_button.is_pressed.is_connected(hide):
 		close_button.pressed.connect(hide)
-	else:
-		printerr("CardPileViewer: Tlačítko 'CloseButton' nebylo nalezeno! Zkontroluj strukturu scény a cestu ve skriptu.")
 
-func show_cards(cards: Array[CardData], p_scale: Vector2 = Vector2(0.7, 0.7)):
-	if not is_instance_valid(grid_container):
-		printerr("CardPileViewer: 'GridContainer' nebyl nalezen!")
-		return
-
+func show_cards(cards: Array):
+	# Clear previous cards
 	for child in grid_container.get_children():
 		child.queue_free()
 
-	if cards.is_empty():
-		var empty_label = Label.new()
-		empty_label.text = "Balíček je prázdný."
-		grid_container.add_child(empty_label)
-	else:
-		for card_data in cards:
-			if not is_instance_valid(card_data): continue
-			
-			var card_ui_instance = CardUIScene.instantiate()
-			card_ui_instance.initial_scale = p_scale
-			card_ui_instance.card_data = card_data
-			grid_container.add_child(card_ui_instance)
+	# Instance and add new cards
+	for card_data in cards:
+		var card_ui = CardUIScene.instantiate()
+		grid_container.add_child(card_ui)
+		card_ui.load_card(card_data)
+
 	show()
