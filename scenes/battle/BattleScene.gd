@@ -316,7 +316,10 @@ func _on_combat_ended(player_won: bool):
 	_current_battle_state = BattleState.BATTLE_OVER
 	
 	if player_won:
-		end_battle_as_victory()
+		if is_instance_valid(encounter_data) and encounter_data.encounter_type == EncounterData.EncounterType.BOSS:
+			_show_victory_screen()
+		else:
+			GameManager.battle_finished(true)
 	else:
 		GameManager.battle_finished(false)
 
@@ -475,7 +478,7 @@ func _on_hand_discard_animation_finished():
 	)
 	# =========================================
 
-func end_battle_as_victory():
+func _show_victory_screen():
 	_current_battle_state = BattleState.BATTLE_OVER
 	if is_instance_valid(_player_unit_node):
 		PlayerData.current_hp = _player_unit_node.current_health
@@ -488,13 +491,13 @@ func end_battle_as_victory():
 	victory_screen.main_menu_pressed.connect(_on_main_menu_pressed)
 
 func _on_play_again_pressed():
-	GameManager.battle_finished(true)
+	GameManager.go_to_character_select()
 
 func _on_main_menu_pressed():
-	get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")
+	GameManager.go_to_main_menu()
 
 func _on_win_button_pressed():
-	end_battle_as_victory()
+	_show_victory_screen()
 
 func _on_unit_died(unit_node: Node2D):
 	"""Zpracuje smrt jednotky"""
