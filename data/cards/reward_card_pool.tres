@@ -22,7 +22,6 @@
 [ext_resource type="Resource" uid="uid://c4s0mkx36b14w" path="res://data/cards/paladin/smite.tres" id="19_fx5sd"]
 [ext_resource type="Resource" uid="uid://drxshlnb32t3" path="res://data/cards/everyone/quick_step.tres" id="20_lu7jt"]
 
-
 [resource]
 script = ExtResource("2_l42lv")
 cards = Array[ExtResource("1_2iis6")]([ExtResource("2_jvxe8"), ExtResource("3_lu7jt"), ExtResource("4_jwg80"), ExtResource("5_vdwrm"), ExtResource("6_mfx3r"), ExtResource("7_qcydm"), ExtResource("8_qxini"), ExtResource("9_l5g5n"), ExtResource("10_781vi"), ExtResource("11_k6twn"), ExtResource("12_cplxl"), ExtResource("13_1xvkr"), ExtResource("14_pps1u"), ExtResource("15_v74jh"), ExtResource("16_4qnfk"), ExtResource("17_43t0k"), ExtResource("18_mdtlh"), ExtResource("19_fx5sd"), ExtResource("20_lu7jt")])
