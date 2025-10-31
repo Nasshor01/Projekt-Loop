@@ -15,7 +15,6 @@ const SHAPE_DIAMOND = [
 
 const UnitScene = preload("res://scenes/battle/Unit.tscn")
 const AIController = preload("res://scripts/ai/EnemyAIController.gd")
-const VictoryScreenScene = preload("res://scenes/ui/VictoryScreen.tscn")
 
 @export var encounter_data: EncounterData
 
@@ -86,7 +85,6 @@ func _ready():
 	player_hand_ui_instance.card_hover_ended.connect(_on_card_hover_ended)
 	draw_pile_button.pile_clicked.connect(_on_draw_pile_clicked)
 	discard_pile_button.pile_clicked.connect(_on_discard_pile_clicked)
-	win_button.pressed.connect(_on_win_button_pressed)
 	
 	player_hand_ui_instance.card_draw_animation_finished.connect(_on_card_draw_animation_finished)
 	player_hand_ui_instance.hand_discard_animation_finished.connect(_on_hand_discard_animation_finished)
@@ -315,13 +313,10 @@ func _on_combat_ended(player_won: bool):
 	"""Volá se když TurnManager ukončí souboj"""
 	_current_battle_state = BattleState.BATTLE_OVER
 	
-	if player_won:
-		if is_instance_valid(encounter_data) and encounter_data.encounter_type == EncounterData.EncounterType.BOSS:
-			_show_victory_screen()
-		else:
-			GameManager.battle_finished(true)
+	if player_won and is_instance_valid(_player_unit_node):
+		GameManager.battle_finished(true, _player_unit_node.current_health, _player_unit_node.current_block)
 	else:
-		GameManager.battle_finished(false)
+		GameManager.battle_finished(player_won)
 
 # NOVÉ A UPRAVENÉ FUNKCE PRO START HRY
 func start_player_spawn_selection():
@@ -477,27 +472,6 @@ func _on_hand_discard_animation_finished():
 			TurnManager.next_turn()
 	)
 	# =========================================
-
-func _show_victory_screen():
-	_current_battle_state = BattleState.BATTLE_OVER
-	if is_instance_valid(_player_unit_node):
-		PlayerData.current_hp = _player_unit_node.current_health
-		PlayerData.global_shield = _player_unit_node.current_block
-		print("GLOBÁLNÍ ŠTÍT uložen, nová hodnota: %d" % PlayerData.global_shield)
-
-	var victory_screen = VictoryScreenScene.instantiate()
-	add_child(victory_screen)
-	victory_screen.play_again_pressed.connect(_on_play_again_pressed)
-	victory_screen.main_menu_pressed.connect(_on_main_menu_pressed)
-
-func _on_play_again_pressed():
-	GameManager.go_to_character_select()
-
-func _on_main_menu_pressed():
-	GameManager.go_to_main_menu()
-
-func _on_win_button_pressed():
-	_show_victory_screen()
 
 func _on_unit_died(unit_node: Node2D):
 	"""Zpracuje smrt jednotky"""

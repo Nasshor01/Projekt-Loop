@@ -14,6 +14,7 @@ var shop_scene = "res://scenes/shop/ShopScene.tscn"
 var rest_scene = "res://scenes/camp/RestScene.tscn"
 var global_ui_scene = preload("res://scenes/ui/GlobalUI.tscn")
 var event_scene = "res://scenes/events/EventScene.tscn"
+var how_to_play_scene = "res://scenes/ui/HowToPlay.tscn"
 
 var current_scene: Node = null
 var current_seed: int
@@ -99,7 +100,7 @@ func start_battle(encounter: EncounterData):
 	current_encounter = encounter
 	_change_scene(battle_scene)
 
-func battle_finished(player_won: bool):
+func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -1):
 	DebugLogger.log_info("=== BATTLE FINISHED ===", "BATTLE")
 	DebugLogger.log_battle_event("battle_result", {
 		"won": player_won,
@@ -111,8 +112,21 @@ func battle_finished(player_won: bool):
 	DebugLogger.log_artifacts()
 	
 	if player_won:
-		_prepare_battle_rewards()
-		_change_scene(reward_scene)
+		if final_hp != -1:
+			PlayerData.current_hp = final_hp
+		if final_shield != -1:
+			PlayerData.global_shield = final_shield
+			print("GLOBÁLNÍ ŠTÍT uložen, nová hodnota: %d" % PlayerData.global_shield)
+
+		if is_instance_valid(current_encounter) and current_encounter.encounter_type == EncounterData.EncounterType.BOSS:
+			last_run_was_victory = true
+			last_run_xp_earned = PlayerData.floors_cleared * 15 # Bonus XP for victory
+			SaveManager.add_xp(last_run_xp_earned)
+			DebugLogger.log_info("XP earned after victory: %d" % last_run_xp_earned, "PROGRESSION")
+			_change_scene(end_of_run_scene)
+		else:
+			_prepare_battle_rewards()
+			_change_scene(reward_scene)
 	else:
 		last_run_was_victory = false
 		last_run_xp_earned = PlayerData.floors_cleared * 10
@@ -128,6 +142,9 @@ func go_to_main_menu():
 
 func go_to_character_select():
 	_change_scene(character_select_scene)
+
+func go_to_how_to_play():
+	_change_scene(how_to_play_scene)
 
 func go_to_run_prep_screen(p_class: ClassData, p_subclass: SubclassData):
 	selected_class_data = p_class
