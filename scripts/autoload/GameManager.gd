@@ -216,10 +216,6 @@ func _change_scene(scene_path: String):
 	if is_instance_valid(global_ui_instance):
 		if scene_path == map_scene or scene_path == battle_scene:
 			global_ui_instance.show()
-			if scene_path == map_scene:
-				global_ui_instance.show_hp()
-			else:
-				global_ui_instance.hide_hp()
 		else:
 			global_ui_instance.hide()
 
