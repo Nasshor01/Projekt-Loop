@@ -53,6 +53,10 @@ theme_override_constants/separation = 20
 layout_mode = 2
 text = "Hrát"
 
+[node name="HowToPlayButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Jak hrát"
+
 [node name="ExitButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 text = "Ukončit"
