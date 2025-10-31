@@ -6,6 +6,7 @@ extends CanvasLayer
 @onready var ng_plus_label: Label = $MainPanel/MarginContainer/MainLayout/CenterSection/NGPlusDisplay/NGPlusLabel
 @onready var deck_button: Button = $MainPanel/MarginContainer/MainLayout/RightSection/DeckButton
 @onready var menu_button: Button = $MainPanel/MarginContainer/MainLayout/RightSection/MenuButton
+@onready var deck_viewer = $DeckViewer
 
 
 func _ready():
@@ -14,6 +15,7 @@ func _ready():
 	PlayerData.gold_changed.connect(_on_gold_changed)
 	PlayerData.floor_changed.connect(_on_floor_changed)
 	PlayerData.ng_plus_changed.connect(_on_ng_plus_changed)
+	PlayerData.deck_changed.connect(_update_deck_button)
 
 	# Připojení tlačítek
 	deck_button.pressed.connect(_on_deck_button_pressed)
@@ -57,10 +59,8 @@ func _update_deck_button():
 
 
 func _on_deck_button_pressed():
-	print("Tlačítko 'Balíček' bylo stisknuto. Zde se otevře obrazovka s balíčkem.")
-	# TODO: Implementovat zobrazení balíčku karet
+	deck_viewer.display_deck(PlayerData.master_deck)
 
 
 func _on_menu_button_pressed():
-	print("Tlačítko 'Menu' bylo stisknuto. Zde se otevře hlavní menu.")
-	# TODO: Implementovat zobrazení menu
+	get_tree().call_group("GameManager", "go_to_main_menu")

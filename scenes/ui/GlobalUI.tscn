@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scenes/ui/GlobalUI.gd" id="1_f4cv4"]
 [ext_resource type="PackedScene" uid="uid://cu6oy5nwloafr" path="res://scenes/ui/PlayerArtifactsUI.tscn" id="2_z3wfs"]
+[ext_resource type="PackedScene" path="res://scenes/ui/DeckViewer.tscn" id="3_abcde"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_z18a7"]
 bg_color = Color(0, 0, 0, 0.501961)
@@ -104,3 +105,18 @@ text = "Balíček (30)"
 [node name="MenuButton" type="Button" parent="MainPanel/MarginContainer/MainLayout/RightSection"]
 layout_mode = 2
 text = "Menu"
+
+[node name="DeckViewer" parent="." instance=ExtResource("3_abcde")]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -448.0
+offset_top = -256.0
+offset_right = 448.0
+offset_bottom = 256.0
+grow_horizontal = 2
+grow_vertical = 2

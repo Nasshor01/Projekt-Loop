@@ -31,15 +31,16 @@ offset_bottom = 624.0
 
 [node name="EndTurnButton" type="Button" parent="CanvasLayer"]
 offset_left = 1032.0
-offset_top = 16.0
+offset_top = 106.0
 offset_right = 1128.0
-offset_bottom = 56.0
+offset_bottom = 146.0
 text = "Ukončit tah"
 
 [node name="VictoryLabel" type="Label" parent="CanvasLayer"]
 visible = false
+offset_top = 90.0
 offset_right = 1152.0
-offset_bottom = 648.0
+offset_bottom = 738.0
 theme_override_font_sizes/font_size = 50
 text = "Výhra"
 horizontal_alignment = 1
@@ -92,16 +93,16 @@ offset_bottom = 448.0
 
 [node name="WinButton" type="Button" parent="CanvasLayer"]
 offset_left = 1032.0
-offset_top = 72.0
+offset_top = 162.0
 offset_right = 1124.0
-offset_bottom = 93.0
+offset_bottom = 183.0
 text = "Okamžitá výhra"
 
 [node name="TurnCounterLabel" type="Label" parent="CanvasLayer"]
 offset_left = 1032.0
-offset_top = 112.0
+offset_top = 202.0
 offset_right = 1128.0
-offset_bottom = 160.0
+offset_bottom = 250.0
 theme_override_font_sizes/font_size = 24
 text = "Tah: 1"
 horizontal_alignment = 1

@@ -9,6 +9,7 @@ signal health_changed(new_hp, new_max_hp)
 signal player_state_initialized
 signal floor_changed(new_floor)
 signal ng_plus_changed(new_level)
+signal deck_changed
 
 # --- Proměnné pro jeden "run" ---
 var selected_class = null
@@ -104,6 +105,7 @@ func start_new_run_state():
 	emit_signal("artifacts_changed")
 	self.gold = gold # Trigger the setter
 	emit_signal("health_changed", current_hp, max_hp)
+	emit_signal("deck_changed")
 	
 	
 	# 5. VYSLAT SIGNÁL PRO VŠECHNY, KTEŘÍ ČEKAJÍ
@@ -557,6 +559,7 @@ func add_curse(curse_type: String = "basic"):
 	if curse_card:
 		master_deck.append(curse_card)
 		DebugLogger.log_info("Added curse: %s" % curse_card.card_name, "CARDS")
+		emit_signal("deck_changed")
 
 func remove_all_curses():
 	"""Odstraní všechny curse karty z balíčku"""
@@ -571,6 +574,9 @@ func remove_all_curses():
 		master_deck.erase(card)
 		removed_count += 1
 	
+	if removed_count > 0:
+		emit_signal("deck_changed")
+
 	DebugLogger.log_info("Removed %d curse cards" % removed_count, "CARDS")
 	return removed_count
 
