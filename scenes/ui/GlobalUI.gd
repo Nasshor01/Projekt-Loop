@@ -14,8 +14,8 @@ func _ready():
 	PlayerData.health_changed.connect(_on_player_health_changed)
 	PlayerData.gold_changed.connect(_on_player_gold_changed)
 	PlayerData.deck_changed.connect(_on_player_deck_changed)
-	PlayerData.floors_cleared_changed.connect(_on_player_floors_cleared_changed)
-	PlayerData.ng_plus_level_changed.connect(_on_player_ng_plus_level_changed)
+	PlayerData.floor_changed.connect(_on_player_floor_changed)
+	PlayerData.ng_plus_changed.connect(_on_player_ng_plus_changed)
 
 	deck_button.pressed.connect(_on_deck_button_pressed)
 	menu_button.pressed.connect(_on_menu_button_pressed)
@@ -30,11 +30,11 @@ func _ready():
 	_update_all_displays()
 
 func _update_all_displays():
-	_on_player_health_changed(PlayerData.health, PlayerData.max_health)
+	_on_player_health_changed(PlayerData.current_hp, PlayerData.max_hp)
 	_on_player_gold_changed(PlayerData.gold)
 	_on_player_deck_changed()
-	_on_player_floors_cleared_changed(PlayerData.floors_cleared)
-	_on_player_ng_plus_level_changed(PlayerData.ng_plus_level)
+	_on_player_floor_changed(PlayerData.floors_cleared)
+	_on_player_ng_plus_changed(PlayerData.ng_plus_level)
 
 func _on_player_health_changed(new_health, new_max_health):
 	hp_label.text = "HP: %d/%d" % [new_health, new_max_health]
@@ -45,10 +45,10 @@ func _on_player_gold_changed(new_gold):
 func _on_player_deck_changed():
 	deck_button.text = "Balíček (%d)" % PlayerData.master_deck.size()
 
-func _on_player_floors_cleared_changed(new_floors):
-	floor_label.text = "Patro: %d" % new_floors
+func _on_player_floor_changed(new_floor):
+	floor_label.text = "Patro: %d" % new_floor
 
-func _on_player_ng_plus_level_changed(new_level):
+func _on_player_ng_plus_changed(new_level):
 	ng_plus_label.text = "NG+: %d" % new_level
 
 func _on_deck_button_pressed():
