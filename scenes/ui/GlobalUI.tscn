@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://igmyfibd5goq"]
+[gd_scene load_steps=5 format=3 uid="uid://igmyfibd5goq"]
 
 [ext_resource type="Script" path="res://scenes/ui/GlobalUI.gd" id="1_f4cv4"]
 [ext_resource type="PackedScene" uid="uid://cu6oy5nwloafr" path="res://scenes/ui/PlayerArtifactsUI.tscn" id="2_z3wfs"]
@@ -16,8 +16,6 @@ corner_radius_top_left = 5
 corner_radius_top_right = 5
 corner_radius_bottom_right = 5
 corner_radius_bottom_left = 5
-
-[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_b06mc"]
 
 [node name="GlobalUI" type="CanvasLayer"]
 script = ExtResource("1_f4cv4")
@@ -66,7 +64,6 @@ alignment = 1
 
 [node name="GoldIcon" type="TextureRect" parent="MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay"]
 layout_mode = 2
-texture = SubResource("CompressedTexture2D_b06mc")
 stretch_mode = 5
 
 [node name="GoldLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay"]
@@ -107,22 +104,9 @@ text = "Balíček (30)"
 layout_mode = 2
 text = "Menu"
 
-[node name="PopupMenu" parent="MainPanel/MarginContainer/MainLayout/RightSection" instance=ExtResource("4_ghijk")]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-
 [node name="DeckViewer" parent="." instance=ExtResource("3_abcde")]
 visible = false
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -448.0
-offset_top = -256.0
-offset_right = 448.0
-offset_bottom = 256.0
-grow_horizontal = 2
-grow_vertical = 2
+
+[node name="PopupMenu" parent="." instance=ExtResource("4_ghijk")]
+unique_name_in_owner = true
+visible = false
