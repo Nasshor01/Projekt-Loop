@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://b5ybgxi0pnlk7"]
+[gd_scene load_steps=2 format=3 uid="uid://pjdtf3hky6c6"]
 
-[ext_resource type="Script" path="res://scripts/CardPileViewer.gd" id="1_1uh4v"]
+[ext_resource type="Script" path="res://scenes/ui/DeckViewer.gd" id="1_1uh4v"]
 
-[node name="CardPileViewer" type="PanelContainer"]
+[node name="DeckViewer" type="PanelContainer"]
 offset_right = 1088.0
 offset_bottom = 576.0
 size_flags_horizontal = 3
@@ -24,7 +24,7 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
-text = "Balíček"
+text = "Celý balíček"
 
 [node name="Control" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2

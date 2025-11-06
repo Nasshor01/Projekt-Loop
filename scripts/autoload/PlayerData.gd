@@ -7,6 +7,9 @@ signal artifacts_changed
 signal gold_changed(new_amount)
 signal health_changed(new_hp, new_max_hp)
 signal player_state_initialized
+signal floor_changed(new_floor)
+signal ng_plus_changed(new_level)
+signal deck_changed
 
 # --- Proměnné pro jeden "run" ---
 var selected_class = null
@@ -21,8 +24,16 @@ var max_energy: int = 3
 var max_hp: int = 50
 var current_hp: int = 50
 var artifacts: Array[ArtifactsData] = []
-var gold: int = 0
-var floors_cleared: int = 0
+var gold: int = 0:
+	set(value):
+		if gold != value:
+			gold = value
+			emit_signal("gold_changed", gold)
+var floors_cleared: int = 0:
+	set(value):
+		if floors_cleared != value:
+			floors_cleared = value
+			emit_signal("floor_changed", floors_cleared)
 var current_run_xp: int = 0
 var path_taken: Array[MapNodeResource] = []
 var active_skill_tree = null
@@ -44,11 +55,15 @@ var global_shield: int = 0
 var adrenaline_cards_this_turn: int = 0
 var has_adrenaline_addiction: bool = false
 var adrenaline_overdose_this_turn: bool = false #na překročení limitu
-var ng_plus_level: int = 0 # 0 = normal, 1 = NG+, 2 = NG+2, etc.
+var ng_plus_level: int = 0:
+	set(value):
+		if ng_plus_level != value:
+			ng_plus_level = value
+			emit_signal("ng_plus_changed", ng_plus_level)
 
 func get_current_node() -> MapNodeResource:
 	if not path_taken.is_empty():
-		floors_cleared = path_taken.size()
+		self.floors_cleared = path_taken.size()
 		return path_taken.back()
 	return null
 
@@ -88,8 +103,9 @@ func start_new_run_state():
 	
 	# 4. Oznámíme UI, jaký je finální stav
 	emit_signal("artifacts_changed")
-	emit_signal("gold_changed", gold)
+	self.gold = gold # Trigger the setter
 	emit_signal("health_changed", current_hp, max_hp)
+	emit_signal("deck_changed")
 	
 	
 	# 5. VYSLAT SIGNÁL PRO VŠECHNY, KTEŘÍ ČEKAJÍ
@@ -106,7 +122,8 @@ func start_ng_plus_state():
 	
 	emit_signal("health_changed", current_hp, max_hp)
 	emit_signal("artifacts_changed")
-	emit_signal("gold_changed", gold)
+	self.gold = gold
+	self.ng_plus_level = ng_plus_level # re-emit ng+ level
 
 func apply_passive_skills():
 	DebugLogger.log_info("=== APPLYING PASSIVE SKILLS ===", "SKILLS")
@@ -507,13 +524,11 @@ func remove_artifact(artifact_data: ArtifactsData):
 		emit_signal("artifacts_changed")
 
 func add_gold(amount: int):
-	gold += amount
-	emit_signal("gold_changed", gold)
+	self.gold += amount
 
 func spend_gold(amount: int) -> bool:
-	if gold >= amount:
-		gold -= amount
-		emit_signal("gold_changed", gold)
+	if self.gold >= amount:
+		self.gold -= amount
 		return true
 	return false
 
@@ -544,6 +559,7 @@ func add_curse(curse_type: String = "basic"):
 	if curse_card:
 		master_deck.append(curse_card)
 		DebugLogger.log_info("Added curse: %s" % curse_card.card_name, "CARDS")
+		emit_signal("deck_changed")
 
 func remove_all_curses():
 	"""Odstraní všechny curse karty z balíčku"""
@@ -558,6 +574,9 @@ func remove_all_curses():
 		master_deck.erase(card)
 		removed_count += 1
 	
+	if removed_count > 0:
+		emit_signal("deck_changed")
+
 	DebugLogger.log_info("Removed %d curse cards" % removed_count, "CARDS")
 	return removed_count
 
@@ -642,3 +661,14 @@ func _create_adrenaline_addiction_artifact() -> ArtifactsData:
 	
 	
 	return artifact
+
+func emit_deck_changed():
+	deck_changed.emit()
+
+func emit_all_signals():
+	health_changed.emit(current_hp, max_hp)
+	gold_changed.emit(gold)
+	deck_changed.emit()
+	floor_changed.emit(floors_cleared)
+	ng_plus_changed.emit(ng_plus_level)
+	artifacts_changed.emit()

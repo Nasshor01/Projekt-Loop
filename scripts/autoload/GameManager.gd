@@ -53,6 +53,7 @@ func _ready():
 	go_to_main_menu()
 
 func start_new_run(seed = null):
+	SaveManager.delete_saved_run()
 	if seed == null:
 		randomize()
 		current_seed = randi()
@@ -134,6 +135,7 @@ func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -
 		_prepare_battle_rewards()
 		_change_scene(reward_scene)
 	else:
+		SaveManager.delete_saved_run()
 		last_run_was_victory = false
 		last_run_xp_earned = PlayerData.current_run_xp
 		SaveManager.add_xp(last_run_xp_earned)
@@ -168,6 +170,7 @@ func go_to_run_prep_screen(p_class: ClassData, p_subclass: SubclassData):
 
 func reward_chosen():
 	if _is_post_boss_reward:
+		SaveManager.delete_saved_run()
 		print("Odměna po bossovi vybrána, přecházím na obrazovku konce.")
 		_is_post_boss_reward = false
 		last_run_xp_earned = PlayerData.current_run_xp
@@ -216,10 +219,6 @@ func _change_scene(scene_path: String):
 	if is_instance_valid(global_ui_instance):
 		if scene_path == map_scene or scene_path == battle_scene:
 			global_ui_instance.show()
-			if scene_path == map_scene:
-				global_ui_instance.show_hp()
-			else:
-				global_ui_instance.hide_hp()
 		else:
 			global_ui_instance.hide()
 
@@ -365,3 +364,62 @@ func _get_random_elite_artifact() -> ArtifactsData:
 
 	print("DEBUG: Nepodařilo se najít žádný vhodný artefakt")
 	return null # Pokud v poolu nejsou ani common, nevrátíme nic
+
+#==============================================================================
+# Popup Menu Logic
+#==============================================================================
+
+func _on_popup_restart_run():
+	SaveManager.delete_saved_run()
+	start_new_run()
+
+func _on_popup_save_run():
+	SaveManager.save_run(PlayerData)
+	# Optionally, provide feedback to the player, e.g., a small notification.
+	print("Hra uložena.")
+
+func _on_popup_back_to_char_select():
+	SaveManager.delete_saved_run()
+	go_to_character_select()
+
+func _on_popup_save_and_quit():
+	SaveManager.save_run(PlayerData)
+	get_tree().quit()
+
+func _on_popup_back_to_menu():
+	SaveManager.delete_saved_run()
+	go_to_main_menu()
+
+func load_and_start_saved_run():
+	var loaded_data = SaveManager.load_run()
+	if loaded_data.is_empty():
+		DebugLogger.log_error("Failed to load run data or no save file found.", "SAVE")
+		return
+
+	# Restore PlayerData state
+	PlayerData.health = loaded_data.get("health", 1)
+	PlayerData.max_health = loaded_data.get("max_health", 1)
+	PlayerData.gold = loaded_data.get("gold", 0)
+	PlayerData.floors_cleared = loaded_data.get("floors_cleared", 0)
+	PlayerData.ng_plus_level = loaded_data.get("ng_plus_level", 0)
+	PlayerData.current_run_xp = loaded_data.get("current_run_xp", 0)
+
+	PlayerData.master_deck = []
+	for card_path in loaded_data.get("master_deck", []):
+		var card = load(card_path)
+		if card:
+			PlayerData.master_deck.append(card)
+
+	PlayerData.artifacts = []
+	for artifact_path in loaded_data.get("artifacts", []):
+		var artifact = load(artifact_path)
+		if artifact:
+			PlayerData.artifacts.append(artifact)
+
+	PlayerData.emit_deck_changed()
+	PlayerData.emit_all_signals()
+
+	DebugLogger.log_info("=== SAVED RUN LOADED ===", "GAME_FLOW")
+	DebugLogger.log_full_game_state()
+
+	_change_scene(map_scene)

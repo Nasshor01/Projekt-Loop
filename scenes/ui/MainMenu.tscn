@@ -51,7 +51,12 @@ theme_override_constants/separation = 20
 
 [node name="PlayButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-text = "Hrát"
+text = "Nová hra"
+
+[node name="LoadRunButton" type="Button" parent="VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Načíst run"
 
 [node name="HowToPlayButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
