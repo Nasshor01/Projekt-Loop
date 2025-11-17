@@ -12,7 +12,10 @@ func setup(unit_ref: Unit, turn_manager: Node):
 	_turn_manager = turn_manager
 
 	if is_instance_valid(unit) and is_instance_valid(unit.unit_data):
-		portrait.texture = unit.unit_data.portrait
+		if unit.unit_data.has("portrait") and unit.unit_data.portrait != null:
+			portrait.texture = unit.unit_data.portrait
+		else:
+			portrait.texture = null # Fallback, pokud portrét chybí
 
 		# Vypočítáme celkovou iniciativu
 		var base_init = unit.unit_data.initiative
