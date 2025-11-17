@@ -31,6 +31,7 @@ const AIController = preload("res://scripts/ai/EnemyAIController.gd")
 @onready var battle_grid_instance: BattleGrid = $BattleGrid
 @export var camera_2d: Camera2D
 @onready var turn_counter_label: Label = $CanvasLayer/TurnCounterLabel
+@onready var initiative_bar = $CanvasLayer/InitiativeBar
 
 @export var camera_speed = 1.0
 @export var camera_zoom_speed = 0.1
@@ -163,8 +164,14 @@ func _on_round_started(round_number: int):
 	_update_turn_display()
 	print("=== KOLO %d ===" % round_number)
 
+	if is_instance_valid(initiative_bar) and has_node("/root/TurnManager"):
+		initiative_bar.update_turn_order(TurnManager.get_turn_order())
+
 func _on_turn_started(unit: Unit):
 	"""Volá se když je na řadě další jednotka"""
+	if is_instance_valid(initiative_bar):
+		initiative_bar.set_active_unit(unit)
+
 	if not is_instance_valid(unit):
 		TurnManager.next_turn()
 		return
