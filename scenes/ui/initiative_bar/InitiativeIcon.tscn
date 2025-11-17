@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://b1h2o3f4g5j6k"]
 
-[ext_resource type="Script" path="res://scenes/ui/initiative_bar/InitiativeIcon.gd" id="1_abcde"]
+[ext_resource type="Script" uid="uid://1bkf5hd0phy6" path="res://scenes/ui/initiative_bar/InitiativeIcon.gd" id="1_abcde"]
 [ext_resource type="PackedScene" uid="uid://c6g8f5y1x0v3k" path="res://scenes/ui/initiative_bar/InitiativeTooltip.tscn" id="2_fghij"]
 
 [node name="InitiativeIcon" type="PanelContainer"]
@@ -17,10 +17,6 @@ stretch_mode = 5
 [node name="Tooltip" parent="." instance=ExtResource("2_fghij")]
 visible = false
 layout_mode = 2
-offset_left = 55.0
-offset_top = 0.0
-offset_right = 205.0
-offset_bottom = 50.0
 
 [connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
 [connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]
