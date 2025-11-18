@@ -7,7 +7,7 @@ var combat_buffs: Array[String] = []
 func _ready():
 	print("EventManager: Inicializace...")
 
-func filter_events_for_floor(events: Array, floor: int) -> Array:
+func _filter_events_for_floor(events: Array, floor: int) -> Array:
 	"""Vyfiltruje eventy vhodné pro dané patro"""
 	var available_events: Array = []
 	
@@ -50,7 +50,7 @@ func start_new_run():
 	combat_buffs.clear()
 	print("EventManager: Reset pro nový run")
 
-func debug_available_events(events: Array, floor: int):
+func _debug_available_events(events: Array, floor: int):
 	"""Debug informace o dostupných eventech"""
 	print("EventManager: DEBUG - Celkem eventů: %d pro patro %d" % [events.size(), floor])
 	for event in events:

@@ -185,7 +185,7 @@ func _on_turn_started(unit: Unit):
 	else:
 		_start_enemy_initiative_turn(unit)
 
-func _start_player_initiative_turn(player_unit: Unit, extra_draw: int = 0):
+func _start_player_initiative_turn(_player_unit: Unit, extra_draw: int = 0):
 	"""Zahájí tah hráče v iniciativním systému"""
 	_current_battle_state = BattleState.PROCESSING
 	end_turn_button.disabled = true
@@ -359,8 +359,6 @@ func confirm_player_spawn(at_position: Vector2i):
 		all_units.append(_player_unit_node)
 	all_units.append_array(_enemy_units) # Přidá všechny nepřátele
 	
-	# (Poznámka: Signály 'died' už připojujete ve funkcích
-	# spawn_player_unit_at a spawn_enemy_units, což je v pořádku)
 	# ==============================================
 
 	# ===== Zahájení souboje přes TurnManager =====
@@ -501,7 +499,7 @@ func _on_unit_died(unit_node: Node2D):
 		if PlayerData.has_revive:
 			print("!!! BOŽSKÁ OCHRANA AKTIVOVÁNA !!!")
 			PlayerData.has_revive = false
-			var heal_amount = PlayerData.max_hp / 2
+			var heal_amount = PlayerData.max_hp / 2.0
 			if unit_node.has_method("heal"):
 				unit_node.heal(heal_amount)
 			return
@@ -548,7 +546,7 @@ func spawn_enemy_units():
 	var available_spawn_cells: Array[Vector2i] = []
 	
 	for cell in all_active_cells:
-		if cell.x < battle_grid_instance.grid_columns / 2: continue
+		if cell.x < battle_grid_instance.grid_columns / 2.0: continue
 		if cell == player_cell: continue
 			
 		var terrain = battle_grid_instance.get_terrain_on_cell(cell)
@@ -610,7 +608,7 @@ func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: Car
 	_show_valid_targets_for_card(card_data_resource)
 
 func try_play_card(card: CardData, initial_target: Node2D) -> void:
-	DebugLogger.log_card_played(card.card_name, initial_target.name if initial_target else "none")
+	DebugLogger.log_card_played(card.card_name, str(initial_target.name) if initial_target else "none")
 	if _is_action_processing: return
 	if not card: return
 	if not PlayerData.spend_energy(card.cost):
@@ -979,7 +977,7 @@ func _spawn_unit(unit_data: UnitData, grid_pos: Vector2i) -> Unit:
 		unit_instance.queue_free()
 		return null
 
-func _on_card_hover_started(card_data: CardData): pass
+func _on_card_hover_started(_card_data: CardData): pass
 func _on_card_hover_ended():
 	if _player_action_state != PlayerActionState.CARD_SELECTED: battle_grid_instance.hide_aoe_highlight()
 
@@ -1036,6 +1034,12 @@ func _setup_camera_boundaries():
 	camera_2d.limit_left = 0 - horizontal_padding; camera_2d.limit_top = 0 - top_padding
 	camera_2d.limit_right = grid_pixel_width + horizontal_padding
 	camera_2d.limit_bottom = grid_pixel_height + bottom_padding
+
+# explicitní zaokrouhlení (doporučeno)
+	camera_2d.limit_left = -int(round(horizontal_padding))
+	camera_2d.limit_top = -int(round(top_padding))
+	camera_2d.limit_right = int(round(grid_pixel_width + horizontal_padding))
+	camera_2d.limit_bottom = int(round(grid_pixel_height + bottom_padding))
 
 func get_player_unit() -> Node2D:
 	return _player_unit_node
