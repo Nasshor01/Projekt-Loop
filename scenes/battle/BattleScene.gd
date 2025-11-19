@@ -14,6 +14,7 @@ extends Node3D
 # Cílové hodnoty pro plynulý pohyb
 var _cam_target_pos: Vector3
 var _cam_target_rot_y: float
+var _cam_target_rot_x: float
 var _cam_target_zoom: float
 # ---------------------------------------------
 
