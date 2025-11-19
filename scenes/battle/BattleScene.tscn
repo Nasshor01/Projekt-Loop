@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://drcylmyjefmn0"]
+[gd_scene load_steps=12 format=3 uid="uid://drcylmyjefmn0"]
 
 [ext_resource type="Script" uid="uid://d3ytuwmimqlg4" path="res://scenes/battle/BattleScene.gd" id="1_vd1me"]
 [ext_resource type="Resource" uid="uid://d118t8olbc47a" path="res://data/encounters/first_battle.tres" id="2_q8wks"]
@@ -10,17 +10,36 @@
 [ext_resource type="PackedScene" uid="uid://ckvi6eu1vd02a" path="res://scenes/ui/DevConsole.tscn" id="8_5282s"]
 [ext_resource type="PackedScene" uid="uid://d1e2f3g4h5i6j" path="res://scenes/ui/initiative_bar/InitiativeBar.tscn" id="9_abcde"]
 
-[node name="BattleScene" type="Node2D" node_paths=PackedStringArray("camera_2d")]
-script = ExtResource("1_vd1me")
-encounter_data = ExtResource("2_q8wks")
-camera_2d = NodePath("Camera2D")
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nnhtb"]
+albedo_color = Color(0.762404, 0.762404, 0.762404, 1)
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rpe18"]
+albedo_color = Color(0.230315, 0.230315, 0.230315, 1)
+
+[node name="BattleScene" type="Node3D" node_paths=PackedStringArray("camera_3d")]
+script = ExtResource("1_vd1me")
+camera_move_speed = null
+camera_rotation_speed = null
+camera_zoom_speed = null
+camera_min_zoom = null
+camera_max_zoom = null
+camera_smoothness = null
+camera_min_pitch = null
+camera_max_pitch = null
+encounter_data = ExtResource("2_q8wks")
+camera_3d = NodePath("Camera3D")
+starting_hand_size = null
+
+[node name="Camera3D" type="Camera3D" parent="."]
 unique_name_in_owner = true
-position = Vector2(576, 324)
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 15, 15, 15)
+projection = 1
+size = 20.0
 
 [node name="BattleGrid" parent="." instance=ExtResource("2_t3o3d")]
-position = Vector2(50, 50)
+material_light = SubResource("StandardMaterial3D_nnhtb")
+material_dark = SubResource("StandardMaterial3D_rpe18")
+grid_line_color = Color(0.5, 0.5, 0.5, 0.5)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -117,5 +136,9 @@ vertical_alignment = 1
 
 [node name="DevConsole" parent="." instance=ExtResource("8_5282s")]
 visible = false
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 0, 0)
+shadow_enabled = true
 
 [connection signal="pressed" from="CanvasLayer/EndTurnButton" to="." method="_on_end_turn_button_pressed"]

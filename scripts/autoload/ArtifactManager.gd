@@ -192,7 +192,7 @@ func on_card_played(card_data: CardData):
 	
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_CARD_PLAYED, context)
 
-func on_damage_taken(amount: int, attacker: Node2D = null):
+func on_damage_taken(amount: int, attacker: Node = null):
 	print("🔔 ArtifactManager: ON_DAMAGE_TAKEN trigger s %d poškozením" % amount)
 	print("🔔 Attacker: %s" % str(attacker))
 	
@@ -229,7 +229,7 @@ func on_damage_taken(amount: int, attacker: Node2D = null):
 	
 	return results
 
-func on_damage_dealt(amount: int, target: Node2D, was_critical: bool = false):
+func on_damage_dealt(amount: int, target: Node, was_critical: bool = false):
 	var context = {
 		"damage_amount": amount,
 		"target": target,
@@ -238,7 +238,7 @@ func on_damage_dealt(amount: int, target: Node2D, was_critical: bool = false):
 	}
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_DAMAGE_DEALT, context)
 
-func on_enemy_death(enemy: Node2D):
+func on_enemy_death(enemy: Node):
 	var context = {
 		"dead_enemy": enemy,
 		"target": _get_player_unit(),
@@ -262,7 +262,7 @@ func on_block_gained(amount: int):
 	}
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_BLOCK_GAINED, context)
 
-func _get_player_unit() -> Node2D:
+func _get_player_unit() -> Node:
 	var current_scene = get_tree().current_scene
 	
 	print("🔍 Hledám player unit...")
@@ -278,7 +278,7 @@ func _get_player_unit() -> Node2D:
 	var players = get_tree().get_nodes_in_group("player")
 	if players.size() > 0:
 		print("✅ Player nalezen metodou 2: %s" % str(players[0]))
-		return players[0] as Node2D
+		return players[0] as Node
 	
 	# Metoda 3: Hledání podle faction v Unit nódech
 	var all_units = get_tree().get_nodes_in_group("units")
@@ -287,7 +287,7 @@ func _get_player_unit() -> Node2D:
 			var unit_data = unit.get_unit_data()
 			if unit_data and unit_data.faction == UnitData.Faction.PLAYER:
 				print("✅ Player nalezen metodou 3: %s" % str(unit))
-				return unit as Node2D
+				return unit as Node
 	
 	print("❌ Player unit nebyl nalezen!")
 	return null

@@ -1,5 +1,24 @@
-extends Node2D
+extends Node3D
 
+# --- KONFIGURACE KAMERY (To, co ti chybělo) ---
+@export_group("Camera Settings")
+@export var camera_move_speed: float = 15.0
+@export var camera_rotation_speed: float = 2.0
+@export var camera_zoom_speed: float = 2.0
+@export var camera_min_zoom: float = 5.0
+@export var camera_max_zoom: float = 30.0
+@export var camera_smoothness: float = 10.0
+@export var camera_min_pitch: float = -85.0 # Úplně shora (téměř -90)
+@export var camera_max_pitch: float = -30.0 # Pohled zešikma (horizont)
+
+# Cílové hodnoty pro plynulý pohyb
+var _cam_target_pos: Vector3
+var _cam_target_rot_y: float
+var _cam_target_zoom: float
+# ---------------------------------------------
+
+const UnitScene = preload("res://scenes/battle/Unit.tscn")
+# Konstanty tvarů gridu (pro generování)
 const SHAPE_DEFAULT = [
 	"111111111111111", "111111111111111", "111111111111111", "111111111111111", "111111111111111",
 	"111111111111111", "111111111111111", "111111111111111", "111111111111111", "111111111111111",
@@ -12,9 +31,6 @@ const SHAPE_DIAMOND = [
 	"00001110000", "00011111000", "00111111100", "01111111110", "11111111111",
 	"01111111110", "00111111100", "00011111000", "00001110000",
 ]
-
-const UnitScene = preload("res://scenes/battle/Unit.tscn")
-const AIController = preload("res://scripts/ai/EnemyAIController.gd")
 
 @export var encounter_data: EncounterData
 
@@ -29,14 +45,10 @@ const AIController = preload("res://scripts/ai/EnemyAIController.gd")
 @onready var energy_label: Label = $CanvasLayer/EnergyLabel
 @onready var win_button: Button = $CanvasLayer/WinButton
 @onready var battle_grid_instance: BattleGrid = $BattleGrid
-@export var camera_2d: Camera2D
 @onready var turn_counter_label: Label = $CanvasLayer/TurnCounterLabel
 @onready var initiative_bar = $CanvasLayer/InitiativeBar
 
-@export var camera_speed = 1.0
-@export var camera_zoom_speed = 0.1
-@export var camera_min_zoom = 0.5
-@export var camera_max_zoom = 2.0
+@export var camera_3d: Camera3D 
 
 enum PlayerActionState { IDLE, CARD_SELECTED, UNIT_SELECTED }
 var _player_action_state: PlayerActionState = PlayerActionState.IDLE
@@ -44,17 +56,13 @@ var _player_action_state: PlayerActionState = PlayerActionState.IDLE
 enum BattleState { SETUP, AWAITING_PLAYER_SPAWN, PLAYER_TURN, ENEMY_TURN, PROCESSING, BATTLE_OVER }
 var _current_battle_state: BattleState = BattleState.SETUP
 
-
 @export var starting_hand_size: int = 5
 
 var _selected_card_ui: Control = null
 var _selected_card_data: CardData = null
-# =================================================================
-#pohyby a ai enemy
 var _player_unit_node: Unit = null
 var _selected_unit: Unit = null
 var _enemy_units: Array[Unit] = []
-# =================================================================
 
 var _is_action_processing: bool = false
 var _cards_to_draw_queue: int = 0
@@ -95,45 +103,118 @@ func _ready():
 	ArtifactManager.overdose_warning_triggered.connect(_on_overdose_warning)
 	
 	_setup_camera_boundaries()
-	battle_grid_instance.set_camera(camera_2d)
+	battle_grid_instance.set_camera(camera_3d)
 	_generate_grid_from_shape()
+	
+	# Inicializace cílových hodnot kamery
+	if camera_3d:
+		_cam_target_pos = camera_3d.position
+		_cam_target_rot_y = camera_3d.rotation.y
+		_cam_target_zoom = camera_3d.size
+		_cam_target_rot_x = camera_3d.rotation.x
 	
 	start_player_spawn_selection()
 
+func _process(delta):
+	if not camera_3d: return
+
+	# 1. POHYB KAMERY
+	var input_dir = Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
+	
+	var forward_vec = -camera_3d.global_transform.basis.z
+	forward_vec.y = 0 
+	forward_vec = forward_vec.normalized()
+	
+	var right_vec = camera_3d.global_transform.basis.x
+	right_vec.y = 0
+	right_vec.normalized()
+	
+	var move_vec = (right_vec * input_dir.x + forward_vec * -input_dir.y)
+	
+	if move_vec.length() > 0:
+		_cam_target_pos += move_vec * camera_move_speed * delta
+
+	# 2. ROTACE KAMERY (Q/E)
+	var rot_input = 0
+	if Input.is_key_pressed(KEY_Q): rot_input += 1
+	if Input.is_key_pressed(KEY_E): rot_input -= 1
+	
+	_cam_target_rot_y += rot_input * camera_rotation_speed * delta
+
+	# 3. APLIKACE LERPU (PLYNULOST)
+	camera_3d.position = camera_3d.position.lerp(_cam_target_pos, camera_smoothness * delta)
+	
+	var current_rot = camera_3d.rotation
+	current_rot.y = lerp_angle(current_rot.y, _cam_target_rot_y, camera_smoothness * delta)
+	current_rot.x = lerp_angle(current_rot.x, _cam_target_rot_x, camera_smoothness * delta)
+	camera_3d.rotation = current_rot
+	
+	camera_3d.size = lerp(camera_3d.size, _cam_target_zoom, camera_smoothness * delta)
+	
+	# 4. RAYCAST UPDATE PRO HOVER
+	var grid_cell = get_grid_cell_under_mouse()
+	battle_grid_instance.set_mouse_over_cell(grid_cell)
+	
+	var unit_under_mouse = battle_grid_instance.get_object_on_cell(grid_cell)
+	if is_instance_valid(unit_under_mouse) and unit_under_mouse.get_unit_data().faction == UnitData.Faction.ENEMY:
+		enemy_info_panel.update_stats(unit_under_mouse)
+	else:
+		enemy_info_panel.hide_panel()
+		
+	if _player_action_state == PlayerActionState.CARD_SELECTED:
+		_update_card_target_preview()
+
 func _unhandled_input(event: InputEvent):
 	if _is_action_processing: return
-
-	if event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_MIDDLE or event.button_mask & MOUSE_BUTTON_MASK_RIGHT):
-		camera_2d.position -= event.relative / camera_2d.zoom * camera_speed
-
-	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
-			var new_zoom_value = camera_2d.zoom / (1 + camera_zoom_speed)
-			camera_2d.zoom = new_zoom_value.clamp(Vector2(camera_min_zoom, camera_min_zoom), Vector2(camera_max_zoom, camera_max_zoom))
-		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
-			var new_zoom_value = camera_2d.zoom * (1 + camera_zoom_speed)
-			camera_2d.zoom = new_zoom_value.clamp(Vector2(camera_min_zoom, camera_min_zoom), Vector2(camera_max_zoom, camera_max_zoom))
 	
-	# LOGIKA PRO VÝBĚR SPAWNU
-	if _current_battle_state == BattleState.AWAITING_PLAYER_SPAWN:
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			var clicked_cell = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
-			if battle_grid_instance.is_cell_a_valid_spawn_point(clicked_cell):
-				confirm_player_spawn(clicked_cell)
-				get_viewport().set_input_as_handled()
-		return
+	# --- 1. OVLÁDÁNÍ KAMERY MYŠÍ (NOVÉ) ---
+	# Pokud hýbeš myší a držíš PROSTŘEDNÍ tlačítko (kolečko)
+	if event is InputEventMouseMotion:
+		if event.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
+			# 1. Rotace do stran (Y osa)
+			_cam_target_rot_y -= event.relative.x * 0.005
+			
+			# 2. Náklon nahoru/dolů (X osa) - NOVÉ
+			_cam_target_rot_x -= event.relative.y * 0.005
+			
+			# OMEZENÍ (CLAMP) - Aby se kamera nepřetočila přes hlavu
+			# Musíme převést stupně na radiány, protože Godot používá radiány
+			var min_rad = deg_to_rad(camera_min_pitch)
+			var max_rad = deg_to_rad(camera_max_pitch)
+			_cam_target_rot_x = clamp(_cam_target_rot_x, min_rad, max_rad)
+	# --------------------------------------
+
+	# ZOOM KAMERY (Kolečko - Scroll)
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_cam_target_zoom = clamp(_cam_target_zoom - camera_zoom_speed, camera_min_zoom, camera_max_zoom)
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_cam_target_zoom = clamp(_cam_target_zoom + camera_zoom_speed, camera_min_zoom, camera_max_zoom)
 
 	if card_pile_viewer.visible and event.is_action_pressed("ui_cancel"):
 		card_pile_viewer.hide()
 		return
 
-	if _current_battle_state != BattleState.PLAYER_TURN: return
-	
+	# KLIKÁNÍ NA MŘÍŽKU (RAYCAST)
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		var clicked_grid_cell = get_grid_cell_under_mouse()
+		print("🖱️ KLIK! Grid coords: ", clicked_grid_cell)
+		
+		# Logika SPAWN
+		if _current_battle_state == BattleState.AWAITING_PLAYER_SPAWN:
+			if battle_grid_instance.is_cell_a_valid_spawn_point(clicked_grid_cell):
+				confirm_player_spawn(clicked_grid_cell)
+				get_viewport().set_input_as_handled()
+			return
+		
+		if _current_battle_state != BattleState.PLAYER_TURN: return
+
+		# Logika KARTY
 		if _player_action_state == PlayerActionState.CARD_SELECTED:
 			var is_self_targeting_card = false
 			if is_instance_valid(_selected_card_data):
 				is_self_targeting_card = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
+			
 			if is_self_targeting_card:
 				if is_instance_valid(_player_unit_node):
 					try_play_card(_selected_card_data, _player_unit_node)
@@ -143,18 +224,24 @@ func _unhandled_input(event: InputEvent):
 					get_viewport().set_input_as_handled()
 				return
 			
-			var clicked_grid_cell = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
 			var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
 			try_play_card(_selected_card_data, target_node)
 			get_viewport().set_input_as_handled()
+			
+		# Logika POHYB
 		elif _player_action_state == PlayerActionState.UNIT_SELECTED:
-			var clicked_grid_cell = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
 			if battle_grid_instance.is_cell_movable(clicked_grid_cell):
 				_execute_move(_selected_unit, clicked_grid_cell)
 			else:
 				_reset_player_selection()
 			get_viewport().set_input_as_handled()
-
+		
+		# Logika VÝBĚR JEDNOTKY
+		elif _player_action_state == PlayerActionState.IDLE:
+			var unit_clicked = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
+			if unit_clicked and unit_clicked is Unit:
+				if unit_clicked.unit_data.faction == UnitData.Faction.PLAYER and unit_clicked.can_move():
+					_on_unit_selected_on_grid(unit_clicked)
 
 # ===== NOVÉ FUNKCE PRO INICIATIVNÍ SYSTÉM =====
 
@@ -359,13 +446,13 @@ func confirm_player_spawn(at_position: Vector2i):
 		all_units.append(_player_unit_node)
 	all_units.append_array(_enemy_units) # Přidá všechny nepřátele
 	
-	# ==============================================
+# ==============================================
 
 	# ===== Zahájení souboje přes TurnManager =====
 	# Předáme pouze validní jednotky
-	var valid_units = all_units.filter(func(u): return is_instance_valid(u)) 
+	var valid_units = all_units.filter(func(u): return is_instance_valid(u))
 	call_deferred("_start_combat_with_turn_manager", valid_units)
-	# ====================================================
+	# ==========================================
 
 
 func spawn_player_unit_at(grid_pos: Vector2i):
@@ -387,11 +474,11 @@ func _update_turn_display():
 func start_extra_turn():
 	"""Spustí PLNOHODNOTNÝ extra tah hráče"""
 	print("⚡ SPOUŠTÍM EXTRA TAH!")
-	_is_extra_turn = false  # Reset flag
+	_is_extra_turn = false # Reset flag
 	
 	# 1. ODHOĎ SOUČASNÉ KARTY (jako konec normálního tahu)
 	PlayerData.discard_hand()
-	player_hand_ui_instance.clear_hand()  # Vyčisti UI
+	player_hand_ui_instance.clear_hand() # Vyčisti UI
 	_update_pile_counts()
 	
 	# 2. RESETUJ ENERGII
@@ -399,7 +486,7 @@ func start_extra_turn():
 	
 	# 3. RESETUJ POHYB JEDNOTKY (KLÍČOVÉ!)
 	if is_instance_valid(_player_unit_node):
-		_player_unit_node.reset_for_new_turn()  # Toto resetuje pohyb!
+		_player_unit_node.reset_for_new_turn() # Toto resetuje pohyb!
 	
 	# 4. DOBÍREJ NOVÉ KARTY (normální množství)
 	_cards_to_draw_queue = starting_hand_size
@@ -412,7 +499,8 @@ func start_extra_turn():
 
 
 # Přidejte debug do signálu stats_changed
-func _on_unit_stats_changed(unit_node: Node2D):
+# OPRAVA: Změna z Node2D na Node3D
+func _on_unit_stats_changed(unit_node: Node3D):
 	if is_instance_valid(unit_node) and unit_node == _player_unit_node:
 		player_info_panel.update_stats(unit_node)
 
@@ -490,7 +578,8 @@ func end_battle_as_victory():
 	else:
 		GameManager.battle_finished(true)
 
-func _on_unit_died(unit_node: Node2D):
+# OPRAVA: Změna z Node2D na Unit (nebo Node3D)
+func _on_unit_died(unit_node: Unit):
 	"""Zpracuje smrt jednotky"""
 	print("=== Jednotka zemřela: %s ===" % unit_node.unit_data.unit_name)
 	
@@ -505,6 +594,7 @@ func _on_unit_died(unit_node: Node2D):
 			return
 	
 	# Trigger enemy death artefakty
+	# POZNÁMKA: Ujisti se, že ArtifactManager.on_enemy_death bere jako argument 'Node' nebo 'Unit', ne 'Node2D'
 	if unit_node.unit_data.faction == UnitData.Faction.ENEMY:
 		if has_node("/root/ArtifactManager"):
 			ArtifactManager.on_enemy_death(unit_node)
@@ -515,13 +605,15 @@ func _on_unit_died(unit_node: Node2D):
 	
 	battle_grid_instance.remove_object_by_instance(unit_node)
 	
-	# Animace zmizení
+	# Animace zmizení pro 3D (Scale místo Modulate)
 	var tween = create_tween()
-	tween.tween_property(unit_node, "modulate:a", 0.0, 0.5)
+	# Zmenšíme jednotku do nuly (zmizí)
+	tween.tween_property(unit_node, "scale", Vector3.ZERO, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	
-	# ===== UPRAVENO: Odregistruj až PO animaci =====
+	# Odregistruj až PO animaci
 	await tween.finished
 	
+	# POZNÁMKA: Ujisti se, že TurnManager.unregister_unit bere jako argument 'Node' nebo 'Unit'
 	if has_node("/root/TurnManager"):
 		TurnManager.unregister_unit(unit_node)
 	
@@ -567,9 +659,9 @@ func spawn_enemy_units():
 			continue
 			
 		print("Enemy data:")
-		print("  - unit_name: %s" % enemy_entry.unit_data.unit_name)
-		print("  - max_health: %d" % enemy_entry.unit_data.max_health)
-		print("  - ai_script: %s" % str(enemy_entry.unit_data.ai_script))
+		print("  - unit_name: %s" % enemy_entry.unit_data.unit_name)
+		print("  - max_health: %d" % enemy_entry.unit_data.max_health)
+		print("  - ai_script: %s" % str(enemy_entry.unit_data.ai_script))
 		
 		if available_spawn_cells.is_empty():
 			printerr("Nedostatek spawn pozic!")
@@ -577,16 +669,16 @@ func spawn_enemy_units():
 			
 		var random_pos = available_spawn_cells.pick_random()
 		available_spawn_cells.erase(random_pos)
-		print("  - spawn pozice: %s" % str(random_pos))
+		print("  - spawn pozice: %s" % str(random_pos))
 
 		var enemy_node = _spawn_unit(enemy_entry.unit_data, random_pos)
 		if is_instance_valid(enemy_node):
-			print("  ✅ Enemy spawnován!")
+			print("  ✅ Enemy spawnován!")
 			_enemy_units.append(enemy_node)
 			enemy_node.died.connect(_on_unit_died)
 			enemy_node.stats_changed.connect(_on_unit_stats_changed)
 		else:
-			print("  ❌ Spawn selhal!")
+			print("  ❌ Spawn selhal!")
 	
 	print("=== SPAWN DOKONČEN ===")
 	print("Celkem nepřátel: %d" % _enemy_units.size())
@@ -607,7 +699,8 @@ func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: Car
 	player_hand_ui_instance.set_selected_card(card_ui_node)
 	_show_valid_targets_for_card(card_data_resource)
 
-func try_play_card(card: CardData, initial_target: Node2D) -> void:
+# OPRAVA: Argument je Node3D (nebo Unit, ale Node3D je obecnější pro 3D svět)
+func try_play_card(card: CardData, initial_target: Node3D) -> void:
 	DebugLogger.log_card_played(card.card_name, str(initial_target.name) if initial_target else "none")
 	if _is_action_processing: return
 	if not card: return
@@ -749,8 +842,9 @@ func _execute_move(unit_to_move: Unit, target_cell: Vector2i):
 		# Voláme přímo funkci na jednotce, která efekt zpracuje
 		unit_to_move.process_terrain_effects(terrain_on_cell)
 	_reset_player_selection()
-	
-func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
+
+# OPRAVA: Argument 'target' musí být Node3D (pro 3D jednotky)
+func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 	if not is_instance_valid(target): return
 	
 	match effect.effect_type:
@@ -761,7 +855,7 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 				# Existující bonus z skillů
 				damage_to_deal += PlayerData.global_card_damage_bonus
 				
-				# NOVÉ: Přidej conditional bonusy z artefaktů
+				# Přidej conditional bonusy z artefaktů
 				if has_node("/root/ArtifactManager"):
 					var context = {
 						"current_hp": PlayerData.current_hp,
@@ -787,7 +881,8 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 				
 				target.take_damage(damage_to_deal)
 				
-				# NOVÉ: Trigger damage dealt artefakty
+				# Trigger damage dealt artefakty
+				# POZNÁMKA: Ujisti se, že ArtifactManager.on_damage_dealt bere jako argument 'Node' nebo 'Unit'
 				if has_node("/root/ArtifactManager"):
 					ArtifactManager.on_damage_dealt(damage_to_deal, target, is_critical)
 
@@ -822,7 +917,8 @@ func _apply_single_effect(effect: CardEffectData, target: Node2D) -> void:
 				target.take_damage(damage)
 		
 		CardEffectData.EffectType.MODIFY_INITIATIVE_NEXT_ROUND:
-			if has_node("/root/TurnManager") and is_instance_valid(target) and target is Unit:
+			# POZNÁMKA: Ujisti se, že TurnManager bere jako argument 'Node' nebo 'Unit'
+			if has_node("/root/TurnManager") and is_instance_valid(target):
 				TurnManager.modify_initiative_next_round(target, effect.value)
 			else:
 				printerr("Efekt MODIFY_INITIATIVE nelze aplikovat na ", target)
@@ -836,9 +932,11 @@ func can_attack_target(attacker: Unit, target: Unit, battle_grid: BattleGrid) ->
 	var distance = battle_grid.get_distance(attacker.grid_position, target.grid_position)
 	return distance <= attacker.unit_data.attack_range
 
-func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node2D) -> Array[Node2D]:
-	var targets: Array[Node2D] = []
-	var clicked_grid_cell = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
+# OPRAVA: Návratový typ Node2D změněn na Node3D (nebo Array[Unit])
+func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D) -> Array:
+	var targets: Array = []
+	var clicked_grid_cell = get_grid_cell_under_mouse() # OPRAVA: Použití 3D Raycast funkce místo get_global_mouse_position
+	
 	if effect.target_type == CardEffectData.TargetType.ANY_GRID_CELL:
 		var affected_cells = battle_grid_instance.get_cells_for_aoe(clicked_grid_cell, effect.area_of_effect_type, effect.aoe_param_x, effect.aoe_param_y)
 		for cell in affected_cells:
@@ -901,13 +999,15 @@ func _on_energy_changed(new_amount: int):
 	energy_label.text = "Energie: " + str(new_amount)
 
 func _physics_process(_delta):
-	var mouse_pos = get_global_mouse_position()
-	var grid_cell = battle_grid_instance.get_cell_at_world_position(mouse_pos)
+	# Použijeme novou funkci pro Raycast místo 2D mouse position
+	var grid_cell = get_grid_cell_under_mouse() 
 	var unit_under_mouse = battle_grid_instance.get_object_on_cell(grid_cell)
+	
 	if is_instance_valid(unit_under_mouse) and unit_under_mouse.get_unit_data().faction == UnitData.Faction.ENEMY:
 		enemy_info_panel.update_stats(unit_under_mouse)
 	else:
 		enemy_info_panel.hide_panel()
+		
 	if _player_action_state == PlayerActionState.CARD_SELECTED:
 		_update_card_target_preview()
 
@@ -967,6 +1067,7 @@ func set_enemy_intents():
 			_:
 				enemy_unit.hide_intent()
 
+# OPRAVA: Return type je Unit (což je Node3D, takže ok, ale explicitní Unit je lepší)
 func _spawn_unit(unit_data: UnitData, grid_pos: Vector2i) -> Unit:
 	if not unit_data: return null
 	var unit_instance: Unit = UnitScene.instantiate()
@@ -983,16 +1084,21 @@ func _on_card_hover_ended():
 
 func _update_card_target_preview():
 	if not _selected_card_data: return
-	var mouse_grid_pos = battle_grid_instance.get_cell_at_world_position(get_global_mouse_position())
+	
+	# OPRAVA: Použití 3D Raycast funkce místo get_global_mouse_position
+	var mouse_grid_pos = get_grid_cell_under_mouse()
+	
 	if not battle_grid_instance.is_valid_grid_position(mouse_grid_pos):
 		battle_grid_instance.hide_aoe_highlight()
 		return
+		
 	var final_aoe_cells: Array[Vector2i] = []
 	for effect in _selected_card_data.effects:
 		if effect.area_of_effect_type == CardEffectData.AreaOfEffectType.SINGLE_TARGET: continue
 		var potential_cells = battle_grid_instance.get_cells_for_aoe(mouse_grid_pos, effect.area_of_effect_type, effect.aoe_param_x, effect.aoe_param_y)
 		for cell in potential_cells:
 			if battle_grid_instance.is_cell_active(cell): final_aoe_cells.append(cell)
+			
 	battle_grid_instance.show_aoe_highlight(final_aoe_cells)
 
 func _place_terrain_features():
@@ -1012,7 +1118,8 @@ func _place_terrain_features():
 				battle_grid_instance.place_terrain(random_pos, terrain_data)
 				occupied_cells.append(random_pos); placed_count += 1
 
-func _apply_terrain_effect(unit: Node2D, terrain: TerrainData):
+# OPRAVA: Argument unit je Node3D (nebo Unit)
+func _apply_terrain_effect(unit: Node3D, terrain: TerrainData):
 	if not is_instance_valid(unit) or not is_instance_valid(terrain): return
 	match terrain.effect_type:
 		TerrainData.TerrainEffect.APPLY_STATUS_ON_ENTER:
@@ -1027,21 +1134,10 @@ func _generate_grid_from_shape():
 	battle_grid_instance.build_from_shape(selected_shape)
 
 func _setup_camera_boundaries():
-	if not (is_instance_valid(battle_grid_instance) and is_instance_valid(camera_2d)): return
-	var horizontal_padding = 500.0; var top_padding = 300.0; var bottom_padding = 400.0
-	var grid_pixel_width = battle_grid_instance.grid_columns * battle_grid_instance.cell_size.x
-	var grid_pixel_height = battle_grid_instance.grid_rows * battle_grid_instance.cell_size.y
-	camera_2d.limit_left = 0 - horizontal_padding; camera_2d.limit_top = 0 - top_padding
-	camera_2d.limit_right = grid_pixel_width + horizontal_padding
-	camera_2d.limit_bottom = grid_pixel_height + bottom_padding
+	pass # Ve 3D zatím hranice neřešíme
 
-# explicitní zaokrouhlení (doporučeno)
-	camera_2d.limit_left = -int(round(horizontal_padding))
-	camera_2d.limit_top = -int(round(top_padding))
-	camera_2d.limit_right = int(round(grid_pixel_width + horizontal_padding))
-	camera_2d.limit_bottom = int(round(grid_pixel_height + bottom_padding))
-
-func get_player_unit() -> Node2D:
+# OPRAVA: Návratový typ Node3D (nebo Unit)
+func get_player_unit() -> Node3D:
 	return _player_unit_node
 
 func get_enemy_count() -> int:
@@ -1049,3 +1145,29 @@ func get_enemy_count() -> int:
 
 func get_all_enemies() -> Array:
 	return _enemy_units
+
+# NOVÁ FUNKCE PRO 3D RAYCAST (Náhrada za get_global_mouse_position)
+func get_grid_cell_under_mouse() -> Vector2i:
+	var mouse_pos = get_viewport().get_mouse_position()
+	if not camera_3d: return Vector2i(-1, -1)
+	
+	# Vytvoříme rovinu podlahy (Y = 0)
+	var drop_plane = Plane(Vector3.UP, 0)
+	
+	var ray_origin = camera_3d.project_ray_origin(mouse_pos)
+	var ray_normal = camera_3d.project_ray_normal(mouse_pos)
+	
+	var intersection = drop_plane.intersects_ray(ray_origin, ray_normal)
+	
+	if intersection:
+		# Přepočet 3D pozice na indexy mřížky
+		# Předpokládáme, že cell_size_3d je v BattleGrid nastaveno (default 2.0)
+		var cell_size = 2.0 
+		if battle_grid_instance and "cell_size_3d" in battle_grid_instance:
+			cell_size = battle_grid_instance.cell_size_3d
+			
+		var grid_x = round(intersection.x / cell_size)
+		var grid_y = round(intersection.z / cell_size)
+		return Vector2i(grid_x, grid_y)
+	
+	return Vector2i(-1, -1)
