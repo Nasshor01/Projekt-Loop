@@ -188,6 +188,12 @@ func get_turn_order() -> Array[Unit]:
 	"""Vrátí aktuální pořadí tahů (pro UI)"""
 	return _turn_order.duplicate()
 
+func get_initiative_modifier_for_unit(unit: Unit) -> int:
+	"""Vrátí dočasný modifikátor iniciativy pro danou jednotku."""
+	if not is_instance_valid(unit):
+		return 0
+	return _initiative_modifiers.get(unit.get_instance_id(), 0)
+
 func modify_initiative_next_round(unit: Unit, change: int):
 	"""
 	Upraví iniciativu jednotky POUZE pro příští kolo.

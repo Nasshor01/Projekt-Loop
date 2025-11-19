@@ -143,7 +143,7 @@ func get_effective_value() -> int:
 	
 	# NOVÉ: Pokud je percentage_based, počítej z max HP
 	if percentage_based and PlayerData:
-		return (PlayerData.max_hp * base_value) / 100
+		return (PlayerData.max_hp * base_value) / 100.0
 	
 	return base_value
 
@@ -153,7 +153,7 @@ func get_effective_secondary_value() -> int:
 	var base_value = secondary_value * current_stacks
 	
 	if percentage_based and PlayerData:
-		return (PlayerData.max_hp * base_value) / 100
+		return (PlayerData.max_hp * base_value) / 100.0
 	
 	return base_value
 

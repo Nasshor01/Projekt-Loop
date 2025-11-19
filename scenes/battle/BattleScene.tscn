@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://drcylmyjefmn0"]
+[gd_scene load_steps=10 format=3 uid="uid://drcylmyjefmn0"]
 
 [ext_resource type="Script" uid="uid://d3ytuwmimqlg4" path="res://scenes/battle/BattleScene.gd" id="1_vd1me"]
 [ext_resource type="Resource" uid="uid://d118t8olbc47a" path="res://data/encounters/first_battle.tres" id="2_q8wks"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://csfa8idl8266g" path="res://scenes/ui/DeckPileUI.tscn" id="5_nabc4"]
 [ext_resource type="PackedScene" uid="uid://b5ybgxi0pnlk7" path="res://scenes/ui/CardPileViewer.tscn" id="6_q8wks"]
 [ext_resource type="PackedScene" uid="uid://ckvi6eu1vd02a" path="res://scenes/ui/DevConsole.tscn" id="8_5282s"]
+[ext_resource type="PackedScene" uid="uid://d1e2f3g4h5i6j" path="res://scenes/ui/initiative_bar/InitiativeBar.tscn" id="9_abcde"]
 
 [node name="BattleScene" type="Node2D" node_paths=PackedStringArray("camera_2d")]
 script = ExtResource("1_vd1me")
@@ -22,6 +23,12 @@ position = Vector2(576, 324)
 position = Vector2(50, 50)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="InitiativeBar" parent="CanvasLayer" instance=ExtResource("9_abcde")]
+offset_left = -287.0
+offset_top = 79.0
+offset_right = 289.0
+offset_bottom = 139.0
 
 [node name="PlayerHandUI" parent="CanvasLayer" instance=ExtResource("3_rjp4h")]
 offset_left = 188.0

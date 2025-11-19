@@ -1,9 +1,9 @@
-[gd_scene load_steps=5 format=3 uid="uid://igmyfibd5goq"]
+[gd_scene load_steps=6 format=3 uid="uid://igmyfibd5goq"]
 
-[ext_resource type="Script" path="res://scenes/ui/GlobalUI.gd" id="1_f4cv4"]
+[ext_resource type="Script" uid="uid://x2hd3fytxgbm" path="res://scenes/ui/GlobalUI.gd" id="1_f4cv4"]
 [ext_resource type="PackedScene" uid="uid://cu6oy5nwloafr" path="res://scenes/ui/PlayerArtifactsUI.tscn" id="2_z3wfs"]
-[ext_resource type="PackedScene" path="res://scenes/ui/DeckViewer.tscn" id="3_abcde"]
-[ext_resource type="PackedScene" path="res://scenes/ui/PopupMenu.tscn" id="4_ghijk"]
+[ext_resource type="PackedScene" uid="uid://pjdtf3hky6c6" path="res://scenes/ui/DeckViewer.tscn" id="3_abcde"]
+[ext_resource type="PackedScene" uid="uid://b8ybgxi0pnlk8" path="res://scenes/ui/PopupMenu.tscn" id="4_ghijk"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_z18a7"]
 bg_color = Color(0, 0, 0, 0.501961)

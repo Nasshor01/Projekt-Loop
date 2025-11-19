@@ -1,0 +1,17 @@
+[gd_scene load_steps=2 format=3 uid="uid://d1e2f3g4h5i6j"]
+
+[ext_resource type="Script" uid="uid://oos47u21dm33" path="res://scenes/ui/initiative_bar/InitiativeBar.gd" id="1_klmno"]
+
+[node name="InitiativeBar" type="PanelContainer"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_right = 250.0
+offset_bottom = 60.0
+grow_horizontal = 2
+script = ExtResource("1_klmno")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+alignment = 1
