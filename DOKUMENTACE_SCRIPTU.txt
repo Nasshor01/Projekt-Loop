@@ -859,8 +859,9 @@ BerserkerAI.gd
 4.3 MAP (scripts/map/)
 ----------------------
 Map.gd
-- Popis: Správce mapy (viz scenes/map/Map.gd - duplikát?)
+- Popis: Správce mapy (logická/datová vrstva)
 - Třída: Node2D
+- POZNÁMKA: NENÍ duplikát scenes/map/Map.gd - ten je scénový/vizuální
 - Navazuje na: MapData.gd, MapGenerator.gd, MapNode.gd
 
 MapData.gd
@@ -899,8 +900,9 @@ MapGenerator.gd
 - Navazuje na: MapData.gd, MapNodeResource.gd
 
 MapNode.gd
-- Popis: Vizuální uzel na mapě (viz scenes/map/MapNode.gd - duplikát?)
+- Popis: Logický/datový uzel na mapě
 - Třída: Area2D
+- POZNÁMKA: NENÍ duplikát scenes/map/MapNode.gd - ten je vizuální
 - Navazuje na: MapNodeResource.gd
 
 ConnectionLine.gd
@@ -1230,9 +1232,12 @@ EventScene
 2. EventManager.gd - CHYBÍ PUBLIC FUNKCE (již zmíněno výše)
    Mělo by být přidáno pro správnou enkapsulaci.
 
-3. Duplicitní soubory:
-   - Map.gd existuje v scenes/map/ i scripts/map/ (možná duplikát?)
-   - MapNode.gd existuje v scenes/map/ i scripts/map/ (možná duplikát?)
+3. Map.gd a MapNode.gd - NENÍ DUPLIKÁT
+   - scenes/map/Map.gd - scénový skript pro vizuální mapu
+   - scripts/map/Map.gd - datový/logický skript (možná nepoužívaný?)
+   - scenes/map/MapNode.gd - vizuální uzel na mapě
+   - scripts/map/MapNode.gd - datový/logický uzel (možná nepoužívaný?)
+   POZNÁMKA: Zkontrolovat, zda scripts/map/ verze jsou skutečně používány
 
 ================================================================================
 7. SHRNUTÍ
@@ -1270,9 +1275,170 @@ Celkem: ~81 GDScript souborů
 --------------
 1. Opravit chyby uvedené v sekci 6
 2. Zkontrolovat duplicitní soubory (Map.gd, MapNode.gd)
-3. Přidat dokumentaci k custom efektům artefaktů
-4. Zvážit refaktoring některých dlouhých skriptů (BattleScene.gd má 1174 řádků)
-5. Přidat více error handlingu v kritických místech
+3. Zvážit refaktoring některých dlouhých skriptů (BattleScene.gd má 1174 řádků)
+4. Přidat více error handlingu v kritických místech
+
+================================================================================
+8. CUSTOM EFEKTY ARTEFAKTŮ A KARET
+================================================================================
+
+8.1 PŘEHLED SYSTÉMU CUSTOM EFEKTŮ
+---------------------------------
+Custom efekty umožňují implementovat složitější logiku, která přesahuje
+standardní enum-based efekty. Systém je implementován pro artefakty, karty
+používají pouze standardní CardEffectData.EffectType enum.
+
+8.2 CUSTOM EFEKTY ARTEFAKTŮ
+----------------------------
+Custom efekty artefaktů jsou implementovány přes:
+- ArtifactsData.custom_effect_id: String - ID custom efektu
+- ArtifactEffect._apply_custom_effect() - volá ArtifactManager.handle_custom_effect()
+- ArtifactManager.handle_custom_effect() - hlavní logika všech custom efektů
+
+8.2.1 IMPLEMENTOVANÉ CUSTOM EFEKTY ARTEFAKTŮ
+---------------------------------------------
+
+1. "adrenaline_addiction_advanced" / "adrenaline_addiction"
+   Popis: Závislost na Adrenalin kartách - tolerance 2, pak předávkování
+   Trigger: ON_CARD_PLAYED (když se zahraje Adrenalin karta)
+   Mechanika:
+     - První 2 Adrenalin karty: BEZ POSTIHU (tolerance)
+     - 3+ Adrenalin karty: PŘEDÁVKOVÁNÍ
+       * -5 HP
+       * -2 energie
+       * Vulnerable status (2 kola)
+   Context: {"card": CardData}
+   Použití: curse/adrenaline_addiction.tres
+
+2. "block_per_enemy"
+   Popis: Blok podle počtu živých nepřátel
+   Mechanika:
+     - Blok = počet nepřátel × primary_value
+     - Počítá pouze živé nepřátele
+   Použití: Dračí šupina (pokud existuje)
+
+3. "dragon_heart_combo"
+   Popis: Srdce draka - blok podle max HP (limit 2x za souboj)
+   Trigger: ON_BLOCK_GAINED
+   Mechanika:
+     - Blok = 100% aktuálních max HP
+     - Limit: 2 použití za souboj
+     - Resetuje se na začátku každého souboje
+   Meta data: uses_this_combat (int)
+   Použití: legendary/SrdceDraka.tres
+
+4. "cursed_ring_combo"
+   Popis: Prokletý prsten - +max HP jednorázově, -energie každý tah
+   Mechanika:
+     - Při získání: +secondary_value max HP (jednorázově)
+     - Každý tah: -1 energie (aplikováno přes ENERGY_LOSS)
+   Meta data: hp_bonus_applied (bool)
+   Použití: (pokud existuje)
+
+5. "blood_chalice_combo"
+   Popis: Krvavý grál - tradeoff HP za heal
+   Mechanika:
+     - -secondary_value HP (poškození)
+     - +primary_value heal (léčení)
+   Použití: (pokud existuje)
+
+6. "mage_book_limit"
+   Popis: Mágova kniha s limitem karet za tah
+   Trigger: ON_DRAW_CARDS
+   Mechanika:
+     - Dobírá primary_value karet
+     - Limit: secondary_value karet za tah
+     - Sleduje cards_drawn_this_turn v context
+   Context: {"cards_drawn_this_turn": int}
+   Použití: (pokud existuje)
+
+7. "scaling_damage"
+   Popis: Meč nekonečna - +damage za zabitého nepřítele
+   Trigger: ON_ENEMY_DEATH
+   Mechanika:
+     - +primary_value do PlayerData.global_card_damage_bonus
+     - Bonus platí pouze pro aktuální souboj
+   Použití: boss/infinity_sword.tres
+
+8. "extra_turn"
+   Popis: Časový krystal - extra tah
+   Mechanika:
+     - Označí že bude extra tah
+     - Realizace probíhá v BattleScene
+   Použití: legendary/ČasovýKrystal.tres
+
+8.2.2 JAK PŘIDAT NOVÝ CUSTOM EFEKT
+-----------------------------------
+1. V ArtifactsData.tres nastav custom_effect_id na unikátní string ID
+2. V ArtifactManager.handle_custom_effect() přidej nový case:
+   
+   match artifact.custom_effect_id:
+       "novy_efekt_id":
+           # Tvoje logika zde
+           return true
+       _:
+           print("Neznámý custom efekt: %s" % artifact.custom_effect_id)
+           return false
+
+3. Pokud potřebuješ context, ujisti se, že volající předává správné hodnoty
+4. Pokud potřebuješ meta data, použij artifact.set_meta() a artifact.get_meta()
+
+8.2.3 CONTEXT DICTIONARY
+------------------------
+Context je Dictionary předávaný do handle_custom_effect() s informacemi:
+- "card": CardData - zahraná karta (pro ON_CARD_PLAYED)
+- "target": Unit - cílová jednotka
+- "amount": int - množství (damage, heal, atd.)
+- "attacker": Unit - útočník
+- "current_hp": int - aktuální HP hráče
+- "max_hp": int - max HP hráče
+- "current_energy": int - aktuální energie
+- "cards_drawn_this_turn": int - počet karet dobraných tento tah
+- A další podle potřeby...
+
+8.3 CUSTOM EFEKTY KARET
+-----------------------
+Karty NEMAJÍ custom efekty - používají pouze standardní CardEffectData.EffectType enum.
+
+Všechny efekty karet jsou implementovány v BattleScene._apply_single_effect() přes
+match statement na CardEffectData.EffectType.
+
+Pokud potřebuješ složitější logiku pro kartu:
+1. Použij kombinaci více CardEffectData v CardData.effects
+2. Nebo přidej nový EffectType do CardEffectData.EffectType enum
+3. Implementuj logiku v BattleScene._apply_single_effect()
+
+8.4 ROZDÍLY MEZI ARTEFAKTY A KARTAMI
+------------------------------------
+ARTEFAKTY:
+- Mají custom_effect_id pro složité efekty
+- Custom efekty v ArtifactManager.handle_custom_effect()
+- Flexibilnější systém pro komplexní logiku
+
+KARTY:
+- Pouze standardní CardEffectData.EffectType enum
+- Všechny efekty v BattleScene._apply_single_effect()
+- Jednodušší, ale méně flexibilní systém
+
+8.5 PŘÍKLADY POUŽITÍ
+--------------------
+Příklad 1: Adrenalin závislost
+- Artifact: curse/adrenaline_addiction.tres
+- custom_effect_id: "adrenaline_addiction_advanced"
+- Trigger: ON_CARD_PLAYED
+- Když se zahraje Adrenalin karta, zkontroluje počet a aplikuje postih
+
+Příklad 2: Srdce draka
+- Artifact: legendary/SrdceDraka.tres
+- custom_effect_id: "dragon_heart_combo"
+- Trigger: ON_BLOCK_GAINED
+- Při získání bloku dá blok = max HP, max 2x za souboj
+
+Příklad 3: Meč nekonečna
+- Artifact: boss/infinity_sword.tres
+- custom_effect_id: "scaling_damage"
+- Trigger: ON_ENEMY_DEATH
+- Při zabití nepřítele +1 damage bonus pro zbytek souboje
 
 ================================================================================
                     KONEC DOKUMENTACE
