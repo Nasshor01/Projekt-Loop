@@ -1,0 +1,1280 @@
+================================================================================
+                    KOMPLETNÍ DOKUMENTACE VŠECH SKRIPTŮ
+                    PROJEKT: projekt-loop-v2
+                    Datum vytvoření: 2025
+================================================================================
+
+OBSAH:
+1. Přehled struktury projektu
+2. Data skripty (data/)
+3. Scene skripty (scenes/)
+4. Script skripty (scripts/)
+5. Závislosti a propojení mezi skripty
+6. Nalezené chyby
+7. Shrnutí
+
+================================================================================
+1. PŘEHLED STRUKTURY PROJEKTU
+================================================================================
+
+Projekt je roguelike karetní hra postavená v Godot 4. Hlavní složky:
+- data/     - Datové třídy (Resource) pro karty, artefakty, jednotky, atd.
+- scenes/   - Scénové skripty pro UI a herní logiku
+- scripts/  - Pomocné skripty (autoload, AI, map, resources, debug)
+
+================================================================================
+2. DATA SKRIPTY (data/)
+================================================================================
+
+2.1 TERRAIN (data/terrain/)
+---------------------------
+TerrainData.gd
+- Popis: Definuje vlastnosti terénu na bojišti
+- Třída: Resource
+- Klíčové vlastnosti:
+  * terrain_id, terrain_name, description, sprite
+  * is_flat_on_ground (bool) - zda leží na zemi nebo stojí
+  * is_walkable, blocks_line_of_sight, movement_cost
+  * effect_type (enum) - typ efektu terénu
+  * effect_string_value, effect_numeric_value, effect_duration
+- Použití: BattleGrid používá pro umístění terénu na mřížku
+- Navazuje na: BattleGrid.gd, Unit.gd (process_terrain_effects)
+
+2.2 ARTIFACTS (data/artifacts/)
+--------------------------------
+ArtifactsData.gd
+- Popis: Hlavní datová třída pro artefakty
+- Třída: Resource
+- Klíčové vlastnosti:
+  * artifact_name, description, texture, artifact_type (enum)
+  * trigger_type (enum) - kdy se efekt spouští (PASSIVE, START_OF_TURN, atd.)
+  * effect_type (enum) - typ efektu (MODIFY_MAX_HP, GAIN_BLOCK, atd.)
+  * primary_value, secondary_value, percentage_based
+  * uses_per_combat, current_uses - limity použití
+  * is_stackable, max_stacks, current_stacks - stohování
+  * synergy_set_id - pro synergii s jinými artefakty
+  * condition_type, condition_value - podmíněné efekty
+  * custom_effect_id - pro custom efekty
+- Klíčové funkce:
+  * can_trigger() -> bool - zkontroluje, jestli se může aktivovat
+  * use_artifact() - označí jako použitý
+  * reset_for_new_combat() - resetuje pro nový souboj
+  * add_stack() -> bool - přidá stack
+  * get_effective_value() -> int - vrátí efektivní hodnotu s ohledem na stacky
+  * check_condition(context) -> bool - zkontroluje podmínku
+  * get_formatted_description() -> String - popis s aktuálními hodnotami
+  * get_rarity_color() -> Color - barva podle vzácnosti
+- Navazuje na: ArtifactManager.gd, ArtifactEffect.gd, PlayerData.gd
+
+ArtifactEffect.gd
+- Popis: Wrapper třída pro vykonání efektu artefaktu
+- Třída: RefCounted
+- Klíčové funkce:
+  * execute() -> bool - vykoná efekt artefaktu
+  * _apply_effect() -> bool - aplikuje konkrétní efekt podle typu
+  * _apply_custom_effect() -> bool - aplikuje custom efekty
+- Navazuje na: ArtifactsData.gd, ArtifactManager.gd
+
+ArtifactPool.gd
+- Popis: Kontejner pro pole artefaktů
+- Třída: Resource
+- Vlastnosti: artifacts: Array[ArtifactsData]
+- Použití: Pool soubory (.tres) pro různé typy artefaktů
+
+2.3 ENCOUNTERS (data/encounters/)
+----------------------------------
+EncounterData.gd
+- Popis: Definuje souboj s nepřáteli
+- Třída: Resource
+- Vlastnosti:
+  * encounter_type (enum: NORMAL, ELITE, BOSS)
+  * xp_reward (int)
+  * enemies: Array[EncounterEntry]
+- Navazuje na: BattleScene.gd, GameManager.gd
+
+EncounterEntry.gd
+- Popis: Definuje jednu jednotku v souboji a její pozici
+- Třída: Resource
+- Vlastnosti:
+  * unit_data: UnitData
+  * grid_position: Vector2i
+- Navazuje na: EncounterData.gd
+
+2.4 UNITS (data/units/)
+-----------------------
+UnitData.gd
+- Popis: Datová třída pro jednotky (hráč i nepřátelé)
+- Třída: Resource
+- Vlastnosti:
+  * unit_id, unit_name, description
+  * faction (enum: PLAYER, ENEMY, NEUTRAL)
+  * max_health, attack_damage, movement_range, attack_range
+  * initiative (int) - pro tahový systém
+  * sprite_texture: Texture2D
+  * ai_script: Script - skript AI pro nepřátele
+- Navazuje na: Unit.gd, BattleScene.gd, AI skripty
+
+2.5 CARDS (data/cards/)
+-----------------------
+CardData.gd
+- Popis: Hlavní datová třída pro karty
+- Třída: Resource
+- Vlastnosti:
+  * card_id, card_name, card_description
+  * cost (int) - cena zahrání
+  * range_type (enum) - typ dosahu
+  * range_value (int) - hodnota dosahu
+  * tags: Array[CardTag] - tagy karty (ATTACK, SPELL, atd.)
+  * rarity (enum: COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, BASIC)
+  * required_class: ClassData, required_subclass: SubclassData
+  * artwork: Texture2D
+  * effects: Array[CardEffectData] - efekty karty
+  * is_upgraded (bool), upgraded_version: CardData
+- Klíčové funkce:
+  * add_effect(effect: CardEffectData)
+  * has_tag(tag_to_check: CardTag) -> bool
+  * can_be_used_by(player_class, player_subclass) -> bool
+- Navazuje na: CardEffectData.gd, BattleScene.gd, PlayerData.gd
+
+CardEffectData.gd
+- Popis: Definuje jeden efekt karty
+- Třída: Resource
+- Vlastnosti:
+  * effect_type (enum) - typ efektu (DEAL_DAMAGE, GAIN_BLOCK, atd.)
+  * value (int) - číselná hodnota
+  * string_value (String) - textová hodnota
+  * target_type (enum) - cíl efektu (SELF_UNIT, SELECTED_ENEMY_UNIT, atd.)
+  * area_of_effect_type (enum) - typ AoE (SINGLE_TARGET, ROW, COLUMN, atd.)
+  * aoe_param_x, aoe_param_y (int) - parametry AoE
+- Navazuje na: CardData.gd, BattleScene.gd (_apply_single_effect)
+
+CardPool.gd
+- Popis: Kontejner pro pole karet
+- Třída: Resource
+- Vlastnosti: cards: Array[CardData]
+- Použití: Pool soubory pro různé typy karet
+
+StartingDeckPool.gd
+- Popis: Pool pro startovní karty
+- Třída: Resource
+- Vlastnosti:
+  * attack_cards: Array[CardData]
+  * defend_cards: Array[CardData]
+  * utility_cards: Array[CardData]
+- Navazuje na: SubclassData.gd
+
+2.6 CLASSES (data/classes/)
+---------------------------
+ClassData.gd
+- Popis: Definuje hlavní třídu postavy
+- Třída: Resource
+- Vlastnosti:
+  * class_id, display_name, description
+  * base_unit_data: UnitData
+- Navazuje na: SubclassData.gd, PlayerData.gd
+
+SubclassData.gd
+- Popis: Definuje podtřídu postavy
+- Třída: Resource
+- Vlastnosti:
+  * subclass_id, subclass_name, description
+  * parent_class: ClassData
+  * starting_deck: Array[DeckEntry]
+  * specific_unit_data: UnitData
+  * passive_skill_tree: PassiveSkillTreeData
+- Navazuje na: ClassData.gd, PlayerData.gd, PassiveSkillTreeData.gd
+
+2.7 SKILLS (data/skills/)
+-------------------------
+PassiveSkillTreeData.gd
+- Popis: Datová třída pro strom pasivních dovedností
+- Třída: Resource
+- Vlastnosti:
+  * skill_nodes: Array[PassiveSkillNode]
+  * nodes_by_id: Dictionary (runtime cache)
+- Klíčové funkce:
+  * _build_lookup_dictionary() - vytvoří cache uzlů podle ID
+  * get_node_by_id(id) -> PassiveSkillNode
+- Navazuje na: PassiveSkillNode.gd, PassiveSkillTree.gd
+
+PassiveSkillNode.gd
+- Popis: Definuje jeden uzel ve stromu dovedností
+- Třída: Resource
+- Vlastnosti:
+  * id: StringName, skill_name, description
+  * icon: Texture2D, position: Vector2
+  * tier (enum: TIER_1 až TIER_5)
+  * node_type (enum: BASIC, NOTABLE, KEYSTONE, MASTERY, STARTER)
+  * cost (int), connected_nodes: PackedStringArray
+  * prerequisite_nodes: PackedStringArray
+  * effects: Array[PassiveEffectData]
+  * is_starter (bool), max_allocations (int)
+  * branch (String), branch_position (int)
+  * unlock_conditions: Array[String]
+  * is_unlocked (bool) - runtime stav
+  * allocation_count (int) - runtime stav
+- Klíčové funkce:
+  * get_node_size() -> float - velikost podle typu
+  * get_node_color() -> Color - barva podle typu a stavu
+  * get_cost_for_tier() -> int - náklady podle tieru
+  * can_allocate() -> bool - zda lze alokovat
+  * get_formatted_description() -> String
+- Navazuje na: PassiveEffectData.gd, PassiveSkillTreeData.gd
+
+PassiveEffectData.gd
+- Popis: Definuje efekt pasivní dovednosti
+- Třída: Resource
+- Vlastnosti:
+  * effect_type (enum) - typ efektu (ADD_MAX_HP, CRITICAL_CHANCE_BONUS, atd.)
+  * value (int) - hodnota efektu
+  * string_value (String)
+  * secondary_value (int)
+  * conditional (bool), condition_description (String)
+- Klíčové funkce:
+  * get_formatted_description() -> String
+- Navazuje na: PassiveSkillNode.gd, PlayerData.gd (apply_passive_skills)
+
+SkillTreeGenerator.gd
+- Popis: Generátor stromu dovedností pro Paladina
+- Třída: RefCounted
+- Klíčové funkce:
+  * generate_paladin_tree() -> PassiveSkillTreeData - generuje celý strom
+  * create_node(...) -> PassiveSkillNode - vytvoří uzel
+  * add_effect(node, effect_type, value) - přidá efekt k uzlu
+  * setup_connections(nodes) - nastaví propojení mezi uzly
+  * auto_position_nodes(nodes) - automaticky pozicuje uzly
+  * get_branch_x_offset(branch_name) -> float
+  * get_tier_y_offset(tier) -> float
+- Navazuje na: PassiveSkillTreeData.gd, PassiveSkillNode.gd
+
+================================================================================
+3. SCENE SKRIPTY (scenes/)
+================================================================================
+
+3.1 BATTLE (scenes/battle/)
+---------------------------
+BattleScene.gd
+- Popis: Hlavní scéna pro souboje
+- Třída: Node3D
+- Klíčové vlastnosti:
+  * encounter_data: EncounterData
+  * camera_3d: Camera3D
+  * battle_grid_instance: BattleGrid
+  * _player_unit_node: Unit, _enemy_units: Array[Unit]
+  * _current_battle_state (enum: SETUP, AWAITING_PLAYER_SPAWN, PLAYER_TURN, atd.)
+  * _player_action_state (enum: IDLE, CARD_SELECTED, UNIT_SELECTED)
+- Klíčové funkce:
+  * _ready() - inicializace, připojení signálů
+  * _process(delta) - pohyb kamery, raycast pro hover
+  * _unhandled_input(event) - klikání, zoom kamery
+  * start_player_spawn_selection() - výběr spawn pozice
+  * confirm_player_spawn(at_position) - potvrzení spawnu
+  * spawn_player_unit_at(grid_pos) - spawn hráče
+  * spawn_enemy_units() - spawn nepřátel
+  * _on_round_started(round_number) - callback z TurnManager
+  * _on_turn_started(unit) - callback z TurnManager
+  * _start_player_initiative_turn() - zahájí tah hráče
+  * _start_enemy_initiative_turn() - zahájí tah nepřítele
+  * _process_single_enemy_action() - zpracuje akci nepřítele
+  * try_play_card(card, initial_target) - zahrání karty
+  * _apply_single_effect(effect, target) - aplikuje efekt karty
+  * _get_targets_for_effect(effect, initial_target) -> Array
+  * _execute_move(unit, target_cell) - pohyb jednotky
+  * get_grid_cell_under_mouse() -> Vector2i - 3D raycast
+  * set_enemy_intents() - zobrazí záměry nepřátel
+  * _on_unit_died(unit_node) - zpracuje smrt jednotky
+- Signály: připojeno na TurnManager, PlayerData, ArtifactManager
+- Navazuje na: BattleGrid.gd, Unit.gd, TurnManager.gd, PlayerData.gd, ArtifactManager.gd, AI skripty
+
+BattleGrid.gd
+- Popis: Správce mřížky bojiště (3D)
+- Třída: Node3D
+- Klíčové vlastnosti:
+  * cell_size_3d (float) - velikost buňky ve 3D
+  * grid_columns, grid_rows (int)
+  * _active_cells: Dictionary - aktivní buňky
+  * _grid_objects: Dictionary - objekty na mřížce
+  * terrain_layer: Dictionary - terén na buňkách
+  * _movable_cells, _targetable_cells, _aoe_cells, _danger_cells - highlighty
+- Klíčové funkce:
+  * build_from_shape(shape_array) - vytvoří mřížku z tvaru
+  * place_object_on_cell(object, grid_pos, is_moving) -> bool
+  * remove_object_by_instance(object)
+  * get_object_on_cell(grid_pos) -> Node
+  * get_distance(cell_a, cell_b) -> int
+  * is_cell_active(grid_pos) -> bool
+  * show_movable_range(unit) - zobrazí pohyblivé buňky
+  * show_targetable_cells(cells, is_attack) - zobrazí cílitelné buňky
+  * show_aoe_highlight(cells) - zobrazí AoE
+  * show_danger_zone(enemy_units) - zobrazí nebezpečnou zónu
+  * get_cells_for_aoe(origin, aoe_type, param_x, param_y) -> Array
+  * place_terrain(grid_pos, terrain_data)
+  * get_terrain_on_cell(grid_pos) -> TerrainData
+  * get_player_spawn_points(num_columns) -> Array
+  * get_line(from_cell, to_cell) -> Array - Bresenham line
+- Navazuje na: BattleScene.gd, Unit.gd, TerrainData.gd
+
+Unit.gd
+- Popis: Reprezentace jednotky na bojišti (3D)
+- Třída: Node3D
+- Klíčové vlastnosti:
+  * unit_data: UnitData
+  * current_health, current_block, retained_block (int)
+  * grid_position: Vector2i
+  * active_statuses: Dictionary - aktivní statusy
+  * has_used_base_move, extra_moves - pohyb
+  * _has_acted_this_turn - akce
+  * last_attacker: Unit
+  * is_aiming, berserker_frustration, is_permanently_enraged - AI specifické
+- Signály: died(unit_node), unit_selected(unit_node), stats_changed(unit_node)
+- Klíčové funkce:
+  * _ready() - inicializace podle faction
+  * attack(target, damage_multiplier) - útok
+  * take_damage(amount) - přijme poškození
+  * heal(amount) - léčení
+  * add_block(amount) - přidá blok
+  * apply_status(status_id, value, duration) - aplikuje status
+  * process_terrain_effects(terrain_data) - zpracuje terén
+  * reset_for_new_turn() - reset pro nový tah
+  * start_turn() -> int - začátek tahu, vrací extra_draw
+  * end_turn() - konec tahu
+  * can_move() -> bool, use_move_action(), gain_extra_move()
+  * process_turn_start_statuses() -> int - zpracuje statusy na začátku tahu
+  * process_turn_end_statuses() - zpracuje statusy na konci tahu
+  * get_current_movement_range() -> int
+  * show_intent(attack_damage), hide_intent()
+  * _show_floating_text(amount, type) - zobrazí floating text
+- Navazuje na: UnitData.gd, BattleScene.gd, BattleGrid.gd, PlayerData.gd, ArtifactManager.gd
+
+CameraMovement.gd
+- Popis: Ovládání 2D kamery (používá se na mapě)
+- Třída: Camera2D
+- Klíčové funkce:
+  * set_camera_limits(grid_width, grid_height, cell_size)
+  * _unhandled_input(event) - pohyb a zoom myší
+- Navazuje na: Map.gd
+
+3.2 UI (scenes/ui/)
+-------------------
+UnitInfoPanel.gd
+- Popis: Panel s informacemi o jednotce
+- Třída: PanelContainer
+- Klíčové funkce:
+  * update_stats(unit_node) - aktualizuje zobrazení statů
+  * update_from_player_data() - aktualizuje z PlayerData
+  * hide_panel()
+- Navazuje na: BattleScene.gd, Unit.gd, PlayerData.gd
+
+InitiativeBar.gd
+- Popis: Lišta s pořadím tahů podle iniciativy
+- Třída: PanelContainer
+- Klíčové funkce:
+  * update_turn_order(units) - aktualizuje pořadí
+  * set_active_unit(active_unit) - zvýrazní aktivní jednotku
+- Navazuje na: InitiativeIcon.gd, TurnManager.gd
+
+InitiativeIcon.gd
+- Popis: Ikona jednotky v liště iniciativy
+- Třída: PanelContainer
+- Klíčové funkce:
+  * setup(unit_ref, turn_manager) - nastaví data
+  * set_active(is_active) - zvýrazní pokud je na tahu
+- Navazuje na: InitiativeBar.gd, TurnManager.gd
+
+PopupMenu.gd
+- Popis: Popup menu (Esc menu)
+- Třída: ColorRect
+- Signály: back_to_game_pressed, restart_run_pressed, save_run_pressed, atd.
+- Navazuje na: GlobalUI.gd
+
+DeckViewer.gd
+- Popis: Prohlížeč balíčku karet
+- Třída: PanelContainer
+- Klíčové funkce:
+  * show_cards(cards, card_scale) - zobrazí karty individuálně
+  * display_deck(deck) - zobrazí balíček s počítáním
+  * hide_and_clear()
+- Navazuje na: CardUI.gd, GlobalUI.gd
+
+MainMenu.gd
+- Popis: Hlavní menu
+- Třída: Control
+- Navazuje na: GameManager.gd
+
+GlobalUI.gd
+- Popis: Globální UI lišta (HP, zlato, patro, artefakty)
+- Třída: CanvasLayer
+- Klíčové funkce:
+  * _update_all_displays() - aktualizuje všechny zobrazení
+  * _on_player_health_changed(), _on_player_gold_changed(), atd.
+  * _on_deck_button_pressed(), _on_menu_button_pressed()
+- Navazuje na: PlayerData.gd, DeckViewer.gd, PopupMenu.gd, GameManager.gd
+
+EndOfRunScreen.gd
+- Popis: Obrazovka konce běhu
+- Třída: Control
+- Klíčové funkce:
+  * setup(xp_earned, run_was_a_victory) - nastaví výsledek
+- Navazuje na: GameManager.gd
+
+HowToPlay.gd
+- Popis: Návod ke hře
+- Třída: CanvasLayer
+- Navazuje na: GameManager.gd
+
+PassiveSkillTree.gd
+- Popis: Zobrazení stromu pasivních dovedností
+- Třída: Node2D
+- Klíčové funkce:
+  * _refresh_tree() - překreslí strom
+  * _generate_skill_nodes(is_editor_preview) - vytvoří UI uzly
+  * _draw_connections() - nakreslí propojení
+  * _draw_background_lines() - nakreslí pomocné čáry
+  * _can_unlock_node() -> bool - zkontroluje, zda lze odemknout
+  * _on_skill_unlocked() - zpracuje odemknutí
+  * _apply_skill_effects() - aplikuje efekty
+- Navazuje na: PassiveSkillTreeData.gd, PassiveSkillUI.gd, SaveManager.gd
+
+PassiveSkillUI.gd
+- Popis: UI prvek pro jeden skill uzel
+- Třída: Button
+- Signál: skill_selected(skill_data)
+- Klíčové funkce:
+  * display(data, is_unlocked, can_unlock) - zobrazí uzel
+  * _create_simple_tooltip() -> String
+  * _set_unlocked_state(), _set_can_unlock_state(), _set_locked_state()
+  * _draw() - custom kreslení různých tvarů uzlů
+- Navazuje na: PassiveSkillNode.gd, PassiveSkillTree.gd
+
+SkillTreeCamera.gd
+- Popis: Kamera pro skill tree s pan a zoom
+- Třída: Camera2D
+- Navazuje na: PassiveSkillTree.gd
+
+PlayerHandUI.gd
+- Popis: UI pro ruku hráče (vějíř karet)
+- Třída: Control
+- Signály: hand_card_was_clicked, card_hover_started, card_hover_ended, atd.
+- Klíčové funkce:
+  * add_card_animated(card_data, from_pos) - přidá kartu s animací
+  * discard_hand_animated(to_pos) - odhodí karty s animací
+  * clear_hand() - vyčistí ruku
+  * set_selected_card(card_node) - zvýrazní vybranou kartu
+  * _arrange_cards() - uspořádá karty do vějíře
+- Navazuje na: CardUI.gd, BattleScene.gd
+
+FloatingText.gd
+- Popis: Plovoucí text pro poškození/léčení
+- Třída: Label
+- Klíčové funkce:
+  * start(text_to_show, color) - spustí animaci
+- Navazuje na: Unit.gd
+
+GameOver.gd
+- Popis: Obrazovka game over
+- Třída: Control
+- Navazuje na: GameManager.gd
+
+ArtifactIcon.gd
+- Popis: Ikona artefaktu
+- Třída: TextureRect
+- Klíčové funkce:
+  * set_artifact(data) - nastaví artefakt
+- Navazuje na: ArtifactsData.gd, PlayerArtifactsUI.gd
+
+ArtifactChoiceUI.gd
+- Popis: UI pro výběr artefaktu
+- Třída: PanelContainer
+- Signál: artifact_chosen(artifact_data)
+- Klíčové funkce:
+  * display_artifact(data) - zobrazí artefakt
+- Navazuje na: ArtifactsData.gd, TreasureScene.gd, RewardScene.gd
+
+PlayerArtifactsUI.gd
+- Popis: Zobrazení všech artefaktů hráče
+- Třída: HBoxContainer
+- Klíčové funkce:
+  * update_artifacts_display() - aktualizuje zobrazení
+- Navazuje na: PlayerData.gd, ArtifactIcon.gd
+
+DevConsole.gd
+- Popis: Debug konzole pro testování
+- Třída: CanvasLayer
+- Klíčové funkce:
+  * _on_text_submitted(command_text) - zpracuje příkaz
+  * _cmd_add_artifact(), _cmd_remove_artifact(), atd. - debug příkazy
+- Navazuje na: PlayerData.gd, ArtifactManager.gd
+
+3.3 SHOP (scenes/shop/)
+-----------------------
+ShopItemUI.gd
+- Popis: UI prvek pro jeden item v obchodě
+- Třída: PanelContainer
+- Signál: item_purchased(item_data, button_node)
+- Klíčové funkce:
+  * setup_item(item_data, cost, is_on_sale, original_price)
+  * _display_item_content() - zobrazí kartu nebo artefakt
+  * _update_price_display()
+- Navazuje na: ShopScene.gd, CardUI.gd, ArtifactChoiceUI.gd
+
+ShopScene.gd
+- Popis: Scéna obchodu
+- Třída: Node2D
+- Klíčové funkce:
+  * _generate_shop_inventory() - vygeneruje inventář
+  * _on_item_purchased() - zpracuje nákup
+  * get_available_artifacts() -> Array - filtruje dostupné artefakty
+  * _on_remove_card_button_pressed() - otevře card removal
+- Navazuje na: ShopItemUI.gd, PlayerData.gd, GameManager.gd
+
+3.4 REWARDS (scenes/rewards/)
+-----------------------------
+TreasureScene.gd
+- Popis: Scéna pokladnice
+- Třída: CanvasLayer
+- Klíčové funkce:
+  * _generate_artifact_choices() - vygeneruje výběr artefaktů
+  * _get_weighted_random_artifact() - vážený výběr podle rarity
+  * get_available_artifacts() -> Array
+- Navazuje na: ArtifactChoiceUI.gd, PlayerData.gd, GameManager.gd
+
+RewardScene.gd
+- Popis: Scéna odměn po souboji
+- Třída: PanelContainer
+- Klíčové funkce:
+  * setup_ui() - nastaví UI s odměnami
+  * _on_card_selected() - zpracuje výběr karty
+  * _on_artifact_selected() - zpracuje výběr artefaktu
+- Navazuje na: CardUI.gd, ArtifactChoiceUI.gd, PlayerData.gd, GameManager.gd
+
+3.5 EVENTS (scenes/events/)
+---------------------------
+EventScene.gd
+- Popis: Scéna eventu
+- Třída: Node2D
+- Klíčové funkce:
+  * _get_random_event_for_floor(floor) -> EventData
+  * display_event() - zobrazí event
+  * _on_choice_made(choice_index) - zpracuje volbu
+  * _process_choice_new(choice) - aplikuje volbu
+  * show_result(result_lines) - zobrazí výsledek
+  * _open_card_removal_screen(), _open_card_upgrade_screen()
+- Navazuje na: EventData.gd, EventChoiceButton.gd, EventManager.gd, GameManager.gd
+
+EventChoiceButton.gd
+- Popis: Tlačítko pro volbu v eventu
+- Třída: Button
+- Klíčové funkce:
+  * set_choice_data_new(data) - nastaví volbu
+- Navazuje na: EventChoice.gd, EventScene.gd
+
+3.6 MAP (scenes/map/)
+---------------------
+Map.gd
+- Popis: Hlavní scéna mapy
+- Třída: Node2D
+- Klíčové funkce:
+  * initialize_map() - inicializuje mapu
+  * _render_map_visuals() - vykreslí uzly
+  * _on_map_node_clicked() - zpracuje kliknutí na uzel
+  * _trigger_node_action() - spustí akci uzlu
+  * _update_highlighting() - aktualizuje zvýraznění
+  * _setup_camera() - nastaví kameru
+- Navazuje na: MapData.gd, MapNode.gd, MapGenerator.gd, GameManager.gd
+
+MapNode.gd
+- Popis: Vizuální uzel na mapě
+- Třída: Area2D
+- Signály: node_clicked, node_hovered, node_exited
+- Klíčové funkce:
+  * set_data(data) - nastaví data uzlu
+- Navazuje na: MapNodeResource.gd, Map.gd
+
+3.7 CHARSELECT (scenes/CharSelect/)
+-----------------------------------
+CharacterSelectScreen.gd
+- Popis: Výběr postavy
+- Třída: Control
+- Klíčové funkce:
+  * _on_continue_pressed() - přejde na run prep
+- Navazuje na: GameManager.gd
+
+RunPrepScreen.gd
+- Popis: Příprava běhu (skill tree, staty)
+- Třída: Control
+- Klíčové funkce:
+  * update_display() - aktualizuje zobrazení
+- Navazuje na: GameManager.gd, SaveManager.gd, PassiveSkillTree.gd
+
+3.8 CAMP (scenes/camp/)
+-----------------------
+RestScene.gd
+- Popis: Scéna odpočinku
+- Třída: PanelContainer
+- Klíčové funkce:
+  * _on_heal_pressed() - léčení
+  * _on_upgrade_pressed() - vylepšení karty
+  * _on_card_selected_for_upgrade() - zpracuje výběr karty
+- Navazuje na: PlayerData.gd, CardPileViewer.gd, GameManager.gd
+
+================================================================================
+4. SCRIPT SKRIPTY (scripts/)
+================================================================================
+
+4.1 AUTOLOAD (scripts/autoload/)
+---------------------------------
+GameManager.gd
+- Popis: Hlavní správce hry, řídí přechody mezi scénami
+- Třída: Node (autoload)
+- Klíčové vlastnosti:
+  * current_scene, current_seed, current_encounter, current_map_data
+  * global_ui_instance, scene_container
+  * selected_class_data, selected_subclass_data
+- Klíčové funkce:
+  * start_new_run(seed) - začne nový běh
+  * start_new_game_plus(seed) - začne NG+ běh
+  * start_battle(encounter) - spustí souboj
+  * battle_finished(player_won, final_hp, final_shield) - konec souboje
+  * go_to_main_menu(), go_to_character_select(), go_to_how_to_play()
+  * go_to_run_prep_screen(class, subclass)
+  * reward_chosen() - odměna vybrána
+  * show_treasure_node(), treasure_collected()
+  * go_to_shop(), leave_shop()
+  * go_to_rest_scene()
+  * go_to_event_scene(), event_completed()
+  * _change_scene(scene_path) - přechod mezi scénami
+  * _prepare_battle_rewards() - připraví odměny
+  * _get_random_elite_artifact() -> ArtifactsData
+  * load_and_start_saved_run() - načte uložený běh
+- Navazuje na: Všechny scény, PlayerData.gd, SaveManager.gd
+
+PlayerData.gd
+- Popis: Globální data hráče
+- Třída: Node (autoload)
+- Signály: energy_changed, artifacts_changed, gold_changed, health_changed, atd.
+- Klíčové vlastnosti:
+  * selected_class, selected_subclass
+  * master_deck, current_hand, discard_pile, draw_pile, exhaust_pile
+  * current_energy, max_energy
+  * max_hp, current_hp
+  * artifacts: Array[ArtifactsData]
+  * gold, floors_cleared, current_run_xp
+  * path_taken: Array[MapNodeResource]
+  * active_skill_tree: PassiveSkillTreeData
+  * has_revive, global_card_damage_bonus, starting_retained_block
+  * critical_chance, heal_end_of_turn, aura_enhancement, atd. - pasivní efekty
+  * adrenaline_cards_this_turn, has_adrenaline_addiction - adrenalin systém
+  * ng_plus_level
+- Klíčové funkce:
+  * start_new_run_state() - reset pro nový běh
+  * start_ng_plus_state() - reset pro NG+
+  * initialize_player(class, subclass) - inicializace hráče
+  * apply_passive_skills() - aplikuje pasivní dovednosti
+  * reset_battle_stats() - reset pro souboj
+  * reset_energy() - reset energie
+  * spend_energy(amount) -> bool, gain_energy(amount)
+  * draw_cards(amount) -> int - dobírání karet
+  * discard_hand() - odhodí ruku
+  * reshuffle_discard_into_draw_pile() - zamíchá odhazovací balíček
+  * add_artifact(new_artifact) -> bool - přidá artefakt
+  * find_artifact_by_name(name) -> ArtifactsData
+  * can_gain_artifact(artifact) -> bool
+  * get_artifact_stack_info(name) -> String
+  * remove_artifact(artifact_data)
+  * add_gold(amount), spend_gold(amount) -> bool
+  * take_damage(amount), heal(amount)
+  * change_max_hp(amount)
+  * add_curse(curse_type), remove_all_curses(), get_curse_count() -> int
+  * track_adrenaline_card_played() - sledování adrenalinu
+  * reset_adrenaline_tracking()
+  * _trigger_adrenaline_addiction() - aktivuje závislost
+- Navazuje na: Všechny scény, ArtifactManager.gd, SaveManager.gd
+
+ArtifactManager.gd
+- Popis: Správce artefaktů a jejich efektů
+- Třída: Node (autoload)
+- Signály: artifact_triggered, artifact_gained, artifact_lost, overdose_warning_triggered
+- Klíčové vlastnosti:
+  * _passive_artifacts: Array - pasivní artefakty
+  * _triggered_artifacts: Dictionary - artefakty podle triggeru
+- Klíčové funkce:
+  * _refresh_artifact_cache() - obnoví cache artefaktů
+  * trigger_artifacts(trigger_type, context) -> Array - spustí artefakty
+  * get_passive_bonus(effect_type) -> int - pasivní bonus
+  * get_conditional_bonus(effect_type, context) -> int - podmíněný bonus
+  * on_combat_start() -> Array - spustí START_OF_COMBAT artefakty
+  * on_turn_start() -> Array - spustí START_OF_TURN artefakty
+  * on_turn_end() -> Array - spustí END_OF_TURN artefakty
+  * on_card_played(card_data) -> Array
+  * on_damage_taken(amount, attacker) -> Array
+  * on_damage_dealt(amount, target, was_critical) -> Array
+  * on_enemy_death(enemy) -> Array
+  * on_heal(amount) -> Array
+  * on_block_gained(amount) -> Array
+  * get_max_hp_bonus() -> int
+  * get_max_energy_bonus() -> int
+  * get_card_damage_bonus(context) -> int
+  * get_block_bonus() -> int
+  * get_heal_bonus() -> int
+  * get_critical_chance() -> int
+  * get_thorns_damage() -> int
+  * handle_custom_effect(artifact, context) -> bool - custom efekty
+  * check_conditional_artifacts() -> Array
+- Navazuje na: PlayerData.gd, ArtifactsData.gd, ArtifactEffect.gd, BattleScene.gd
+
+TurnManager.gd
+- Popis: Správce tahového systému založeného na iniciativě
+- Třída: Node (autoload)
+- Signály: round_started(round_number), turn_started(unit), combat_ended(player_won)
+- Klíčové vlastnosti:
+  * _combatants: Array[Unit] - všechny jednotky
+  * _turn_order: Array[Unit] - pořadí tahů
+  * _current_turn_index: int
+  * _round_number: int
+  * _is_combat_active: bool
+  * _initiative_modifiers: Dictionary - dočasné modifikátory iniciativy
+- Klíčové funkce:
+  * start_combat(all_units) - zahájí souboj
+  * _calculate_turn_order() - vypočítá pořadí podle iniciativy
+  * _start_new_round() - zahájí nové kolo
+  * _start_next_unit_turn() - zahájí tah další jednotky
+  * next_turn() - přejde na další tah
+  * register_unit(unit) - přidá jednotku
+  * unregister_unit(unit) - odebere jednotku
+  * _check_combat_end() -> bool
+  * _end_combat(player_won)
+  * get_current_round() -> int
+  * get_current_unit() -> Unit
+  * get_turn_order() -> Array[Unit]
+  * get_initiative_modifier_for_unit(unit) -> int
+  * modify_initiative_next_round(unit, change) - upraví iniciativu pro příští kolo
+  * reset() - reset pro nový souboj
+- Navazuje na: BattleScene.gd, Unit.gd
+
+EventManager.gd
+- Popis: Správce eventů
+- Třída: Node (autoload)
+- Klíčové vlastnosti:
+  * event_history: Array[String] - historie použitých eventů
+  * combat_buffs: Array[String] - buffy pro souboj
+- Klíčové funkce:
+  * _filter_events_for_floor(events, floor) -> Array - filtruje eventy
+  * mark_event_as_used(event) - označí jako použitý
+  * add_combat_buff(buff_id) - přidá buff
+  * get_and_clear_combat_buffs() -> Array[String]
+  * start_new_run() - reset pro nový běh
+  * _debug_available_events(events, floor) - debug info
+- CHYBA: Funkce _filter_events_for_floor a _debug_available_events jsou private,
+  ale EventScene.gd je volá jako public. Chybí public wrapper funkce!
+- Navazuje na: EventData.gd, EventScene.gd
+
+SaveManager.gd
+- Popis: Správce ukládání a načítání
+- Třída: Node (autoload)
+- Signál: meta_progress_changed
+- Klíčové vlastnosti:
+  * meta_progress: MetaProgress
+- Klíčové funkce:
+  * get_xp_for_next_level() -> int
+  * _check_for_level_up() - zkontroluje level up
+  * save_meta_progress() - uloží meta progress
+  * load_meta_progress() - načte meta progress
+  * add_xp(amount) - přidá XP
+  * save_run(player_data) - uloží běh
+  * load_run() -> Dictionary - načte běh
+  * has_saved_run() -> bool
+  * delete_saved_run() - smaže uložený běh
+- CHYBA: V save_run() používá player_data.health a player_data.max_health,
+  ale PlayerData používá current_hp a max_hp!
+- Navazuje na: MetaProgress.gd, PlayerData.gd, GameManager.gd
+
+DebugLogger.gd
+- Popis: Rozšířený logger pro debugging
+- Třída: Node (autoload)
+- Klíčové funkce:
+  * log_debug(), log_info(), log_warning(), log_error(), log_critical()
+  * log_battle_event(), log_player_action(), log_card_played()
+  * log_player_stats(), log_deck_state(), log_artifacts()
+  * log_skill_tree_state(), log_meta_progress()
+  * log_full_game_state() - kompletní dump stavu
+  * start_performance_timer(), end_performance_timer()
+  * log_performance_summary()
+- Navazuje na: Všechny skripty (používá se všude)
+
+4.2 AI (scripts/ai/)
+--------------------
+EnemyAIBase.gd
+- Popis: Základní třída pro všechny enemy AI
+- Třída: RefCounted
+- Vnitřní třída: AIAction (enum ActionType: ATTACK, MOVE, SPECIAL, PASS, RUSH)
+- Klíčové funkce:
+  * get_next_action(enemy_unit, all_player_units, battle_grid) -> AIAction
+  * find_closest_player() -> Unit
+  * get_valid_players() -> Array[Unit]
+  * can_attack_target() -> bool
+  * get_reachable_cells() -> Array[Vector2i]
+  * create_pass_action(), create_attack_action(), create_move_action()
+  * create_rush_action() - vytvoří RUSH akci
+- Navazuje na: Unit.gd, BattleGrid.gd, všechny AI implementace
+
+EnemyAIController.gd
+- Popis: Starý AI controller (možná nepoužívaný?)
+- Třída: Object
+- Používá AStar2D pro pathfinding
+- Navazuje na: BattleGrid.gd
+
+FighterAI.gd
+- Popis: Jednoduchá melee AI - jdi a zaútoč
+- Třída: extends EnemyAIBase
+- Klíčové funkce:
+  * get_next_action() -> AIAction
+  * find_path_to_adjacent() -> Array[Vector2i]
+  * find_path() -> Array[Vector2i]
+  * update_astar_grid() - aktualizuje A* grid
+- Navazuje na: EnemyAIBase.gd, BattleGrid.gd
+
+ArcherAI.gd
+- Popis: Pokročilý taktický Archer s vylepšeným AI
+- Třída: extends EnemyAIBase
+- Klíčové funkce:
+  * get_next_action() -> AIAction
+  * find_best_tactical_move() -> Dictionary - najde nejlepší pozici
+  * evaluate_position_score() -> float - ohodnotí pozici
+  * find_escape_move() -> Dictionary - únik z melee zóny
+  * is_cell_behind_cover() -> bool - zkontroluje krytí
+  * find_path() -> Array[Vector2i]
+- Navazuje na: EnemyAIBase.gd, BattleGrid.gd, Unit.gd (is_aiming)
+
+BerserkerAI.gd
+- Popis: Berserker - malý pohyb, silný dmg, rush mechanika
+- Třída: extends EnemyAIBase
+- Klíčové funkce:
+  * get_next_action() -> AIAction
+  * find_limited_path_to_player() -> Array[Vector2i]
+  * find_rush_path_to_player() -> Array[Vector2i] - rush path
+  * find_path_with_movement_limit() -> Array[Vector2i]
+  * get_adjacent_walkable_cells() -> Array[Vector2i]
+- Navazuje na: EnemyAIBase.gd, BattleGrid.gd, Unit.gd (berserker_frustration)
+
+4.3 MAP (scripts/map/)
+----------------------
+Map.gd
+- Popis: Správce mapy (viz scenes/map/Map.gd - duplikát?)
+- Třída: Node2D
+- Navazuje na: MapData.gd, MapGenerator.gd, MapNode.gd
+
+MapData.gd
+- Popis: Datová třída pro mapu
+- Třída: Resource
+- Vlastnosti:
+  * all_nodes: Array
+  * starting_nodes: Array
+  * boss_node: MapNodeResource
+- Navazuje na: MapNodeResource.gd, MapGenerator.gd
+
+MapNodeResource.gd
+- Popis: Datová třída pro uzel na mapě
+- Třída: Resource
+- Vlastnosti:
+  * type (enum: UNASSIGNED, MONSTER, ELITE, EVENT, REST, SHOP, TREASURE, BOSS)
+  * position: Vector2
+  * row, column: int
+  * connections: Array - uzly v dalším patře
+  * incoming_connections: Array - uzly v předchozím patře
+- Navazuje na: MapData.gd, MapGenerator.gd
+
+MapGenerator.gd
+- Popis: Generátor procedurální mapy
+- Třída: Node
+- Klíčové funkce:
+  * generate_map(seed_value) -> MapData
+  * _generate_initial_grid() -> Array[Array]
+  * _generate_paths(grid) - generuje cesty
+  * _fix_dead_ends(grid) - opraví slepé uličky
+  * _prune_unconnected_nodes(grid) -> Array
+  * _assign_room_types(map_data) - přiřadí typy místností
+  * _is_placement_valid(node, type) -> bool
+  * _get_weighted_random_type(weights) -> NodeType
+  * _ensure_unique_destinations(nodes, weights) - zajistí unikátní typy
+- Navazuje na: MapData.gd, MapNodeResource.gd
+
+MapNode.gd
+- Popis: Vizuální uzel na mapě (viz scenes/map/MapNode.gd - duplikát?)
+- Třída: Area2D
+- Navazuje na: MapNodeResource.gd
+
+ConnectionLine.gd
+- Popis: Čára spojující uzly na mapě
+- Třída: Line2D
+- Klíčové funkce:
+  * setup(from, to) - nastaví počátek a konec
+  * _process(delta) - aktualizuje pozici
+- Navazuje na: Map.gd
+
+4.4 RESOURCES (scripts/resources/)
+-----------------------------------
+EventData.gd
+- Popis: Datová třída pro event
+- Třída: Resource
+- Vlastnosti:
+  * event_id, event_name, description
+  * event_type (enum), rarity (enum)
+  * artwork: Texture2D
+  * min_floor, max_floor, once_per_run
+  * required_gold, required_artifact, required_class, required_flag
+  * choices: Array[EventChoice]
+- Navazuje na: EventChoice.gd, EventScene.gd
+
+EventChoice.gd
+- Popis: Volba v eventu
+- Třída: Resource
+- Vlastnosti:
+  * choice_text, choice_tooltip
+  * cost: EventCost, reward: EventReward
+  * success_chance (float), show_success_chance (bool)
+  * failure_cost: EventCost, failure_reward: EventReward
+  * triggers_combat, combat_encounter, opens_shop, atd.
+- Klíčové funkce:
+  * can_afford() -> bool
+  * get_full_text() -> String
+  * get_tooltip() -> String
+- Navazuje na: EventCost.gd, EventReward.gd, EventScene.gd
+
+EventCost.gd
+- Popis: Cena volby v eventu
+- Třída: Resource
+- Vlastnosti:
+  * gold, hp, max_hp (int)
+  * remove_random_card, remove_specific_card, add_curse
+  * remove_artifact
+- Klíčové funkce:
+  * can_afford() -> bool
+  * apply_cost() - aplikuje cenu
+  * get_cost_description() -> String
+- Navazuje na: EventChoice.gd, PlayerData.gd
+
+EventReward.gd
+- Popis: Odměna z eventu
+- Třída: Resource
+- Vlastnosti:
+  * gold, heal, max_hp
+  * add_card, add_random_card, card_rarity
+  * remove_card, remove_specific_card
+  * upgrade_random_card, upgrade_specific_card, upgrade_all_cards
+  * transform_card
+  * add_artifact, add_random_basic_artifact, add_random_event_artifact
+  * buff_next_combat, unlock_character, atd.
+  * pending_card_removal, pending_card_upgrade
+- Klíčové funkce:
+  * apply_reward(results_log) - aplikuje odměnu
+  * _upgrade_random_card(), _upgrade_specific_card(), _upgrade_all_cards()
+  * _transform_random_card()
+  * _get_random_card_by_rarity() -> CardData
+  * _get_random_basic_artifact() -> ArtifactsData
+  * get_reward_description() -> String
+- Navazuje na: EventChoice.gd, PlayerData.gd, CardData.gd, ArtifactsData.gd
+
+EventPoolData.gd
+- Popis: Pool eventů
+- Třída: Resource
+- Vlastnosti: events: Array[EventData]
+- Navazuje na: EventData.gd, EventScene.gd
+
+4.5 DATA (scripts/data/)
+-------------------------
+MetaProgress.gd
+- Popis: Meta progress (XP, level, skill points)
+- Třída: Resource
+- Vlastnosti:
+  * total_xp: int
+  * player_level: int
+  * skill_points: int
+  * unlocked_skill_ids: PackedStringArray
+- Navazuje na: SaveManager.gd, PlayerData.gd
+
+4.6 DEBUG (scripts/debug/)
+---------------------------
+CrashReporter.gd
+- Popis: Generátor crash reportů
+- Třída: Node
+- Klíčové funkce:
+  * generate_crash_report(error_msg) -> String
+- Navazuje na: DebugLogger.gd
+
+DataValidator.gd
+- Popis: Validátor dat
+- Třída: RefCounted
+- Klíčové funkce:
+  * validate_player_data() -> bool
+  * validate_battle_state(battle_scene) -> bool
+- Navazuje na: PlayerData.gd, DebugLogger.gd
+
+PerformanceMonitor.gd
+- Popis: Monitor výkonu
+- Třída: Node
+- Klíčové funkce:
+  * _check_performance() - kontroluje FPS
+- Navazuje na: DebugLogger.gd
+
+SystemDebug.gd
+- Popis: Debug systém s checkpointy
+- Třída: Node
+- Klíčové funkce:
+  * _on_checkpoint_timer() - pravidelné checkpointy
+  * _on_energy_changed(), _on_health_changed(), atd. - logování změn
+  * log_error_with_context() - rozšířené logování
+- Navazuje na: DebugLogger.gd, PlayerData.gd
+
+4.7 OSTATNÍ (scripts/)
+-----------------------
+CardUI.gd
+- Popis: UI prvek pro kartu
+- Třída: Control
+- Klíčové funkce:
+  * update_display() - aktualizuje zobrazení
+  * load_card(new_card_data) - načte kartu
+- Navazuje na: CardData.gd, PlayerHandUI.gd, DeckViewer.gd
+
+CardPileViewer.gd
+- Popis: Prohlížeč balíčku karet
+- Třída: PanelContainer
+- Klíčové funkce:
+  * show_cards(cards) - zobrazí karty
+- Navazuje na: CardUI.gd, BattleScene.gd, ShopScene.gd
+
+DeckPileUI.gd
+- Popis: Klikatelná ikona balíčku
+- Třída: TextureButton
+- Signál: pile_clicked
+- Klíčové funkce:
+  * update_count(count) - aktualizuje počet
+- Navazuje na: BattleScene.gd
+
+DeckEntry.gd
+- Popis: Záznam karty v startovním balíčku
+- Třída: Resource
+- Vlastnosti:
+  * card: CardData
+  * count: int
+- Navazuje na: SubclassData.gd
+
+================================================================================
+5. ZÁVISLOSTI A PROPOJENÍ MEZI SKRIPTY
+================================================================================
+
+5.1 HLAVNÍ AUTOLOAD SKRIPTY
+----------------------------
+GameManager
+  └─> Řídí všechny scény (Map, Battle, Shop, Event, atd.)
+  └─> Používá: PlayerData, SaveManager, DebugLogger
+
+PlayerData
+  └─> Centrální úložiště dat hráče
+  └─> Používá: ArtifactManager (pro artefakty)
+  └─> Používá: SaveManager (pro ukládání)
+  └─> Používá: PassiveSkillTreeData (pro skill tree)
+  └─> Používá: CardData, ArtifactsData, UnitData
+
+ArtifactManager
+  └─> Spravuje artefakty a jejich efekty
+  └─> Používá: PlayerData, ArtifactsData, ArtifactEffect
+  └─> Voláno z: BattleScene, Unit, PlayerData
+
+TurnManager
+  └─> Správce tahového systému
+  └─> Používá: Unit
+  └─> Voláno z: BattleScene
+
+EventManager
+  └─> Správce eventů
+  └─> Používá: EventData
+  └─> Voláno z: EventScene
+
+SaveManager
+  └─> Ukládání a načítání
+  └─> Používá: MetaProgress, PlayerData
+  └─> Voláno z: GameManager
+
+5.2 BATTLE SYSTÉM
+-----------------
+BattleScene
+  ├─> BattleGrid (mřížka)
+  ├─> Unit (jednotky)
+  ├─> TurnManager (tahový systém)
+  ├─> PlayerData (data hráče)
+  ├─> ArtifactManager (artefakty)
+  ├─> AI skripty (EnemyAIBase a potomci)
+  └─> CardData, CardEffectData (karty)
+
+BattleGrid
+  ├─> TerrainData (terén)
+  └─> Unit (jednotky na mřížce)
+
+Unit
+  ├─> UnitData (data jednotky)
+  ├─> PlayerData (pro hráče)
+  ├─> ArtifactManager (pro efekty)
+  └─> TerrainData (pro terén)
+
+5.3 CARD SYSTÉM
+---------------
+CardData
+  └─> CardEffectData (efekty karet)
+
+BattleScene
+  └─> Zpracovává efekty karet přes _apply_single_effect()
+
+PlayerData
+  └─> Spravuje balíčky (master_deck, current_hand, atd.)
+
+5.4 ARTIFACT SYSTÉM
+-------------------
+ArtifactsData
+  └─> ArtifactEffect (vykonání efektu)
+
+ArtifactManager
+  ├─> Spravuje všechny artefakty
+  ├─> Triggeruje efekty podle trigger_type
+  └─> Používá: ArtifactEffect pro vykonání
+
+PlayerData
+  └─> Ukládá artefakty v artifacts: Array[ArtifactsData]
+
+5.5 SKILL TREE SYSTÉM
+---------------------
+PassiveSkillTreeData
+  └─> PassiveSkillNode (uzly)
+
+PassiveSkillNode
+  └─> PassiveEffectData (efekty)
+
+PlayerData
+  └─> apply_passive_skills() aplikuje efekty z odemčených skillů
+
+SaveManager
+  └─> Ukládá odemčené skill IDs v MetaProgress
+
+5.6 MAP SYSTÉM
+--------------
+MapGenerator
+  └─> Generuje MapData
+
+MapData
+  └─> Obsahuje Array[MapNodeResource]
+
+MapNodeResource
+  └─> Definuje uzly a jejich propojení
+
+Map (scéna)
+  ├─> MapData
+  ├─> MapGenerator
+  └─> MapNode (vizuální uzly)
+
+5.7 EVENT SYSTÉM
+----------------
+EventData
+  └─> EventChoice (volby)
+
+EventChoice
+  ├─> EventCost (cena)
+  └─> EventReward (odměna)
+
+EventScene
+  ├─> EventData
+  ├─> EventManager (filtrování)
+  └─> EventChoiceButton (UI)
+
+================================================================================
+6. NALEZENÉ CHYBY
+================================================================================
+
+6.1 KRITICKÉ CHYBY
+------------------
+1. EventManager.gd - CHYBÍ PUBLIC FUNKCE
+   Soubor: scripts/autoload/EventManager.gd
+   Problém: Funkce _filter_events_for_floor() a _debug_available_events() jsou
+            private (začínají _), ale EventScene.gd je volá jako public.
+   Řešení: Přidat public wrapper funkce:
+           func filter_events_for_floor(events: Array, floor: int) -> Array:
+               return _filter_events_for_floor(events, floor)
+           
+           func debug_available_events(events: Array, floor: int):
+               _debug_available_events(events, floor)
+
+2. SaveManager.gd - ŠPATNÉ NÁZVY PROMĚNNÝCH
+   Soubor: scripts/autoload/SaveManager.gd, řádky 64-65
+   Problém: Používá player_data.health a player_data.max_health, ale PlayerData
+            používá current_hp a max_hp.
+   Řešení: Změnit na:
+           "health": player_data.current_hp,
+           "max_health": player_data.max_hp
+
+3. GameManager.gd - ŠPATNÉ NÁZVY PROMĚNNÝCH
+   Soubor: scripts/autoload/GameManager.gd, řádky 400-401
+   Problém: V load_and_start_saved_run() používá loaded_data.get("health") a
+            loaded_data.get("max_health"), ale SaveManager ukládá jako "health"
+            a "max_health" místo "current_hp" a "max_hp".
+   POZNÁMKA: Toto je konzistentní s SaveManager, ale mělo by se změnit na
+            current_hp a max_hp pro konzistenci s PlayerData.
+   Řešení: Změnit v SaveManager.gd i GameManager.gd na current_hp a max_hp
+
+6.2 VAROVÁNÍ
+------------
+1. BattleScene.gd - NEDEFINOVANÁ PROMĚNNÁ
+   Soubor: scenes/battle/BattleScene.gd, řádek 114
+   Problém: Používá _cam_target_rot_x, ale není deklarována na začátku třídy
+            (na rozdíl od _cam_target_rot_y, _cam_target_pos, _cam_target_zoom).
+   Řešení: Přidat deklaraci na řádek 17:
+           var _cam_target_rot_x: float
+
+2. EventManager.gd - CHYBÍ PUBLIC FUNKCE (již zmíněno výše)
+   Mělo by být přidáno pro správnou enkapsulaci.
+
+3. Duplicitní soubory:
+   - Map.gd existuje v scenes/map/ i scripts/map/ (možná duplikát?)
+   - MapNode.gd existuje v scenes/map/ i scripts/map/ (možná duplikát?)
+
+================================================================================
+7. SHRNUTÍ
+================================================================================
+
+7.1 STRUKTURA PROJEKTU
+----------------------
+Projekt obsahuje:
+- 17 data skriptů (Resource třídy)
+- 32 scene skriptů (UI a herní logika)
+- 32 script skriptů (autoload, AI, map, resources, debug)
+
+Celkem: ~81 GDScript souborů
+
+7.2 HLAVNÍ SYSTÉMY
+------------------
+1. Battle System - tahový systém s iniciativou, 3D mřížka, AI
+2. Card System - karetní systém s efekty
+3. Artifact System - artefakty s různými triggery
+4. Skill Tree System - pasivní dovednosti
+5. Map System - procedurální generování mapy
+6. Event System - náhodné události
+7. Save System - ukládání a načítání
+
+7.3 KLÍČOVÉ ZÁVISLOSTI
+---------------------
+- Všechny scény závisí na GameManager
+- Všechny skripty používají PlayerData pro data hráče
+- Battle systém závisí na TurnManager
+- Artefakty spravuje ArtifactManager
+- Ukládání spravuje SaveManager
+- Debugging přes DebugLogger
+
+7.4 DOPORUČENÍ
+--------------
+1. Opravit chyby uvedené v sekci 6
+2. Zkontrolovat duplicitní soubory (Map.gd, MapNode.gd)
+3. Přidat dokumentaci k custom efektům artefaktů
+4. Zvážit refaktoring některých dlouhých skriptů (BattleScene.gd má 1174 řádků)
+5. Přidat více error handlingu v kritických místech
+
+================================================================================
+                    KONEC DOKUMENTACE
+================================================================================
+
