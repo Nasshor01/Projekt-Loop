@@ -38,4 +38,11 @@ tags = Array[int]([7])
 rarity = 1
 effects = Array[ExtResource("1_7wdfw")]([SubResource("Resource_mvbm2"), SubResource("Resource_67ins")])
 is_upgraded = true
+max_uses_per_turn = 2
+debuff_on_overuse = {
+"damage": 5,
+"energy_loss": 2,
+"status": "vulnerable",
+"status_duration": 2
+}
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

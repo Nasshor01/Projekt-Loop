@@ -28,4 +28,6 @@ rarity = 1
 effects = Array[ExtResource("1_03w7k")]([SubResource("Resource_gxwom")])
 is_upgraded = false
 upgraded_version = ExtResource("3_hif7o")
+max_uses_per_turn = -1
+debuff_on_overuse = {}
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

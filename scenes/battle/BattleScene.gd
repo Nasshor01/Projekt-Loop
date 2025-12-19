@@ -14,6 +14,7 @@ extends Node3D
 # Cílové hodnoty pro plynulý pohyb
 var _cam_target_pos: Vector3
 var _cam_target_rot_y: float
+var _cam_target_rot_x: float
 var _cam_target_zoom: float
 # ---------------------------------------------
 
@@ -70,6 +71,7 @@ var _is_drawing_cards: bool = false
 var _is_first_turn: bool = true
 var _current_turn_number: int = 0
 var _is_extra_turn: bool = false
+var _cards_played_this_turn: Dictionary = {}  # Tracking karet za tah pro limit použití
 
 func _ready():
 	DebugLogger.log_info("Battle scene loaded", "BATTLE")
@@ -99,8 +101,6 @@ func _ready():
 	
 	player_hand_ui_instance.card_draw_animation_finished.connect(_on_card_draw_animation_finished)
 	player_hand_ui_instance.hand_discard_animation_finished.connect(_on_hand_discard_animation_finished)
-	
-	ArtifactManager.overdose_warning_triggered.connect(_on_overdose_warning)
 	
 	_setup_camera_boundaries()
 	battle_grid_instance.set_camera(camera_3d)
@@ -198,7 +198,7 @@ func _unhandled_input(event: InputEvent):
 	# KLIKÁNÍ NA MŘÍŽKU (RAYCAST)
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		var clicked_grid_cell = get_grid_cell_under_mouse()
-		print("🖱️ KLIK! Grid coords: ", clicked_grid_cell)
+		DebugLogger.log_debug("KLIK! Grid coords: %s" % str(clicked_grid_cell))
 		
 		# Logika SPAWN
 		if _current_battle_state == BattleState.AWAITING_PLAYER_SPAWN:
@@ -249,7 +249,7 @@ func _on_round_started(round_number: int):
 	"""Volá se na začátku každého kola"""
 	_current_turn_number = round_number
 	_update_turn_display()
-	print("=== KOLO %d ===" % round_number)
+	DebugLogger.log_info("=== KOLO %d ===" % round_number)
 
 	if is_instance_valid(initiative_bar) and has_node("/root/TurnManager"):
 		initiative_bar.update_turn_order(TurnManager.get_turn_order())
@@ -277,11 +277,8 @@ func _start_player_initiative_turn(_player_unit: Unit, extra_draw: int = 0):
 	_current_battle_state = BattleState.PROCESSING
 	end_turn_button.disabled = true
 	
-	# Reset adrenaline tracking
-	PlayerData.reset_adrenaline_tracking()
-	
-	if PlayerData.has_adrenaline_addiction:
-		_show_floating_notification("💉 Závislost aktivní (limit: 2 Adrenaliny)", Color.PURPLE)
+	# Reset tracking karet za tah
+	_cards_played_this_turn.clear()
 	
 	# Reset energie
 	PlayerData.reset_energy()
@@ -396,14 +393,14 @@ func _process_single_enemy_action(enemy_unit: Unit):
 		# Pokud akce byla útok NEBO rush, resetuj frustraci
 		if action.type == EnemyAIBase.AIAction.ActionType.ATTACK or action.type == EnemyAIBase.AIAction.ActionType.RUSH:
 			enemy_unit.berserker_frustration = 0
-			print("✅ [BattleScene] Frustrace resetována (útok proveden).")
+			DebugLogger.log_debug("[BattleScene] Frustrace resetována (útok proveden).")
 		
 		# Pokud to byl pohyb nebo pass (a AI ještě není v rage), zvyšíme frustraci
 		# POZNÁMKA: Pokud chcete, aby se frustrace zvyšovala i v RAGE módu (pokud se netrefí),
 		# odstraňte podmínku 'and not enemy_unit.is_permanently_enraged'
 		elif (action.type == EnemyAIBase.AIAction.ActionType.MOVE or action.type == EnemyAIBase.AIAction.ActionType.PASS):
 			enemy_unit.berserker_frustration += 1
-			print("⬆️ [BattleScene] Frustrace zvýšena na: %d (bez útoku)." % enemy_unit.berserker_frustration)
+			DebugLogger.log_debug("[BattleScene] Frustrace zvýšena na: %d (bez útoku)." % enemy_unit.berserker_frustration)
 
 func _on_combat_ended(player_won: bool):
 	"""Volá se když TurnManager ukončí souboj"""
@@ -473,7 +470,7 @@ func _update_turn_display():
 
 func start_extra_turn():
 	"""Spustí PLNOHODNOTNÝ extra tah hráče"""
-	print("⚡ SPOUŠTÍM EXTRA TAH!")
+	DebugLogger.log_info("SPOUŠTÍM EXTRA TAH!")
 	_is_extra_turn = false # Reset flag
 	
 	# 1. ODHOĎ SOUČASNÉ KARTY (jako konec normálního tahu)
@@ -529,7 +526,7 @@ func _on_card_draw_animation_finished():
 	_draw_next_card_in_queue()
 
 func _reshuffle_and_continue_drawing():
-	print("Míchám odhazovací balíček...")
+	DebugLogger.log_debug("Míchám odhazovací balíček...")
 	var tween = create_tween()
 	tween.tween_property(discard_pile_button, "modulate", Color.YELLOW, 0.2)
 	tween.tween_property(discard_pile_button, "modulate", Color.WHITE, 0.2)
@@ -549,7 +546,7 @@ func _reshuffle_and_continue_drawing():
 	)
 
 func _finish_drawing_hand():
-	print("Dobírání dokončeno.")
+	DebugLogger.log_debug("Dobírání dokončeno.")
 	_is_drawing_cards = false
 	player_hand_ui_instance._request_arrange()
 	_current_battle_state = BattleState.PLAYER_TURN
@@ -581,12 +578,12 @@ func end_battle_as_victory():
 # OPRAVA: Změna z Node2D na Unit (nebo Node3D)
 func _on_unit_died(unit_node: Unit):
 	"""Zpracuje smrt jednotky"""
-	print("=== Jednotka zemřela: %s ===" % unit_node.unit_data.unit_name)
+	DebugLogger.log_info("=== Jednotka zemřela: %s ===" % unit_node.unit_data.unit_name)
 	
 	# Zpracuj oživení hráče
 	if unit_node == _player_unit_node:
 		if PlayerData.has_revive:
-			print("!!! BOŽSKÁ OCHRANA AKTIVOVÁNA !!!")
+			DebugLogger.log_info("!!! BOŽSKÁ OCHRANA AKTIVOVÁNA !!!")
 			PlayerData.has_revive = false
 			var heal_amount = PlayerData.max_hp / 2.0
 			if unit_node.has_method("heal"):
@@ -621,14 +618,14 @@ func _on_unit_died(unit_node: Unit):
 
 
 func spawn_enemy_units():
-	print("=== DEBUG: SPAWNING ENEMIES ===")
+	DebugLogger.log_debug("=== DEBUG: SPAWNING ENEMIES ===")
 	
 	if not encounter_data:
 		printerr("BattleScene: Chybí EncounterData!")
 		return
 
-	print("Encounter data: %s" % encounter_data.resource_path)
-	print("Počet nepřátel: %d" % encounter_data.enemies.size())
+	DebugLogger.log_debug("Encounter data: %s" % encounter_data.resource_path)
+	DebugLogger.log_debug("Počet nepřátel: %d" % encounter_data.enemies.size())
 
 	var all_active_cells = battle_grid_instance._active_cells.keys()
 	var player_cell = Vector2i.ZERO
@@ -648,20 +645,20 @@ func spawn_enemy_units():
 		if is_walkable and not is_occupied:
 			available_spawn_cells.append(cell)
 
-	print("Dostupných spawn pozic: %d" % available_spawn_cells.size())
+	DebugLogger.log_debug("Dostupných spawn pozic: %d" % available_spawn_cells.size())
 
 	for i in range(encounter_data.enemies.size()):
 		var enemy_entry = encounter_data.enemies[i]
-		print("=== SPAWNING ENEMY %d ===" % (i + 1))
+		DebugLogger.log_debug("=== SPAWNING ENEMY %d ===" % (i + 1))
 		
 		if not enemy_entry or not enemy_entry.unit_data:
-			print("CHYBA: Nevalidní enemy entry!")
+			DebugLogger.log_error("CHYBA: Nevalidní enemy entry!")
 			continue
 			
-		print("Enemy data:")
-		print("  - unit_name: %s" % enemy_entry.unit_data.unit_name)
-		print("  - max_health: %d" % enemy_entry.unit_data.max_health)
-		print("  - ai_script: %s" % str(enemy_entry.unit_data.ai_script))
+		DebugLogger.log_debug("Enemy data:")
+		DebugLogger.log_debug("  - unit_name: %s" % enemy_entry.unit_data.unit_name)
+		DebugLogger.log_debug("  - max_health: %d" % enemy_entry.unit_data.max_health)
+		DebugLogger.log_debug("  - ai_script: %s" % str(enemy_entry.unit_data.ai_script))
 		
 		if available_spawn_cells.is_empty():
 			printerr("Nedostatek spawn pozic!")
@@ -669,19 +666,19 @@ func spawn_enemy_units():
 			
 		var random_pos = available_spawn_cells.pick_random()
 		available_spawn_cells.erase(random_pos)
-		print("  - spawn pozice: %s" % str(random_pos))
+		DebugLogger.log_debug("  - spawn pozice: %s" % str(random_pos))
 
 		var enemy_node = _spawn_unit(enemy_entry.unit_data, random_pos)
 		if is_instance_valid(enemy_node):
-			print("  ✅ Enemy spawnován!")
+			DebugLogger.log_debug("  ✅ Enemy spawnován!")
 			_enemy_units.append(enemy_node)
 			enemy_node.died.connect(_on_unit_died)
 			enemy_node.stats_changed.connect(_on_unit_stats_changed)
 		else:
-			print("  ❌ Spawn selhal!")
+			DebugLogger.log_error("  ❌ Spawn selhal!")
 	
-	print("=== SPAWN DOKONČEN ===")
-	print("Celkem nepřátel: %d" % _enemy_units.size())
+	DebugLogger.log_debug("=== SPAWN DOKONČEN ===")
+	DebugLogger.log_debug("Celkem nepřátel: %d" % _enemy_units.size())
 
 func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: CardData):
 	if _current_battle_state != BattleState.PLAYER_TURN: return
@@ -689,7 +686,7 @@ func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: Car
 		_reset_player_selection()
 		return
 	if PlayerData.current_energy < card_data_resource.cost:
-		print("Nedostatek energie!")
+		DebugLogger.log_warning("Nedostatek energie!")
 		return
 
 	_reset_player_selection()
@@ -705,8 +702,24 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 	if _is_action_processing: return
 	if not card: return
 	if not PlayerData.spend_energy(card.cost):
-		print("Nedostatek energie!")
+		DebugLogger.log_warning("Nedostatek energie pro kartu: %s" % card.card_name)
 		return
+
+	# Kontrola limitu použití karty za tah
+	if card.max_uses_per_turn > 0:
+		var current_count = _cards_played_this_turn.get(card.card_id, 0)
+		if current_count >= card.max_uses_per_turn:
+			# Překročen limit - aplikuj debuff
+			_apply_overuse_debuff(card)
+			PlayerData.gain_energy(card.cost)  # Vrať energii
+			return
+		
+		# Zvýš počítadlo
+		_cards_played_this_turn[card.card_id] = current_count + 1
+		
+		# Vizuální feedback pro limit
+		if current_count + 1 == card.max_uses_per_turn:
+			_show_floating_notification("⚠️ Limit: %d/%d" % [current_count + 1, card.max_uses_per_turn], Color.ORANGE)
 
 	_is_action_processing = true
 	var card_played_successfully = true
@@ -716,19 +729,6 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 			_player_unit_node.use_action()
 	
 	var card_ui_to_remove = _selected_card_ui
-	
-	# SLEDOVÁNÍ ADRENALIN KARET
-	if card.card_id == "adrenaline" or card.card_id == "adrenaline+":
-		PlayerData.track_adrenaline_card_played()
-		
-		# Vizuální feedback podle stavu
-		if PlayerData.has_adrenaline_addiction:
-			# Má závislost - ukáž kolikátý adrenalin
-			_show_adrenaline_counter(PlayerData.adrenaline_cards_this_turn)
-		else:
-			# Nemá závislost - varuj před získáním
-			if PlayerData.adrenaline_cards_this_turn == 3:
-				_show_addiction_warning()
 	
 	for effect_data in card.effects:
 		var targets = _get_targets_for_effect(effect_data, initial_target)
@@ -743,7 +743,7 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 		if has_node("/root/ArtifactManager"):
 			var artifact_results = ArtifactManager.on_card_played(card)
 			for result in artifact_results:
-				print("Card play artefakt aktivován: %s" % result.description)
+				DebugLogger.log_debug("Card play artefakt aktivován: %s" % result.description)
 		
 		var has_exhaust_effect = card.effects.any(func(e): return e.effect_type == CardEffectData.EffectType.EXHAUST)
 		if has_exhaust_effect:
@@ -757,32 +757,48 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 		player_hand_ui_instance._request_arrange()
 		_update_pile_counts()
 	else:
-		print("Karta '%s' nenašla žádný platný cíl." % card.card_name)
+		DebugLogger.log_warning("Karta '%s' nenašla žádný platný cíl." % card.card_name)
 		PlayerData.gain_energy(card.cost)
 
 	_is_action_processing = false
 	_reset_player_selection()
 
-# NOVÁ FUNKCE - zobrazení počítadla adrenalinů
-func _show_adrenaline_counter(count: int):
-	"""Zobrazí počítadlo adrenalinů při závislosti"""
-	var color = Color.YELLOW
-	var text = "Adrenalin %d/2" % count
+func _apply_overuse_debuff(card: CardData):
+	"""Aplikuje debuff při překročení limitu použití karty"""
+	if not card.debuff_on_overuse or card.debuff_on_overuse.is_empty():
+		return
 	
-	if count > 2:
-		color = Color.RED
-		text = "💀 PŘEDÁVKOVÁNÍ! (%d)" % count
-	elif count == 2:
-		color = Color.ORANGE
-		text = "⚠️ Adrenalin %d/2 - LIMIT!" % count
+	if not is_instance_valid(_player_unit_node):
+		return
 	
-	_show_floating_notification(text, color)
-
-# NOVÁ FUNKCE - varování před závislostí
-func _show_addiction_warning():
-	"""Varování před získáním závislosti"""
-	var text = "⚠️ VAROVÁNÍ: Další Adrenalin = ZÁVISLOST!"
-	_show_floating_notification(text, Color.ORANGE)
+	var debuff = card.debuff_on_overuse
+	var messages: Array[String] = []
+	
+	# Poškození
+	if debuff.has("damage") and debuff.damage > 0:
+		_player_unit_node.take_damage(debuff.damage)
+		messages.append("-%d HP" % debuff.damage)
+	
+	# Ztráta energie
+	if debuff.has("energy_loss") and debuff.energy_loss > 0:
+		var energy_to_lose = min(debuff.energy_loss, PlayerData.current_energy)
+		if energy_to_lose > 0:
+			PlayerData.current_energy -= energy_to_lose
+			PlayerData.emit_signal("energy_changed", PlayerData.current_energy)
+			messages.append("-%d EN" % energy_to_lose)
+	
+	# Status efekt
+	if debuff.has("status") and not debuff.status.is_empty():
+		var duration = debuff.get("status_duration", 1)
+		if _player_unit_node.has_method("apply_status"):
+			_player_unit_node.apply_status(debuff.status, duration)
+			messages.append(debuff.status.capitalize())
+	
+	# Vizuální feedback
+	if not messages.is_empty():
+		var text = "💀 PŘEKROČEN LIMIT! " + ", ".join(messages)
+		_show_floating_notification(text, Color.RED)
+		DebugLogger.log_warning("Karta %s překročila limit použití, aplikován debuff" % card.card_name)
 
 # NOVÁ FUNKCE - pomocná pro notifikace
 func _show_floating_notification(text: String, color: Color):
@@ -816,10 +832,6 @@ func _show_floating_notification(text: String, color: Color):
 		tween.tween_property(label, "modulate:a", 0.0, 0.5)
 		tween.tween_callback(label.queue_free)
 
-func _on_overdose_warning():
-	"""Tato funkce se spustí, když ArtifactManager vyšle signál."""
-	var text = "⚠️ VAROVÁNÍ: Další Adrenalin způsobí PŘEDÁVKOVÁNÍ!"
-	_show_floating_notification(text, Color.ORANGE)
 
 func _on_unit_selected_on_grid(unit_node: Unit):
 	if _current_battle_state != BattleState.PLAYER_TURN: return
@@ -875,7 +887,7 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 					if crit_roll <= total_crit_chance:
 						damage_to_deal *= 2
 						is_critical = true
-						print("💥 KRITICKÝ ZÁSAH! Poškození: %d" % damage_to_deal)
+						DebugLogger.log_info("💥 KRITICKÝ ZÁSAH! Poškození: %d" % damage_to_deal)
 						if is_instance_valid(_player_unit_node):
 							_player_unit_node._show_floating_text(damage_to_deal, "critical")
 				

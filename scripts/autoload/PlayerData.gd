@@ -52,9 +52,6 @@ var energy_on_kill: int = 0
 var block_on_card_play: int = 0
 var global_shield: int = 0
 
-var adrenaline_cards_this_turn: int = 0
-var has_adrenaline_addiction: bool = false
-var adrenaline_overdose_this_turn: bool = false #na překročení limitu
 var ng_plus_level: int = 0:
 	set(value):
 		if ng_plus_level != value:
@@ -605,62 +602,6 @@ func change_max_hp(amount: int):
 	
 	# KLÍČOVÝ KROK: Oznámíme všem (včetně GlobalUI), že se zdraví změnilo
 	emit_signal("health_changed", current_hp, max_hp)
-
-func track_adrenaline_card_played():
-	"""Volá se při zahrání Adrenalin karty"""
-	adrenaline_cards_this_turn += 1
-	print("🏃 Adrenalin karta zahrána, celkem tento tah: %d" % adrenaline_cards_this_turn)
-	
-	#pokud má závislost: kontrola limitu
-	if has_adrenaline_addiction:
-		if adrenaline_cards_this_turn > 2:
-			adrenaline_overdose_this_turn = true
-			print("předávkování! překročen limit 2 adrenalinů za tah")
-	
-	#pokud nemá závislost: kontrola zda muže získat
-	elif adrenaline_cards_this_turn >=4:
-		_trigger_adrenaline_addiction()
-	
-
-func reset_adrenaline_tracking():
-	"""Volá se na začátku nového tahu"""
-	adrenaline_cards_this_turn = 0
-	adrenaline_overdose_this_turn = false
-
-func _trigger_adrenaline_addiction():
-	"""Přidá secret punishment artefakt"""
-	print("💉 AKTIVACE: Příliš mnoho adrenalinu! Získáváš závislost...")
-	
-	var addiction_artifact = load("res://data/artifacts/curse/adrenaline_addiction.tres")
-	
-	if not addiction_artifact:
-		print("artefakt nenalezen, vytváří se záložní")
-		addiction_artifact = _create_adrenaline_addiction_artifact()
-	else:
-		addiction_artifact = addiction_artifact.duplicate()
-	
-	# Přidej artefakt
-	add_artifact(addiction_artifact)
-	has_adrenaline_addiction = true
-	
-	print("⚠️ Získal jsi SECRET ARTEFAKT: Závislost na adrenalinu!")
-
-func _create_adrenaline_addiction_artifact() -> ArtifactsData:
-	"""Vytvoří secret punishment artefakt"""
-	var artifact = ArtifactsData.new()
-	
-	artifact.artifact_name = "Závislost na adrenalinu"
-	artifact.description = "Na začátku každého tahu ztratíš 1 energii a utrpíš 1 poškození. (SECRET)"
-	artifact.artifact_type = ArtifactsData.ArtifactType.CURSED
-	artifact.trigger_type = ArtifactsData.TriggerType.START_OF_TURN
-	artifact.effect_type = ArtifactsData.EffectType.ENERGY_LOSS
-	artifact.primary_value = 1  # Ztráta energie
-	artifact.secondary_value = 1  # Poškození
-	artifact.max_stacks = 1
-	artifact.custom_effect_id = "adrenaline_addiction"
-	
-	
-	return artifact
 
 func emit_deck_changed():
 	deck_changed.emit()

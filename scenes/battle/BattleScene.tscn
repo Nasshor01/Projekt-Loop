@@ -18,17 +18,8 @@ albedo_color = Color(0.230315, 0.230315, 0.230315, 1)
 
 [node name="BattleScene" type="Node3D" node_paths=PackedStringArray("camera_3d")]
 script = ExtResource("1_vd1me")
-camera_move_speed = null
-camera_rotation_speed = null
-camera_zoom_speed = null
-camera_min_zoom = null
-camera_max_zoom = null
-camera_smoothness = null
-camera_min_pitch = null
-camera_max_pitch = null
 encounter_data = ExtResource("2_q8wks")
 camera_3d = NodePath("Camera3D")
-starting_hand_size = null
 
 [node name="Camera3D" type="Camera3D" parent="."]
 unique_name_in_owner = true

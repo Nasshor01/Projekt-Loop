@@ -49,6 +49,10 @@ enum CardRarity {
 @export var is_upgraded: bool = false
 @export var upgraded_version: CardData = null
 
+# Limit použití karty za tah (pro secret debuffy)
+@export var max_uses_per_turn: int = -1  # -1 = neomezeně
+@export var debuff_on_overuse: Dictionary = {}  # {"damage": 5, "energy_loss": 2, "status": "vulnerable", "status_duration": 2}
+
 
 # Enum pro typy dosahu - PŘESUNUTO SEM z CardEffectData, protože dosah je spíše vlastnost karty jako celku
 # než jednotlivého efektu (i když i to by šlo modelovat). Pro zjednodušení zatím takto.
