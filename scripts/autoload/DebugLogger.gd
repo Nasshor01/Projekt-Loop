@@ -196,7 +196,7 @@ func log_skill_tree_state():
 		return
 
 	var tree = PlayerData.active_skill_tree
-	var unlocked_ids = SaveManager.meta_progress.unlocked_skill_ids if SaveManager else []
+	var unlocked_ids: PackedStringArray = SaveManager.meta_progress.unlocked_skill_ids if SaveManager else PackedStringArray()
 
 	log_info("Skill tree nodes: %d" % tree.skill_nodes.size(), "SKILLS")
 	log_info("Unlocked skills: %d" % unlocked_ids.size(), "SKILLS")
@@ -389,7 +389,7 @@ func log_run_summary():
 	
 	# Loguj aktivní skilly
 	log_info("Active skills:", "RUN_SUMMARY")
-	var unlocked_ids = SaveManager.meta_progress.unlocked_skill_ids if SaveManager else []
+	var unlocked_ids: PackedStringArray = SaveManager.meta_progress.unlocked_skill_ids if SaveManager else PackedStringArray()
 	for skill_id in unlocked_ids:
 		log_info("  - %s" % skill_id, "RUN_SUMMARY")
 	

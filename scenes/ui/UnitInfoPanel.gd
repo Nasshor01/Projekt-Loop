@@ -7,7 +7,7 @@ extends PanelContainer
 @onready var attack_label: Label = %AttackLabel
 @onready var status_effects_list: VBoxContainer = %StatusEffectsList
 
-func update_stats(unit_node: Node2D):
+func update_stats(unit_node: Node):
 	if not name_label or not hp_label or not block_label or not attack_label or not status_effects_list:
 		printerr("UnitInfoPanel: Některé z Label/Kontejner uzlů nebyly nalezeny!")
 		visible = false
@@ -57,7 +57,7 @@ func update_stats(unit_node: Node2D):
 		
 	_update_status_display(unit_node)
 
-func _update_status_display(unit_node: Node2D):
+func _update_status_display(unit_node: Node):
 	# Vymaž staré statusy
 	for child in status_effects_list.get_children():
 		child.queue_free()

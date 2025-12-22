@@ -26,4 +26,6 @@ tags = Array[int]([0])
 rarity = 1
 effects = Array[ExtResource("1_jjv5j")]([SubResource("Resource_k6dw4")])
 is_upgraded = true
+max_uses_per_turn = -1
+debuff_on_overuse = {}
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

@@ -40,4 +40,11 @@ rarity = 1
 effects = Array[ExtResource("1_bhmln")]([SubResource("Resource_mvbm2"), SubResource("Resource_67ins")])
 is_upgraded = false
 upgraded_version = ExtResource("3_b3hor")
+max_uses_per_turn = 2
+debuff_on_overuse = {
+"damage": 5,
+"energy_loss": 2,
+"status": "vulnerable",
+"status_duration": 2
+}
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

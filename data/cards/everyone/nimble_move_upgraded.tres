@@ -38,4 +38,6 @@ tags = Array[int]([7, 5])
 rarity = 0
 effects = Array[ExtResource("1_smsti")]([SubResource("Resource_8fnk2"), SubResource("Resource_3uoxi")])
 is_upgraded = true
+max_uses_per_turn = -1
+debuff_on_overuse = {}
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

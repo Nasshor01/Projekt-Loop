@@ -7,7 +7,7 @@ var combat_buffs: Array[String] = []
 func _ready():
 	print("EventManager: Inicializace...")
 
-func _filter_events_for_floor(events: Array, floor: int) -> Array:
+func _filter_events_for_floor(events: Array, floor_num: int) -> Array:
 	"""Vyfiltruje eventy vhodné pro dané patro"""
 	var available_events: Array = []
 	
@@ -16,7 +16,7 @@ func _filter_events_for_floor(events: Array, floor: int) -> Array:
 			continue
 			
 		# Filtruj podle patra
-		if floor < event.min_floor or floor > event.max_floor:
+		if floor_num < event.min_floor or floor_num > event.max_floor:
 			continue
 		
 		# Filtruj podle historie (once_per_run)
@@ -26,6 +26,11 @@ func _filter_events_for_floor(events: Array, floor: int) -> Array:
 		available_events.append(event)
 	
 	return available_events
+
+# Public wrapper pro externí volání
+func filter_events_for_floor(events: Array, floor_num: int) -> Array:
+	"""Public wrapper pro _filter_events_for_floor"""
+	return _filter_events_for_floor(events, floor_num)
 
 func mark_event_as_used(event: EventData):
 	"""Označí event jako použitý (pro once_per_run)"""
@@ -50,9 +55,9 @@ func start_new_run():
 	combat_buffs.clear()
 	print("EventManager: Reset pro nový run")
 
-func _debug_available_events(events: Array, floor: int):
+func _debug_available_events(events: Array, floor_num: int):
 	"""Debug informace o dostupných eventech"""
-	print("EventManager: DEBUG - Celkem eventů: %d pro patro %d" % [events.size(), floor])
+	print("EventManager: DEBUG - Celkem eventů: %d pro patro %d" % [events.size(), floor_num])
 	for event in events:
 		if event:
 			print("  Event: %s, patro: %d-%d, použit: %s" % [
@@ -63,3 +68,8 @@ func _debug_available_events(events: Array, floor: int):
 			])
 		else:
 			print("  Event: NULL!")
+
+# Public wrapper pro externí volání
+func debug_available_events(events: Array, floor_num: int):
+	"""Public wrapper pro _debug_available_events"""
+	_debug_available_events(events, floor_num)

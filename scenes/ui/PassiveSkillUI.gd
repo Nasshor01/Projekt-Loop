@@ -58,12 +58,15 @@ func display(data: PassiveSkillNode, is_unlocked: bool, can_unlock: bool):
 		icon_rect.texture = data.icon
 		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		
 		# Přidáme margin pro větší uzly
 		var margin = max(0, (node_size - 32) / 4)
+		var icon_size = node_size - 2*margin
+		
+		# Nastavíme anchors na TOP_LEFT, abychom mohli volně nastavit position a size
+		icon_rect.set_anchors_preset(Control.PRESET_TOP_LEFT)
 		icon_rect.position = Vector2(margin, margin)
-		icon_rect.size = Vector2(node_size - 2*margin, node_size - 2*margin)
+		icon_rect.size = Vector2(icon_size, icon_size)
 	
 	# Nastavíme tier label
 	if tier_label:
@@ -169,16 +172,16 @@ func _set_unlocked_state(data: PassiveSkillNode):
 	modulate = color
 	_add_visual_effects(data)
 
-func _set_can_unlock_state(data: PassiveSkillNode):
+func _set_can_unlock_state(_data: PassiveSkillNode):
 	disabled = false
 	modulate = Color("ffd700")  # Zlatá pro dostupné
 	_add_glow_effect()
 
-func _set_locked_state(data: PassiveSkillNode):
+func _set_locked_state(_data: PassiveSkillNode):
 	modulate = Color(0.3, 0.3, 0.3)
 	_remove_visual_effects()
 
-func _set_starter_state(data: PassiveSkillNode):
+func _set_starter_state(_data: PassiveSkillNode):
 	disabled = false
 	modulate = Color("aaddff")  # Světle modrá pro starter
 	_add_pulse_effect()

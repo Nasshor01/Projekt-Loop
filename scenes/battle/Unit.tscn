@@ -3,12 +3,16 @@
 [ext_resource type="Script" uid="uid://c2ntxvqmfackd" path="res://scenes/battle/Unit.gd" id="1_38ld8"]
 [ext_resource type="Resource" uid="uid://big4b3x4pngq" path="res://data/units/paladin_unit.tres" id="2_xhfnc"]
 
-[node name="Unit" type="Node2D"]
+[node name="Unit" type="Node3D"]
 script = ExtResource("1_38ld8")
 unit_data = ExtResource("2_xhfnc")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.5, 0.5)
+[node name="Sprite3D" type="Sprite3D" parent="."]
+offset = Vector2(0, 80)
+pixel_size = 0.02
+billboard = 2
+alpha_cut = 1
+texture_filter = 0
 
 [node name="IntentUI" type="Control" parent="."]
 layout_mode = 3
