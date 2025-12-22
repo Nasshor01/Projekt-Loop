@@ -20,7 +20,6 @@ var _ui_nodes_ready = false
 @onready var cost_label: Label = $CostLabel
 @onready var description_label: Label = $DescriptionLabel
 
-var _selection_tween: Tween
 var original_scale: Vector2 = Vector2(0.8, 0.8)
 
 func _ready():

@@ -328,7 +328,7 @@ func get_thorns_damage() -> int:
 func should_heal_enhanced(amount: int) -> int:
 	"""Vrátí vylepšené léčení, pokud je aktivní bonus"""
 	if double_healing_bonus > 0:
-		return amount * (100 + double_healing_bonus) / 100
+		return int(float(amount) * (100.0 + float(double_healing_bonus)) / 100.0)
 	return amount
 
 # Zbytek funkcí zůstává stejný...

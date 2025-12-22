@@ -172,16 +172,16 @@ func _set_unlocked_state(data: PassiveSkillNode):
 	modulate = color
 	_add_visual_effects(data)
 
-func _set_can_unlock_state(data: PassiveSkillNode):
+func _set_can_unlock_state(_data: PassiveSkillNode):
 	disabled = false
 	modulate = Color("ffd700")  # Zlatá pro dostupné
 	_add_glow_effect()
 
-func _set_locked_state(data: PassiveSkillNode):
+func _set_locked_state(_data: PassiveSkillNode):
 	modulate = Color(0.3, 0.3, 0.3)
 	_remove_visual_effects()
 
-func _set_starter_state(data: PassiveSkillNode):
+func _set_starter_state(_data: PassiveSkillNode):
 	disabled = false
 	modulate = Color("aaddff")  # Světle modrá pro starter
 	_add_pulse_effect()

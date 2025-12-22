@@ -91,7 +91,7 @@ func _generate_skill_nodes(is_editor_preview: bool):
 	var tree_data = preview_tree_data if is_editor_preview else active_skill_tree
 	if not is_instance_valid(tree_data): return
 	
-	var unlocked_ids = [] if is_editor_preview else SaveManager.meta_progress.unlocked_skill_ids
+	var unlocked_ids: PackedStringArray = PackedStringArray() if is_editor_preview else SaveManager.meta_progress.unlocked_skill_ids
 
 	for skill_node in tree_data.skill_nodes:
 		if not is_instance_valid(skill_node): continue
@@ -172,7 +172,7 @@ func _draw_connections(is_editor_preview: bool):
 	var tree_data = preview_tree_data if is_editor_preview else active_skill_tree
 	if not is_instance_valid(tree_data): return
 
-	var unlocked_ids = [] if is_editor_preview else SaveManager.meta_progress.unlocked_skill_ids
+	var unlocked_ids: PackedStringArray = PackedStringArray() if is_editor_preview else SaveManager.meta_progress.unlocked_skill_ids
 
 	for skill_node in tree_data.skill_nodes:
 		if not is_instance_valid(skill_node) or not skill_ui_map.has(skill_node.id):
@@ -235,6 +235,7 @@ func _save_positions_to_resources():
 			ResourceSaver.save(skill_data)
 			saved_count += 1
 	
+	print("Uloženo %d pozic skill uzlů do .tres souborů" % saved_count)
 	_draw_editor_preview()
 
 # --- LOGIKA ODEMYKÁNÍ ---

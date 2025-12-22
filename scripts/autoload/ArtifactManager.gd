@@ -2,8 +2,6 @@
 extends Node
 
 signal artifact_triggered(artifact_name: String, effect_description: String)
-signal artifact_gained(artifact: ArtifactsData)
-signal artifact_lost(artifact: ArtifactsData)
 
 var _passive_artifacts: Array[ArtifactsData] = []
 var _triggered_artifacts: Dictionary = {}

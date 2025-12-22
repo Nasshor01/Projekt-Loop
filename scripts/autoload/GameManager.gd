@@ -52,13 +52,13 @@ func _ready():
 	add_child(global_ui_instance)
 	go_to_main_menu()
 
-func start_new_run(seed = null):
+func start_new_run(rng_seed = null):
 	SaveManager.delete_saved_run()
-	if seed == null:
+	if rng_seed == null:
 		randomize()
 		current_seed = randi()
 	else:
-		current_seed = seed
+		current_seed = rng_seed
 	
 	_is_post_boss_reward = false
 	# NOVÉ DEBUG LOGOVÁNÍ
@@ -75,12 +75,12 @@ func start_new_run(seed = null):
 	
 	_change_scene(map_scene)
 
-func start_new_game_plus(seed = null):
-	if seed == null:
+func start_new_game_plus(rng_seed = null):
+	if rng_seed == null:
 		randomize()
 		current_seed = randi()
 	else:
-		current_seed = seed
+		current_seed = rng_seed
 	
 	print("Zahajuji NOVÝ BĚH+ se seedem: ", current_seed)
 	PlayerData.ng_plus_level += 1

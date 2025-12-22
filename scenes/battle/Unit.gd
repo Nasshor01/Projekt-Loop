@@ -4,7 +4,6 @@ extends Node3D
 const FloatingTextScene = preload("res://scenes/ui/FloatingText.tscn")
 
 signal died(unit_node)
-signal unit_selected(unit_node)
 signal stats_changed(unit_node)
 
 @export var unit_data: UnitData
@@ -147,7 +146,7 @@ func reset_for_new_turn():
 	if unit_data.faction == UnitData.Faction.PLAYER and PlayerData.heal_end_of_turn > 0:
 		var heal_amount = PlayerData.heal_end_of_turn
 		if PlayerData.double_healing_bonus > 0:
-			heal_amount = heal_amount * (100 + PlayerData.double_healing_bonus) / 100
+			heal_amount = int(float(heal_amount) * (100.0 + float(PlayerData.double_healing_bonus)) / 100.0)
 		heal(heal_amount)
 	
 	_update_stats_and_emit_signal()
