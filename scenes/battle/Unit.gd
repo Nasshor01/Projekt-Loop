@@ -369,10 +369,38 @@ func _show_floating_text(amount: int, type: String):
 		canvas.add_child(instance)
 		var camera = get_viewport().get_camera_3d()
 		if camera:
-			var screen_pos = camera.unproject_position(global_position)
-			instance.position = screen_pos + Vector2(0, -80)
+			# Použijeme přímo global_position jednotky (střed buňky na mřížce)
+			# a přidáme offset pouze nahoru - žádný horizontální offset
+			# global_position jednotky je přesně na středu grid cell
+			var world_pos_above_unit = global_position + Vector3(0, 1.5, 0)  # 1.5 metru nad zemí (nad hlavou)
+			var screen_pos = camera.unproject_position(world_pos_above_unit)
+			
+			# Kontrola, jestli je pozice před kamerou (ne za kamerou)
+			var camera_forward = -camera.global_transform.basis.z
+			var to_unit = (world_pos_above_unit - camera.global_position).normalized()
+			var is_in_front = camera_forward.dot(to_unit) > 0
+			
+			# Kontrola, jestli je pozice viditelná na obrazovce
+			var viewport_size = get_viewport().get_visible_rect().size
+			var margin = 50  # Povolíme malý okraj mimo obrazovku
+			if is_in_front and \
+			   screen_pos.x >= -margin and screen_pos.x <= viewport_size.x + margin and \
+			   screen_pos.y >= -margin and screen_pos.y <= viewport_size.y + margin:
+				# Text je viditelný - použijeme pozici s offsetem nahoru
+				# Nastavíme text nejdřív, abychom mohli získat jeho šířku
+				instance.text = text_to_display
+				# Získáme šířku textu pro zarovnání na střed
+				var font = instance.get_theme_font("font")
+				var font_size = instance.get_theme_font_size("font_size")
+				var text_size = font.get_string_size(text_to_display, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+				# Odečteme polovinu šířky, aby byl text zarovnaný na střed postavy
+				instance.position = screen_pos + Vector2(-text_size.x * 0.5, -40)
+			else:
+				# Pozice není viditelná - použijeme fallback pozici uprostřed obrazovky
+				instance.position = viewport_size * 0.5 + Vector2(0, -100)
 		else:
-			instance.position = Vector2(500, 300)
+			var viewport_size = get_viewport().get_visible_rect().size
+			instance.position = viewport_size * 0.5
 			
 		instance.start(text_to_display, color)
 
@@ -394,10 +422,38 @@ func show_status_text(text_to_show: String, color_type: String):
 		canvas.add_child(instance)
 		var camera = get_viewport().get_camera_3d()
 		if camera:
-			var screen_pos = camera.unproject_position(global_position)
-			instance.position = screen_pos + Vector2(0, -80)
+			# Použijeme přímo global_position jednotky (střed buňky na mřížce)
+			# a přidáme offset pouze nahoru - žádný horizontální offset
+			# global_position jednotky je přesně na středu grid cell
+			var world_pos_above_unit = global_position + Vector3(0, 1.5, 0)  # 1.5 metru nad zemí (nad hlavou)
+			var screen_pos = camera.unproject_position(world_pos_above_unit)
+			
+			# Kontrola, jestli je pozice před kamerou (ne za kamerou)
+			var camera_forward = -camera.global_transform.basis.z
+			var to_unit = (world_pos_above_unit - camera.global_position).normalized()
+			var is_in_front = camera_forward.dot(to_unit) > 0
+			
+			# Kontrola, jestli je pozice viditelná na obrazovce
+			var viewport_size = get_viewport().get_visible_rect().size
+			var margin = 50  # Povolíme malý okraj mimo obrazovku
+			if is_in_front and \
+			   screen_pos.x >= -margin and screen_pos.x <= viewport_size.x + margin and \
+			   screen_pos.y >= -margin and screen_pos.y <= viewport_size.y + margin:
+				# Text je viditelný - použijeme pozici s offsetem nahoru
+				# Nastavíme text nejdřív, abychom mohli získat jeho šířku
+				instance.text = text_to_show
+				# Získáme šířku textu pro zarovnání na střed
+				var font = instance.get_theme_font("font")
+				var font_size = instance.get_theme_font_size("font_size")
+				var text_size = font.get_string_size(text_to_show, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+				# Odečteme polovinu šířky, aby byl text zarovnaný na střed postavy
+				instance.position = screen_pos + Vector2(-text_size.x * 0.5, -40)
+			else:
+				# Pozice není viditelná - použijeme fallback pozici uprostřed obrazovky
+				instance.position = viewport_size * 0.5 + Vector2(0, -100)
 		else:
-			instance.position = Vector2(500, 300)
+			var viewport_size = get_viewport().get_visible_rect().size
+			instance.position = viewport_size * 0.5
 
 	instance.start(text_to_show, color)
 
