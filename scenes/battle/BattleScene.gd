@@ -456,7 +456,6 @@ func spawn_player_unit_at(grid_pos: Vector2i):
 	if PlayerData.selected_subclass and PlayerData.selected_subclass.specific_unit_data:
 		_player_unit_node = _spawn_unit(PlayerData.selected_subclass.specific_unit_data, grid_pos)
 		if is_instance_valid(_player_unit_node):
-			_player_unit_node.unit_selected.connect(_on_unit_selected_on_grid)
 			_player_unit_node.stats_changed.connect(_on_unit_stats_changed)
 			_player_unit_node.died.connect(_on_unit_died)
 
