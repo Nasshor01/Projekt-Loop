@@ -423,6 +423,21 @@ func handle_custom_effect(artifact: ArtifactsData, context: Dictionary = {}) -> 
 			# Efekt se realizuje v BattleScene, zde jen vracíme true
 			return true
 		
+		"random_energy":
+			# Záhadná kostka: 50% šance na +2 energie, jinak -1 energie
+			var roll = randf()
+			if roll < 0.5:
+				# 50% šance - získá 2 energie
+				PlayerData.gain_energy(2)
+				DebugLogger.log_info("🎲 Záhadná kostka: Hodil jsi dobře! +2 energie")
+			else:
+				# 50% šance - ztratí 1 energii (ale ne méně než 0)
+				var energy_to_lose = min(1, PlayerData.current_energy)
+				PlayerData.current_energy -= energy_to_lose
+				PlayerData.emit_signal("energy_changed", PlayerData.current_energy)
+				DebugLogger.log_info("🎲 Záhadná kostka: Špatný hod! -%d energie" % energy_to_lose)
+			return true
+		
 		_:
 			DebugLogger.log_warning("Neznámý custom efekt: %s" % artifact.custom_effect_id)
 			return false
