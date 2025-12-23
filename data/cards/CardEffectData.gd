@@ -45,3 +45,9 @@ enum AreaOfEffectType {
 @export var area_of_effect_type: AreaOfEffectType = AreaOfEffectType.SINGLE_TARGET
 @export var aoe_param_x: int = 1
 @export var aoe_param_y: int = 1
+
+# Podmíněné efekty
+@export var has_condition: bool = false
+@export var condition_type: String = ""  # "block_above", "block_below", "health_below_percent", "health_above_percent", "target_has_debuff", "damage_per_block", "took_damage_last_turn", "target_health_above_percent"
+@export var condition_value: int = 0  # Hodnota pro podmínku (např. 20 bloku, 50% zdraví)
+@export var conditional_bonus_value: int = 0  # Bonusová hodnota, pokud je podmínka splněna

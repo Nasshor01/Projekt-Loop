@@ -4,7 +4,7 @@ extends Node2D
 const ShopItemUIScene = preload("res://scenes/shop/ShopItemUI.tscn")
 
 # --- BAZÉNY ZBOŽÍ PRO OBCHOD ---
-# Načítáme zdroje z tvých "pool" souborů
+# Načítáme zdroje z tvých "pool" souborů"
 const SHOP_CARD_POOL = preload("res://data/cards/shop_card_pool.tres")
 const SHOP_ARTIFACT_POOL = preload("res://data/artifacts/basic_artifact_pool.tres")
 
@@ -42,8 +42,16 @@ func _generate_shop_inventory():
 	for child in items_grid.get_children():
 		child.queue_free()
 
-	# KARTY - zůstávají stejné (karty se dají vždy koupit)
-	var available_cards = SHOP_CARD_POOL.cards.duplicate()
+	# KARTY - filtrujeme podle třídy a odemčených karet
+	var available_cards = SHOP_CARD_POOL.get_available_cards(
+		PlayerData.selected_class,
+		PlayerData.selected_subclass,
+		PlayerData.unlocked_cards
+	)
+	if available_cards.is_empty():
+		print("VAROVÁNÍ: Žádné dostupné karty pro obchod")
+		return
+	
 	available_cards.shuffle()
 	var cards_to_sell = available_cards.slice(0, 3)
 	

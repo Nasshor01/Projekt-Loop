@@ -196,10 +196,10 @@ func log_skill_tree_state():
 		return
 
 	var tree = PlayerData.active_skill_tree
-	var unlocked_ids: PackedStringArray = SaveManager.meta_progress.unlocked_skill_ids if SaveManager else PackedStringArray()
+	var allocated_skills: Dictionary = SaveManager.meta_progress.allocated_skills if SaveManager else {}
 
 	log_info("Skill tree nodes: %d" % tree.skill_nodes.size(), "SKILLS")
-	log_info("Unlocked skills: %d" % unlocked_ids.size(), "SKILLS")
+	log_info("Unlocked skills: %d" % allocated_skills.size(), "SKILLS")
 
 	# Detailní info o každém skillu
 	for node in tree.skill_nodes:
@@ -207,8 +207,10 @@ func log_skill_tree_state():
 			continue
 
 		# ----- ZDE JE OPRAVA -----
-		var is_unlocked = node.id in unlocked_ids
-		var status = "✅ UNLOCKED" if is_unlocked else "🔒 LOCKED"
+		var node_id_str = String(node.id)
+		var allocation_count = allocated_skills.get(node_id_str, 0)
+		var is_unlocked = allocation_count > 0
+		var status = "✅ UNLOCKED (%d)" % allocation_count if is_unlocked else "🔒 LOCKED"
 
 		var skill_info = {
 			"id": node.id, # <-- OPRAVENO Z node.skill_id
@@ -389,9 +391,10 @@ func log_run_summary():
 	
 	# Loguj aktivní skilly
 	log_info("Active skills:", "RUN_SUMMARY")
-	var unlocked_ids: PackedStringArray = SaveManager.meta_progress.unlocked_skill_ids if SaveManager else PackedStringArray()
-	for skill_id in unlocked_ids:
-		log_info("  - %s" % skill_id, "RUN_SUMMARY")
+	var allocated_skills: Dictionary = SaveManager.meta_progress.allocated_skills if SaveManager else {}
+	for skill_id in allocated_skills.keys():
+		var allocation_count = allocated_skills.get(skill_id, 0)
+		log_info("  - %s (x%d)" % [skill_id, allocation_count], "RUN_SUMMARY")
 	
 	log_info("=== END RUN SUMMARY ===", "RUN_SUMMARY")
 
@@ -402,11 +405,13 @@ func log_meta_progress():
 		
 	log_info("=== META PROGRESS ===", "META")
 	log_info("Total XP: %d" % SaveManager.meta_progress.total_xp, "META")
-	log_info("Unlocked skills: %d" % SaveManager.meta_progress.unlocked_skill_ids.size(), "META")
+	var allocated_skills = SaveManager.meta_progress.allocated_skills
+	log_info("Unlocked skills: %d" % allocated_skills.size(), "META")
 	
 	# Seznam všech odemčených skillů
-	for skill_id in SaveManager.meta_progress.unlocked_skill_ids:
-		log_debug("  - Skill: %s" % skill_id, "META")
+	for skill_id in allocated_skills.keys():
+		var allocation_count = allocated_skills.get(skill_id, 0)
+		log_debug("  - Skill: %s (x%d)" % [skill_id, allocation_count], "META")
 	
 	log_info("=== END META PROGRESS ===", "META")
 

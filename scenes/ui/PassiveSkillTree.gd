@@ -99,7 +99,6 @@ func _generate_skill_nodes(is_editor_preview: bool):
 	
 	# ✅ OPRAVENO: Používáme allocated_skills místo unlocked_skill_ids
 	var allocated_skills: Dictionary = {} if is_editor_preview else SaveManager.meta_progress.allocated_skills
-	var unlocked_ids_for_check = allocated_skills.keys()  # Pro zpětnou kompatibilitu s _can_unlock_node
 
 	for skill_node in tree_data.skill_nodes:
 		if not is_instance_valid(skill_node): continue
@@ -116,7 +115,7 @@ func _generate_skill_nodes(is_editor_preview: bool):
 			var skill_id = String(skill_node.id)
 			var allocation_count = allocated_skills.get(skill_id, 0)
 			var is_unlocked = allocation_count > 0
-			var can_unlock = _can_unlock_node(skill_node, unlocked_ids_for_check)
+			var can_unlock = _can_unlock_node(skill_node, allocated_skills)
 			skill_ui.display(skill_node, is_unlocked, can_unlock)
 			skill_ui.skill_selected.connect(_on_skill_unlocked)
 
@@ -272,7 +271,7 @@ func _save_positions_to_resources():
 
 # --- LOGIKA ODEMYKÁNÍ ---
 
-func _can_unlock_node(skill_node: PassiveSkillNode, unlocked_ids: PackedStringArray) -> bool:
+func _can_unlock_node(skill_node: PassiveSkillNode, allocated_skills_dict: Dictionary) -> bool:
 	# ✅ OPRAVENO: Používáme allocated_skills místo unlocked_skill_ids
 	if SaveManager.meta_progress.skill_points < skill_node.get_cost_for_tier():
 		return false
@@ -283,13 +282,13 @@ func _can_unlock_node(skill_node: PassiveSkillNode, unlocked_ids: PackedStringAr
 		return false
 	
 	# Starter může být vždy odemčen, pokud je prázdný strom
-	if unlocked_ids.is_empty():
+	if allocated_skills_dict.is_empty():
 		return skill_node.is_starter
 	
 	# NOVÉ: Kontrola unlock_conditions (např. "all_nodes_unlocked", "level_10", atd.)
 	if not skill_node.unlock_conditions.is_empty():
 		for condition in skill_node.unlock_conditions:
-			if not _check_unlock_condition(condition, unlocked_ids, skill_node):
+			if not _check_unlock_condition(condition, allocated_skills_dict, skill_node):
 				return false
 	
 	# ✅ OPRAVENO: Používáme POUZE prerequisite_nodes pro logiku odemykání
@@ -333,30 +332,36 @@ func _can_unlock_node(skill_node: PassiveSkillNode, unlocked_ids: PackedStringAr
 	
 	return true
 
-func _check_unlock_condition(condition: String, unlocked_ids: PackedStringArray, skill_node: PassiveSkillNode) -> bool:
+func _check_unlock_condition(condition: String, allocated_skills_dict: Dictionary, skill_node: PassiveSkillNode) -> bool:
 	"""Kontroluje speciální podmínky pro odemčení"""
 	match condition:
 		"all_nodes_unlocked":
-			# Všechny uzly kromě tohoto musí být odemčené
+			# Všechny uzly kromě tohoto musí být odemčené (allocation count > 0)
 			var all_nodes = active_skill_tree.skill_nodes
 			for node in all_nodes:
 				if String(node.id) == String(skill_node.id) or node.is_starter:
 					continue
-				if not unlocked_ids.has(String(node.id)):
+				var node_id_str = String(node.id)
+				var allocation_count = allocated_skills_dict.get(node_id_str, 0)
+				if allocation_count == 0:
 					return false
 			return true
 		"all_tier_3_unlocked":
-			# Všechny Tier 3 uzly musí být odemčené
+			# Všechny Tier 3 uzly musí být odemčené (allocation count > 0)
 			for node in active_skill_tree.skill_nodes:
 				if node.tier == PassiveSkillNode.SkillTier.TIER_3:
-					if not unlocked_ids.has(String(node.id)):
+					var node_id_str = String(node.id)
+					var allocation_count = allocated_skills_dict.get(node_id_str, 0)
+					if allocation_count == 0:
 						return false
 			return true
 		"all_keystones_unlocked":
-			# Všechny keystone uzly musí být odemčené
+			# Všechny keystone uzly musí být odemčené (allocation count > 0)
 			for node in active_skill_tree.skill_nodes:
 				if node.node_type == PassiveSkillNode.NodeType.KEYSTONE:
-					if not unlocked_ids.has(String(node.id)):
+					var node_id_str = String(node.id)
+					var allocation_count = allocated_skills_dict.get(node_id_str, 0)
+					if allocation_count == 0:
 						return false
 			return true
 		_:
@@ -366,9 +371,9 @@ func _check_unlock_condition(condition: String, unlocked_ids: PackedStringArray,
 func _on_skill_unlocked(skill_data: PassiveSkillNode):
 	# ✅ OPRAVENO: Používáme allocated_skills místo unlocked_skill_ids
 	var skill_id = String(skill_data.id)
-	var unlocked_ids = SaveManager.meta_progress.allocated_skills.keys()
+	var allocated_skills_dict = SaveManager.meta_progress.allocated_skills
 	
-	if not _can_unlock_node(skill_data, unlocked_ids):
+	if not _can_unlock_node(skill_data, allocated_skills_dict):
 		return
 		
 	SaveManager.meta_progress.skill_points -= skill_data.get_cost_for_tier()
@@ -376,6 +381,15 @@ func _on_skill_unlocked(skill_data: PassiveSkillNode):
 	# Zvýšíme allocation count
 	var current_count = SaveManager.meta_progress.allocated_skills.get(skill_id, 0)
 	SaveManager.meta_progress.allocated_skills[skill_id] = current_count + 1
+	
+	# NOVÉ: Odemkneme kartu, pokud je to první alokace a skill má unlocks_card nastaveno
+	if current_count == 0 and skill_data.unlocks_card != "":
+		if not PlayerData.unlocked_cards.has(skill_data.unlocks_card):
+			PlayerData.unlocked_cards.append(skill_data.unlocks_card)
+			print("Odemčena karta: %s" % skill_data.unlocks_card)
+			# Uložíme odemčené karty do meta progress
+			SaveManager.meta_progress.unlocked_cards = PlayerData.unlocked_cards.duplicate()
+			SaveManager.save_meta_progress()  # Uložíme změny
 	
 	SaveManager.save_meta_progress()
 	

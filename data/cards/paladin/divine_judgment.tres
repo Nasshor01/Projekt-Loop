@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://cwdqirvuo46er"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_djudge"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_djudge"]
+[ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_djudge"]
+
+[sub_resource type="Resource" id="Resource_djudge1"]
+script = ExtResource("1_djudge")
+effect_type = 0
+value = 25
+string_value = ""
+target_type = 3
+area_of_effect_type = 4
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[sub_resource type="Resource" id="Resource_djudge2"]
+script = ExtResource("1_djudge")
+effect_type = 17
+value = 0
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_djudge")
+card_id = "divine_judgment"
+card_name = "Božský Soud"
+card_description = "Způsob 25 svatého poškození všem nepřátelům. Tato karta se vyčerpá."
+cost = 3
+range_type = 6
+range_value = 1
+tags = Array[int]([0, 1])
+rarity = 3
+required_subclass = ExtResource("3_djudge")
+effects = Array[ExtResource("1_djudge")]([SubResource("Resource_djudge1"), SubResource("Resource_djudge2")])
+is_upgraded = false
+max_uses_per_turn = -1
+debuff_on_overuse = {}
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

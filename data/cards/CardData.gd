@@ -101,3 +101,86 @@ func can_be_used_by(player_class: ClassData, player_subclass: SubclassData) -> b
 			return player_class == required_class
 			
 	return false # Nemělo by nastat, pokud je logika správná
+
+func get_damage_bonus() -> int:
+	"""Vrátí celkový bonus k poškození z pasivních skillů a artefaktů"""
+	var bonus = 0
+	
+	# V editoru nejsou autoload singletony dostupné
+	if Engine.is_editor_hint():
+		return 0
+	
+	# V Godot jsou autoload singletony dostupné přímo jako globální proměnné
+	# Za běhu jsou vždy dostupné, takže můžeme přistoupit přímo
+	
+	# Bonus z pasivních skillů (PlayerData je autoload singleton)
+	bonus += PlayerData.global_card_damage_bonus
+	
+	# Bonus z artefaktů (ArtifactManager je autoload singleton)
+	var context = {
+		"current_hp": PlayerData.current_hp,
+		"max_hp": PlayerData.max_hp,
+		"current_energy": PlayerData.current_energy
+	}
+	bonus += ArtifactManager.get_card_damage_bonus(context)
+	
+	return bonus
+
+func get_display_description() -> String:
+	"""Vrátí popis karty s aktuálními hodnotami poškození (včetně bonusů)"""
+	var description = card_description
+	var damage_bonus = get_damage_bonus()
+	
+	if damage_bonus == 0:
+		return description  # Žádný bonus, vrať původní popis
+	
+	# OPRAVA BUG 1: Shromáždíme všechny unikátní hodnoty poškození najednou
+	# aby se zabránilo problému s více efekty se stejnou hodnotou
+	var damage_replacements = {}  # {base_damage: total_damage}
+	
+	for effect in effects:
+		if effect.effect_type == CardEffectData.EffectType.DEAL_DAMAGE:
+			var base_damage = effect.value
+			var total_damage = base_damage + damage_bonus
+			# Použijeme maximum, pokud máme více efektů se stejnou základní hodnotou
+			# (i když by to nemělo nastat, je to bezpečnější)
+			if not damage_replacements.has(base_damage) or damage_replacements[base_damage] < total_damage:
+				damage_replacements[base_damage] = total_damage
+	
+	# Aplikujeme všechny nahrazení najednou (od největších hodnot k nejmenším,
+	# aby se zabránilo problémům s čísly, která jsou částí jiných čísel)
+	var sorted_bases = damage_replacements.keys()
+	sorted_bases.sort()
+	sorted_bases.reverse()  # Od největších k nejmenším
+	
+	for base_damage in sorted_bases:
+		var total_damage = damage_replacements[base_damage]
+		var base_str = str(base_damage)
+		var total_str = str(total_damage)
+		
+		# Nahradíme všechny výskyty základní hodnoty celkovou hodnotou
+		# Použijeme různé formáty, které se mohou v popisech vyskytovat
+		
+		# Základní formáty
+		description = description.replace(base_str + " poškození", total_str + " poškození")
+		description = description.replace(base_str + " poškození.", total_str + " poškození.")
+		description = description.replace(base_str + " svatého poškození", total_str + " svatého poškození")
+		description = description.replace(base_str + " svatého poškození.", total_str + " svatého poškození.")
+		
+		# Formáty s "Způsob" / "Způsobí"
+		description = description.replace("Způsob " + base_str + " poškození", "Způsob " + total_str + " poškození")
+		description = description.replace("Způsobí " + base_str + " poškození", "Způsobí " + total_str + " poškození")
+		description = description.replace("Způsob " + base_str + " svatého poškození", "Způsob " + total_str + " svatého poškození")
+		description = description.replace("Způsobí " + base_str + " svatého poškození", "Způsobí " + total_str + " svatého poškození")
+		
+		# Formáty s "všem nepřátelům" / "nepřátelům"
+		description = description.replace("všem nepřátelům způsob " + base_str + " poškození", "všem nepřátelům způsob " + total_str + " poškození")
+		description = description.replace("všem nepřátelům způsobí " + base_str + " poškození", "všem nepřátelům způsobí " + total_str + " poškození")
+		description = description.replace("nepřátelům způsob " + base_str + " poškození", "nepřátelům způsob " + total_str + " poškození")
+		description = description.replace("nepřátelům způsobí " + base_str + " poškození", "nepřátelům způsobí " + total_str + " poškození")
+		
+		# Formáty s "v oblasti" / "ve sloupci" / "v řadě"
+		description = description.replace("způsobí " + base_str + " poškození", "způsobí " + total_str + " poškození")
+		description = description.replace("způsob " + base_str + " poškození", "způsob " + total_str + " poškození")
+	
+	return description

@@ -55,6 +55,9 @@ enum NodeType {
 # NOVÉ: Podmínky pro odemčení
 @export var unlock_conditions: Array[String] = []  # ["level_10", "complete_boss_fight", atd.]
 
+# NOVÉ: Odemykání karet
+@export var unlocks_card: String = ""  # card_id karty, která se odemkne při alokaci tohoto uzlu
+
 # NOVÉ: Vizuální vlastnosti pro různé typy
 func get_node_size() -> float:
 	match node_type:
@@ -95,6 +98,7 @@ func get_cost_for_tier() -> int:
 		return cost
 	# Automatický výpočet nákladů podle tieru
 	match tier:
+		SkillTier.TIER_0: return 0  # OPRAVA BUG 2: Explicitní case pro TIER_0
 		SkillTier.TIER_1: return 1
 		SkillTier.TIER_2: return 2
 		SkillTier.TIER_3: return 3

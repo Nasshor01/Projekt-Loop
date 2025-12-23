@@ -12,6 +12,9 @@ extends Resource
 # Místo starého unlocked_skill_ids, které nepodporovalo stackování
 @export var allocated_skills: Dictionary = {}
 
+# NOVÉ: Seznam odemčených karet (card_id)
+@export var unlocked_cards: Array[String] = []
+
 # ZPĚTNÁ KOMPATIBILITA: Pokud máš staré uložené hry s unlocked_skill_ids
 func _init():
 	# Migrace ze starého systému

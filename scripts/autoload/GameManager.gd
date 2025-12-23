@@ -33,17 +33,24 @@ var _is_post_boss_reward: bool = false
 var selected_class_data: ClassData = null
 var selected_subclass_data: SubclassData = null
 
-const CARD_REWARD_POOL = preload("res://data/cards/reward_card_pool.tres")
-const ELITE_ARTIFACT_POOL = preload("res://data/artifacts/pool/elite_reward_pool.tres")
-const BOSS_ARTIFACT_POOL = preload("res://data/artifacts/pool/boss_reward_pool.tres")
+# Use load() instead of preload() to avoid script resolution issues at parse time
+var CARD_REWARD_POOL = null
+var ELITE_ARTIFACT_POOL = null
+var BOSS_ARTIFACT_POOL = null
 
-var last_battle_rewards = {}
+var last_battle_rewards := {}
 
 func _ready():
 	if has_node("/root/DebugLogger"):
 		DebugLogger.log_info("=== GAME MANAGER STARTED ===")
 	DebugLogger.log_info("=== GAME MANAGER STARTED ===")
 	DebugLogger.log_system_info() # Zaloguje system info
+	
+	# Load resource pools at runtime to avoid script resolution issues
+	CARD_REWARD_POOL = load("res://data/cards/reward_card_pool.tres")
+	ELITE_ARTIFACT_POOL = load("res://data/artifacts/pool/elite_reward_pool.tres")
+	BOSS_ARTIFACT_POOL = load("res://data/artifacts/pool/boss_reward_pool.tres")
+	
 	scene_container = Node.new()
 	scene_container.name = "SceneContainer"
 	add_child(scene_container)
@@ -82,13 +89,13 @@ func start_new_game_plus(rng_seed = null):
 	else:
 		current_seed = rng_seed
 	
-	print("Zahajuji NOVÝ BĚH+ se seedem: ", current_seed)
-	PlayerData.ng_plus_level += 1
+	print("Zahajuji NOVOU SMYČKU se seedem: ", current_seed)
+	PlayerData.loop_level += 1
 	
 	has_saved_camera_state = false
 	current_map_data = null
 	# NEVOLÁME initialize_player, protože postava zůstává
-	PlayerData.start_ng_plus_state() # Volá částečný reset
+	PlayerData.start_loop_state() # Volá částečný reset
 	
 	_change_scene(map_scene)
 	
@@ -123,8 +130,8 @@ func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -
 			print("GLOBÁLNÍ ŠTÍT uložen, nová hodnota: %d" % PlayerData.global_shield)
 
 		var gained_xp = current_encounter.xp_reward
-		if PlayerData.ng_plus_level > 0:
-			gained_xp = int(gained_xp * (1.0 + (PlayerData.ng_plus_level * 0.2)))
+		if PlayerData.loop_level > 0:
+			gained_xp = int(gained_xp * (1.0 + (PlayerData.loop_level * 0.2)))
 		PlayerData.current_run_xp += gained_xp
 		DebugLogger.log_info("XP gained from encounter: %d (Total this run: %d)" % [gained_xp, PlayerData.current_run_xp], "PROGRESSION")
 
@@ -294,10 +301,19 @@ func _prepare_battle_rewards():
 
 	# 2. Odměna karet (pro všechny typy kromě bosse)
 	if encounter_type != EncounterData.EncounterType.BOSS:
-		if is_instance_valid(CARD_REWARD_POOL) and CARD_REWARD_POOL.cards != null and not CARD_REWARD_POOL.cards.is_empty():
-			var available_cards = CARD_REWARD_POOL.cards.duplicate()
-			available_cards.shuffle()
-			last_battle_rewards["cards"] = available_cards.slice(0, 3)
+		if is_instance_valid(CARD_REWARD_POOL):
+			# Použijeme filtrovaný pool podle třídy a odemčených karet
+			var available_cards = CARD_REWARD_POOL.get_available_cards(
+				PlayerData.selected_class,
+				PlayerData.selected_subclass,
+				PlayerData.unlocked_cards
+			)
+			if not available_cards.is_empty():
+				available_cards.shuffle()
+				last_battle_rewards["cards"] = available_cards.slice(0, 3)
+			else:
+				print("VAROVÁNÍ: Žádné dostupné karty pro hráče")
+				last_battle_rewards["cards"] = []
 		else:
 			print("VAROVÁNÍ: CARD_REWARD_POOL je prázdný nebo neexistuje")
 			last_battle_rewards["cards"] = []
@@ -387,7 +403,8 @@ func _on_popup_save_and_quit():
 	get_tree().quit()
 
 func _on_popup_back_to_menu():
-	SaveManager.delete_saved_run()
+	# NESMAŽEME uložený run při návratu do hlavního menu
+	# Run se smaže jen při restartu nebo výběru nové postavy
 	go_to_main_menu()
 
 func load_and_start_saved_run():
@@ -396,26 +413,98 @@ func load_and_start_saved_run():
 		DebugLogger.log_error("Failed to load run data or no save file found.", "SAVE")
 		return
 
-	# Restore PlayerData state
-	PlayerData.health = loaded_data.get("health", 1)
-	PlayerData.max_health = loaded_data.get("max_health", 1)
+	# Obnovíme seed
+	current_seed = loaded_data.get("current_seed", 0)
+	if current_seed > 0:
+		seed(current_seed)
+		DebugLogger.log_info("Seed restored: %d" % current_seed, "GAME_FLOW")
+
+	# Obnovíme třídu a podtřídu
+	var class_path = loaded_data.get("selected_class_path", "")
+	var subclass_path = loaded_data.get("selected_subclass_path", "")
+	
+	if class_path != "" and subclass_path != "":
+		var loaded_class = load(class_path) as ClassData
+		var loaded_subclass = load(subclass_path) as SubclassData
+		
+		if is_instance_valid(loaded_class) and is_instance_valid(loaded_subclass):
+			selected_class_data = loaded_class
+			selected_subclass_data = loaded_subclass
+			PlayerData.initialize_player(loaded_class, loaded_subclass)
+			DebugLogger.log_info("Class and subclass restored: %s / %s" % [class_path, subclass_path], "GAME_FLOW")
+		else:
+			DebugLogger.log_error("Failed to load class or subclass from save file.", "SAVE")
+			return
+	else:
+		DebugLogger.log_error("No class or subclass data in save file.", "SAVE")
+		return
+
+	# Restore PlayerData state (kromě HP - to načteme až po aplikaci pasivních skillů)
 	PlayerData.gold = loaded_data.get("gold", 0)
 	PlayerData.floors_cleared = loaded_data.get("floors_cleared", 0)
-	PlayerData.ng_plus_level = loaded_data.get("ng_plus_level", 0)
+	PlayerData.loop_level = loaded_data.get("ng_plus_level", 0)  # Migrace: staré save soubory mají "ng_plus_level"
 	PlayerData.current_run_xp = loaded_data.get("current_run_xp", 0)
 
+	# Obnovíme balíček
 	PlayerData.master_deck = []
 	for card_path in loaded_data.get("master_deck", []):
 		var card = load(card_path)
 		if card:
 			PlayerData.master_deck.append(card)
 
+	# Obnovíme artefakty
 	PlayerData.artifacts = []
 	for artifact_path in loaded_data.get("artifacts", []):
 		var artifact = load(artifact_path)
 		if artifact:
 			PlayerData.artifacts.append(artifact)
 
+	# Regenerujeme mapu se stejným seedem, aby se uzly shodovaly
+	# Vytvoříme dočasnou instanci MapGeneratoru pro regeneraci
+	var MapGeneratorClass = load("res://scripts/map/MapGenerator.gd")
+	var temp_generator = MapGeneratorClass.new()
+	current_map_data = temp_generator.generate_map(current_seed)
+	temp_generator.queue_free()
+	DebugLogger.log_info("Map regenerated with seed: %d" % current_seed, "GAME_FLOW")
+	
+	# Obnovíme path_taken - najdeme uzly podle row a column v regenerované mapě
+	PlayerData.path_taken = []
+	var path_taken_data = loaded_data.get("path_taken", [])
+	
+	for node_data in path_taken_data:
+		var row = node_data.get("row", -1)
+		var column = node_data.get("column", -1)
+		if row >= 0 and column >= 0:
+			# Najdeme uzel s odpovídajícím row a column
+			for node in current_map_data.all_nodes:
+				if node.row == row and node.column == column:
+					PlayerData.path_taken.append(node)
+					break
+	
+	DebugLogger.log_info("Path taken restored: %d nodes" % PlayerData.path_taken.size(), "GAME_FLOW")
+
+	# Aplikujeme pasivní skilly (aby se správně nastavily staty)
+	# POZNÁMKA: Toto resetuje max_hp na 50, takže musíme načíst HP až poté
+	PlayerData.apply_passive_skills()
+	
+	# Nyní načteme HP z uložených dat (PO aplikaci pasivních skillů)
+	# Uložíme si původní max_hp z uložených dat
+	var saved_max_hp = loaded_data.get("max_hp", 50)
+	var saved_current_hp = loaded_data.get("current_hp", 50)
+	
+	# Pokud je uložené max_hp jiné než aktuální (po aplikaci skillů),
+	# znamená to, že bylo změněno eventem nebo jinak
+	if saved_max_hp != PlayerData.max_hp:
+		# Vypočítáme rozdíl a aplikujeme ho
+		var max_hp_difference = saved_max_hp - PlayerData.max_hp
+		PlayerData.change_max_hp(max_hp_difference)
+		DebugLogger.log_info("Max HP restored from save: %d (difference: %d)" % [saved_max_hp, max_hp_difference], "GAME_FLOW")
+	
+	# Načteme current_hp (ale zajistíme, že nepřesáhne max_hp)
+	PlayerData.current_hp = min(saved_current_hp, PlayerData.max_hp)
+	DebugLogger.log_info("Current HP restored from save: %d/%d" % [PlayerData.current_hp, PlayerData.max_hp], "GAME_FLOW")
+
+	# Emitujeme signály pro aktualizaci UI
 	PlayerData.emit_deck_changed()
 	PlayerData.emit_all_signals()
 

@@ -430,9 +430,13 @@ static func auto_position_nodes_clean(nodes: Array[PassiveSkillNode]):
 				var tier_nodes = branch_data[tier]
 				var tier_y = get_tier_y_offset_clean(tier)
 				
-				# Main branch uzly jsou uprostřed
-				for node in tier_nodes:
-					node.position = Vector2(branch_x, tier_y)
+				# OPRAVA BUG 3: Main branch uzly potřebují offset pro více uzlů ve stejném tieru
+				# Používáme stejnou logiku jako ostatní větve
+				for i in range(tier_nodes.size()):
+					var node = tier_nodes[i]
+					# Horizontální offset pro více uzlů ve stejném tieru
+					var x_offset = (i - (tier_nodes.size() - 1) * 0.5) * NODE_OFFSET_IN_TIER
+					node.position = Vector2(branch_x + x_offset, tier_y)
 		else:
 			# Ostatní větve - lineární layout
 			var branch_data = branch_groups[branch_name]

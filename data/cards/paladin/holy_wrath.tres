@@ -1,0 +1,37 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://dxerjswvp57fs"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_hwrath"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_hwrath"]
+[ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_hwrath"]
+
+[sub_resource type="Resource" id="Resource_hwrath"]
+script = ExtResource("1_hwrath")
+effect_type = 0
+value = 12
+string_value = ""
+target_type = 1
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+has_condition = true
+condition_type = "block_above"
+condition_value = 15
+conditional_bonus_value = 8
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_hwrath")
+card_id = "holy_wrath"
+card_name = "Svatý Hněv"
+card_description = "Způsob 12 svatého poškození. Pokud máš více než 15 bloku, způsob +8 svatého poškození."
+cost = 2
+range_type = 2
+range_value = 1
+tags = Array[int]([0])
+rarity = 2
+required_subclass = ExtResource("3_hwrath")
+effects = Array[ExtResource("1_hwrath")]([SubResource("Resource_hwrath")])
+is_upgraded = false
+max_uses_per_turn = -1
+debuff_on_overuse = {}
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

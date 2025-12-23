@@ -8,10 +8,28 @@ extends Control
 
 func _ready():
 	play_button.pressed.connect(GameManager.go_to_character_select)
-	load_run_button.pressed.connect(GameManager.load_and_start_saved_run)
+	load_run_button.pressed.connect(_on_load_run_button_pressed)
 	how_to_play_button.pressed.connect(GameManager.go_to_how_to_play)
 	exit_button.pressed.connect(func(): get_tree().quit())
+	
+	_update_load_button_state()
 
+func _on_load_run_button_pressed():
+	if not SaveManager.has_saved_run():
+		print("Žádný uložený run nenalezen.")
+		return
+	GameManager.load_and_start_saved_run()
+
+func _enter_tree():
+	# Aktualizujeme stav tlačítka při každém zobrazení scény
+	# Ale jen pokud jsou @onready proměnné už inicializované
+	if is_instance_valid(load_run_button):
+		_update_load_button_state()
+
+func _update_load_button_state():
+	"""Aktualizuje stav tlačítka 'Načíst run' podle existence uloženého runu"""
+	if not is_instance_valid(load_run_button):
+		return
 	if SaveManager.has_saved_run():
 		load_run_button.disabled = false
 	else:

@@ -1,0 +1,55 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=7 format=3 uid="uid://b753xss6vwd2"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_dprot"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_dprot"]
+[ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_dprot"]
+
+[sub_resource type="Resource" id="Resource_dprot1"]
+script = ExtResource("1_dprot")
+effect_type = 2
+value = 15
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[sub_resource type="Resource" id="Resource_dprot2"]
+script = ExtResource("1_dprot")
+effect_type = 15
+value = 10
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[sub_resource type="Resource" id="Resource_dprot3"]
+script = ExtResource("1_dprot")
+effect_type = 0
+value = 12
+string_value = ""
+target_type = 3
+area_of_effect_type = 4
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_dprot")
+card_id = "divine_protection"
+card_name = "Božská Ochrana"
+card_description = "Získej 15 bloku. Vyléč se za 10 HP. Způsob 12 svatého poškození všem nepřátelům."
+cost = 3
+range_type = 6
+range_value = 1
+tags = Array[int]([0, 6, 8])
+rarity = 3
+required_subclass = ExtResource("3_dprot")
+effects = Array[ExtResource("1_dprot")]([SubResource("Resource_dprot1"), SubResource("Resource_dprot2"), SubResource("Resource_dprot3")])
+is_upgraded = false
+max_uses_per_turn = -1
+debuff_on_overuse = {}
+metadata/_custom_type_script = "uid://uk53klqs1ti4"
