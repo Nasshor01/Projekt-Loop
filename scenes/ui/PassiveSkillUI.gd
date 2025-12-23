@@ -166,11 +166,13 @@ func _format_effect_simple(effect) -> String:
 	else:
 		return "Speciální efekt"
 
-# Visual effects a styling - ZJEDNODUŠENÉ
+# Visual effects a styling - VYLEPŠENÉ
 func _set_unlocked_state(data: PassiveSkillNode):
 	var color = data.get_node_color() if data.has_method("get_node_color") else Color.WHITE
 	modulate = color
 	_add_visual_effects(data)
+	# Přidáme glow efekt pro odemčené uzly
+	_add_glow_effect(color)
 
 func _set_can_unlock_state(_data: PassiveSkillNode):
 	disabled = false
@@ -203,17 +205,24 @@ func _add_glow_effect(glow_color: Color = Color.YELLOW):
 	add_theme_color_override("font_outline_color", glow_color)
 	add_theme_constant_override("outline_size", 2)
 
+# ✅ OPRAVENO: Vlastní tween místo get_processed_tweens()
+var pulse_tween: Tween = null
+
 func _add_pulse_effect():
-	var tween = create_tween()
-	tween.set_loops()
-	tween.tween_property(self, "scale", Vector2(1.1, 1.1), 1.0)
-	tween.tween_property(self, "scale", Vector2(1.0, 1.0), 1.0)
+	# ✅ OPRAVENO: Používáme vlastní tween místo create_tween() bez reference
+	if pulse_tween:
+		pulse_tween.kill()
+	pulse_tween = create_tween()
+	pulse_tween.set_loops()
+	pulse_tween.tween_property(self, "scale", Vector2(1.1, 1.1), 1.0)
+	pulse_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 1.0)
 
 func _remove_visual_effects():
-	var tweens = get_tree().get_processed_tweens()
-	for tween in tweens:
-		if tween.is_valid():
-			tween.kill()
+	# ✅ OPRAVENO: Používáme vlastní tween místo get_processed_tweens()
+	# get_processed_tweens() by zabilo tweens celé hry!
+	if pulse_tween:
+		pulse_tween.kill()
+		pulse_tween = null
 	
 	scale = Vector2.ONE
 	rotation = 0.0
@@ -246,7 +255,9 @@ func _draw():
 			_draw_diamond(center, radius)
 
 func _draw_circle(center: Vector2, radius: float, border_width: float = 2.0):
-	draw_circle(center, radius, Color.TRANSPARENT, false, border_width)
+	# Vylepšené kreslení - přidáme vnitřní výplň
+	var fill_color = Color(modulate.r, modulate.g, modulate.b, 0.2)
+	draw_circle(center, radius, fill_color)
 	draw_arc(center, radius, 0, 2*PI, 32, modulate, border_width)
 
 func _draw_octagon(center: Vector2, radius: float):

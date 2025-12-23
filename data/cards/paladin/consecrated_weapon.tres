@@ -1,0 +1,52 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://s0wyr1n60do2"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_cweapon"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_cweapon"]
+[ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_cweapon"]
+
+[sub_resource type="Resource" id="Resource_cweapon1"]
+script = ExtResource("1_cweapon")
+effect_type = 0
+value = 9
+string_value = ""
+target_type = 1
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[sub_resource type="Resource" id="Resource_cweapon2"]
+script = ExtResource("1_cweapon")
+effect_type = 13
+value = 5
+string_value = "consecrated_weapon"
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_cweapon")
+card_id = "consecrated_weapon"
+card_name = "Posvěcená Zbraň"
+card_description = "Způsob 9 svatého poškození. Příští útok způsobí +5 svatého poškození."
+cost = 2
+range_type = 2
+range_value = 1
+tags = Array[int]([0])
+rarity = 1
+required_subclass = ExtResource("3_cweapon")
+effects = Array[ExtResource("1_cweapon")]([SubResource("Resource_cweapon1"), SubResource("Resource_cweapon2")])
+is_upgraded = false
+max_uses_per_turn = -1
+debuff_on_overuse = {}
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

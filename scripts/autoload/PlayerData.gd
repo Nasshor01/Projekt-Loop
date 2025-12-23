@@ -8,7 +8,7 @@ signal gold_changed(new_amount)
 signal health_changed(new_hp, new_max_hp)
 signal player_state_initialized
 signal floor_changed(new_floor)
-signal ng_plus_changed(new_level)
+signal loop_level_changed(new_level)
 signal deck_changed
 
 # --- Proměnné pro jeden "run" ---
@@ -52,11 +52,63 @@ var energy_on_kill: int = 0
 var block_on_card_play: int = 0
 var global_shield: int = 0
 
-var ng_plus_level: int = 0:
+# Card Management efekty
+var first_turn_draw_bonus: int = 0
+var max_hand_size_bonus: int = 0
+var conditional_draw_conditions: Array[Dictionary] = []
+var unlocked_cards: Array[String] = []  # Seznam odemčených karet
+
+# Resource Management efekty
+var starting_combo_points: int = 0
+var starting_essence: int = 0
+var starting_potions: int = 0
+var starting_traps: int = 0
+
+# Combat Bonuses
+var target_bonus_damage_percent: int = 0
+var target_card_cost_reduction: int = 0
+var first_attack_free_count: int = 0
+var spell_block_amount: int = 0
+
+# Passive Enhancements
+var passive_enhancements: Dictionary = {}  # {passive_id: bonus_value}
+var passive_resonance_bonus_percent: int = 0
+var passive_use_count_bonus: int = 0
+var passive_threshold_overrides: Dictionary = {}  # {passive_id: new_threshold}
+
+# Posture System (Fighter)
+var posture_bonuses: Dictionary = {}  # {posture_type: bonus_percent}
+var posture_switch_cost_reduction: int = 0
+
+# DoT/Status
+var poison_damage_bonus: int = 0
+
+# Summoning (Nekromant)
+var summon_health_bonus: int = 0
+var enemy_to_card_conversion_percent: int = 0
+
+# Lifesteal (Vrah Duší)
+var lifesteal_percentage: int = 0
+var overheal_to_temp_hp_percent: int = 0
+var allied_damage_lifesteal_percent: int = 0
+
+# Conditional Effects
+var conditional_block_effects: Array[Dictionary] = []
+var starting_temp_hp: int = 0
+
+# Support (Ochránce)
+var allied_defense_bonus_percent: int = 0
+var force_enemy_movement_uses: int = 0
+
+# Elemental (Elementalista)
+var first_spell_element_free: bool = false
+var used_free_elements: Array[String] = []  # ["fire", "ice", "lightning"]
+
+var loop_level: int = 0:
 	set(value):
-		if ng_plus_level != value:
-			ng_plus_level = value
-			emit_signal("ng_plus_changed", ng_plus_level)
+		if loop_level != value:
+			loop_level = value
+			emit_signal("loop_level_changed", loop_level)
 
 func get_current_node() -> MapNodeResource:
 	if not path_taken.is_empty():
@@ -66,7 +118,7 @@ func get_current_node() -> MapNodeResource:
 
 func start_new_run_state():
 	EventManager.start_new_run()
-	ng_plus_level = 0
+	loop_level = 0
 	
 	# 1. Resetujeme balíček na startovní
 	master_deck.clear()
@@ -108,7 +160,7 @@ func start_new_run_state():
 	# 5. VYSLAT SIGNÁL PRO VŠECHNY, KTEŘÍ ČEKAJÍ
 	emit_signal("player_state_initialized")
 
-func start_ng_plus_state():
+func start_loop_state():
 	current_hp = max_hp
 	path_taken.clear()
 	floors_cleared = 0
@@ -120,7 +172,7 @@ func start_ng_plus_state():
 	emit_signal("health_changed", current_hp, max_hp)
 	emit_signal("artifacts_changed")
 	self.gold = gold
-	self.ng_plus_level = ng_plus_level # re-emit ng+ level
+	self.loop_level = loop_level # re-emit loop level
 
 func apply_passive_skills():
 	DebugLogger.log_info("=== APPLYING PASSIVE SKILLS ===", "SKILLS")
@@ -144,6 +196,58 @@ func apply_passive_skills():
 	energy_on_kill = 0
 	block_on_card_play = 0
 	
+	# Reset Card Management
+	first_turn_draw_bonus = 0
+	max_hand_size_bonus = 0
+	conditional_draw_conditions.clear()
+	unlocked_cards.clear()
+	
+	# Reset Resource Management
+	starting_combo_points = 0
+	starting_essence = 0
+	starting_potions = 0
+	starting_traps = 0
+	
+	# Reset Combat Bonuses
+	target_bonus_damage_percent = 0
+	target_card_cost_reduction = 0
+	first_attack_free_count = 0
+	spell_block_amount = 0
+	
+	# Reset Passive Enhancements
+	passive_enhancements.clear()
+	passive_resonance_bonus_percent = 0
+	passive_use_count_bonus = 0
+	passive_threshold_overrides.clear()
+	
+	# Reset Posture System
+	posture_bonuses.clear()
+	posture_switch_cost_reduction = 0
+	
+	# Reset DoT/Status
+	poison_damage_bonus = 0
+	
+	# Reset Summoning
+	summon_health_bonus = 0
+	enemy_to_card_conversion_percent = 0
+	
+	# Reset Lifesteal
+	lifesteal_percentage = 0
+	overheal_to_temp_hp_percent = 0
+	allied_damage_lifesteal_percent = 0
+	
+	# Reset Conditional Effects
+	conditional_block_effects.clear()
+	starting_temp_hp = 0
+	
+	# Reset Support
+	allied_defense_bonus_percent = 0
+	force_enemy_movement_uses = 0
+	
+	# Reset Elemental
+	first_spell_element_free = false
+	used_free_elements.clear()
+	
 	# DEBUG: Loguj stav skill tree
 	if not is_instance_valid(active_skill_tree):
 		DebugLogger.log_error("active_skill_tree je null!", "SKILLS")
@@ -157,6 +261,8 @@ func apply_passive_skills():
 			
 			if "passive_skill_tree" in selected_subclass and is_instance_valid(selected_subclass.passive_skill_tree):
 				active_skill_tree = selected_subclass.passive_skill_tree
+				# Zajistíme, že skill tree má správně sestavený lookup dictionary
+				active_skill_tree.rebuild()
 				DebugLogger.log_info("✅ Tree načten! Nodes: %d" % active_skill_tree.skill_nodes.size(), "SKILLS")
 			else:
 				DebugLogger.log_error("Skill tree nebyl nalezen v subclass!", "SKILLS")
@@ -168,71 +274,232 @@ func apply_passive_skills():
 			return
 	else:
 		DebugLogger.log_info("Skill tree OK, nodes: %d" % active_skill_tree.skill_nodes.size(), "SKILLS")
+		# Zajistíme, že skill tree má správně sestavený lookup dictionary
+		active_skill_tree.rebuild()
 
-	# Načteme odemčené skilly
-	var unlocked_ids = SaveManager.meta_progress.unlocked_skill_ids
-	DebugLogger.log_info("Aplikuji %d odemčených skillů" % unlocked_ids.size(), "SKILLS")
+	# Načteme odemčené skilly (z allocated_skills dictionary)
+	var allocated_skills = SaveManager.meta_progress.allocated_skills
+	DebugLogger.log_info("Aplikuji %d odemčených skillů" % allocated_skills.size(), "SKILLS")
 	
 	# 4. Projdeme odemčené skilly a aplikujeme jejich EFEKTY
-	for skill_id in unlocked_ids:
+	# Iterujeme přes všechny skill_id v allocated_skills a aplikujeme efekty podle allocation_count
+	for skill_id_key in allocated_skills.keys():
+		# Převod na String pro zajištění kompatibility (klíče mohou být StringName)
+		var skill_id = String(skill_id_key)
+		var allocation_count = allocated_skills.get(skill_id_key, 0)
+		if allocation_count == 0:
+			continue  # Přeskočíme, pokud není alokován
+		
+		DebugLogger.log_debug("Hledám skill: '%s' (allocation: %d)" % [skill_id, allocation_count], "SKILLS")
 		var skill_node = active_skill_tree.get_node_by_id(skill_id)
 		if not is_instance_valid(skill_node):
-			DebugLogger.log_warning("Skill '%s' nebyl nalezen!" % skill_id, "SKILLS")
+			DebugLogger.log_warning("Skill '%s' nebyl nalezen v skill tree! Dostupné ID: %s" % [skill_id, str(active_skill_tree.nodes_by_id.keys())], "SKILLS")
 			continue
 		
-		DebugLogger.log_debug("Aplikuji: %s (Tier %d)" % [skill_node.skill_name, skill_node.tier], "SKILLS")
+		DebugLogger.log_debug("Aplikuji: %s (Tier %d, x%d)" % [skill_node.skill_name, skill_node.tier, allocation_count], "SKILLS")
 		
-		# Projdeme všechny efekty definované v uzlu
-		for effect_data in skill_node.effects:
-			if not is_instance_valid(effect_data):
-				continue
-			
-			# Aplikujeme efekt podle typu
-			match effect_data.effect_type:
-				PassiveEffectData.EffectType.ADD_MAX_HP:
-					max_hp += effect_data.value
-					print("  + %d max HP (nyní %d)" % [effect_data.value, max_hp])
-				PassiveEffectData.EffectType.ADD_STARTING_GOLD:
-					gold += effect_data.value
-					print("  + %d zlato (nyní %d)" % [effect_data.value, gold])
-				PassiveEffectData.EffectType.ADD_MAX_ENERGY:
-					max_energy += effect_data.value
-					print("  + %d max energie (nyní %d)" % [effect_data.value, max_energy])
-				PassiveEffectData.EffectType.GRANT_REVIVE:
-					if effect_data.value > 0: 
-						has_revive = true
-						print("  ✅ Získán revive")
-				PassiveEffectData.EffectType.ADD_CARD_DAMAGE:
-					global_card_damage_bonus += effect_data.value
-					print("  + %d poškození karet (nyní %d)" % [effect_data.value, global_card_damage_bonus])
-				PassiveEffectData.EffectType.ADD_RETAINED_BLOCK:
-					starting_retained_block += effect_data.value
-					print("  + %d startovní blok (nyní %d)" % [effect_data.value, starting_retained_block])
-				PassiveEffectData.EffectType.CRITICAL_CHANCE_BONUS:
-					critical_chance += effect_data.value
-					print("  + %d%% kritická šance (nyní %d%%)" % [effect_data.value, critical_chance])
-				PassiveEffectData.EffectType.HEAL_END_OF_TURN:
-					heal_end_of_turn += effect_data.value
-					print("  + %d HP za konec tahu (nyní %d)" % [effect_data.value, heal_end_of_turn])
-				PassiveEffectData.EffectType.AURA_ENHANCEMENT:
-					aura_enhancement += effect_data.value
-					print("  + %d%% vylepšení aur (nyní %d%%)" % [effect_data.value, aura_enhancement])
-				PassiveEffectData.EffectType.AVATAR_STARTING_BLOCK:
-					var shield_amount = max_hp * effect_data.value
-					global_shield += shield_amount
-					print(" ✨ Avatar Světla přidal %d do GLOBÁLNÍHO ŠTÍTU (nyní %d)" % [shield_amount, global_shield])
-				PassiveEffectData.EffectType.THORNS_DAMAGE:
-					thorns_damage += effect_data.value
-					print("  + %d poškození trny (nyní %d)" % [effect_data.value, thorns_damage])
-				PassiveEffectData.EffectType.DOUBLE_HEALING:
-					double_healing_bonus += effect_data.value
-					print("  + %d%% léčení bonus (nyní %d%%)" % [effect_data.value, double_healing_bonus])
-				PassiveEffectData.EffectType.ENERGY_ON_KILL:
-					energy_on_kill += effect_data.value
-					print("  + %d energie za zabití (nyní %d)" % [effect_data.value, energy_on_kill])
-				PassiveEffectData.EffectType.BLOCK_ON_CARD_PLAY:
-					block_on_card_play += effect_data.value
-					print("  + %d blok za kartu (nyní %d)" % [effect_data.value, block_on_card_play])
+		# Aplikujeme efekty tolikrát, kolikrát je skill alokován (pro stackovatelné efekty)
+		for _i in range(allocation_count):
+			# Projdeme všechny efekty definované v uzlu
+			for effect_data in skill_node.effects:
+				if not is_instance_valid(effect_data):
+					continue
+				
+				# Aplikujeme efekt podle typu
+				match effect_data.effect_type:
+					PassiveEffectData.EffectType.ADD_MAX_HP:
+						max_hp += effect_data.value
+						print("  + %d max HP (nyní %d)" % [effect_data.value, max_hp])
+					PassiveEffectData.EffectType.ADD_STARTING_GOLD:
+						gold += effect_data.value
+						print("  + %d zlato (nyní %d)" % [effect_data.value, gold])
+					PassiveEffectData.EffectType.ADD_MAX_ENERGY:
+						max_energy += effect_data.value
+						print("  + %d max energie (nyní %d)" % [effect_data.value, max_energy])
+					PassiveEffectData.EffectType.GRANT_REVIVE:
+						if effect_data.value > 0: 
+							has_revive = true
+							print("  ✅ Získán revive")
+					PassiveEffectData.EffectType.ADD_CARD_DAMAGE:
+						global_card_damage_bonus += effect_data.value
+						print("  + %d poškození karet (nyní %d)" % [effect_data.value, global_card_damage_bonus])
+					PassiveEffectData.EffectType.ADD_RETAINED_BLOCK:
+						starting_retained_block += effect_data.value
+						print("  + %d startovní blok (nyní %d)" % [effect_data.value, starting_retained_block])
+					PassiveEffectData.EffectType.CRITICAL_CHANCE_BONUS:
+						critical_chance += effect_data.value
+						print("  + %d%% kritická šance (nyní %d%%)" % [effect_data.value, critical_chance])
+					PassiveEffectData.EffectType.HEAL_END_OF_TURN:
+						heal_end_of_turn += effect_data.value
+						print("  + %d HP za konec tahu (nyní %d)" % [effect_data.value, heal_end_of_turn])
+					PassiveEffectData.EffectType.AURA_ENHANCEMENT:
+						aura_enhancement += effect_data.value
+						print("  + %d%% vylepšení aur (nyní %d%%)" % [effect_data.value, aura_enhancement])
+					PassiveEffectData.EffectType.AVATAR_STARTING_BLOCK:
+						var shield_amount = max_hp * effect_data.value
+						global_shield += shield_amount
+						print(" ✨ Avatar Světla přidal %d do GLOBÁLNÍHO ŠTÍTU (nyní %d)" % [shield_amount, global_shield])
+					PassiveEffectData.EffectType.THORNS_DAMAGE:
+						thorns_damage += effect_data.value
+						print("  + %d poškození trny (nyní %d)" % [effect_data.value, thorns_damage])
+					PassiveEffectData.EffectType.DOUBLE_HEALING:
+						double_healing_bonus += effect_data.value
+						print("  + %d%% léčení bonus (nyní %d%%)" % [effect_data.value, double_healing_bonus])
+					PassiveEffectData.EffectType.ENERGY_ON_KILL:
+						energy_on_kill += effect_data.value
+						print("  + %d energie za zabití (nyní %d)" % [effect_data.value, energy_on_kill])
+					PassiveEffectData.EffectType.BLOCK_ON_CARD_PLAY:
+						block_on_card_play += effect_data.value
+						print("  + %d blok za kartu (nyní %d)" % [effect_data.value, block_on_card_play])
+					
+					# Card Management
+					PassiveEffectData.EffectType.CARD_UNLOCK:
+						var card_id = effect_data.string_value if effect_data.string_value != "" else ""
+						if card_id != "":
+							if not unlocked_cards.has(card_id):
+								unlocked_cards.append(card_id)
+								print("  ✅ Odemknuta karta: %s" % card_id)
+					PassiveEffectData.EffectType.DRAW_CARD_FIRST_TURN:
+						first_turn_draw_bonus += effect_data.value
+						print("  + %d karty navíc v prvním kole (nyní %d)" % [effect_data.value, first_turn_draw_bonus])
+					PassiveEffectData.EffectType.CONDITIONAL_DRAW:
+						conditional_draw_conditions.append({
+							"condition": effect_data.string_value,
+							"draw_count": effect_data.value
+						})
+						print("  ✅ Přidána podmínka pro líznutí: %s (%d karet)" % [effect_data.string_value, effect_data.value])
+					PassiveEffectData.EffectType.HAND_SIZE_BONUS:
+						max_hand_size_bonus += effect_data.value
+						print("  + %d k velikosti ruky (nyní %d)" % [effect_data.value, max_hand_size_bonus])
+					
+					# Resource Management
+					PassiveEffectData.EffectType.STARTING_RESOURCE:
+						var resource_type = effect_data.string_value.to_lower() if effect_data.string_value != "" else ""
+						match resource_type:
+							"combo", "combo_points":
+								starting_combo_points += effect_data.value
+								print("  + %d kombo bodů na začátku (nyní %d)" % [effect_data.value, starting_combo_points])
+							"essence":
+								starting_essence += effect_data.value
+								print("  + %d essence na začátku (nyní %d)" % [effect_data.value, starting_essence])
+							"potions":
+								starting_potions += effect_data.value
+								print("  + %d lektvarů na začátku (nyní %d)" % [effect_data.value, starting_potions])
+							_:
+								print("  ⚠️ Neznámý typ resource: %s" % resource_type)
+					PassiveEffectData.EffectType.STARTING_TRAP:
+						starting_traps += effect_data.value
+						print("  + %d pastí na začátku (nyní %d)" % [effect_data.value, starting_traps])
+					PassiveEffectData.EffectType.STARTING_POTIONS:
+						starting_potions += effect_data.value
+						print("  + %d lektvarů na začátku (nyní %d)" % [effect_data.value, starting_potions])
+					
+					# Combat Bonuses
+					PassiveEffectData.EffectType.TARGET_BONUS_DAMAGE:
+						target_bonus_damage_percent += effect_data.value
+						print("  + %d%% poškození proti cíli (nyní %d%%)" % [effect_data.value, target_bonus_damage_percent])
+					PassiveEffectData.EffectType.CARD_COST_REDUCTION_TARGET:
+						target_card_cost_reduction += effect_data.value
+						print("  - %d cena karty proti cíli (nyní -%d)" % [effect_data.value, target_card_cost_reduction])
+					PassiveEffectData.EffectType.FIRST_ATTACK_FREE:
+						first_attack_free_count += effect_data.value
+						print("  + %d prvních útoků zdarma (nyní %d)" % [effect_data.value, first_attack_free_count])
+					PassiveEffectData.EffectType.SPELL_BLOCK:
+						spell_block_amount += effect_data.value
+						print("  + %d bloku za kouzlo (nyní %d)" % [effect_data.value, spell_block_amount])
+					
+					# Passive Enhancements
+					PassiveEffectData.EffectType.PASSIVE_ENHANCEMENT:
+						var passive_id = effect_data.string_value if effect_data.string_value != "" else ""
+						if passive_id != "":
+							if not passive_enhancements.has(passive_id):
+								passive_enhancements[passive_id] = 0
+							passive_enhancements[passive_id] += effect_data.value
+							print("  + %d k pasivní schopnosti '%s' (nyní +%d)" % [effect_data.value, passive_id, passive_enhancements[passive_id]])
+					PassiveEffectData.EffectType.PASSIVE_RESONANCE_BONUS:
+						passive_resonance_bonus_percent += effect_data.value
+						print("  + %d%% k pasivní rezonanci (nyní %d%%)" % [effect_data.value, passive_resonance_bonus_percent])
+					PassiveEffectData.EffectType.PASSIVE_USE_COUNT:
+						passive_use_count_bonus += effect_data.value
+						print("  + %d použití pasivní schopnosti za kolo (nyní %d)" % [effect_data.value, passive_use_count_bonus])
+					PassiveEffectData.EffectType.PASSIVE_TRIGGER_THRESHOLD:
+						var passive_id = effect_data.string_value if effect_data.string_value != "" else ""
+						if passive_id != "":
+							passive_threshold_overrides[passive_id] = effect_data.value
+							print("  ✅ Prah '%s' změněn na %d%%" % [passive_id, effect_data.value])
+					
+					# Posture System
+					PassiveEffectData.EffectType.POSTURE_BONUS:
+						var posture = effect_data.string_value.to_lower() if effect_data.string_value != "" else ""
+						if posture != "":
+							if not posture_bonuses.has(posture):
+								posture_bonuses[posture] = 0
+							posture_bonuses[posture] += effect_data.value
+							print("  + %d%% bonus v postoji '%s' (nyní %d%%)" % [effect_data.value, posture, posture_bonuses[posture]])
+					PassiveEffectData.EffectType.POSTURE_COST_REDUCTION:
+						posture_switch_cost_reduction += effect_data.value
+						print("  - %d cena přepnutí postoje (nyní -%d)" % [effect_data.value, posture_switch_cost_reduction])
+					
+					# DoT/Status
+					PassiveEffectData.EffectType.POISON_DAMAGE_BONUS:
+						poison_damage_bonus += effect_data.value
+						print("  + %d poškození jedů (nyní %d)" % [effect_data.value, poison_damage_bonus])
+					
+					# Summoning
+					PassiveEffectData.EffectType.SUMMON_HEALTH_BONUS:
+						summon_health_bonus += effect_data.value
+						print("  + %d HP pro vyvolané jednotky (nyní %d)" % [effect_data.value, summon_health_bonus])
+					PassiveEffectData.EffectType.ENEMY_TO_CARD_CONVERSION:
+						enemy_to_card_conversion_percent += effect_data.value
+						print("  + %d%% konverze nepřátel na karty (nyní %d%%)" % [effect_data.value, enemy_to_card_conversion_percent])
+					
+					# Lifesteal
+					PassiveEffectData.EffectType.LIFESTEAL_PERCENTAGE:
+						lifesteal_percentage += effect_data.value
+						print("  + %d%% lifesteal (nyní %d%%)" % [effect_data.value, lifesteal_percentage])
+					PassiveEffectData.EffectType.OVERHEAL_TO_TEMP_HP:
+						overheal_to_temp_hp_percent += effect_data.value
+						print("  + %d%% přebytečného léčení → dočasné HP (nyní %d%%)" % [effect_data.value, overheal_to_temp_hp_percent])
+					PassiveEffectData.EffectType.ALLIED_DAMAGE_LIFESTEAL:
+						allied_damage_lifesteal_percent += effect_data.value
+						print("  + %d%% lifesteal z poškození spojenců (nyní %d%%)" % [effect_data.value, allied_damage_lifesteal_percent])
+					
+					# Conditional Effects
+					PassiveEffectData.EffectType.CONDITIONAL_BLOCK:
+						conditional_block_effects.append({
+							"condition": effect_data.string_value,
+							"block_amount": effect_data.value
+						})
+						print("  ✅ Přidán podmíněný blok: %s (%d bloku)" % [effect_data.string_value, effect_data.value])
+					PassiveEffectData.EffectType.STARTING_TEMP_HP:
+						starting_temp_hp += effect_data.value
+						print("  + %d dočasného HP na začátku (nyní %d)" % [effect_data.value, starting_temp_hp])
+					
+					# Support
+					PassiveEffectData.EffectType.ALLIED_DEFENSE_BONUS:
+						allied_defense_bonus_percent += effect_data.value
+						print("  + %d%% obrany spojenců (nyní %d%%)" % [effect_data.value, allied_defense_bonus_percent])
+					PassiveEffectData.EffectType.FORCE_ENEMY_MOVEMENT:
+						force_enemy_movement_uses += effect_data.value
+						print("  + %d použití donucení pohybu (nyní %d)" % [effect_data.value, force_enemy_movement_uses])
+					
+					# Elemental
+					PassiveEffectData.EffectType.FIRST_SPELL_ELEMENT_FREE:
+						first_spell_element_free = true
+						used_free_elements.clear()
+						print("  ✅ První kouzlo každého živlu zdarma")
+					
+					# Legacy efekty (pokud ještě nejsou implementované)
+					PassiveEffectData.EffectType.MOVEMENT_BONUS:
+						print("  ⚠️ MOVEMENT_BONUS ještě není implementován")
+					PassiveEffectData.EffectType.CARD_COST_REDUCTION:
+						print("  ⚠️ CARD_COST_REDUCTION ještě není implementován")
+					PassiveEffectData.EffectType.DRAW_EXTRA_CARDS:
+						print("  ⚠️ DRAW_EXTRA_CARDS ještě není implementován")
+					PassiveEffectData.EffectType.STATUS_IMMUNITY:
+						print("  ⚠️ STATUS_IMMUNITY ještě není implementován")
+					PassiveEffectData.EffectType.AREA_DAMAGE_BONUS:
+						print("  ⚠️ AREA_DAMAGE_BONUS ještě není implementován")
 	
 	# NOVÉ: Aplikuj bonusy z artefaktů
 	if has_node("/root/ArtifactManager"):
@@ -282,9 +549,16 @@ func initialize_player(p_class, p_subclass):
 		active_skill_tree = p_subclass.passive_skill_tree
 	
 	if is_instance_valid(active_skill_tree):
+		# Zajistíme, že skill tree má správně sestavený lookup dictionary
+		active_skill_tree.rebuild()
 		print("✅ Skill tree načten: " + str(active_skill_tree.skill_nodes.size()) + " uzlů")
 	else:
 		print("⚠️ Žádný skill tree nebyl nastaven.")
+	
+	# NOVÉ: Načteme odemčené karty z meta progress
+	if SaveManager and SaveManager.meta_progress:
+		unlocked_cards = SaveManager.meta_progress.unlocked_cards.duplicate()
+		print("✅ Načteno %d odemčených karet" % unlocked_cards.size())
 	
 	print("=== INICIALIZACE DOKONČENA ===")
 
@@ -611,5 +885,5 @@ func emit_all_signals():
 	gold_changed.emit(gold)
 	deck_changed.emit()
 	floor_changed.emit(floors_cleared)
-	ng_plus_changed.emit(ng_plus_level)
+	loop_level_changed.emit(loop_level)
 	artifacts_changed.emit()

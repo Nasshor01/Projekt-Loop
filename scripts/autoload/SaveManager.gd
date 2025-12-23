@@ -50,6 +50,32 @@ func add_xp(amount: int):
 	_check_for_level_up()
 	save_meta_progress()
 
+func recalculate_skill_points():
+	"""Přepočítá skill points podle aktuálního levelu a resetuje alokované skilly"""
+	if not meta_progress:
+		printerr("SaveManager: meta_progress není načten!")
+		return
+	
+	var old_skill_points = meta_progress.skill_points
+	
+	# Vypočítáme správný počet skill points: level 1 = 0, level 2 = 1, ..., level N = N-1
+	var correct_skill_points = max(0, meta_progress.player_level - 1)
+	
+	# Resetujeme alokované skilly
+	meta_progress.allocated_skills.clear()
+	
+	# Nastavíme správný počet skill points
+	meta_progress.skill_points = correct_skill_points
+	
+	print("=== RESET SKILL POINTS ===")
+	print("Level: %d" % meta_progress.player_level)
+	print("Staré skill points: %d" % old_skill_points)
+	print("Nové skill points: %d" % meta_progress.skill_points)
+	print("Alokované skilly resetovány")
+	
+	save_meta_progress()
+	emit_signal("meta_progress_changed")
+
 #==============================================================================
 # Run Progress
 #==============================================================================
@@ -60,15 +86,36 @@ func save_run(player_data: PlayerData):
 		DebugLogger.log_error("Failed to open save file for writing.", "SAVE")
 		return
 
+	# Uložíme resource paths pro třídu a podtřídu
+	var class_path = ""
+	var subclass_path = ""
+	if is_instance_valid(player_data.selected_class):
+		class_path = player_data.selected_class.resource_path
+	if is_instance_valid(player_data.selected_subclass):
+		subclass_path = player_data.selected_subclass.resource_path
+
+	# Uložíme path_taken jako row a column každého uzlu
+	var path_taken_data = []
+	for node in player_data.path_taken:
+		if is_instance_valid(node):
+			path_taken_data.append({
+				"row": node.row,
+				"column": node.column
+			})
+
 	var data_to_save = {
-		"health": player_data.health,
-		"max_health": player_data.max_health,
+		"current_hp": player_data.current_hp,
+		"max_hp": player_data.max_hp,
 		"gold": player_data.gold,
 		"master_deck": player_data.master_deck.map(func(card): return card.resource_path),
 		"artifacts": player_data.artifacts.map(func(artifact): return artifact.resource_path),
 		"floors_cleared": player_data.floors_cleared,
-		"ng_plus_level": player_data.ng_plus_level,
+		"loop_level": player_data.loop_level,  # Ukládáme jako loop_level, ale načítáme i staré "ng_plus_level" pro kompatibilitu
 		"current_run_xp": player_data.current_run_xp,
+		"selected_class_path": class_path,
+		"selected_subclass_path": subclass_path,
+		"current_seed": GameManager.current_seed,
+		"path_taken": path_taken_data,
 	}
 
 	var json_string = JSON.stringify(data_to_save, "\t")

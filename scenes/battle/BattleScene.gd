@@ -72,6 +72,7 @@ var _is_first_turn: bool = true
 var _current_turn_number: int = 0
 var _is_extra_turn: bool = false
 var _cards_played_this_turn: Dictionary = {}  # Tracking karet za tah pro limit použití
+var _took_damage_last_turn: bool = false  # Tracking poškození pro consecrated_barrier
 
 func _ready():
 	DebugLogger.log_info("Battle scene loaded", "BATTLE")
@@ -225,6 +226,17 @@ func _unhandled_input(event: InputEvent):
 				return
 			
 			var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
+			
+			# Kontrola: Pokud karta vyžaduje nepřítele jako cíl, musí být target_node validní nepřítel
+			if is_instance_valid(_selected_card_data):
+				var requires_enemy = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
+				if requires_enemy:
+					if not is_instance_valid(target_node) or not target_node is Unit or not target_node.get_unit_data().faction == UnitData.Faction.ENEMY:
+						# Karta vyžaduje nepřítele, ale klikli jsme na prázdnou buňku nebo ne-nepřítele
+						DebugLogger.log_warning("Karta vyžaduje vybraného nepřítele!")
+						get_viewport().set_input_as_handled()
+						return
+			
 			try_play_card(_selected_card_data, target_node)
 			get_viewport().set_input_as_handled()
 			
@@ -280,6 +292,9 @@ func _start_player_initiative_turn(_player_unit: Unit, extra_draw: int = 0):
 	# Reset tracking karet za tah
 	_cards_played_this_turn.clear()
 	
+	# POZNÁMKA: Tracking poškození se NERESETUJE na začátku tahu, ale na konci tahu hráče
+	# aby karta consecrated_barrier mohla správně zkontrolovat, zda hráč utrpěl poškození v předchozím tahu
+	
 	# Reset energie
 	PlayerData.reset_energy()
 	
@@ -329,7 +344,34 @@ func _process_single_enemy_action(enemy_unit: Unit):
 	
 	match action.type:
 		EnemyAIBase.AIAction.ActionType.ATTACK:
-			await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+			# Tracking poškození pro consecrated_barrier
+			if is_instance_valid(action.target_unit) and action.target_unit == _player_unit_node:
+				_took_damage_last_turn = true
+			
+			# Elementální poškození (Mage)
+			if action.special_data.get("elemental_damage", false):
+				var element_type = action.special_data.get("element_type", "fire")
+				await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+				# Aplikuj elementální efekt
+				if is_instance_valid(action.target_unit) and action.target_unit is Unit:
+					match element_type:
+						"fire":
+							action.target_unit.apply_status("burning", 2, 3)
+						"ice":
+							action.target_unit.apply_status("chilled", 1, 2)
+						"lightning":
+							action.target_unit.apply_status("shocked", 1, 1)
+			# Assassin double attack
+			elif action.special_data.get("double_attack", false):
+				await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+				await get_tree().create_timer(0.3).timeout  # Krátká pauza mezi útoky
+				await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+			# Holy damage (Healer) - už je v multiplier
+			else:
+				await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+		
+		EnemyAIBase.AIAction.ActionType.SPECIAL:
+			await _process_special_action(enemy_unit, action)
 		
 		EnemyAIBase.AIAction.ActionType.RUSH:
 			if enemy_unit.can_move():
@@ -700,6 +742,13 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 	DebugLogger.log_card_played(card.card_name, str(initial_target.name) if initial_target else "none")
 	if _is_action_processing: return
 	if not card: return
+	
+	# Frozen - nemůže hrát karty
+	if is_instance_valid(_player_unit_node) and (_player_unit_node.is_frozen or _player_unit_node.active_statuses.has("frozen")):
+		DebugLogger.log_warning("Jsi zmrazen! Nemůžeš hrát karty.")
+		_show_floating_notification("❄️ ZMRAZEN!", Color.CYAN)
+		return
+	
 	if not PlayerData.spend_energy(card.cost):
 		DebugLogger.log_warning("Nedostatek energie pro kartu: %s" % card.card_name)
 		return
@@ -721,14 +770,11 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 			_show_floating_notification("⚠️ Limit: %d/%d" % [current_count + 1, card.max_uses_per_turn], Color.ORANGE)
 
 	_is_action_processing = true
-	var card_played_successfully = true
-	if card_played_successfully:
-	# ===== PŘIDÁNO: Označ akci =====
-		if is_instance_valid(_player_unit_node):
-			_player_unit_node.use_action()
+	var card_played_successfully = false
 	
 	var card_ui_to_remove = _selected_card_ui
 	
+	# Projdi všechny efekty a zkontroluj, zda mají platné cíle
 	for effect_data in card.effects:
 		var targets = _get_targets_for_effect(effect_data, initial_target)
 		if not targets.is_empty():
@@ -736,6 +782,11 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 			for target_unit in targets:
 				if is_instance_valid(target_unit):
 					_apply_single_effect(effect_data, target_unit)
+	
+	# Označ akci pouze pokud byla karta úspěšně použita
+	if card_played_successfully:
+		if is_instance_valid(_player_unit_node):
+			_player_unit_node.use_action()
 					
 	if card_played_successfully:
 		# DŮLEŽITÉ: Trigger artefaktů PO trackování ale PŘED aplikací efektů
@@ -854,14 +905,68 @@ func _execute_move(unit_to_move: Unit, target_cell: Vector2i):
 		unit_to_move.process_terrain_effects(terrain_on_cell)
 	_reset_player_selection()
 
+# Kontrola podmínek pro efekt
+func _check_condition(effect: CardEffectData, target: Node3D) -> bool:
+	if not effect.has_condition or effect.condition_type.is_empty():
+		return true
+	
+	if not is_instance_valid(_player_unit_node):
+		return false
+	
+	match effect.condition_type:
+		"block_above":
+			return _player_unit_node.current_block > effect.condition_value
+		"block_below":
+			return _player_unit_node.current_block < effect.condition_value
+		"health_below_percent":
+			var percent = (PlayerData.current_hp * 100) / PlayerData.max_hp
+			return percent < effect.condition_value
+		"health_above_percent":
+			var percent = (PlayerData.current_hp * 100) / PlayerData.max_hp
+			return percent > effect.condition_value
+		"target_has_debuff":
+			if target is Unit and target.has("active_statuses"):
+				return target.active_statuses.size() > 0
+			return false
+		"target_health_above_percent":
+			if target is Unit and target.has("current_health") and target.has("get_unit_data"):
+				var unit_data = target.get_unit_data()
+				var max_hp = unit_data.max_health
+				var percent = (target.current_health * 100) / max_hp
+				return percent > effect.condition_value
+			return false
+		"took_damage_last_turn":
+			return _took_damage_last_turn
+		_:
+			return true
+
 # OPRAVA: Argument 'target' musí být Node3D (pro 3D jednotky)
 func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 	if not is_instance_valid(target): return
+	
+	# Kontrola podmínek
+	var condition_met = _check_condition(effect, target)
+	var bonus_value = effect.conditional_bonus_value if condition_met else 0
 	
 	match effect.effect_type:
 		CardEffectData.EffectType.DEAL_DAMAGE:
 			if target.has_method("take_damage"):
 				var damage_to_deal = effect.value
+				
+				# Podmíněné bonusy z karty
+				damage_to_deal += bonus_value
+				
+				# Speciální podmínka: damage_per_block (holy_vengeance)
+				if effect.condition_type == "damage_per_block" and is_instance_valid(_player_unit_node):
+					damage_to_deal += _player_unit_node.current_block * effect.conditional_bonus_value
+				
+				# Status efekt: consecrated_weapon (+5 poškození na příští útok)
+				if is_instance_valid(_player_unit_node) and _player_unit_node.active_statuses.has("consecrated_weapon"):
+					var status_data = _player_unit_node.active_statuses["consecrated_weapon"]
+					damage_to_deal += status_data.value
+					# Odstraň status po použití
+					_player_unit_node.active_statuses.erase("consecrated_weapon")
+					_player_unit_node._update_stats_and_emit_signal()
 				
 				# Existující bonus z skillů
 				damage_to_deal += PlayerData.global_card_damage_bonus
@@ -890,7 +995,25 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 						if is_instance_valid(_player_unit_node):
 							_player_unit_node._show_floating_text(damage_to_deal, "critical")
 				
+				# Tracking pro gods_lightning (energie při zabití nepřítele)
+				var enemy_health_before = 0
+				if target is Unit and target.get_unit_data().faction == UnitData.Faction.ENEMY:
+					enemy_health_before = target.current_health
+				
 				target.take_damage(damage_to_deal)
+				
+				# Pokud byl nepřítel zabit touto kartou, zkontroluj, zda karta má gods_lightning efekt
+				if target is Unit and target.get_unit_data().faction == UnitData.Faction.ENEMY:
+					if enemy_health_before > 0 and target.current_health <= 0:
+						# Zkontroluj, zda aktuální karta má GAIN_ENERGY efekt (gods_lightning)
+						for card_effect in _selected_card_data.effects:
+							if card_effect.effect_type == CardEffectData.EffectType.GAIN_ENERGY:
+								PlayerData.gain_energy(card_effect.value)
+								DebugLogger.log_info("⚡ Gods Lightning: Získal %d energie za zabití nepřítele!" % card_effect.value)
+				
+				# Tracking poškození pro consecrated_barrier (pokud je target hráč)
+				if target == _player_unit_node:
+					_took_damage_last_turn = true
 				
 				# Trigger damage dealt artefakty
 				# POZNÁMKA: Ujisti se, že ArtifactManager.on_damage_dealt bere jako argument 'Node' nebo 'Unit'
@@ -898,10 +1021,42 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 					ArtifactManager.on_damage_dealt(damage_to_deal, target, is_critical)
 
 		CardEffectData.EffectType.GAIN_BLOCK:
-			if target.has_method("add_block"): target.add_block(effect.value)
+			if target.has_method("add_block"):
+				var block_amount = effect.value
+				# Podpora pro blok z max_hp (používá se v unbreakable_faith)
+				if effect.string_value == "max_hp" and is_instance_valid(_player_unit_node):
+					block_amount = PlayerData.max_hp
+				
+				# Pro podmíněné efekty: kontrolujeme blok PŘED přidáním základního bloku
+				# Pokud je podmínka splněna, přidáme bonusový blok
+				# POZNÁMKA: Pro "block_above" kontrolujeme blok PŘED přidáním nového bloku
+				var condition_met_before = _check_condition(effect, target)
+				
+				# Přidej základní blok
+				target.add_block(block_amount)
+				
+				# Pokud byla podmínka splněna PŘED přidáním bloku, přidej bonus
+				if condition_met_before and effect.conditional_bonus_value > 0:
+					target.add_block(effect.conditional_bonus_value)
+				
+				# Podpora pro retained_block (blok, který nezmizí na konci tahu)
+				# Pokud string_value obsahuje "retain", nastavíme retained_block
+				if effect.string_value.contains("retain") and target.has("retained_block"):
+					var total_block_added = block_amount
+					if condition_met_before and effect.conditional_bonus_value > 0:
+						total_block_added += effect.conditional_bonus_value
+					target.retained_block += total_block_added
+					# Ujistíme se, že retained_block nepřesáhne current_block
+					target.retained_block = min(target.retained_block, target.current_block)
 			
 		CardEffectData.EffectType.HEAL_UNIT:
-			if target.has_method("heal"): target.heal(effect.value)
+			if target.has_method("heal"):
+				var heal_amount = effect.value
+				# Podmíněné bonusy z karty (např. massive_healing)
+				# Pokud je podmínka splněna a conditional_bonus_value > 0, použij bonusovou hodnotu místo základní
+				if condition_met and effect.conditional_bonus_value > 0:
+					heal_amount = effect.conditional_bonus_value
+				target.heal(heal_amount)
 			
 		CardEffectData.EffectType.HEAL_TO_FULL:
 			if target.has_method("heal_to_full"): target.heal_to_full()
@@ -917,7 +1072,25 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 		CardEffectData.EffectType.GAIN_ENERGY: PlayerData.gain_energy(effect.value)
 		
 		CardEffectData.EffectType.APPLY_STATUS:
-			if target.has_method("apply_status"): target.apply_status(effect.string_value, effect.value)
+			if target.has_method("apply_status"):
+				# Speciální případ: remove_all_debuffs
+				if effect.string_value == "remove_all_debuffs":
+					if target is Unit and target.has("active_statuses"):
+						# Odstraň všechny debuff statusy (zachovej buffy jako regeneration, aura_devotion)
+						var statuses_to_remove = []
+						for status_id in target.active_statuses.keys():
+							# Zachovej buffy (regeneration, aura_devotion, aura_devotion_plus)
+							if status_id != "regeneration" and status_id != "aura_devotion" and status_id != "aura_devotion_plus":
+								statuses_to_remove.append(status_id)
+						
+						for status_id in statuses_to_remove:
+							target.active_statuses.erase(status_id)
+						
+						if not statuses_to_remove.is_empty():
+							target._update_stats_and_emit_signal()
+							DebugLogger.log_info("Odstraněno %d debuffů" % statuses_to_remove.size())
+				else:
+					target.apply_status(effect.string_value, effect.value)
 			
 		CardEffectData.EffectType.GAIN_EXTRA_MOVE:
 			if target.has_method("gain_extra_move"): target.gain_extra_move()
@@ -964,6 +1137,10 @@ func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D
 					targets.append(initial_target_node)
 		CardEffectData.TargetType.ALL_ENEMY_UNITS:
 			targets.assign(_enemy_units)
+		CardEffectData.TargetType.ALL_ALLY_UNITS:
+			# V této hře je hráč jediný spojenec, ale pro budoucí rozšíření můžeme přidat další spojence
+			if is_instance_valid(_player_unit_node):
+				targets.append(_player_unit_node)
 	return targets
 	
 func _reset_player_selection():
@@ -993,6 +1170,10 @@ func _on_end_turn_button_pressed():
 	# ===== UPRAVENO PRO INICIATIVNÍ SYSTÉM =====
 	_current_battle_state = BattleState.PROCESSING
 	end_turn_button.disabled = true
+	
+	# Reset tracking poškození na konci tahu hráče (pro consecrated_barrier)
+	# Toto zajistí, že v dalším tahu hráče bude tracking správně nastaven
+	_took_damage_last_turn = false
 	
 	# Zavolej end_turn na hráči
 	if is_instance_valid(_player_unit_node):
@@ -1180,5 +1361,72 @@ func get_grid_cell_under_mouse() -> Vector2i:
 		var grid_x = round(intersection.x / cell_size)
 		var grid_y = round(intersection.z / cell_size)
 		return Vector2i(grid_x, grid_y)
+	
+	return Vector2i(-1, -1)
+
+func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> void:
+	"""Zpracuje speciální akce AI (meteorit, spawn, buff, heal)"""
+	var special_type = action.special_data.get("type", "")
+	
+	match special_type:
+		"meteor":
+			# Mage meteorit - poškození všem jednotkám na gridu
+			enemy_unit.show_status_text("☄️ METEORIT!", "critical")
+			await get_tree().create_timer(1.0).timeout
+			
+			var damage = int(enemy_unit.unit_data.attack_damage * action.special_data.get("damage_multiplier", 2.0))
+			var all_units = battle_grid_instance.get_all_objects_on_grid()
+			
+			for unit in all_units:
+				if unit is Unit:
+					await unit.take_damage(damage)
+					# Aplikuje burning všem
+					unit.apply_status("burning", 2, 3)
+			
+			# Zapálí celý grid (můžeme přidat vizuální efekt)
+			print("🔥 Grid je zapálen!")
+		
+		"spawn_spirit":
+			# Druid spawn spiritu
+			var spawn_pos = _find_spawn_position(enemy_unit)
+			if spawn_pos != Vector2i(-1, -1):
+				# TODO: Vytvořit spirit unit (bude potřeba UnitData pro spirit)
+				print("🌿 Druid spawnuje spiritu na pozici: %s" % spawn_pos)
+				# _spawn_unit("spirit", spawn_pos, action.special_data.get("is_guardian", false))
+		
+		"buff_ally":
+			# Monk buffuje spojence
+			var target = action.special_data.get("target")
+			if is_instance_valid(target) and target is Unit:
+				var bonus = action.special_data.get("damage_bonus", 2)
+				var duration = action.special_data.get("duration", 3)
+				target.apply_status("monk_blessing", bonus, duration)
+				target.show_status_text("BLESSED!", "heal")
+				print("✨ Monk požehnal spojence: +%d damage na %d kol" % [bonus, duration])
+		
+		"heal_ally":
+			# Healer léčí spojence
+			var target = action.special_data.get("target")
+			if is_instance_valid(target) and target is Unit:
+				var heal_amount = action.special_data.get("heal_amount", 8)
+				target.heal(heal_amount)
+				target.show_status_text("HEALED!", "heal")
+				print("💚 Healer vyléčil spojence za %d HP" % heal_amount)
+		
+		_:
+			print("⚠️ Neznámý typ speciální akce: %s" % special_type)
+
+func _find_spawn_position(near_unit: Unit) -> Vector2i:
+	"""Najde volnou pozici pro spawn jednotky poblíž"""
+	var adjacent = [
+		Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT
+	]
+	
+	for offset in adjacent:
+		var pos = near_unit.grid_position + offset
+		if battle_grid_instance.is_cell_active(pos):
+			var obj = battle_grid_instance.get_object_on_cell(pos)
+			if not obj:
+				return pos
 	
 	return Vector2i(-1, -1)

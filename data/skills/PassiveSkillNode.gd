@@ -14,6 +14,7 @@ extends Resource
 
 # NOVÉ: Tier systém jako v Path of Exile
 enum SkillTier {
+	TIER_0 = 0,    # Starter node (na samém začátku)
 	TIER_1 = 1,    # Základní vylepšení
 	TIER_2 = 2,    # Specializované vylepšení  
 	TIER_3 = 3,    # Pokročilé schopnosti
@@ -36,17 +37,16 @@ enum NodeType {
 
 # Náklady a propojení
 @export var cost: int = 1
-@export var connected_nodes: PackedStringArray = []
-@export var prerequisite_nodes: PackedStringArray = []  # NOVÉ: Explicitní prerekvizity
+@export var connected_nodes: PackedStringArray = []  # POUZE VIZUÁLNÍ - pro kreslení linek
+@export var prerequisite_nodes: PackedStringArray = []  # POUZE LOGIKA - pro odemykání
+@export var max_allocations: int = 1  # Kolikrát lze skill vzít (pro stackovatelné efekty)
 
 # Efekty a vlastnosti
 @export var effects: Array[PassiveEffectData] = []
 @export var is_starter: bool = false
-@export var max_allocations: int = 1  # NOVÉ: Kolikrát lze skill vzít (pro stackovatelné efekty)
 
-# Runtime stav
-var is_unlocked: bool = false
-var allocation_count: int = 0
+# POZNÁMKA: Runtime stav (is_unlocked, allocation_count) byl odstraněn!
+# Používej SaveManager.meta_progress.allocated_skills místo toho
 
 # NOVÉ: Pozičnímu automaticky podle tieru a branže
 @export var branch: String = "main"  # "defense", "offense", "utility", "main"
@@ -55,26 +55,42 @@ var allocation_count: int = 0
 # NOVÉ: Podmínky pro odemčení
 @export var unlock_conditions: Array[String] = []  # ["level_10", "complete_boss_fight", atd.]
 
+# NOVÉ: Odemykání karet
+@export var unlocks_card: String = ""  # card_id karty, která se odemkne při alokaci tohoto uzlu
+
 # NOVÉ: Vizuální vlastnosti pro různé typy
 func get_node_size() -> float:
 	match node_type:
-		NodeType.BASIC: return 32.0
-		NodeType.NOTABLE: return 48.0
-		NodeType.KEYSTONE: return 64.0
-		NodeType.MASTERY: return 56.0
-		NodeType.STARTER: return 40.0
-		_: return 32.0
+		NodeType.BASIC: return 36.0  # Zvýšeno z 32
+		NodeType.NOTABLE: return 56.0  # Zvýšeno z 48
+		NodeType.KEYSTONE: return 80.0  # Zvýšeno z 64
+		NodeType.MASTERY: return 64.0  # Zvýšeno z 56
+		NodeType.STARTER: return 50.0  # Zvýšeno z 40
+		_: return 36.0
 
 func get_node_color() -> Color:
-	if not is_unlocked:
-		return Color(0.3, 0.3, 0.3)  # Tmavě šedá pro zamčené
+	# POZNÁMKA: is_unlocked byl odstraněn - použij SaveManager pro kontrolu
+	# Tato funkce vrací základní barvu podle typu uzlu
+	# Skutečný stav (odemčeno/zamčeno) se řeší v UI
+	
+	# Barvy podle větve a typu uzlu
+	var branch_color = get_branch_color()
 	
 	match node_type:
-		NodeType.BASIC: return Color.WHITE
+		NodeType.BASIC: return branch_color.lerp(Color.WHITE, 0.3)  # Světlejší podle větve
 		NodeType.NOTABLE: return Color.GOLD
-		NodeType.KEYSTONE: return Color.CRIMSON
-		NodeType.MASTERY: return Color.CYAN
-		NodeType.STARTER: return Color.LIGHT_GREEN
+		NodeType.KEYSTONE: return Color(1.0, 0.2, 0.2)  # Jasně červená
+		NodeType.MASTERY: return Color(0.2, 0.8, 1.0)  # Jasně cyan
+		NodeType.STARTER: return Color(0.4, 1.0, 0.4)  # Jasně zelená
+		_: return branch_color
+
+func get_branch_color() -> Color:
+	"""Vrátí barvu podle větve"""
+	match branch.to_lower():
+		"defense": return Color(0.3, 0.5, 0.9)  # Modrá
+		"offense": return Color(0.9, 0.3, 0.3)  # Červená
+		"utility": return Color(0.5, 0.9, 0.5)  # Zelená
+		"main": return Color(0.9, 0.8, 0.3)  # Zlatá
 		_: return Color.WHITE
 
 func get_cost_for_tier() -> int:
@@ -82,6 +98,7 @@ func get_cost_for_tier() -> int:
 		return cost
 	# Automatický výpočet nákladů podle tieru
 	match tier:
+		SkillTier.TIER_0: return 0  # OPRAVA BUG 2: Explicitní case pro TIER_0
 		SkillTier.TIER_1: return 1
 		SkillTier.TIER_2: return 2
 		SkillTier.TIER_3: return 3
@@ -89,8 +106,8 @@ func get_cost_for_tier() -> int:
 		SkillTier.TIER_5: return 5
 		_: return 1
 
-func can_allocate() -> bool:
-	return allocation_count < max_allocations
+# POZNÁMKA: can_allocate() byl odstraněn - použij SaveManager pro kontrolu
+# Příklad: SaveManager.meta_progress.allocated_skills.get(String(id), 0) < max_allocations
 
 func get_formatted_description() -> String:
 	var desc = description
@@ -106,6 +123,8 @@ func get_formatted_description() -> String:
 	
 	# Přidáme stackování pokud je možné
 	if max_allocations > 1:
-		desc += "\n[color=gray]Stackovatelné (%d/%d)[/color]" % [allocation_count, max_allocations]
+		# POZNÁMKA: allocation_count byl odstraněn - použij SaveManager
+		# Příklad: var count = SaveManager.meta_progress.allocated_skills.get(String(id), 0)
+		desc += "\n[color=gray]Stackovatelné (max %d)[/color]" % max_allocations
 	
 	return desc

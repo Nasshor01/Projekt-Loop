@@ -187,8 +187,15 @@ func _get_random_card_by_rarity(rarity: CardData.CardRarity) -> CardData:
 	if not card_pool:
 		return null
 	
+	# Použijeme filtrovaný pool podle třídy a odemčených karet
+	var available_cards = card_pool.get_available_cards(
+		PlayerData.selected_class,
+		PlayerData.selected_subclass,
+		PlayerData.unlocked_cards
+	)
+	
 	var filtered_cards = []
-	for card in card_pool.cards:
+	for card in available_cards:
 		if card.rarity == rarity:
 			filtered_cards.append(card)
 	

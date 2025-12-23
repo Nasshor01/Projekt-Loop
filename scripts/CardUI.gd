@@ -42,7 +42,10 @@ func update_display():
 
 	name_label.text = card_data.card_name
 	cost_label.text = str(card_data.cost)
-	description_label.text = card_data.card_description
+	
+	# Použijeme dynamický popis s aktuálními hodnotami poškození
+	description_label.text = card_data.get_display_description()
+	
 	if artwork_texture_rect and card_data.artwork:
 		artwork_texture_rect.texture = card_data.artwork
 

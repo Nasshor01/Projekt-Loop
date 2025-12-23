@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://mdpwxm73guyd"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_dgrace"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_dgrace"]
+[ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_dgrace"]
+
+[sub_resource type="Resource" id="Resource_dgrace1"]
+script = ExtResource("1_dgrace")
+effect_type = 16
+value = 0
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[sub_resource type="Resource" id="Resource_dgrace2"]
+script = ExtResource("1_dgrace")
+effect_type = 17
+value = 0
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_dgrace")
+card_id = "divine_grace"
+card_name = "Božská Milost"
+card_description = "Vyléč se na plné zdraví. Tato karta se vyčerpá."
+cost = 3
+range_type = 1
+range_value = 1
+tags = Array[int]([6])
+rarity = 3
+required_subclass = ExtResource("3_dgrace")
+effects = Array[ExtResource("1_dgrace")]([SubResource("Resource_dgrace1"), SubResource("Resource_dgrace2")])
+is_upgraded = false
+max_uses_per_turn = -1
+debuff_on_overuse = {}
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

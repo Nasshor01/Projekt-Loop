@@ -21,6 +21,10 @@ var extra_moves: int = 0
 var _has_acted_this_turn: bool = false
 var last_attacker: Unit = null
 
+# Elementární status efekty
+var is_frozen: bool = false  # Frozen - nemůže hrát karty ani se hýbat
+var movement_penalty: int = 0  # Chilled - snížení pohybu
+
 #---------------------------------------------
 #pro enemy AI
 var is_aiming: bool = false
@@ -44,8 +48,8 @@ func _ready():
 			add_to_group("units")
 			
 		else:
-			if PlayerData.ng_plus_level > 0:
-				var multiplier = 1.0 + (PlayerData.ng_plus_level * 0.5)
+			if PlayerData.loop_level > 0:
+				var multiplier = 1.0 + (PlayerData.loop_level * 0.3)  # Změněno z 0.5 na 0.3 pro lepší scaling
 				unit_data.max_health = int(unit_data.max_health * multiplier)
 				unit_data.attack_damage = int(unit_data.attack_damage * multiplier)
 
@@ -72,6 +76,15 @@ func get_last_attacker() -> Unit:
 
 func attack(target: Node, damage_multiplier: float = 1.0) -> void:
 	if not is_instance_valid(target) or not target.has_method("take_damage"): return
+	
+	# Assassin dodge - 35% šance, že útok mine
+	if target is Unit and target.unit_data.ai_script and target.unit_data.ai_script.resource_path.contains("AssassinAI"):
+		var dodge_roll = randi_range(1, 100)
+		if dodge_roll <= 35:  # 35% dodge chance
+			target._show_floating_text("DODGE!", "heal")
+			print("💨 Assassin se vyhnul útoku!")
+			return
+	
 	if target.has_method("set_last_attacker"):
 		target.set_last_attacker(self)
 	
@@ -107,7 +120,15 @@ func take_damage(amount: int) -> void:
 		ArtifactManager.on_damage_taken(amount, attacker)
 
 	var damage_to_deal = amount
-	var absorbed_by_block = min(amount, current_block)
+	
+	# Status efekt: defensive_stance (50% snížení poškození)
+	if active_statuses.has("defensive_stance"):
+		damage_to_deal = int(damage_to_deal * 0.5)
+		# Odstraň status po použití
+		active_statuses.erase("defensive_stance")
+		_update_stats_and_emit_signal()
+	
+	var absorbed_by_block = min(damage_to_deal, current_block)
 	
 	if absorbed_by_block > 0:
 		_show_floating_text(absorbed_by_block, "block_loss")
@@ -162,6 +183,9 @@ func set_aiming(state: bool):
 			_update_stats_and_emit_signal()
 
 func can_move() -> bool:
+	# Frozen - nemůže se hýbat
+	if is_frozen or active_statuses.has("frozen"):
+		return false
 	return not has_used_base_move or extra_moves > 0
 
 func use_move_action():
@@ -176,8 +200,25 @@ func gain_extra_move():
 func apply_status(status_id: String, value: int, duration: int = 1):
 	if active_statuses.has(status_id):
 		active_statuses[status_id].value += value
+		# Pro frozen/chilled - aktualizuj movement_penalty
+		if status_id == "chilled":
+			movement_penalty = active_statuses[status_id].value
+			# Pokud má 3+ chilled, stane se frozen
+			if movement_penalty >= 3:
+				is_frozen = true
+				apply_status("frozen", 1, 1)
+		if status_id == "frozen":
+			is_frozen = true
 	else:
 		active_statuses[status_id] = { "id": status_id, "value": value, "duration": duration }
+		# Pro frozen/chilled - nastav movement_penalty
+		if status_id == "chilled":
+			movement_penalty = value
+			if value >= 3:
+				is_frozen = true
+				apply_status("frozen", 1, 1)
+		if status_id == "frozen":
+			is_frozen = true
 	_update_stats_and_emit_signal()
 
 func process_turn_start_statuses() -> int:
@@ -223,6 +264,23 @@ func process_turn_end_statuses():
 	for status_id in active_statuses.keys():
 		if status_id == "aura_devotion" or status_id == "aura_devotion_plus":
 			continue
+		
+		# Regenerace - léčí na konci tahu
+		if status_id == "regeneration":
+			var status_data = active_statuses[status_id]
+			var heal_amount = status_data.value
+			heal(heal_amount)
+		
+		# Burning - poškození na konci tahu
+		if status_id == "burning":
+			var status_data = active_statuses[status_id]
+			var damage = status_data.value
+			take_damage(damage)
+			_show_floating_text(damage, "damage")
+			# Snížíme hodnotu nebo duration
+			status_data.value = max(0, status_data.value - 1)  # Snížíme poškození každé kolo
+			if status_data.value <= 0:
+				statuses_to_remove.append(status_id)
 
 		active_statuses[status_id].duration -= 1
 		if active_statuses[status_id].duration <= 0:
@@ -233,6 +291,10 @@ func process_turn_end_statuses():
 
 	for status_id in statuses_to_remove:
 		active_statuses.erase(status_id)
+		# Reset frozen pokud zmizí chilled/frozen
+		if status_id == "frozen" or status_id == "chilled":
+			is_frozen = false
+			movement_penalty = 0
 
 	_update_stats_and_emit_signal()
 
@@ -243,8 +305,18 @@ func get_current_movement_range() -> int:
 	if active_statuses.has("Slow"):
 		current_range += active_statuses["Slow"].value
 	
+	# Chilled - snížení pohybu
+	if active_statuses.has("chilled"):
+		var chilled_data = active_statuses["chilled"]
+		movement_penalty = chilled_data.value
+		current_range = max(0, current_range - movement_penalty)
+	
+	# Frozen - žádný pohyb
+	if is_frozen or active_statuses.has("frozen"):
+		current_range = 0
+	
 	if unit_data.movement_range > 0:
-		return max(1, current_range)
+		return max(0, current_range)
 	else:
 		return 0
 

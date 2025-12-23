@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://d2ajmhld1r5hd"]
+
+[ext_resource type="Script" uid="uid://bssgy4e2cfc7r" path="res://scripts/test/test_skill_tree_config.gd" id="1_jtowb"]
+
+[node name="Node" type="Node"]
+script = ExtResource("1_jtowb")

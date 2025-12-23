@@ -93,6 +93,9 @@ func _on_text_submitted(command_text: String):
 		"reload_artifacts":
 			_cmd_reload_artifacts()
 		
+		"reset_skill_points":
+			_cmd_reset_skill_points()
+		
 		"help":
 			_cmd_help()
 		
@@ -223,6 +226,30 @@ func _cmd_reload_artifacts():
 	_load_all_artifacts()
 	log_success("🔄 Artefakty znovu načteny!")
 
+func _cmd_reset_skill_points():
+	if not has_node("/root/SaveManager"):
+		log_error("SaveManager není dostupný!")
+		return
+	
+	var save_manager = get_node("/root/SaveManager")
+	var meta = save_manager.meta_progress
+	
+	if not meta:
+		log_error("Meta progress není načten!")
+		return
+	
+	var old_skill_points = meta.skill_points
+	var level = meta.player_level
+	
+	# Zavoláme funkci pro přepočet skill points
+	save_manager.recalculate_skill_points()
+	
+	log_success("🔄 Skill points resetovány!")
+	log_message("  Level: %d" % level)
+	log_message("  Staré skill points: %d" % old_skill_points)
+	log_message("  Nové skill points: %d" % meta.skill_points)
+	log_message("  Alokované skilly byly resetovány")
+
 func _cmd_help():
 	log_message("📖 Dostupné příkazy:")
 	log_message("  add_artifact <název> - Přidá artefakt")
@@ -236,6 +263,7 @@ func _cmd_help():
 	log_message("  set_hp <číslo> - Nastaví HP")
 	log_message("  add_energy <číslo> - Přidá energii")
 	log_message("  reload_artifacts - Znovu načte artefakty")
+	log_message("  reset_skill_points - Resetuje skill points podle levelu")
 	log_message("  help - Zobrazí tento seznam")
 
 func _show_artifact_examples():
