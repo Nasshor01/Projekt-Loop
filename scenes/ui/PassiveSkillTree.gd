@@ -20,7 +20,7 @@ const PassiveSkillUIScene = preload("res://scenes/ui/PassiveSkillUI.tscn")
 			_save_positions_to_resources()
 			save_positions = false
 
-## NOVÉ: Automaticky vygeneruj strom pro Paladina
+## Automaticky vygeneruj strom pro Paladina (pro náhled v editoru)
 @export var generate_paladin_tree: bool = false:
 	set(value):
 		if Engine.is_editor_hint() and value:
@@ -68,9 +68,15 @@ func _refresh_tree():
 # --- NOVÉ FUNKCE PRO GENEROVÁNÍ ---
 
 func _generate_and_preview_paladin():
-
+	print("=== GENEROVÁNÍ PALADIN SKILL TREE ===")
 	preview_tree_data = SkillTreeGenerator.generate_paladin_tree()
+	if not is_instance_valid(preview_tree_data):
+		printerr("❌ Chyba při generování stromu!")
+		return
+	print("✅ Strom vygenerován! Počet uzlů: %d" % preview_tree_data.skill_nodes.size())
 	_draw_editor_preview()
+	print("✅ Náhled vykreslen!")
+
 
 
 # --- VYLEPŠENÉ FUNKCE ---
@@ -91,7 +97,9 @@ func _generate_skill_nodes(is_editor_preview: bool):
 	var tree_data = preview_tree_data if is_editor_preview else active_skill_tree
 	if not is_instance_valid(tree_data): return
 	
-	var unlocked_ids: PackedStringArray = PackedStringArray() if is_editor_preview else SaveManager.meta_progress.unlocked_skill_ids
+	# ✅ OPRAVENO: Používáme allocated_skills místo unlocked_skill_ids
+	var allocated_skills: Dictionary = {} if is_editor_preview else SaveManager.meta_progress.allocated_skills
+	var unlocked_ids_for_check = allocated_skills.keys()  # Pro zpětnou kompatibilitu s _can_unlock_node
 
 	for skill_node in tree_data.skill_nodes:
 		if not is_instance_valid(skill_node): continue
@@ -105,8 +113,10 @@ func _generate_skill_nodes(is_editor_preview: bool):
 		if is_editor_preview:
 			skill_ui.display(skill_node, false, false)
 		else:
-			var is_unlocked = unlocked_ids.has(String(skill_node.id))
-			var can_unlock = _can_unlock_node(skill_node, unlocked_ids)
+			var skill_id = String(skill_node.id)
+			var allocation_count = allocated_skills.get(skill_id, 0)
+			var is_unlocked = allocation_count > 0
+			var can_unlock = _can_unlock_node(skill_node, unlocked_ids_for_check)
 			skill_ui.display(skill_node, is_unlocked, can_unlock)
 			skill_ui.skill_selected.connect(_on_skill_unlocked)
 
@@ -132,13 +142,13 @@ func _draw_background_lines():
 		tiers[node.tier] = true
 		branches[node.branch] = true
 	
-	# Nakreslíme tier čáry (horizontální)
+	# Nakreslíme tier čáry (horizontální) - rozšířeno pro větší strom
 	if show_tier_lines:
 		for tier in tiers.keys():
 			var y = SkillTreeGenerator.get_tier_y_offset(tier)
 			var line = Line2D.new()
-			line.add_point(Vector2(-400, y))
-			line.add_point(Vector2(1200, y))
+			line.add_point(Vector2(-800, y))  # Rozšířeno doleva (uprav podle potřeby)
+			line.add_point(Vector2(2800, y))  # Rozšířeno doprava (uprav podle potřeby)
 			line.width = 2.0
 			line.default_color = Color(0.3, 0.3, 0.3, 0.5)
 			background_lines_container.add_child(line)
@@ -150,13 +160,13 @@ func _draw_background_lines():
 			label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 			background_lines_container.add_child(label)
 	
-	# Nakreslíme branch čáry (vertikální) 
+	# Nakreslíme branch čáry (vertikální) - rozšířeno pro větší strom
 	if show_branch_lines:
 		for branch in branches.keys():
 			var x = SkillTreeGenerator.get_branch_x_offset(branch)
 			var line = Line2D.new()
-			line.add_point(Vector2(x, 0))
-			line.add_point(Vector2(x, 800))
+			line.add_point(Vector2(x, -200))  # Začátek výš (uprav podle potřeby)
+			line.add_point(Vector2(x, 2000))  # Konec níž (uprav podle potřeby)
 			line.width = 2.0
 			line.default_color = Color(0.3, 0.3, 0.3, 0.3)
 			background_lines_container.add_child(line)
@@ -172,7 +182,8 @@ func _draw_connections(is_editor_preview: bool):
 	var tree_data = preview_tree_data if is_editor_preview else active_skill_tree
 	if not is_instance_valid(tree_data): return
 
-	var unlocked_ids: PackedStringArray = PackedStringArray() if is_editor_preview else SaveManager.meta_progress.unlocked_skill_ids
+	# ✅ OPRAVENO: Používáme allocated_skills místo unlocked_skill_ids
+	var allocated_skills: Dictionary = {} if is_editor_preview else SaveManager.meta_progress.allocated_skills
 
 	for skill_node in tree_data.skill_nodes:
 		if not is_instance_valid(skill_node) or not skill_ui_map.has(skill_node.id):
@@ -188,21 +199,42 @@ func _draw_connections(is_editor_preview: bool):
 			var to_ui_node = skill_ui_map[to_id_string]
 			var to_pos = to_ui_node.position + to_ui_node.size / 2.0
 			
-			var line = Line2D.new()
-			line.add_point(from_pos)
-			line.add_point(to_pos)
-			
 			var from_node = tree_data.get_node_by_id(skill_node.id)
 			var to_node = tree_data.get_node_by_id(to_id_string)
 			
+			# NOVÝ ČISTÝ DESIGN - jednodušší spojení
+			var line = Line2D.new()
+			
+			# Pokud jsou uzly ve stejném tieru (horizontální spojení), použijeme přímou čáru
 			if from_node and to_node and from_node.tier == to_node.tier:
 				line.width = 3.0
+				line.add_point(from_pos)
+				line.add_point(to_pos)
+			# Pokud jsou uzly ve stejné větvi (vertikální spojení), použijeme přímou čáru
+			elif from_node and to_node and from_node.branch == to_node.branch:
+				line.width = 4.0
+				line.add_point(from_pos)
+				line.add_point(to_pos)
+			# Cross-branch spojení (např. do Aura Mastery) - mírná křivka
 			else:
 				line.width = 5.0
+				var mid_x = (from_pos.x + to_pos.x) / 2.0
+				var mid_y = (from_pos.y + to_pos.y) / 2.0
+				var curve_offset = 30.0  # Menší oblouk pro čistší vzhled
+				var direction = 1.0 if from_pos.x < to_pos.x else -1.0
+				var mid_point = Vector2(mid_x + curve_offset * direction, mid_y)
+				
+				# Jednoduchá křivka s méně body
+				for i in range(7):  # Méně bodů = jednodušší křivka
+					var t = i / 6.0
+					var point = from_pos.lerp(mid_point, t).lerp(to_pos.lerp(mid_point, 1.0 - t), t)
+					line.add_point(point)
 			
 			# --- ZMĚNA ZDE: POUŽÍVÁME NOVÉ @export PROMĚNNÉ ---
-			var from_is_unlocked = unlocked_ids.has(String(skill_node.id))
-			var to_is_unlocked = unlocked_ids.has(to_id_string)
+			var from_count = allocated_skills.get(String(skill_node.id), 0)
+			var to_count = allocated_skills.get(to_id_string, 0)
+			var from_is_unlocked = from_count > 0
+			var to_is_unlocked = to_count > 0
 			
 			if from_is_unlocked and to_is_unlocked:
 				line.default_color = unlocked_connection_color
@@ -241,42 +273,110 @@ func _save_positions_to_resources():
 # --- LOGIKA ODEMYKÁNÍ ---
 
 func _can_unlock_node(skill_node: PassiveSkillNode, unlocked_ids: PackedStringArray) -> bool:
+	# ✅ OPRAVENO: Používáme allocated_skills místo unlocked_skill_ids
 	if SaveManager.meta_progress.skill_points < skill_node.get_cost_for_tier():
 		return false
 	
-	if unlocked_ids.has(String(skill_node.id)):
+	# Kontrola, jestli už není na maximu
+	var current_count = SaveManager.meta_progress.allocated_skills.get(String(skill_node.id), 0)
+	if current_count >= skill_node.max_allocations:
 		return false
 	
 	# Starter může být vždy odemčen, pokud je prázdný strom
 	if unlocked_ids.is_empty():
 		return skill_node.is_starter
 	
-	# Kontrola prerekvizit
-	if not skill_node.prerequisite_nodes.is_empty():
-		for prereq in skill_node.prerequisite_nodes:
-			if not unlocked_ids.has(prereq):
+	# NOVÉ: Kontrola unlock_conditions (např. "all_nodes_unlocked", "level_10", atd.)
+	if not skill_node.unlock_conditions.is_empty():
+		for condition in skill_node.unlock_conditions:
+			if not _check_unlock_condition(condition, unlocked_ids, skill_node):
 				return false
 	
-	# Kontrola propojených uzlů
-	for connected_id in skill_node.connected_nodes:
-		if unlocked_ids.has(connected_id):
-			return true
+	# ✅ OPRAVENO: Používáme POUZE prerequisite_nodes pro logiku odemykání
+	# connected_nodes slouží POUZE pro vizuální kreslení linek
 	
-	# Kontrola, jestli nějaký odemčený uzel míří na tento
-	for unlocked_id in unlocked_ids:
-		var unlocked_node = active_skill_tree.get_node_by_id(unlocked_id)
-		if unlocked_node and unlocked_node.connected_nodes.has(String(skill_node.id)):
-			return true
+	# Kontrola prerekvizit (hlavní logika)
+	if not skill_node.prerequisite_nodes.is_empty():
+		for prereq in skill_node.prerequisite_nodes:
+			var prereq_id = String(prereq)
+			# Kontrola, jestli je prerekvizita odemčená
+			var prereq_count = SaveManager.meta_progress.allocated_skills.get(prereq_id, 0)
+			if prereq_count == 0:
+				return false
+	else:
+		# Pokud nemá explicitní prerekvizity, použijeme connected_nodes jako fallback
+		# (pro zpětnou kompatibilitu se starými stromy)
+		var has_connected_unlocked = false
+		for connected_id in skill_node.connected_nodes:
+			var conn_id = String(connected_id)
+			var conn_count = SaveManager.meta_progress.allocated_skills.get(conn_id, 0)
+			if conn_count > 0:
+				has_connected_unlocked = true
+				break
+		
+		# Kontrola, jestli nějaký odemčený uzel míří na tento
+		if not has_connected_unlocked:
+			for allocated_id in SaveManager.meta_progress.allocated_skills.keys():
+				var allocated_node = active_skill_tree.get_node_by_id(allocated_id)
+				if allocated_node and allocated_node.connected_nodes.has(String(skill_node.id)):
+					has_connected_unlocked = true
+					break
+		
+		if not has_connected_unlocked:
+			return false
 	
-	return false
+	# Kontrola, jestli už není na maximu
+	var skill_id_str = String(skill_node.id)
+	var current_allocation = SaveManager.meta_progress.allocated_skills.get(skill_id_str, 0)
+	if current_allocation >= skill_node.max_allocations:
+		return false
+	
+	return true
+
+func _check_unlock_condition(condition: String, unlocked_ids: PackedStringArray, skill_node: PassiveSkillNode) -> bool:
+	"""Kontroluje speciální podmínky pro odemčení"""
+	match condition:
+		"all_nodes_unlocked":
+			# Všechny uzly kromě tohoto musí být odemčené
+			var all_nodes = active_skill_tree.skill_nodes
+			for node in all_nodes:
+				if String(node.id) == String(skill_node.id) or node.is_starter:
+					continue
+				if not unlocked_ids.has(String(node.id)):
+					return false
+			return true
+		"all_tier_3_unlocked":
+			# Všechny Tier 3 uzly musí být odemčené
+			for node in active_skill_tree.skill_nodes:
+				if node.tier == PassiveSkillNode.SkillTier.TIER_3:
+					if not unlocked_ids.has(String(node.id)):
+						return false
+			return true
+		"all_keystones_unlocked":
+			# Všechny keystone uzly musí být odemčené
+			for node in active_skill_tree.skill_nodes:
+				if node.node_type == PassiveSkillNode.NodeType.KEYSTONE:
+					if not unlocked_ids.has(String(node.id)):
+						return false
+			return true
+		_:
+			# Další podmínky (level, boss fight, atd.) - lze rozšířit
+			return true
 
 func _on_skill_unlocked(skill_data: PassiveSkillNode):
-	var unlocked_ids = SaveManager.meta_progress.unlocked_skill_ids
+	# ✅ OPRAVENO: Používáme allocated_skills místo unlocked_skill_ids
+	var skill_id = String(skill_data.id)
+	var unlocked_ids = SaveManager.meta_progress.allocated_skills.keys()
+	
 	if not _can_unlock_node(skill_data, unlocked_ids):
 		return
 		
 	SaveManager.meta_progress.skill_points -= skill_data.get_cost_for_tier()
-	SaveManager.meta_progress.unlocked_skill_ids.append(String(skill_data.id))
+	
+	# Zvýšíme allocation count
+	var current_count = SaveManager.meta_progress.allocated_skills.get(skill_id, 0)
+	SaveManager.meta_progress.allocated_skills[skill_id] = current_count + 1
+	
 	SaveManager.save_meta_progress()
 	
 	# Aplikujeme efekty skilu na PlayerData

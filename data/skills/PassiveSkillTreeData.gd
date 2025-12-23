@@ -7,9 +7,11 @@ class_name PassiveSkillTreeData
 var nodes_by_id: Dictionary = {}
 
 func _init():
-	call_deferred("_build_lookup_dictionary")
+	rebuild()  # ✅ OPRAVENO: Používáme rebuild() místo call_deferred
 
-func _build_lookup_dictionary():  # ← OPRAVENO: bez hvězdiček!
+# ✅ OPRAVENO: Veřejná funkce pro rebuild - volat po generování, loadu, změně
+func rebuild():
+	"""Rebuild lookup dictionary - volat po generování, loadu nebo změně skill_nodes"""
 	nodes_by_id.clear()
 	for node in skill_nodes:
 		if is_instance_valid(node) and node.id != &"":

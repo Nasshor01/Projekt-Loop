@@ -1,0 +1,1017 @@
+[gd_resource type="Resource" script_class="PassiveSkillTreeData" load_steps=80 format=3 uid="uid://ssstqukjeum5"]
+
+[ext_resource type="Script" uid="uid://bvbd0xaypsrcp" path="res://data/skills/PassiveSkillTreeData.gd" id="1_g20m2"]
+[ext_resource type="Script" uid="uid://c4kidtjyabnas" path="res://data/skills/PassiveSkillNode.gd" id="2_ox7uu"]
+[ext_resource type="Script" uid="uid://bhefsqpmjhqur" path="res://data/skills/PassiveEffectData.gd" id="3_jg27p"]
+
+[sub_resource type="Resource" id="Resource_g20m2"]
+script = ExtResource("3_jg27p")
+effect_type = 0
+value = 5
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_ox7uu"]
+script = ExtResource("2_ox7uu")
+id = &"paladin_start"
+skill_name = "Svatý Závazek"
+description = "Startovní bod Paladina. Zvýší maximální zdraví o 5."
+position = Vector2(1000, -250)
+tier = 0
+node_type = 4
+cost = 0
+connected_nodes = PackedStringArray("paladin_block_1", "righteous_anger", "blessed_gold")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_g20m2")])
+is_starter = true
+max_allocations = 1
+branch = "main"
+branch_position = 0
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_jg27p"]
+script = ExtResource("3_jg27p")
+effect_type = 5
+value = 3
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_r05co"]
+script = ExtResource("2_ox7uu")
+id = &"paladin_block_1"
+skill_name = "Výcvik se štítem"
+description = "Začni každý souboj s 3 body bloku."
+position = Vector2(280, 0)
+tier = 1
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("paladin_hp_1", "iron_skin", "fortress")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_jg27p")])
+is_starter = false
+max_allocations = 1
+branch = "defense"
+branch_position = 0
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_jnjx5"]
+script = ExtResource("3_jg27p")
+effect_type = 0
+value = 8
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_hynfu"]
+script = ExtResource("2_ox7uu")
+id = &"paladin_hp_1"
+skill_name = "Vitalita"
+description = "Zvýší maximální zdraví o 8."
+position = Vector2(360, 0)
+tier = 1
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("iron_skin", "defensive_stance", "fortress")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_jnjx5")])
+is_starter = false
+max_allocations = 1
+branch = "defense"
+branch_position = 1
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_h6lh3"]
+script = ExtResource("3_jg27p")
+effect_type = 0
+value = 6
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_at3dc"]
+script = ExtResource("2_ox7uu")
+id = &"iron_skin"
+skill_name = "Železná kůže"
+description = "Zvýší maximální zdraví o 6."
+position = Vector2(440, 0)
+tier = 1
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("defensive_stance", "fortress")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_h6lh3")])
+is_starter = false
+max_allocations = 1
+branch = "defense"
+branch_position = 2
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_vnusd"]
+script = ExtResource("3_jg27p")
+effect_type = 5
+value = 2
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_8d60x"]
+script = ExtResource("2_ox7uu")
+id = &"defensive_stance"
+skill_name = "Obranný postoj"
+description = "Začni každý souboj s 2 body bloku navíc."
+position = Vector2(520, 0)
+tier = 1
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("fortress")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_vnusd")])
+is_starter = false
+max_allocations = 1
+branch = "defense"
+branch_position = 3
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_757e0"]
+script = ExtResource("3_jg27p")
+effect_type = 4
+value = 1
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_7xioy"]
+script = ExtResource("2_ox7uu")
+id = &"righteous_anger"
+skill_name = "Spravedlivý hněv"
+description = "Všechny karty způsobí o 1 poškození navíc."
+position = Vector2(1480, 0)
+tier = 1
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("swift_justice", "holy_power", "divine_wrath")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_757e0")])
+is_starter = false
+max_allocations = 1
+branch = "offense"
+branch_position = 0
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_dvpxm"]
+script = ExtResource("3_jg27p")
+effect_type = 2
+value = 1
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_oakpu"]
+script = ExtResource("2_ox7uu")
+id = &"swift_justice"
+skill_name = "Rychlá spravedlnost"
+description = "Začni každý souboj s 1 extra energií."
+position = Vector2(1560, 0)
+tier = 1
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("holy_power", "battle_fervor", "divine_wrath")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_dvpxm")])
+is_starter = false
+max_allocations = 1
+branch = "offense"
+branch_position = 1
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_04h18"]
+script = ExtResource("3_jg27p")
+effect_type = 4
+value = 1
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_68uic"]
+script = ExtResource("2_ox7uu")
+id = &"holy_power"
+skill_name = "Svatá síla"
+description = "Všechny karty způsobí o 1 poškození navíc."
+position = Vector2(1640, 0)
+tier = 1
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("battle_fervor", "divine_wrath")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_04h18")])
+is_starter = false
+max_allocations = 1
+branch = "offense"
+branch_position = 2
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_uyt2k"]
+script = ExtResource("3_jg27p")
+effect_type = 2
+value = 1
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_e3ejc"]
+script = ExtResource("2_ox7uu")
+id = &"battle_fervor"
+skill_name = "Bojové nadšení"
+description = "Začni každý souboj s 1 extra energií."
+position = Vector2(1720, 0)
+tier = 1
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("divine_wrath")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_uyt2k")])
+is_starter = false
+max_allocations = 1
+branch = "offense"
+branch_position = 3
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_k2p1u"]
+script = ExtResource("3_jg27p")
+effect_type = 1
+value = 10
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_nuhqe"]
+script = ExtResource("2_ox7uu")
+id = &"blessed_gold"
+skill_name = "Požehnané zlato"
+description = "Začni každý souboj s 10 zlatem navíc."
+position = Vector2(920, 0)
+tier = 1
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("divine_insight", "sacred_wisdom", "divine_favor")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_k2p1u")])
+is_starter = false
+max_allocations = 1
+branch = "utility"
+branch_position = 0
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_ns5la"]
+script = ExtResource("3_jg27p")
+effect_type = 21
+value = 1
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_ikvgc"]
+script = ExtResource("2_ox7uu")
+id = &"divine_insight"
+skill_name = "Božský vhled"
+description = "Líznutí karty navíc v prvním kole."
+position = Vector2(1000, 0)
+tier = 1
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("sacred_wisdom", "divine_favor")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_ns5la")])
+is_starter = false
+max_allocations = 1
+branch = "utility"
+branch_position = 1
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_f5tk6"]
+script = ExtResource("3_jg27p")
+effect_type = 1
+value = 5
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_88gib"]
+script = ExtResource("2_ox7uu")
+id = &"sacred_wisdom"
+skill_name = "Svatá moudrost"
+description = "Začni každý souboj s 5 zlatem navíc."
+position = Vector2(1080, 0)
+tier = 1
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("divine_favor")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_f5tk6")])
+is_starter = false
+max_allocations = 1
+branch = "utility"
+branch_position = 2
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_j1lye"]
+script = ExtResource("3_jg27p")
+effect_type = 5
+value = 8
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_kg7kt"]
+script = ExtResource("2_ox7uu")
+id = &"fortress"
+skill_name = "Pevnost"
+description = "Začni každý souboj s 8 body bloku."
+position = Vector2(240, 400)
+tier = 2
+node_type = 1
+cost = 1
+connected_nodes = PackedStringArray("iron_will", "unbreakable", "divine_protection")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_j1lye")])
+is_starter = false
+max_allocations = 1
+branch = "defense"
+branch_position = 0
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_2aoss"]
+script = ExtResource("3_jg27p")
+effect_type = 0
+value = 10
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_yniag"]
+script = ExtResource("2_ox7uu")
+id = &"iron_will"
+skill_name = "Železná vůle"
+description = "Zvýší maximální zdraví o 10."
+position = Vector2(320, 400)
+tier = 2
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("unbreakable", "shield_mastery", "divine_protection")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_2aoss")])
+is_starter = false
+max_allocations = 1
+branch = "defense"
+branch_position = 1
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_0mf6i"]
+script = ExtResource("3_jg27p")
+effect_type = 0
+value = 12
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_6gbkw"]
+script = ExtResource("2_ox7uu")
+id = &"unbreakable"
+skill_name = "Nezlomný"
+description = "Zvýší maximální zdraví o 12."
+position = Vector2(400, 400)
+tier = 2
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("shield_mastery", "guardian_spirit", "divine_protection")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_0mf6i")])
+is_starter = false
+max_allocations = 1
+branch = "defense"
+branch_position = 2
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_7iy4n"]
+script = ExtResource("3_jg27p")
+effect_type = 5
+value = 5
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_33ly0"]
+script = ExtResource("2_ox7uu")
+id = &"shield_mastery"
+skill_name = "Mistrovství se štítem"
+description = "Začni každý souboj s 5 body bloku navíc."
+position = Vector2(480, 400)
+tier = 2
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("guardian_spirit", "divine_protection")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_7iy4n")])
+is_starter = false
+max_allocations = 1
+branch = "defense"
+branch_position = 3
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_rsw17"]
+script = ExtResource("3_jg27p")
+effect_type = 5
+value = 4
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_01p16"]
+script = ExtResource("2_ox7uu")
+id = &"guardian_spirit"
+skill_name = "Ochranný duch"
+description = "Začni každý souboj s 4 body bloku navíc."
+position = Vector2(560, 400)
+tier = 2
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("divine_protection")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_rsw17")])
+is_starter = false
+max_allocations = 1
+branch = "defense"
+branch_position = 4
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_sgolr"]
+script = ExtResource("3_jg27p")
+effect_type = 4
+value = 2
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_trad2"]
+script = ExtResource("2_ox7uu")
+id = &"divine_wrath"
+skill_name = "Božský hněv"
+description = "Všechny karty způsobí o 2 poškození navíc."
+position = Vector2(1440, 400)
+tier = 2
+node_type = 1
+cost = 1
+connected_nodes = PackedStringArray("holy_strike", "smiting_power", "righteous_fury")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_sgolr")])
+is_starter = false
+max_allocations = 1
+branch = "offense"
+branch_position = 0
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_w647u"]
+script = ExtResource("3_jg27p")
+effect_type = 2
+value = 2
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_50qio"]
+script = ExtResource("2_ox7uu")
+id = &"holy_strike"
+skill_name = "Svatý úder"
+description = "Začni každý souboj s 2 extra energií."
+position = Vector2(1520, 400)
+tier = 2
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("smiting_power", "consecrated_blade", "righteous_fury")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_w647u")])
+is_starter = false
+max_allocations = 1
+branch = "offense"
+branch_position = 1
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_1f001"]
+script = ExtResource("3_jg27p")
+effect_type = 4
+value = 2
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_y6urn"]
+script = ExtResource("2_ox7uu")
+id = &"smiting_power"
+skill_name = "Síla trestu"
+description = "Všechny karty způsobí o 2 poškození navíc."
+position = Vector2(1600, 400)
+tier = 2
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("consecrated_blade", "wrathful_strike", "righteous_fury")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_1f001")])
+is_starter = false
+max_allocations = 1
+branch = "offense"
+branch_position = 2
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_domdu"]
+script = ExtResource("3_jg27p")
+effect_type = 2
+value = 1
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_he4c5"]
+script = ExtResource("2_ox7uu")
+id = &"consecrated_blade"
+skill_name = "Požehnaná čepel"
+description = "Začni každý souboj s 1 extra energií."
+position = Vector2(1680, 400)
+tier = 2
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("wrathful_strike", "righteous_fury")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_domdu")])
+is_starter = false
+max_allocations = 1
+branch = "offense"
+branch_position = 3
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_u7hnr"]
+script = ExtResource("3_jg27p")
+effect_type = 4
+value = 1
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_qv441"]
+script = ExtResource("2_ox7uu")
+id = &"wrathful_strike"
+skill_name = "Hněvivý úder"
+description = "Všechny karty způsobí o 1 poškození navíc."
+position = Vector2(1760, 400)
+tier = 2
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("righteous_fury")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_u7hnr")])
+is_starter = false
+max_allocations = 1
+branch = "offense"
+branch_position = 4
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_en1vd"]
+script = ExtResource("3_jg27p")
+effect_type = 21
+value = 1
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_mknhr"]
+script = ExtResource("2_ox7uu")
+id = &"divine_favor"
+skill_name = "Božská přízeň"
+description = "Líznutí karty navíc v prvním kole."
+position = Vector2(880, 400)
+tier = 2
+node_type = 1
+cost = 1
+connected_nodes = PackedStringArray("golden_touch", "blessed_hand", "blessed_recovery")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_en1vd")])
+is_starter = false
+max_allocations = 1
+branch = "utility"
+branch_position = 0
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_qg68x"]
+script = ExtResource("3_jg27p")
+effect_type = 1
+value = 15
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_xygbs"]
+script = ExtResource("2_ox7uu")
+id = &"golden_touch"
+skill_name = "Zlatý dotek"
+description = "Začni každý souboj s 15 zlatem navíc."
+position = Vector2(960, 400)
+tier = 2
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("blessed_hand", "divine_prosperity", "blessed_recovery")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_qg68x")])
+is_starter = false
+max_allocations = 1
+branch = "utility"
+branch_position = 1
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_tfugh"]
+script = ExtResource("3_jg27p")
+effect_type = 21
+value = 1
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_5g73h"]
+script = ExtResource("2_ox7uu")
+id = &"blessed_hand"
+skill_name = "Požehnaná ruka"
+description = "Líznutí karty navíc v prvním kole."
+position = Vector2(1040, 400)
+tier = 2
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("divine_prosperity", "blessed_recovery")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_tfugh")])
+is_starter = false
+max_allocations = 1
+branch = "utility"
+branch_position = 2
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_jlief"]
+script = ExtResource("3_jg27p")
+effect_type = 1
+value = 12
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_it75k"]
+script = ExtResource("2_ox7uu")
+id = &"divine_prosperity"
+skill_name = "Božský blahobyt"
+description = "Začni každý souboj s 12 zlatem navíc."
+position = Vector2(1120, 400)
+tier = 2
+node_type = 0
+cost = 1
+connected_nodes = PackedStringArray("blessed_recovery")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_jlief")])
+is_starter = false
+max_allocations = 1
+branch = "utility"
+branch_position = 3
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_rodvp"]
+script = ExtResource("3_jg27p")
+effect_type = 5
+value = 15
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_4pxv3"]
+script = ExtResource("2_ox7uu")
+id = &"divine_protection"
+skill_name = "Božská ochrana"
+description = "Začni každý souboj s 15 body bloku."
+position = Vector2(320, 800)
+tier = 3
+node_type = 2
+cost = 1
+connected_nodes = PackedStringArray("sacred_thorns", "immovable_fortress", "aura_mastery")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_rodvp")])
+is_starter = false
+max_allocations = 1
+branch = "defense"
+branch_position = 0
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_8epam"]
+script = ExtResource("3_jg27p")
+effect_type = 5
+value = 10
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_vg06q"]
+script = ExtResource("2_ox7uu")
+id = &"sacred_thorns"
+skill_name = "Svaté trny"
+description = "Začni každý souboj s 10 body bloku. Nepřátelé, kteří tě zasáhnou, utrpí 2 poškození."
+position = Vector2(400, 800)
+tier = 3
+node_type = 2
+cost = 1
+connected_nodes = PackedStringArray("immovable_fortress", "aura_mastery")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_8epam")])
+is_starter = false
+max_allocations = 1
+branch = "defense"
+branch_position = 1
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_pnx61"]
+script = ExtResource("3_jg27p")
+effect_type = 0
+value = 20
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_e0da5"]
+script = ExtResource("3_jg27p")
+effect_type = 5
+value = 5
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_xd67b"]
+script = ExtResource("2_ox7uu")
+id = &"immovable_fortress"
+skill_name = "Nepohnutelná pevnost"
+description = "Zvýší maximální zdraví o 20. Začni každý souboj s 5 body bloku."
+position = Vector2(480, 800)
+tier = 3
+node_type = 2
+cost = 1
+connected_nodes = PackedStringArray("aura_mastery")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_pnx61"), SubResource("Resource_e0da5")])
+is_starter = false
+max_allocations = 1
+branch = "defense"
+branch_position = 2
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_ljuo0"]
+script = ExtResource("3_jg27p")
+effect_type = 4
+value = 3
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_dodlv"]
+script = ExtResource("2_ox7uu")
+id = &"righteous_fury"
+skill_name = "Spravedlivá zuřivost"
+description = "Všechny karty způsobí o 3 poškození navíc."
+position = Vector2(1520, 800)
+tier = 3
+node_type = 2
+cost = 1
+connected_nodes = PackedStringArray("divine_retribution", "holy_avenger", "aura_mastery")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_ljuo0")])
+is_starter = false
+max_allocations = 1
+branch = "offense"
+branch_position = 0
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_lc3db"]
+script = ExtResource("3_jg27p")
+effect_type = 4
+value = 4
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_62o86"]
+script = ExtResource("3_jg27p")
+effect_type = 2
+value = 1
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_l8l0l"]
+script = ExtResource("2_ox7uu")
+id = &"divine_retribution"
+skill_name = "Božská odplata"
+description = "Všechny karty způsobí o 4 poškození navíc. Začni každý souboj s 1 extra energií."
+position = Vector2(1600, 800)
+tier = 3
+node_type = 2
+cost = 1
+connected_nodes = PackedStringArray("holy_avenger", "aura_mastery")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_lc3db"), SubResource("Resource_62o86")])
+is_starter = false
+max_allocations = 1
+branch = "offense"
+branch_position = 1
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_cpjhs"]
+script = ExtResource("3_jg27p")
+effect_type = 4
+value = 3
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_l8on5"]
+script = ExtResource("3_jg27p")
+effect_type = 2
+value = 2
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_76n1h"]
+script = ExtResource("2_ox7uu")
+id = &"holy_avenger"
+skill_name = "Svatý mstitel"
+description = "Všechny karty způsobí o 3 poškození navíc. Začni každý souboj s 2 extra energií."
+position = Vector2(1680, 800)
+tier = 3
+node_type = 2
+cost = 1
+connected_nodes = PackedStringArray("aura_mastery")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_cpjhs"), SubResource("Resource_l8on5")])
+is_starter = false
+max_allocations = 1
+branch = "offense"
+branch_position = 2
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_b4d4h"]
+script = ExtResource("3_jg27p")
+effect_type = 1
+value = 20
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_ilw5m"]
+script = ExtResource("2_ox7uu")
+id = &"blessed_recovery"
+skill_name = "Požehnané uzdravení"
+description = "Začni každý souboj s 20 zlatem navíc."
+position = Vector2(960, 800)
+tier = 3
+node_type = 2
+cost = 1
+connected_nodes = PackedStringArray("divine_wealth", "aura_mastery")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_b4d4h")])
+is_starter = false
+max_allocations = 1
+branch = "utility"
+branch_position = 0
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_napr5"]
+script = ExtResource("3_jg27p")
+effect_type = 1
+value = 25
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_kxdgt"]
+script = ExtResource("3_jg27p")
+effect_type = 21
+value = 1
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_levlq"]
+script = ExtResource("2_ox7uu")
+id = &"divine_wealth"
+skill_name = "Božské bohatství"
+description = "Začni každý souboj s 25 zlatem navíc. Líznutí karty navíc v prvním kole."
+position = Vector2(1040, 800)
+tier = 3
+node_type = 2
+cost = 1
+connected_nodes = PackedStringArray("aura_mastery")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_napr5"), SubResource("Resource_kxdgt")])
+is_starter = false
+max_allocations = 1
+branch = "utility"
+branch_position = 1
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_mhmj3"]
+script = ExtResource("3_jg27p")
+effect_type = 8
+value = 50
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_8u0fa"]
+script = ExtResource("2_ox7uu")
+id = &"aura_mastery"
+skill_name = "Mistrovství aur"
+description = "Všechny aury jsou o 50% silnější."
+position = Vector2(1000, 1200)
+tier = 4
+node_type = 3
+cost = 1
+connected_nodes = PackedStringArray("avatar_of_light")
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_mhmj3")])
+is_starter = false
+max_allocations = 1
+branch = "main"
+branch_position = 0
+unlock_conditions = Array[String]([])
+
+[sub_resource type="Resource" id="Resource_cy887"]
+script = ExtResource("3_jg27p")
+effect_type = 9
+value = 2
+string_value = ""
+secondary_value = 0
+conditional = false
+condition_description = ""
+
+[sub_resource type="Resource" id="Resource_qnfqh"]
+script = ExtResource("2_ox7uu")
+id = &"avatar_of_light"
+skill_name = "Avatár světla"
+description = "Na začátku souboje získej blok rovný 2x tvému maximálnímu zdraví. Vyžaduje všechny ostatní uzly odemčené."
+position = Vector2(1000, 1600)
+tier = 5
+node_type = 2
+cost = 1
+connected_nodes = PackedStringArray()
+prerequisite_nodes = PackedStringArray()
+effects = Array[ExtResource("3_jg27p")]([SubResource("Resource_cy887")])
+is_starter = false
+max_allocations = 1
+branch = "main"
+branch_position = 0
+unlock_conditions = Array[String](["all_nodes_unlocked"])
+
+[resource]
+script = ExtResource("1_g20m2")
+skill_nodes = Array[ExtResource("2_ox7uu")]([SubResource("Resource_ox7uu"), SubResource("Resource_r05co"), SubResource("Resource_hynfu"), SubResource("Resource_at3dc"), SubResource("Resource_8d60x"), SubResource("Resource_7xioy"), SubResource("Resource_oakpu"), SubResource("Resource_68uic"), SubResource("Resource_e3ejc"), SubResource("Resource_nuhqe"), SubResource("Resource_ikvgc"), SubResource("Resource_88gib"), SubResource("Resource_kg7kt"), SubResource("Resource_yniag"), SubResource("Resource_6gbkw"), SubResource("Resource_33ly0"), SubResource("Resource_01p16"), SubResource("Resource_trad2"), SubResource("Resource_50qio"), SubResource("Resource_y6urn"), SubResource("Resource_he4c5"), SubResource("Resource_qv441"), SubResource("Resource_mknhr"), SubResource("Resource_xygbs"), SubResource("Resource_5g73h"), SubResource("Resource_it75k"), SubResource("Resource_4pxv3"), SubResource("Resource_vg06q"), SubResource("Resource_xd67b"), SubResource("Resource_dodlv"), SubResource("Resource_l8l0l"), SubResource("Resource_76n1h"), SubResource("Resource_ilw5m"), SubResource("Resource_levlq"), SubResource("Resource_8u0fa"), SubResource("Resource_qnfqh")])
