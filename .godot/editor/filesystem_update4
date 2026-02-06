@@ -88,4 +88,4 @@ res://scenes/battle/BattleGrid.tscn
 res://scenes/ui/Settings.tscn
 res://scenes/rewards/RewardScene.tscn
 res://scenes/ui/CardTooltip.tscn
-res://scripts/autoload/DebugLogger.gd
+res://secrets.cfg
