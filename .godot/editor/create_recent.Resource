@@ -1,0 +1,7 @@
+EncounterData
+UnitData
+CardData
+ArtifactsData
+EventData
+CardPool
+ArtifactPool
