@@ -4,8 +4,9 @@ extends Node
 const LOG_FILE_NAME = "game_debug_log.txt"
 const MAX_LOG_SIZE_MB = 10
 const MAX_BACKUP_FILES = 3
-const FEEDBACK_WEBHOOK_URL = "https://discord.com/api/webhooks/1469338422517698733/OjSD8PfDJbIaRnwY_B1XYO2DdsNqNurEMP6_9dFHVnyYIxEZhkxzxPBDsmk7RqAiUXEx"
-const CRASH_WEBHOOK_URL = "https://discord.com/api/webhooks/1469442970066358404/zfiNxY6svG1hcu0_IYVy-jE-Fg09KU44TQOadrgDcDFMpa2zqso3tlu2XRiY9tt3FCH8"
+const SECRETS_CONFIG_PATH = "res://secrets.cfg"
+var feedback_webhook_url: String = ""
+var crash_webhook_url: String = ""
 const DISCORD_COLOR_INFO = 0x0000FF
 const DISCORD_COLOR_WARNING = 0xF1C40F
 const DISCORD_COLOR_ERROR = 0xFF0000
@@ -55,6 +56,7 @@ func _ready():
 		# Zachytávej printy a errory
 		OS.set_environment("GODOT_LOG_LEVEL", "verbose")
 
+	_load_webhook_secrets()
 	_setup_discord()
 	
 	log_info("DebugLogger inicializován")
@@ -141,7 +143,7 @@ func log_info(message: String, category: String = "GAME"):
 			body += "\n\n" + _build_system_info_text()
 		if discord_feedback_includes_state:
 			body += "\n\n" + _build_full_game_state_text()
-		_send_to_discord(FEEDBACK_WEBHOOK_URL, "Player Feedback", body, DISCORD_COLOR_INFO)
+		_send_to_discord(feedback_webhook_url, "Player Feedback", body, DISCORD_COLOR_INFO)
 	
 	if log_level <= LogLevel.INFO:
 		var formatted = _format_message("INFO", category, message)
@@ -167,7 +169,7 @@ func log_error(message: String, category: String = "GAME", force_discord: bool =
 			log_full_game_state()
 			var full_state_text = _build_full_game_state_text()
 			var body = formatted + "\n\n" + full_state_text
-			_send_to_discord(CRASH_WEBHOOK_URL, "Error", body, DISCORD_COLOR_ERROR, true)
+			_send_to_discord(crash_webhook_url, "Error", body, DISCORD_COLOR_ERROR, true)
 			_send_crash_log_file()
 
 func log_critical(message: String, category: String = "GAME"):
@@ -241,7 +243,7 @@ func _log_critical_internal(formatted_message: String, title: String):
 	log_full_game_state()
 	var full_state_text = _build_full_game_state_text()
 	var body = formatted_message + "\n\n" + full_state_text
-	_send_to_discord(CRASH_WEBHOOK_URL, title, body, DISCORD_COLOR_ERROR, true)
+	_send_to_discord(crash_webhook_url, title, body, DISCORD_COLOR_ERROR, true)
 	_send_crash_log_file()
 
 # === NOVÉ ROZŠÍŘENÉ LOGGING FUNKCE ===
@@ -895,7 +897,7 @@ func _extract_column_index(node) -> Variant:
 
 func send_crash_report_to_discord(report_text: String):
 	var body = "=== CRASH REPORT ===\n" + report_text
-	_send_to_discord(CRASH_WEBHOOK_URL, "Crash Report", body, DISCORD_COLOR_ERROR, true)
+	_send_to_discord(crash_webhook_url, "Crash Report", body, DISCORD_COLOR_ERROR, true)
 	_send_crash_log_file()
 	await get_tree().create_timer(0.25).timeout
 
@@ -910,6 +912,20 @@ func _load_report_preference() -> bool:
 		return bool(config.get_value("settings", "can_send_reports", true))
 	report_consent_known = false
 	return false
+
+func _load_webhook_secrets():
+	var config = ConfigFile.new()
+	var err = config.load(SECRETS_CONFIG_PATH)
+	if err != OK:
+		feedback_webhook_url = ""
+		crash_webhook_url = ""
+		return
+	feedback_webhook_url = String(config.get_value("discord", "feedback_webhook", ""))
+	crash_webhook_url = String(config.get_value("discord", "crash_webhook", ""))
+	if feedback_webhook_url == "YOUR_WEBHOOK_HERE":
+		feedback_webhook_url = ""
+	if crash_webhook_url == "YOUR_WEBHOOK_HERE":
+		crash_webhook_url = ""
 
 func _save_report_preference(value: bool):
 	var config = ConfigFile.new()
@@ -970,7 +986,7 @@ func _send_crash_log_file():
 	else:
 		bytes = file.get_buffer(size_bytes)
 	file.close()
-	_send_file_to_discord(CRASH_WEBHOOK_URL, LOG_FILE_NAME, bytes, "Crash Log File", "Attached game_debug_log.txt", DISCORD_COLOR_ERROR)
+	_send_file_to_discord(crash_webhook_url, LOG_FILE_NAME, bytes, "Crash Log File", "Attached game_debug_log.txt", DISCORD_COLOR_ERROR)
 
 # === HELPER FUNKCE ===
 
