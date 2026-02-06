@@ -1178,7 +1178,7 @@ func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D
 				targets.append(_player_unit_node)
 		CardEffectData.TargetType.SELECTED_ENEMY_UNIT:
 			if is_instance_valid(initial_target_node) and initial_target_node.get_unit_data().faction == UnitData.Faction.ENEMY:
-				if grid_ref and is_instance_valid(_player_unit_node) and grid_ref.get_distance(_player_unit_node.grid_position, initial_target_node.grid_position) <= _selected_card_data.range_value:
+				if grid_ref and is_instance_valid(_player_unit_node) and _selected_card_data and grid_ref.get_distance(_player_unit_node.grid_position, initial_target_node.grid_position) <= _selected_card_data.range_value:
 					targets.append(initial_target_node)
 		CardEffectData.TargetType.ALL_ENEMY_UNITS:
 			targets.assign(_enemy_units)

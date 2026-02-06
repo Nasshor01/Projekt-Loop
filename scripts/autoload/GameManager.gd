@@ -50,7 +50,8 @@ func _ready():
 
 	if has_node("/root/DebugLogger"):
 		DebugLogger.log_info("=== GAME MANAGER STARTED ===")
-	DebugLogger.log_info("=== GAME MANAGER STARTED ===")
+	else:
+		print("=== GAME MANAGER STARTED ===")
 	DebugLogger.log_system_info() # Zaloguje system info
 	
 	# Načteme preferenci jazyka při startu
