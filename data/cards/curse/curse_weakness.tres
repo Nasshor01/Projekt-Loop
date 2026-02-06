@@ -17,8 +17,8 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 [resource]
 script = ExtResource("2_bglw1")
 card_id = "curse_weakness"
-card_name = "Prokletí: Slabost"
-card_description = "Vyřadí se. Při líznutí ztratíš 1 energii."
+card_name = "card.curse_weakness"
+card_description = "card.curse_weakness.desc"
 cost = 0
 range_type = 0
 range_value = 1

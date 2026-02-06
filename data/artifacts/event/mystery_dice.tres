@@ -5,8 +5,8 @@
 
 [resource]
 script = ExtResource("1_8tkrk")
-artifact_name = "Záhadná kostka"
-description = "Na začátku každého tahu: 50% šance na získání 2 energie nebo ztrátu 1 energie.mného."
+artifact_name = "artifact.zahadna_kostka"
+description = "artifact.zahadna_kostka.desc"
 texture = ExtResource("2_8tkrk")
 artifact_type = 6
 trigger_type = 2

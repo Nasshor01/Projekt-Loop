@@ -39,7 +39,7 @@ func apply_reward(results_log: Array = []):
 	"""Aplikuje odměnu na hráče"""
 	if gold > 0:
 		PlayerData.add_gold(gold)
-		results_log.append("[color=yellow]Získal jsi %d zlata![/color]" % gold)
+		results_log.append("[color=yellow]" + TranslationHelper.tr_format("event.reward.gain_gold", {"value": gold}) + "[/color]")
 	
 	if heal > 0:
 		var actual_heal = heal
@@ -47,25 +47,25 @@ func apply_reward(results_log: Array = []):
 			actual_heal = PlayerData.max_hp - PlayerData.current_hp
 		actual_heal = min(actual_heal, PlayerData.max_hp - PlayerData.current_hp)
 		PlayerData.heal(actual_heal)
-		results_log.append("[color=green]Vyléčil jsi %d HP[/color]" % actual_heal)
+		results_log.append("[color=green]" + TranslationHelper.tr_format("event.reward.heal_hp", {"value": actual_heal}) + "[/color]")
 	
 	if max_hp != 0:
 		PlayerData.change_max_hp(max_hp) # Voláme novou funkci
 		if max_hp > 0:
-			results_log.append("[color=green]Získal jsi +%d Max HP![/color]" % max_hp)
+			results_log.append("[color=green]" + TranslationHelper.tr_format("event.reward.max_hp_gain", {"value": max_hp}) + "[/color]")
 		else:
-			results_log.append("[color=red]Ztratil jsi %d Max HP[/color]" % abs(max_hp))
+			results_log.append("[color=red]" + TranslationHelper.tr_format("event.reward.max_hp_loss", {"value": abs(max_hp)}) + "[/color]")
 	
 	# Přidání karty
 	if add_card:
 		PlayerData.master_deck.append(add_card)
-		results_log.append("[color=cyan]Získal jsi kartu: %s[/color]" % add_card.card_name)
+		results_log.append("[color=cyan]" + TranslationHelper.tr_format("event.reward.card", {"name": add_card.get_localized_name()}) + "[/color]")
 	
 	if add_random_card:
 		var random_card = _get_random_card_by_rarity(card_rarity)
 		if random_card:
 			PlayerData.master_deck.append(random_card)
-			results_log.append("[color=cyan]Získal jsi náhodnou kartu: %s[/color]" % random_card.card_name)
+			results_log.append("[color=cyan]" + TranslationHelper.tr_format("event.reward.random_card", {"name": random_card.get_localized_name()}) + "[/color]")
 	
 	# Upgrade karet
 	if upgrade_random_card:
@@ -80,12 +80,12 @@ func apply_reward(results_log: Array = []):
 	# Remove karet
 	if remove_card:
 		pending_card_removal = true
-		results_log.append("[color=gray]Vyber kartu k odstranění...[/color]")
+		results_log.append("[color=gray]" + tr("event.reward.remove_card_select") + "[/color]")
 	
 	if remove_specific_card:
 		if PlayerData.master_deck.has(remove_specific_card):
 			PlayerData.master_deck.erase(remove_specific_card)
-			results_log.append("[color=gray]Odstraněna karta: %s[/color]" % remove_specific_card.card_name)
+			results_log.append("[color=gray]" + TranslationHelper.tr_format("event.reward.remove_card", {"name": remove_specific_card.get_localized_name()}) + "[/color]")
 	
 	# Transform karet
 	if transform_card:
@@ -94,28 +94,28 @@ func apply_reward(results_log: Array = []):
 	# --- ZMĚNA V SEKCI PRO ARTEFAKTY ---
 	if add_artifact:
 		if PlayerData.add_artifact(add_artifact):
-			results_log.append("[color=orange]Získal jsi artefakt: %s[/color]" % add_artifact.artifact_name)
+			results_log.append("[color=orange]" + TranslationHelper.tr_format("event.reward.artifact", {"name": add_artifact.get_localized_name()}) + "[/color]")
 	
 	if add_random_basic_artifact:
 		var random_artifact = _get_random_basic_artifact()
 		if random_artifact and PlayerData.add_artifact(random_artifact):
-			results_log.append("[color=orange]Získal jsi náhodný artefakt: %s[/color]" % random_artifact.artifact_name)
+			results_log.append("[color=orange]" + TranslationHelper.tr_format("event.reward.random_artifact", {"name": random_artifact.get_localized_name()}) + "[/color]")
 	
 	if add_random_event_artifact:
 		var available = EVENT_ARTIFACT_POOL.artifacts.filter(func(art): return PlayerData.can_gain_artifact(art))
 		if not available.is_empty():
 			var event_artifact = available.pick_random()
 			if PlayerData.add_artifact(event_artifact):
-				results_log.append("[color=gold]Získal jsi speciální artefakt: %s[/color]" % event_artifact.artifact_name)
+				results_log.append("[color=gold]" + TranslationHelper.tr_format("event.reward.special_artifact", {"name": event_artifact.get_localized_name()}) + "[/color]")
 	# --- KONEC ZMĚN ---
 	
 	# Speciální akce
 	if buff_next_combat != "":
 		EventManager.add_combat_buff(buff_next_combat)
-		results_log.append("[color=blue]Získal jsi bonus pro příští souboj![/color]")
+		results_log.append("[color=blue]" + tr("event.reward.next_combat_buff") + "[/color]")
 	
 	if opens_card_selection:
-		results_log.append("[color=cyan]Vyber si kartu...[/color]")
+		results_log.append("[color=cyan]" + tr("event.reward.pick_card") + "[/color]")
 
 func _upgrade_random_card(results_log: Array):
 	"""Vylepší náhodnou kartu v balíčku"""
@@ -125,17 +125,14 @@ func _upgrade_random_card(results_log: Array):
 			upgradeable_cards.append(card)
 	
 	if upgradeable_cards.is_empty():
-		results_log.append("[color=gray]Žádné karty nelze vylepšit[/color]")
+		results_log.append("[color=gray]" + tr("event.reward.upgrade_none") + "[/color]")
 		return
 	
 	var card_to_upgrade = upgradeable_cards.pick_random()
 	var index = PlayerData.master_deck.find(card_to_upgrade)
 	if index != -1:
 		PlayerData.master_deck[index] = card_to_upgrade.upgraded_version
-		results_log.append("[color=cyan]Vylepšena karta: %s → %s[/color]" % [
-			card_to_upgrade.card_name,
-			card_to_upgrade.upgraded_version.card_name
-		])
+		results_log.append("[color=cyan]" + TranslationHelper.tr_format("event.reward.upgraded_card", {"from": card_to_upgrade.get_localized_name(), "to": card_to_upgrade.upgraded_version.get_localized_name()}) + "[/color]")
 
 func _upgrade_specific_card(card: CardData, results_log: Array):
 	"""Vylepší konkrétní kartu"""
@@ -145,10 +142,7 @@ func _upgrade_specific_card(card: CardData, results_log: Array):
 	var index = PlayerData.master_deck.find(card)
 	if index != -1:
 		PlayerData.master_deck[index] = card.upgraded_version
-		results_log.append("[color=cyan]Vylepšena karta: %s → %s[/color]" % [
-			card.card_name,
-			card.upgraded_version.card_name
-		])
+		results_log.append("[color=cyan]" + TranslationHelper.tr_format("event.reward.upgraded_card", {"from": card.get_localized_name(), "to": card.upgraded_version.get_localized_name()}) + "[/color]")
 
 func _upgrade_all_cards(results_log: Array):
 	"""Vylepší všechny karty v balíčku"""
@@ -160,9 +154,9 @@ func _upgrade_all_cards(results_log: Array):
 			upgraded_count += 1
 	
 	if upgraded_count > 0:
-		results_log.append("[color=cyan]Vylepšeno %d karet![/color]" % upgraded_count)
+		results_log.append("[color=cyan]" + TranslationHelper.tr_format("event.reward.upgraded_count", {"value": upgraded_count}) + "[/color]")
 	else:
-		results_log.append("[color=gray]Žádné karty nelze vylepšit[/color]")
+		results_log.append("[color=gray]" + tr("event.reward.upgrade_none") + "[/color]")
 
 func _transform_random_card(results_log: Array):
 	"""Promění náhodnou kartu v jinou stejné rarity"""
@@ -176,10 +170,7 @@ func _transform_random_card(results_log: Array):
 		var index = PlayerData.master_deck.find(card_to_transform)
 		if index != -1:
 			PlayerData.master_deck[index] = new_card
-			results_log.append("[color=purple]Proměna: %s → %s[/color]" % [
-				card_to_transform.card_name,
-				new_card.card_name
-			])
+			results_log.append("[color=purple]" + TranslationHelper.tr_format("event.reward.transformed_card", {"from": card_to_transform.get_localized_name(), "to": new_card.get_localized_name()}) + "[/color]")
 
 func _get_random_card_by_rarity(rarity: CardData.CardRarity) -> CardData:
 	"""Získá náhodnou kartu podle rarity"""
@@ -220,33 +211,33 @@ func get_reward_description() -> String:
 	"""Vrátí textový popis odměny"""
 	var parts = []
 	if gold > 0:
-		parts.append("+%d Gold" % gold)
+		parts.append(TranslationHelper.tr_format("event.reward.desc_gold", {"value": gold}))
 	if heal > 0:
 		if heal == 999:
-			parts.append("Plné vyléčení")
+			parts.append(tr("event.reward.desc_full_heal"))
 		else:
-			parts.append("+%d HP" % heal)
+			parts.append(TranslationHelper.tr_format("event.reward.desc_heal", {"value": heal}))
 	if max_hp > 0:
-		parts.append("+%d Max HP" % max_hp)
+		parts.append(TranslationHelper.tr_format("event.reward.desc_max_hp", {"value": max_hp}))
 	if add_card:
-		parts.append("Karta: %s" % add_card.card_name)
+		parts.append(TranslationHelper.tr_format("event.reward.desc_card", {"name": add_card.get_localized_name()}))
 	if add_random_card:
-		parts.append("Náhodná %s karta" % CardData.CardRarity.keys()[card_rarity])
+		parts.append(TranslationHelper.tr_format("event.reward.desc_random_card", {"rarity": tr("card.rarity." + CardData.CardRarity.keys()[card_rarity].to_lower())}))
 	if upgrade_random_card:
-		parts.append("Vylepšení náhodné karty")
+		parts.append(tr("event.reward.desc_upgrade_random"))
 	if upgrade_all_cards:
-		parts.append("Vylepšení všech karet")
+		parts.append(tr("event.reward.desc_upgrade_all"))
 	if remove_card:
-		parts.append("Odstranění karty")
+		parts.append(tr("event.reward.desc_remove_card"))
 	if transform_card:
-		parts.append("Proměna karty")
+		parts.append(tr("event.reward.desc_transform_card"))
 	if add_artifact:
-		parts.append("Artefakt: %s" % add_artifact.artifact_name)
+		parts.append(TranslationHelper.tr_format("event.reward.desc_artifact", {"name": add_artifact.get_localized_name()}))
 	if add_random_basic_artifact:
-		parts.append("Náhodný artefakt")
+		parts.append(tr("event.reward.desc_random_artifact"))
 	if add_random_event_artifact:
-		parts.append("[color=gold]Náhodný speciální artefakt[/color]")
+		parts.append("[color=gold]" + tr("event.reward.desc_random_special_artifact") + "[/color]")
 	
 	if parts.is_empty():
-		return "Žádná odměna"
+		return tr("event.reward.desc_none")
 	return ", ".join(PackedStringArray(parts))

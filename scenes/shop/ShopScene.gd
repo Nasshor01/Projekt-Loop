@@ -23,9 +23,13 @@ const CARD_REMOVAL_COST = 75
 @onready var remove_card_button: Button = $CanvasLayer/MainContainer/VBoxContainer/ServicesPanel/HBoxContainer/RemoveCardButton
 @onready var leave_button: Button = $CanvasLayer/MainContainer/VBoxContainer/LeaveButton
 @onready var card_pile_viewer = $CanvasLayer/MainContainer/CardPileViewer
+@onready var card_tooltip: CardTooltip = $CanvasLayer/CardTooltip
 
 # Slovník pro uložení zlevněných položek a jejich finálních cen
 var items_on_sale: Dictionary = {}
+
+# Tooltip management
+var _current_tooltip_card_data: CardData = null
 
 func _ready():
 	leave_button.gui_input.connect(_on_leave_button_input)
@@ -33,8 +37,16 @@ func _ready():
 	PlayerData.gold_changed.connect(_update_gold_label)
 	card_pile_viewer.visibility_changed.connect(_on_viewer_visibility_changed)
 
+	_update_ui_texts()
 	_update_gold_label(PlayerData.gold)
 	_generate_shop_inventory()
+func _update_ui_texts():
+	if remove_card_button:
+		remove_card_button.text = TranslationHelper.tr_format("ui.shop.remove_card", {"value": CARD_REMOVAL_COST})
+	if leave_button:
+		leave_button.text = tr("ui.shop.leave")
+	
+	# Tooltip se nyní zobrazuje/schovává pomocí pravého kliknutí - žádné timery nejsou potřeba
 
 
 func _generate_shop_inventory():
@@ -49,7 +61,7 @@ func _generate_shop_inventory():
 		PlayerData.unlocked_cards
 	)
 	if available_cards.is_empty():
-		print("VAROVÁNÍ: Žádné dostupné karty pro obchod")
+		print(tr("log.shop.no_cards"))
 		return
 	
 	available_cards.shuffle()
@@ -62,18 +74,20 @@ func _generate_shop_inventory():
 			var sale_price = int(original_price * 0.5)
 			items_on_sale[sale_card] = sale_price
 
-	for card_data in cards_to_sell:
-		if is_instance_valid(card_data):
-			var shop_item_ui = ShopItemUIScene.instantiate()
-			var original_price = CARD_PRICES.get(card_data.rarity, 50)
-			
-			if items_on_sale.has(card_data):
-				shop_item_ui.setup_item(card_data, items_on_sale[card_data], true, original_price)
-			else:
-				shop_item_ui.setup_item(card_data, original_price)
-			
-			items_grid.add_child(shop_item_ui)
-			shop_item_ui.item_purchased.connect(_on_item_purchased)
+		for card_data in cards_to_sell:
+			if is_instance_valid(card_data):
+				var shop_item_ui = ShopItemUIScene.instantiate()
+				var original_price = CARD_PRICES.get(card_data.rarity, 50)
+				
+				if items_on_sale.has(card_data):
+					shop_item_ui.setup_item(card_data, items_on_sale[card_data], true, original_price)
+				else:
+					shop_item_ui.setup_item(card_data, original_price)
+				
+				items_grid.add_child(shop_item_ui)
+				shop_item_ui.item_purchased.connect(_on_item_purchased)
+				# Připojíme tooltip signály pro karty
+				shop_item_ui.card_right_clicked.connect(_on_card_right_clicked)
 
 	# ARTEFAKTY - NOVÉ: Filtrujeme dostupné artefakty
 	var all_artifacts = SHOP_ARTIFACT_POOL.artifacts.duplicate()
@@ -110,25 +124,25 @@ func _on_item_purchased(item_data: Resource, button_node: Button):
 
 	if PlayerData.spend_gold(cost):
 		var item_name = item_data.get("card_name") or item_data.get("artifact_name")
-		print("Koupeno: ", item_name)
+		print(TranslationHelper.tr_format("log.shop.purchased", {"name": tr(item_name)}))
 
 		if item_data is CardData:
 			PlayerData.master_deck.append(item_data)
 			button_node.disabled = true
-			button_node.text = "Koupeno"
+			button_node.text = tr("ui.shop.purchased")
 		elif item_data is ArtifactsData:
 			# OPRAVENO: Používáme novou add_artifact funkci
 			if PlayerData.add_artifact(item_data):
 				button_node.disabled = true
-				button_node.text = "Koupeno"
-				print("✅ Artefakt úspěšně koupen!")
+				button_node.text = tr("ui.shop.purchased")
+				print(tr("log.shop.artifact_purchased"))
 			else:
 				# Tohle by se nemělo stát díky filtrování, ale pro jistotu
-				print("❌ Chyba: Nemůžeš koupit tento artefakt!")
+				print(tr("log.shop.cannot_buy_artifact"))
 				# Vrátíme zlato
 				PlayerData.add_gold(cost)
 	else:
-		print("Nedostatek zlata!")
+		print(tr("log.shop.not_enough_gold"))
 
 func get_available_artifacts(artifact_pool: Array) -> Array:
 	"""Filtruje artefakty které hráč může získat"""
@@ -149,13 +163,13 @@ func _on_leave_button_pressed():
 
 func _update_gold_label(new_amount: int):
 	if is_instance_valid(gold_label):
-		gold_label.text = "Zlato: %d" % new_amount
+		gold_label.text = TranslationHelper.tr_format("ui.shop.gold", {"value": new_amount})
 
 func _on_remove_card_button_pressed():
 	if PlayerData.gold >= CARD_REMOVAL_COST:
 		card_pile_viewer.show_cards(PlayerData.master_deck)
 	else:
-		print("Nemáš dostatek zlata na odstranění karty!")
+		print(tr("ui.shop.not_enough_gold_remove"))
 		remove_card_button.self_modulate = Color.RED
 		var tween = create_tween()
 		tween.tween_interval(0.5)
@@ -167,6 +181,46 @@ func _on_viewer_visibility_changed():
 			if card_ui is CardUI:
 				if not card_ui.is_connected("gui_input", _on_card_in_viewer_clicked):
 					card_ui.gui_input.connect(_on_card_in_viewer_clicked.bind(card_ui.card_data))
+
+func _on_card_right_clicked(card_data: CardData):
+	"""Toggle tooltip při pravém kliknutí na kartu"""
+	if not card_tooltip:
+		return
+	
+	# Pokud je tooltip zobrazený pro tuto kartu, schováme ho
+	if card_tooltip.visible and _current_tooltip_card_data == card_data:
+		card_tooltip.hide_tooltip()
+		_current_tooltip_card_data = null
+	else:
+		# Jinak zobrazíme tooltip pro tuto kartu
+		_current_tooltip_card_data = card_data
+		_show_card_tooltip()
+
+func _show_card_tooltip():
+	"""Zobrazí tooltip pro aktuálně vybranou kartu"""
+	if not _current_tooltip_card_data or not card_tooltip:
+		return
+	
+	var screen_size = get_viewport().get_visible_rect().size
+	var tooltip_size = Vector2(350, 250)
+	
+	# Zobrazíme tooltip v pravém horním rohu (offset 20px od okrajů)
+	var tooltip_pos = Vector2(
+		screen_size.x - tooltip_size.x - 20,
+		20
+	)
+	
+	# Kontrola, aby tooltip nevyšel z obrazovky
+	if tooltip_pos.x + tooltip_size.x > screen_size.x:
+		tooltip_pos.x = screen_size.x - tooltip_size.x - 10
+	if tooltip_pos.y + tooltip_size.y > screen_size.y:
+		tooltip_pos.y = screen_size.y - tooltip_size.y - 10
+	if tooltip_pos.x < 0:
+		tooltip_pos.x = 10
+	if tooltip_pos.y < 0:
+		tooltip_pos.y = 10
+	
+	card_tooltip.show_tooltip(_current_tooltip_card_data, tooltip_pos)
 
 func _on_card_in_viewer_clicked(event: InputEvent, card_data: CardData):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():

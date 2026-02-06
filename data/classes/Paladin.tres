@@ -30,8 +30,8 @@ metadata/_custom_type_script = "uid://erb1281erb63"
 [resource]
 script = ExtResource("1_pmeaw")
 subclass_id = "paladin"
-subclass_name = "paladin"
-description = "Svatý bojovník"
+subclass_name = "class.paladin"
+description = "class.paladin.desc"
 parent_class = ExtResource("1_6n481")
 starting_deck = Array[ExtResource("4_4jb1q")]([SubResource("Resource_3ylp1"), SubResource("Resource_snyqr"), SubResource("Resource_72t25")])
 specific_unit_data = ExtResource("3_4jb1q")

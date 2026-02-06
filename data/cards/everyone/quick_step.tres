@@ -12,13 +12,18 @@ target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_i7eq0")
 card_id = "quick_step"
-card_name = "Rychlý krok"
-card_description = "Zvyš svou iniciativu o 5 pro příští kolo."
+card_name = "card.quick_step"
+card_description = "card.quick_step.desc"
 cost = 1
 range_type = 1
 range_value = 0

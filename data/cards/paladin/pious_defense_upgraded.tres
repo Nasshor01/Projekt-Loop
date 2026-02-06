@@ -12,13 +12,18 @@ target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_pii7y")
 card_id = "pious_defense+"
-card_name = "Zbožná obrana+"
-card_description = "Získej 10 bloku."
+card_name = "card.pious_defense+"
+card_description = "card.pious_defense+.desc"
 cost = 1
 range_type = 1
 range_value = 1

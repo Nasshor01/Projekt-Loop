@@ -5,8 +5,8 @@
 
 [resource]
 script = ExtResource("1_64gqc")
-artifact_name = "Berserkerova zuřivost"
-description = "Když máš méně než 50% HP, tvé karty způsobí {value} extra poškození."
+artifact_name = "artifact.berserkerova_zurivost"
+description = "artifact.berserkerova_zurivost.desc"
 texture = ExtResource("2_wxfd4")
 artifact_type = 2
 trigger_type = 13

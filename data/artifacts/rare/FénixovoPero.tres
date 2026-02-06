@@ -5,8 +5,8 @@
 
 [resource]
 script = ExtResource("1_0duya")
-artifact_name = "Fénixovo pero"
-description = "Jednou za souboj: když tvé zdraví klesne pod 25%, vyléč se na 50% HP."
+artifact_name = "artifact.fenixovo_pero"
+description = "artifact.fenixovo_pero.desc"
 texture = ExtResource("2_2g7nl")
 artifact_type = 2
 trigger_type = 13

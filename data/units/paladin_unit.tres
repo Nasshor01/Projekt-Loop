@@ -1,18 +1,19 @@
 [gd_resource type="Resource" script_class="UnitData" load_steps=3 format=3 uid="uid://big4b3x4pngq"]
 
 [ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_cr1pk"]
-[ext_resource type="Texture2D" uid="uid://d3h6qsi48qr8a" path="res://art/sprites/units/Paladin.png" id="2_5gugt"]
+[ext_resource type="Texture2D" uid="uid://cs1ack0jaqgre" path="res://art/sprites/units/paladin 2.png" id="2_cr1pk"]
 
 [resource]
 script = ExtResource("1_cr1pk")
 unit_id = "paladin"
-unit_name = "Paladin"
-description = "Svatý rytíř světla."
+unit_name = "unit.paladin"
+description = "unit.paladin.desc"
 faction = 0
+unit_type = 0
 max_health = 50
 attack_damage = 5
 movement_range = 2
 attack_range = 1
 initiative = 12
-sprite_texture = ExtResource("2_5gugt")
+sprite_texture = ExtResource("2_cr1pk")
 metadata/_custom_type_script = "uid://celcfyrl033bg"

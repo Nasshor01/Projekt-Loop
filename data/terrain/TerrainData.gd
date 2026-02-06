@@ -34,3 +34,9 @@ enum TerrainEffect {
 @export var effect_string_value: String = "" 
 @export var effect_numeric_value: int = 0 
 @export var effect_duration: int = 1
+
+func get_localized_name() -> String:
+	return tr(terrain_name)
+
+func get_localized_description() -> String:
+	return tr(description)

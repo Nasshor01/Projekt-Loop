@@ -77,14 +77,6 @@ func get_last_attacker() -> Unit:
 func attack(target: Node, damage_multiplier: float = 1.0) -> void:
 	if not is_instance_valid(target) or not target.has_method("take_damage"): return
 	
-	# Assassin dodge - 35% šance, že útok mine
-	if target is Unit and target.unit_data.ai_script and target.unit_data.ai_script.resource_path.contains("AssassinAI"):
-		var dodge_roll = randi_range(1, 100)
-		if dodge_roll <= 35:  # 35% dodge chance
-			target._show_floating_text("DODGE!", "heal")
-			print("💨 Assassin se vyhnul útoku!")
-			return
-	
 	if target.has_method("set_last_attacker"):
 		target.set_last_attacker(self)
 	
@@ -115,6 +107,14 @@ func attack(target: Node, damage_multiplier: float = 1.0) -> void:
 	await target.take_damage(damage)
 
 func take_damage(amount: int) -> void:
+	# Assassin dodge - 35% šance, že útok mine (kontroluje se PŘED poškozením)
+	if unit_data.ai_script and unit_data.ai_script.resource_path.contains("AssassinAI"):
+		var dodge_roll = randi_range(1, 100)
+		if dodge_roll <= 35:  # 35% dodge chance
+			show_status_text("DODGE!", "heal")
+			print("💨 Assassin se vyhnul útoku!")
+			return  # Útok mine, žádné poškození
+	
 	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/ArtifactManager"):
 		var attacker = get_last_attacker()
 		ArtifactManager.on_damage_taken(amount, attacker)
@@ -435,6 +435,9 @@ func _show_floating_text(amount: int, type: String):
 		"critical":
 			text_to_display = "CRIT! -" + str(amount)
 			color = Color.ORANGE
+		"holy_effective":
+			text_to_display = "✨ -" + str(amount)
+			color = Color.GOLD
 
 	var canvas = get_tree().root.find_child("CanvasLayer", true, false)
 	if canvas:
@@ -530,14 +533,14 @@ func show_status_text(text_to_show: String, color_type: String):
 	instance.start(text_to_show, color)
 
 func start_turn() -> int:
-	print("--- %s ZAČÍNÁ TAH ---" % unit_data.unit_name)
+	print(TranslationHelper.tr_format("log.unit.turn_start", {"name": unit_data.get_localized_name()}))
 	_has_acted_this_turn = false
 	reset_for_new_turn()
 	var extra_draw = process_turn_start_statuses()
 	return extra_draw
 
 func end_turn():
-	print("--- %s KONČÍ TAH ---" % unit_data.unit_name)
+	print(TranslationHelper.tr_format("log.unit.turn_end", {"name": unit_data.get_localized_name()}))
 	process_turn_end_statuses()
 
 func can_act() -> bool:
@@ -545,4 +548,4 @@ func can_act() -> bool:
 
 func use_action():
 	_has_acted_this_turn = true
-	print("%s použil akci (zahrál kartu)." % unit_data.unit_name)
+	print(TranslationHelper.tr_format("log.unit.used_action", {"name": unit_data.get_localized_name()}))

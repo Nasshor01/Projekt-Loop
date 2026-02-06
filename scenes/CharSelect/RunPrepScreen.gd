@@ -8,6 +8,7 @@ extends Control
 @onready var points_label: Label = $MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/PointsLabel
 @onready var start_button: Button = $MarginContainer/VBoxContainer/VBoxContainer/StartButton
 @onready var back_button: Button = $MarginContainer/VBoxContainer/VBoxContainer/BackButton
+@onready var title_label: Label = $MarginContainer/VBoxContainer/VBoxContainer/TitleLabel
 @onready var skill_tree = $MarginContainer/VBoxContainer/HSplitContainer/RightPanel/SubViewportContainer/SubViewport/PassiveSkillTree
 
 func _ready():
@@ -20,15 +21,24 @@ func _ready():
 	# ZDE VOLÁME SPRÁVNOU FUNKCI _refresh_tree()
 	skill_tree._refresh_tree() 
 	
+	_update_ui_texts()
 	update_display()
+
+func _update_ui_texts():
+	if title_label:
+		title_label.text = tr("ui.run_prep.title")
+	if start_button:
+		start_button.text = tr("ui.run_prep.start")
+	if back_button:
+		back_button.text = tr("ui.common.back")
 
 func update_display():
 	var meta = SaveManager.meta_progress
 	var xp_needed = SaveManager.get_xp_for_next_level()
 	
-	level_label.text = "Level: %d" % meta.player_level
-	points_label.text = "Dovednostní body: %d" % meta.skill_points
-	xp_label.text = "XP: %d / %d" % [meta.total_xp, xp_needed]
+	level_label.text = TranslationHelper.tr_format("ui.run_prep.level", {"value": meta.player_level})
+	points_label.text = TranslationHelper.tr_format("ui.run_prep.points", {"value": meta.skill_points})
+	xp_label.text = TranslationHelper.tr_format("ui.run_prep.xp", {"current": meta.total_xp, "max": xp_needed})
 	
 	xp_bar.max_value = xp_needed
 	xp_bar.value = meta.total_xp

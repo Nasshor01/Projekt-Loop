@@ -44,8 +44,8 @@ metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
 
 [sub_resource type="Resource" id="Resource_06ckk"]
 script = ExtResource("1_xpx7f")
-choice_text = "Sáhnout do temné vody"
-choice_tooltip = "Zaručeně získáš prokletí. 70% šance na velkou odměnu, jinak získáš další prokletí."
+choice_text = "event.cursed_well.choice.1"
+choice_tooltip = "event.cursed_well.choice.1.tooltip"
 cost = SubResource("Resource_sgo1u")
 reward = SubResource("Resource_12kmc")
 success_chance = 0.7
@@ -59,7 +59,7 @@ metadata/_custom_type_script = "uid://dlyussc7fd6oa"
 
 [sub_resource type="Resource" id="Resource_28eja"]
 script = ExtResource("1_xpx7f")
-choice_text = "Ignorovat studnu a jít dál"
+choice_text = "event.cursed_well.choice.2"
 choice_tooltip = ""
 success_chance = 1.0
 show_success_chance = true
@@ -72,8 +72,8 @@ metadata/_custom_type_script = "uid://dlyussc7fd6oa"
 [resource]
 script = ExtResource("2_qe5uo")
 event_id = "cursed_well"
-event_name = "Prokletá studna"
-description = "Nacházíš starou, kamennou studnu. Voda v ní je nepřirozeně temná a bublá. Zdá se, že z hlubin slyšíš šepot a na dně se něco třpytí."
+event_name = "event.cursed_well.name"
+description = "event.cursed_well.desc"
 event_type = 0
 rarity = 1
 min_floor = 0

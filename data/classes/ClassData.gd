@@ -10,3 +10,9 @@ func _init(p_id: String = "", p_name: String = "Třída", p_desc: String = ""):
 	class_id = p_id
 	display_name = p_name
 	description = p_desc
+
+func get_localized_name() -> String:
+	return tr(display_name)
+
+func get_localized_description() -> String:
+	return tr(description)

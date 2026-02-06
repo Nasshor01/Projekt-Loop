@@ -15,6 +15,7 @@ var rest_scene = "res://scenes/camp/RestScene.tscn"
 var global_ui_scene = preload("res://scenes/ui/GlobalUI.tscn")
 var event_scene = "res://scenes/events/EventScene.tscn"
 var how_to_play_scene = "res://scenes/ui/HowToPlay.tscn"
+var settings_scene = "res://scenes/ui/Settings.tscn"
 
 var current_scene: Node = null
 var current_seed: int
@@ -45,6 +46,9 @@ func _ready():
 		DebugLogger.log_info("=== GAME MANAGER STARTED ===")
 	DebugLogger.log_info("=== GAME MANAGER STARTED ===")
 	DebugLogger.log_system_info() # Zaloguje system info
+	
+	# Načteme preferenci jazyka při startu
+	_load_language_preference()
 	
 	# Load resource pools at runtime to avoid script resolution issues
 	CARD_REWARD_POOL = load("res://data/cards/reward_card_pool.tres")
@@ -160,6 +164,19 @@ func go_to_character_select():
 
 func go_to_how_to_play():
 	_change_scene(how_to_play_scene)
+
+func go_to_settings():
+	_change_scene(settings_scene)
+
+func _load_language_preference():
+	"""Načte preferenci jazyka z ConfigFile při startu"""
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+	if err == OK:
+		var locale = config.get_value("settings", "language", "en")
+		if locale != "":
+			TranslationServer.set_locale(locale)
+			DebugLogger.log_info("Language preference loaded: %s" % locale)
 
 func go_to_run_prep_screen(p_class: ClassData, p_subclass: SubclassData):
 	selected_class_data = p_class

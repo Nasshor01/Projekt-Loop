@@ -6,8 +6,8 @@
 [resource]
 script = ExtResource("2_bglw1")
 card_id = "curse_pain"
-card_name = "Prokletí: Bolest"
-card_description = "Nehratelná. Na konci tvého tahu ti způsobí 2 poškození."
+card_name = "card.curse_pain"
+card_description = "card.curse_pain.desc"
 cost = 99
 range_type = 0
 range_value = 1

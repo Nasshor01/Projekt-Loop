@@ -157,6 +157,14 @@ func get_effective_secondary_value() -> int:
 	
 	return base_value
 
+func get_localized_name() -> String:
+	"""Vrátí lokalizovaný název artefaktu"""
+	return tr(artifact_name)
+
+func get_localized_description() -> String:
+	"""Vrátí lokalizovaný popis artefaktu"""
+	return tr(description)
+
 func check_condition(context: Dictionary = {}) -> bool:
 	"""Zkontroluje, jestli je splněna podmínka pro aktivaci"""
 	if condition_type.is_empty():
@@ -203,7 +211,7 @@ func check_condition(context: Dictionary = {}) -> bool:
 
 func get_formatted_description() -> String:
 	"""Vrátí popis s aktuálními hodnotami"""
-	var desc = description
+	var desc = tr(description)
 	
 	# Nahradíme placeholdery skutečnými hodnotami
 	desc = desc.replace("{value}", str(get_effective_value()))
@@ -211,11 +219,11 @@ func get_formatted_description() -> String:
 	desc = desc.replace("{stacks}", str(current_stacks))
 	
 	if max_stacks > 1:
-		desc += " [Stacks: %d/%d]" % [current_stacks, max_stacks]
+		desc += " " + TranslationHelper.tr_format("artifact.stacks", {"current": current_stacks, "max": max_stacks})
 	
 	if uses_per_combat > 0:
 		var remaining = uses_per_combat - current_uses
-		desc += " [Použití: %d/%d]" % [remaining, uses_per_combat]
+		desc += " " + TranslationHelper.tr_format("artifact.uses", {"current": remaining, "max": uses_per_combat})
 		
 	return desc
 

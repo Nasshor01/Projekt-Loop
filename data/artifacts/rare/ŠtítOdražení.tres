@@ -5,8 +5,8 @@
 
 [resource]
 script = ExtResource("1_twhck")
-artifact_name = "štít odražení"
-description = "Pokaždé když utrpíš poškození, útočník utrpí {value} poškození zpět."
+artifact_name = "artifact.stit_odrazeni"
+description = "artifact.stit_odrazeni.desc"
 texture = ExtResource("2_1321a")
 artifact_type = 2
 trigger_type = 5

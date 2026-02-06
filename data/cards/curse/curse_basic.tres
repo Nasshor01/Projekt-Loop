@@ -6,8 +6,8 @@
 [resource]
 script = ExtResource("2_3iskh")
 card_id = "curse_basic"
-card_name = "Prokletí"
-card_description = "Zbytečná karta, která ti jen zabírá místo na ruce."
+card_name = "card.curse_basic"
+card_description = "card.curse_basic.desc"
 cost = 1
 range_type = 0
 range_value = 1

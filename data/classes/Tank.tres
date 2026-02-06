@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_tgw2m")
 class_id = "tank"
-display_name = "Tank"
-description = "Odolná třída zaměřená na obranu."
+display_name = "class.tank"
+description = "class.tank.desc"
 base_unit_data = ExtResource("1_8ilo1")
 metadata/_custom_type_script = "uid://dko03iddvmufq"

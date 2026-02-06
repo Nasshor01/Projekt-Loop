@@ -72,14 +72,14 @@ func _get_random_event_for_floor(floor: int) -> EventData:
 	# Označ event jako použitý
 	EventManager.mark_event_as_used(chosen_event)
 	
-	print("EventScene: Vybrán event: %s pro patro %d" % [chosen_event.event_name, floor])
+	print(TranslationHelper.tr_format("log.event.selected", {"name": chosen_event.get_localized_name(), "floor": floor}))
 	return chosen_event
 
 func _show_error_message():
 	"""Zobrazí chybovou zprávu místo fallback eventu"""
-	event_title.text = "CHYBA: Žádné eventy"
+	event_title.text = tr("event.error.title")
 	description_text.bbcode_enabled = true
-	description_text.text = "[color=red]Nepodařilo se načíst žádný event![/color]\n\nMožné příčiny:\n• Event Pool soubor neexistuje nebo je prázdný\n• Žádné eventy nejsou vhodné pro patro %d\n• Eventy mají špatně nastavené min_floor/max_floor" % PlayerData.floors_cleared
+	description_text.text = TranslationHelper.tr_format("event.error.description", {"floor": PlayerData.floors_cleared})
 	
 	event_image.visible = false
 	
@@ -90,7 +90,7 @@ func _show_error_message():
 	
 	# Vytvoř jen button pro návrat
 	var return_button = Button.new()
-	return_button.text = "Vrátit se na mapu"
+	return_button.text = tr("event.error.return_to_map")
 	choices_container.add_child(return_button)
 	return_button.pressed.connect(_on_error_continue_pressed)
 
@@ -103,10 +103,10 @@ func display_event():
 	if not current_event:
 		return
 		
-	event_title.text = current_event.event_name
+	event_title.text = current_event.get_localized_name()
 	
 	description_text.bbcode_enabled = true
-	description_text.text = current_event.description
+	description_text.text = current_event.get_localized_description()
 	
 	if current_event.artwork:
 		event_image.texture = current_event.artwork
@@ -142,7 +142,7 @@ func _on_choice_made(choice_index: int):
 	event_resolved = true
 	var choice: EventChoice = current_event.choices[choice_index]
 	
-	DebugLogger.log_info("Event choice selected: %s" % choice.choice_text, "EVENT")
+	DebugLogger.log_info(TranslationHelper.tr_format("log.event.choice_selected", {"text": tr(choice.choice_text)}), "EVENT")
 	
 	# Deaktivuj všechny buttons
 	for button in choice_buttons:
@@ -159,7 +159,7 @@ func _process_choice_new(choice: EventChoice):
 		choice.cost.apply_cost()
 		var cost_desc = choice.cost.get_cost_description()
 		if cost_desc != "":
-			results_log.append("Zaplatil jsi: " + cost_desc)
+			results_log.append(tr("event.result.paid") + " " + cost_desc)
 	
 	# 2. Risk/Reward check
 	var success = true
@@ -172,9 +172,9 @@ func _process_choice_new(choice: EventChoice):
 		], "EVENT")
 		
 		if success:
-			results_log.append("[color=green]✓ Úspěch![/color]")
+			results_log.append("[color=green]" + tr("event.result.success") + "[/color]")
 		else:
-			results_log.append("[color=red]✗ Selhání![/color]")
+			results_log.append("[color=red]" + tr("event.result.failure") + "[/color]")
 	
 	# 3. Aplikuj výsledek
 	if success:
@@ -189,7 +189,7 @@ func _process_choice_new(choice: EventChoice):
 	else:
 		if choice.failure_cost:
 			choice.failure_cost.apply_cost()
-			results_log.append("Dodatečná cena: " + choice.failure_cost.get_cost_description())
+			results_log.append(tr("event.result.additional_cost") + " " + choice.failure_cost.get_cost_description())
 		if choice.failure_reward:
 			choice.failure_reward.apply_reward(results_log)
 	
@@ -204,7 +204,7 @@ func show_result(result_lines: Array):
 	result_text.clear()
 	
 	if result_lines.is_empty():
-		result_text.append_text("Pokračuješ v cestě.")
+		result_text.append_text(tr("event.result.continue"))
 	else:
 		for line in result_lines:
 			result_text.append_text(line + "\n")
@@ -246,7 +246,7 @@ func _on_removal_card_clicked(event: InputEvent, card_data: CardData):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
 		# Odstraň kartu
 		PlayerData.master_deck.erase(card_data)
-		print("Karta '%s' byla odstraněna z balíčku." % card_data.card_name)
+		print(TranslationHelper.tr_format("event.card_removed", {"name": card_data.get_localized_name()}))
 		
 		cards_to_remove_count -= 1
 		
@@ -257,7 +257,7 @@ func _on_removal_card_clicked(event: InputEvent, card_data: CardData):
 			result_panel.visible = true
 			
 			# Aktualizuj result text
-			result_text.append_text("\n[color=gray]Odstraněna karta: %s[/color]" % card_data.card_name)
+			result_text.append_text("\n[color=gray]" + TranslationHelper.tr_format("event.result.removed_card", {"name": card_data.get_localized_name()}) + "[/color]")
 
 func _open_card_upgrade_screen():
 	"""Otevře obrazovku pro výběr karty k vylepšení"""
@@ -273,7 +273,7 @@ func _open_card_upgrade_screen():
 	
 	if upgradeable_cards.is_empty():
 		pending_card_upgrade = false
-		result_text.append_text("\n[color=gray]Žádné karty nelze vylepšit[/color]")
+		result_text.append_text("\n[color=gray]" + tr("event.reward.upgrade_none") + "[/color]")
 		return
 	
 	# Skryj result panel
@@ -296,14 +296,11 @@ func _on_upgrade_card_clicked(event: InputEvent, card_data: CardData):
 		if index != -1 and card_data.upgraded_version:
 			var upgraded = card_data.upgraded_version
 			PlayerData.master_deck[index] = upgraded
-			print("Karta vylepšena: %s → %s" % [card_data.card_name, upgraded.card_name])
+			print(TranslationHelper.tr_format("event.card_upgraded", {"from": card_data.get_localized_name(), "to": upgraded.get_localized_name()}))
 			
 			pending_card_upgrade = false
 			card_removal_viewer.visible = false
 			result_panel.visible = true
 			
 			# Aktualizuj result text
-			result_text.append_text("\n[color=cyan]Vylepšena karta: %s → %s[/color]" % [
-				card_data.card_name,
-				upgraded.card_name
-			])
+			result_text.append_text("\n[color=cyan]" + TranslationHelper.tr_format("event.reward.upgraded_card", {"from": card_data.get_localized_name(), "to": upgraded.get_localized_name()}) + "[/color]")

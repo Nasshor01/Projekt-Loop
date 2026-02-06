@@ -19,8 +19,8 @@ func set_artifact(data: ArtifactsData):
 		self.texture = artifact_data.texture
 		
 		# OPRAVENÝ TOOLTIP - používáme get_formatted_description() místo description
-		tooltip_text = "%s\n%s" % [artifact_data.artifact_name, artifact_data.get_formatted_description()]
+		tooltip_text = "%s\n%s" % [artifact_data.get_localized_name(), artifact_data.get_formatted_description()]
 		
 		# Pokud chceš stacky v tooltipu
 		if artifact_data.max_stacks > 1:
-			tooltip_text += "\nStacky: %d/%d" % [artifact_data.current_stacks, artifact_data.max_stacks]
+			tooltip_text += "\n" + TranslationHelper.tr_format("artifact.stacks", {"current": artifact_data.current_stacks, "max": artifact_data.max_stacks})

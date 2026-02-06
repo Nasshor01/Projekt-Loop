@@ -7,13 +7,15 @@
 [resource]
 script = ExtResource("1_s5pp1")
 unit_id = "demon"
-unit_name = "Demon Bitch"
-description = "Popis jednotky."
+unit_name = "unit.boss_demon_girl"
+description = "unit.boss_demon_girl.desc"
 faction = 1
+unit_type = 2
 max_health = 150
 attack_damage = 17
 movement_range = 3
 attack_range = 1
+initiative = 10
 sprite_texture = ExtResource("2_75lmh")
 ai_script = ExtResource("1_lkkoe")
 metadata/_custom_type_script = "uid://celcfyrl033bg"

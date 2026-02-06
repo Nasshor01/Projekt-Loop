@@ -6,8 +6,8 @@
 [resource]
 script = ExtResource("1_vobtq")
 terrain_id = "rock"
-terrain_name = "Skála"
-description = "Neprůchodná překážka."
+terrain_name = "terrain.rock"
+description = "terrain.rock.desc"
 sprite = ExtResource("2_bsygv")
 is_flat_on_ground = false
 is_walkable = false

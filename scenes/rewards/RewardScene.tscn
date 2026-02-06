@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://cdkaugeoudrqa"]
+[gd_scene load_steps=4 format=3 uid="uid://cdkaugeoudrqa"]
 
 [ext_resource type="Script" uid="uid://4evnmm0nmlqh" path="res://scenes/rewards/RewardScene.gd" id="1_4cy2o"]
+[ext_resource type="PackedScene" uid="uid://dah2k3m4n5p6q" path="res://scenes/ui/CardTooltip.tscn" id="2_tooltip"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_b06mc"]
 
@@ -54,3 +55,14 @@ layout_mode = 2
 [node name="SkipButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 text = "přeskočit"
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="CardTooltip" parent="CanvasLayer" instance=ExtResource("2_tooltip")]
+unique_name_in_owner = true
+offset_left = 400.0
+offset_top = 368.0
+offset_right = 750.0
+offset_bottom = 618.0
+size_flags_horizontal = 4
+size_flags_vertical = 4

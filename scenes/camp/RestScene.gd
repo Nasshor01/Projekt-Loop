@@ -16,11 +16,16 @@ func _ready():
 	heal_button.pressed.connect(_on_heal_pressed)
 	upgrade_button.pressed.connect(_on_upgrade_pressed)
 	leave_button.pressed.connect(_on_leave_pressed)
-	
-	var heal_amount = int(PlayerData.max_hp * 0.3)
-	heal_button.text = "Odpočinout si (+%d HP)" % heal_amount
+	_update_ui_texts()
 	
 	upgrade_preview.hide()
+
+func _update_ui_texts():
+	var heal_amount = int(PlayerData.max_hp * 0.3)
+	heal_button.text = TranslationHelper.tr_format("ui.rest.heal", {"value": heal_amount})
+	upgrade_button.text = tr("ui.rest.upgrade")
+	leave_button.text = tr("ui.rest.leave")
+	title_label.text = tr("ui.rest.title")
 
 func _on_heal_pressed():
 	var heal_amount = int(PlayerData.max_hp * 0.3)
@@ -29,7 +34,7 @@ func _on_heal_pressed():
 
 func _on_upgrade_pressed():
 	options_container.hide()
-	title_label.text = "Vyber kartu k vylepšení"
+	title_label.text = tr("ui.rest.choose_card")
 	
 	var upgradeable_cards: Array[CardData] = []
 	for card in PlayerData.master_deck:
@@ -49,7 +54,7 @@ func _on_card_selected_for_upgrade(event: InputEvent, card_to_upgrade: CardData)
 		var card_index = PlayerData.master_deck.find(card_to_upgrade)
 		if card_index != -1:
 			PlayerData.master_deck[card_index] = card_to_upgrade.upgraded_version
-			print("Karta '%s' vylepšena na '%s'" % [card_to_upgrade.card_name, card_to_upgrade.upgraded_version.card_name])
+			print(TranslationHelper.tr_format("log.rest.card_upgraded", {"from": card_to_upgrade.get_localized_name(), "to": card_to_upgrade.upgraded_version.get_localized_name()}))
 		
 		_on_leave_pressed()
 

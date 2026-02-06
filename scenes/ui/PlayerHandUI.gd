@@ -2,8 +2,7 @@
 extends Control
 
 signal hand_card_was_clicked(card_ui_instance: Control, card_data_resource: CardData)
-signal card_hover_started(card_data_resource: CardData)
-signal card_hover_ended()
+signal card_right_clicked(card_data_resource: CardData)
 signal card_draw_animation_finished() # Nový signál, který oznámí dokončení animace dobrání
 signal hand_discard_animation_finished() # Nový signál pro dokončení odhození
 
@@ -164,16 +163,20 @@ func _arrange_cards():
 		tween.tween_property(card, "rotation_degrees", 0, 0.15)
 
 func _on_card_mouse_entered(card: Control):
+	"""Hover pro vizuální efekty - karta se zvedne"""
 	_hovered_card = card
-	emit_signal("card_hover_started", card.card_data)
 	_request_arrange()
 
 func _on_card_mouse_exited(card: Control):
+	"""Konec hoveru - karta se vrátí na normální pozici"""
 	if _hovered_card == card:
 		_hovered_card = null
-		emit_signal("card_hover_ended")
 		_request_arrange()
 
 func _on_card_gui_input(event: InputEvent, card_node: Control):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		emit_signal("hand_card_was_clicked", card_node, card_node.card_data)
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			emit_signal("hand_card_was_clicked", card_node, card_node.card_data)
+		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+			# Pravý klik - toggle tooltip
+			emit_signal("card_right_clicked", card_node.card_data)

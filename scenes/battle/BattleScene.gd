@@ -48,6 +48,7 @@ const SHAPE_DIAMOND = [
 @onready var battle_grid_instance: BattleGrid = $BattleGrid
 @onready var turn_counter_label: Label = $CanvasLayer/TurnCounterLabel
 @onready var initiative_bar = $CanvasLayer/InitiativeBar
+@onready var card_tooltip: CardTooltip = $CanvasLayer/CardTooltip
 
 @export var camera_3d: Camera3D 
 
@@ -73,6 +74,7 @@ var _current_turn_number: int = 0
 var _is_extra_turn: bool = false
 var _cards_played_this_turn: Dictionary = {}  # Tracking karet za tah pro limit použití
 var _took_damage_last_turn: bool = false  # Tracking poškození pro consecrated_barrier
+var _current_tooltip_card_data: CardData = null
 
 func _ready():
 	DebugLogger.log_info("Battle scene loaded", "BATTLE")
@@ -93,8 +95,9 @@ func _ready():
 	PlayerData.reset_battle_stats()
 	PlayerData.energy_changed.connect(_on_energy_changed)
 	player_hand_ui_instance.hand_card_was_clicked.connect(_on_player_hand_card_clicked)
-	player_hand_ui_instance.card_hover_started.connect(_on_card_hover_started)
-	player_hand_ui_instance.card_hover_ended.connect(_on_card_hover_ended)
+	player_hand_ui_instance.card_right_clicked.connect(_on_card_right_clicked)
+	
+	# Tooltip se nyní zobrazuje/schovává pomocí pravého kliknutí - žádné timery nejsou potřeba
 	draw_pile_button.pile_clicked.connect(_on_draw_pile_clicked)
 	discard_pile_button.pile_clicked.connect(_on_discard_pile_clicked)
 	if not win_button.pressed.is_connected(_on_win_button_pressed):
@@ -102,6 +105,8 @@ func _ready():
 	
 	player_hand_ui_instance.card_draw_animation_finished.connect(_on_card_draw_animation_finished)
 	player_hand_ui_instance.hand_discard_animation_finished.connect(_on_hand_discard_animation_finished)
+
+	_update_ui_texts()
 	
 	_setup_camera_boundaries()
 	battle_grid_instance.set_camera(camera_3d)
@@ -115,6 +120,16 @@ func _ready():
 		_cam_target_rot_x = camera_3d.rotation.x
 	
 	start_player_spawn_selection()
+
+func _update_ui_texts():
+	if is_instance_valid(end_turn_button):
+		end_turn_button.text = tr("ui.battle.end_turn")
+	if is_instance_valid(victory_label):
+		victory_label.text = tr("ui.battle.victory")
+	if is_instance_valid(win_button):
+		win_button.text = tr("ui.battle.instant_win")
+	_update_turn_display()
+	_on_energy_changed(PlayerData.current_energy)
 
 func _process(delta):
 	if not camera_3d: return
@@ -212,11 +227,14 @@ func _unhandled_input(event: InputEvent):
 
 		# Logika KARTY
 		if _player_action_state == PlayerActionState.CARD_SELECTED:
-			var is_self_targeting_card = false
+			var has_self_effect = false
+			var has_enemy_effect = false
 			if is_instance_valid(_selected_card_data):
-				is_self_targeting_card = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
+				has_self_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
+				has_enemy_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
 			
-			if is_self_targeting_card:
+			# Pokud karta má pouze SELF efekty (bez ENEMY efektů), použij hráče jako cíl
+			if has_self_effect and not has_enemy_effect:
 				if is_instance_valid(_player_unit_node):
 					try_play_card(_selected_card_data, _player_unit_node)
 					get_viewport().set_input_as_handled()
@@ -228,14 +246,12 @@ func _unhandled_input(event: InputEvent):
 			var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
 			
 			# Kontrola: Pokud karta vyžaduje nepřítele jako cíl, musí být target_node validní nepřítel
-			if is_instance_valid(_selected_card_data):
-				var requires_enemy = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
-				if requires_enemy:
-					if not is_instance_valid(target_node) or not target_node is Unit or not target_node.get_unit_data().faction == UnitData.Faction.ENEMY:
-						# Karta vyžaduje nepřítele, ale klikli jsme na prázdnou buňku nebo ne-nepřítele
-						DebugLogger.log_warning("Karta vyžaduje vybraného nepřítele!")
-						get_viewport().set_input_as_handled()
-						return
+			if has_enemy_effect:
+				if not is_instance_valid(target_node) or not target_node is Unit or not target_node.get_unit_data().faction == UnitData.Faction.ENEMY:
+					# Karta vyžaduje nepřítele, ale klikli jsme na prázdnou buňku nebo ne-nepřítele
+					DebugLogger.log_warning("Karta vyžaduje vybraného nepřítele!")
+					get_viewport().set_input_as_handled()
+					return
 			
 			try_play_card(_selected_card_data, target_node)
 			get_viewport().set_input_as_handled()
@@ -507,7 +523,7 @@ func spawn_player_unit_at(grid_pos: Vector2i):
 func _update_turn_display():
 	"""Aktualizuje zobrazení čísla tahu"""
 	if is_instance_valid(turn_counter_label):
-		turn_counter_label.text = "Tah: %d" % _current_turn_number
+		turn_counter_label.text = TranslationHelper.tr_format("ui.battle.turn", {"value": _current_turn_number})
 
 func start_extra_turn():
 	"""Spustí PLNOHODNOTNÝ extra tah hráče"""
@@ -745,12 +761,12 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 	
 	# Frozen - nemůže hrát karty
 	if is_instance_valid(_player_unit_node) and (_player_unit_node.is_frozen or _player_unit_node.active_statuses.has("frozen")):
-		DebugLogger.log_warning("Jsi zmrazen! Nemůžeš hrát karty.")
-		_show_floating_notification("❄️ ZMRAZEN!", Color.CYAN)
+		DebugLogger.log_warning(tr("ui.battle.frozen_warning"))
+		_show_floating_notification(tr("ui.battle.frozen_notice"), Color.CYAN)
 		return
 	
 	if not PlayerData.spend_energy(card.cost):
-		DebugLogger.log_warning("Nedostatek energie pro kartu: %s" % card.card_name)
+		DebugLogger.log_warning(TranslationHelper.tr_format("ui.battle.not_enough_energy", {"name": card.get_localized_name()}))
 		return
 
 	# Kontrola limitu použití karty za tah
@@ -767,7 +783,7 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 		
 		# Vizuální feedback pro limit
 		if current_count + 1 == card.max_uses_per_turn:
-			_show_floating_notification("⚠️ Limit: %d/%d" % [current_count + 1, card.max_uses_per_turn], Color.ORANGE)
+			_show_floating_notification(TranslationHelper.tr_format("ui.battle.card_limit", {"current": current_count + 1, "max": card.max_uses_per_turn}), Color.ORANGE)
 
 	_is_action_processing = true
 	var card_played_successfully = false
@@ -781,7 +797,7 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 			card_played_successfully = true
 			for target_unit in targets:
 				if is_instance_valid(target_unit):
-					_apply_single_effect(effect_data, target_unit)
+					await _apply_single_effect(effect_data, target_unit)
 	
 	# Označ akci pouze pokud byla karta úspěšně použita
 	if card_played_successfully:
@@ -807,7 +823,7 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 		player_hand_ui_instance._request_arrange()
 		_update_pile_counts()
 	else:
-		DebugLogger.log_warning("Karta '%s' nenašla žádný platný cíl." % card.card_name)
+		DebugLogger.log_warning(TranslationHelper.tr_format("ui.battle.no_valid_target", {"name": card.get_localized_name()}))
 		PlayerData.gain_energy(card.cost)
 
 	_is_action_processing = false
@@ -827,7 +843,7 @@ func _apply_overuse_debuff(card: CardData):
 	# Poškození
 	if debuff.has("damage") and debuff.damage > 0:
 		_player_unit_node.take_damage(debuff.damage)
-		messages.append("-%d HP" % debuff.damage)
+		messages.append(TranslationHelper.tr_format("ui.battle.debuff_damage", {"value": debuff.damage}))
 	
 	# Ztráta energie
 	if debuff.has("energy_loss") and debuff.energy_loss > 0:
@@ -835,20 +851,20 @@ func _apply_overuse_debuff(card: CardData):
 		if energy_to_lose > 0:
 			PlayerData.current_energy -= energy_to_lose
 			PlayerData.emit_signal("energy_changed", PlayerData.current_energy)
-			messages.append("-%d EN" % energy_to_lose)
+			messages.append(TranslationHelper.tr_format("ui.battle.debuff_energy", {"value": energy_to_lose}))
 	
 	# Status efekt
 	if debuff.has("status") and not debuff.status.is_empty():
 		var duration = debuff.get("status_duration", 1)
 		if _player_unit_node.has_method("apply_status"):
 			_player_unit_node.apply_status(debuff.status, duration)
-			messages.append(debuff.status.capitalize())
+			messages.append(tr("status." + debuff.status))
 	
 	# Vizuální feedback
 	if not messages.is_empty():
-		var text = "💀 PŘEKROČEN LIMIT! " + ", ".join(messages)
+		var text = tr("ui.battle.limit_exceeded") + " " + ", ".join(messages)
 		_show_floating_notification(text, Color.RED)
-		DebugLogger.log_warning("Karta %s překročila limit použití, aplikován debuff" % card.card_name)
+		DebugLogger.log_warning(TranslationHelper.tr_format("ui.battle.limit_exceeded_log", {"name": card.get_localized_name()}))
 
 # NOVÁ FUNKCE - pomocná pro notifikace
 func _show_floating_notification(text: String, color: Color):
@@ -919,10 +935,10 @@ func _check_condition(effect: CardEffectData, target: Node3D) -> bool:
 		"block_below":
 			return _player_unit_node.current_block < effect.condition_value
 		"health_below_percent":
-			var percent = (PlayerData.current_hp * 100) / PlayerData.max_hp
+			var percent = (float(PlayerData.current_hp) * 100.0) / float(PlayerData.max_hp)
 			return percent < effect.condition_value
 		"health_above_percent":
-			var percent = (PlayerData.current_hp * 100) / PlayerData.max_hp
+			var percent = (float(PlayerData.current_hp) * 100.0) / float(PlayerData.max_hp)
 			return percent > effect.condition_value
 		"target_has_debuff":
 			if target is Unit and target.has("active_statuses"):
@@ -932,7 +948,7 @@ func _check_condition(effect: CardEffectData, target: Node3D) -> bool:
 			if target is Unit and target.has("current_health") and target.has("get_unit_data"):
 				var unit_data = target.get_unit_data()
 				var max_hp = unit_data.max_health
-				var percent = (target.current_health * 100) / max_hp
+				var percent = (float(target.current_health) * 100.0) / float(max_hp)
 				return percent > effect.condition_value
 			return false
 		"took_damage_last_turn":
@@ -980,6 +996,23 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 					}
 					damage_to_deal += ArtifactManager.get_card_damage_bonus(context)
 				
+				# Systém efektivity poškození (holy damage vs undead/demon)
+				var damage_type = effect.damage_type
+				
+				# Aplikuj efektivitu poškození, pokud je cíl Unit
+				if target is Unit:
+					var target_unit_data = target.get_unit_data()
+					if target_unit_data:
+						var effectiveness = UnitData.get_damage_effectiveness(damage_type, target_unit_data.unit_type)
+						if effectiveness != 1.0:
+							var original_damage = damage_to_deal
+							damage_to_deal = int(damage_to_deal * effectiveness)
+							if effectiveness > 1.0:
+								DebugLogger.log_info("✨ EFEKTIVNÍ POŠKOZENÍ! %d -> %d (x%.2f)" % [original_damage, damage_to_deal, effectiveness])
+								# Vizuální feedback - zobrazíme efektivní poškození jinou barvou na cíli
+								if target is Unit and target.has_method("_show_floating_text"):
+									target._show_floating_text(damage_to_deal, "holy_effective")
+				
 				# Critical hit logic s artefakt bonusy
 				var total_crit_chance = PlayerData.get_critical_chance()
 				if has_node("/root/ArtifactManager"):
@@ -1000,7 +1033,7 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 				if target is Unit and target.get_unit_data().faction == UnitData.Faction.ENEMY:
 					enemy_health_before = target.current_health
 				
-				target.take_damage(damage_to_deal)
+				await target.take_damage(damage_to_deal)
 				
 				# Pokud byl nepřítel zabit touto kartou, zkontroluj, zda karta má gods_lightning efekt
 				if target is Unit and target.get_unit_data().faction == UnitData.Faction.ENEMY:
@@ -1069,7 +1102,13 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 			_cards_to_draw_queue += effect.value
 			_draw_next_card_in_queue()
 			
-		CardEffectData.EffectType.GAIN_ENERGY: PlayerData.gain_energy(effect.value)
+		CardEffectData.EffectType.GAIN_ENERGY: 
+			# Speciální případ: gods_lightning - energie se získává pouze při zabití nepřítele
+			# Takže tady nic neděláme, energie se přidá v damage efektu
+			if _selected_card_data and _selected_card_data.card_id == "gods_lightning":
+				pass  # Energie se přidá v damage efektu, pokud byl nepřítel zabit
+			else:
+				PlayerData.gain_energy(effect.value)
 		
 		CardEffectData.EffectType.APPLY_STATUS:
 			if target.has_method("apply_status"):
@@ -1188,7 +1227,7 @@ func _on_end_turn_button_pressed():
 	# ============================================
 
 func _on_energy_changed(new_amount: int):
-	energy_label.text = "Energie: " + str(new_amount)
+	energy_label.text = TranslationHelper.tr_format("ui.battle.energy", {"value": new_amount})
 
 func _physics_process(_delta):
 	# Použijeme novou funkci pro Raycast místo 2D mouse position
@@ -1270,9 +1309,50 @@ func _spawn_unit(unit_data: UnitData, grid_pos: Vector2i) -> Unit:
 		unit_instance.queue_free()
 		return null
 
-func _on_card_hover_started(_card_data: CardData): pass
-func _on_card_hover_ended():
-	if _player_action_state != PlayerActionState.CARD_SELECTED: battle_grid_instance.hide_aoe_highlight()
+func _on_card_right_clicked(card_data: CardData):
+	"""Toggle tooltip při pravém kliknutí na kartu"""
+	if not card_tooltip:
+		return
+	
+	# Pokud je tooltip zobrazený pro tuto kartu, schováme ho
+	if card_tooltip.visible and _current_tooltip_card_data == card_data:
+		card_tooltip.hide_tooltip()
+		_current_tooltip_card_data = null
+	else:
+		# Jinak zobrazíme tooltip pro tuto kartu
+		_current_tooltip_card_data = card_data
+		_show_card_tooltip()
+
+func _show_card_tooltip():
+	"""Zobrazí tooltip pro aktuálně vybranou kartu"""
+	if not _current_tooltip_card_data or not card_tooltip:
+		return
+	
+	var screen_size = get_viewport().get_visible_rect().size
+	var tooltip_size = Vector2(350, 250)  # Velikost tooltipu
+	
+	# Zobrazíme tooltip v pravém horním rohu, aby nepřekážel kartám ani gridu
+	# PlayerHandUI je dole (cca 448-576), grid je nahoře a uprostřed
+	# Pravý horní roh je volný (kromě malého "Okamžitá výhra" tlačítka)
+	var tooltip_pos = Vector2(
+		screen_size.x - tooltip_size.x - 20,  # Vpravo s odstupem
+		80  # Odshora s odstupem pod top bar
+	)
+	
+	# Zkontrolujeme, jestli tooltip nevyjde z obrazovky (bezpečnostní kontrola)
+	if tooltip_pos.x + tooltip_size.x > screen_size.x:
+		tooltip_pos.x = screen_size.x - tooltip_size.x - 10
+	
+	if tooltip_pos.y + tooltip_size.y > screen_size.y:
+		tooltip_pos.y = screen_size.y - tooltip_size.y - 10
+	
+	if tooltip_pos.x < 0:
+		tooltip_pos.x = 10
+	
+	if tooltip_pos.y < 0:
+		tooltip_pos.y = 10
+	
+	card_tooltip.show_tooltip(_current_tooltip_card_data, tooltip_pos)
 
 func _update_card_target_preview():
 	if not _selected_card_data: return
@@ -1390,9 +1470,27 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 			# Druid spawn spiritu
 			var spawn_pos = _find_spawn_position(enemy_unit)
 			if spawn_pos != Vector2i(-1, -1):
-				# TODO: Vytvořit spirit unit (bude potřeba UnitData pro spirit)
-				print("🌿 Druid spawnuje spiritu na pozici: %s" % spawn_pos)
-				# _spawn_unit("spirit", spawn_pos, action.special_data.get("is_guardian", false))
+				var is_guardian = action.special_data.get("is_guardian", false)
+				var spirit_unit_data
+				if is_guardian:
+					spirit_unit_data = preload("res://data/units/guardian_spirit.tres")
+				else:
+					spirit_unit_data = preload("res://data/units/wolf_spirit.tres")
+				
+				var spirit_node = _spawn_unit(spirit_unit_data, spawn_pos)
+				if is_instance_valid(spirit_node):
+					_enemy_units.append(spirit_node)
+					spirit_node.died.connect(_on_unit_died)
+					spirit_node.stats_changed.connect(_on_unit_stats_changed)
+					# Přidáme spirit do TurnManager
+					if has_node("/root/TurnManager"):
+						TurnManager.add_unit(spirit_node)
+					if is_guardian:
+						print("🛡️ Druid spawnul guardian spiritu na pozici: %s" % spawn_pos)
+					else:
+						print("🌿 Druid spawnul spiritu na pozici: %s" % spawn_pos)
+				else:
+					print("❌ Chyba při spawnu spiritu")
 		
 		"buff_ally":
 			# Monk buffuje spojence

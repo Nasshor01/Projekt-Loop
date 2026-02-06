@@ -13,6 +13,11 @@ target_type = 1
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 1
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [sub_resource type="Resource" id="Resource_glight2"]
@@ -24,13 +29,18 @@ target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_glight")
 card_id = "gods_lightning"
-card_name = "Boží Blesk"
-card_description = "Způsob 18 svatého poškození. Pokud zabiješ nepřítele, získej 2 energie."
+card_name = "card.gods_lightning"
+card_description = "card.gods_lightning.desc"
 cost = 2
 range_type = 2
 range_value = 1

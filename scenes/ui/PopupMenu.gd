@@ -28,6 +28,21 @@ func _ready():
 	save_and_quit_button.pressed.connect(_on_save_and_quit_pressed)
 	back_to_menu_button.pressed.connect(_on_back_to_menu_pressed)
 	back_to_game_button.pressed.connect(_on_back_to_game_pressed)
+	_update_ui_texts()
+
+func _update_ui_texts():
+	if restart_run_button:
+		restart_run_button.text = tr("ui.menu.restart_run")
+	if save_run_button:
+		save_run_button.text = tr("ui.menu.save_run")
+	if back_to_char_select_button:
+		back_to_char_select_button.text = tr("ui.menu.back_to_char_select")
+	if save_and_quit_button:
+		save_and_quit_button.text = tr("ui.menu.save_and_quit")
+	if back_to_menu_button:
+		back_to_menu_button.text = tr("ui.menu.back_to_menu")
+	if back_to_game_button:
+		back_to_game_button.text = tr("ui.menu.back_to_game")
 
 func _unhandled_input(event):
 	# Pokud je menu viditelné a hráč stiskne 'Esc' (ui_cancel)

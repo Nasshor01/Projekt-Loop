@@ -7,9 +7,10 @@
 [resource]
 script = ExtResource("1_0bo4j")
 unit_id = "skeleton"
-unit_name = "Skeleton warior"
-description = "Popis jednotky."
+unit_name = "unit.skeleton"
+description = "unit.skeleton.desc"
 faction = 1
+unit_type = 1
 max_health = 25
 attack_damage = 3
 movement_range = 3

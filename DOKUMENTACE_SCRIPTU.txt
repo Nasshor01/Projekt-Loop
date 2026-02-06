@@ -1,7 +1,7 @@
 ================================================================================
                     KOMPLETNÍ DOKUMENTACE VŠECH SKRIPTŮ
                     PROJEKT: projekt-loop-v2
-                    Datum vytvoření: 2025
+                    Datum aktualizace: 2026-02-03
 ================================================================================
 
 OBSAH:
@@ -234,6 +234,19 @@ PassiveEffectData.gd
   * get_formatted_description() -> String
 - Navazuje na: PassiveSkillNode.gd, PlayerData.gd (apply_passive_skills)
 
+SkillTreeConfig.gd
+- Popis: Konfigurační data pro generování skill tree
+- Třída: Resource
+- Vlastnosti:
+  * tree_id, subclass_id, tree_name
+  * starter_node_id, starter_node_name, starter_node_description
+  * starter_node_effects, tier_1_nodes až tier_5_nodes
+  * connections, clusters
+  * branch_colors, tree_theme
+- Klíčové funkce:
+  * validate() -> bool - validace konfigurace
+- Navazuje na: SkillTreeGenerator.gd, PassiveSkillNode.gd
+
 SkillTreeGenerator.gd
 - Popis: Generátor stromu dovedností pro Paladina
 - Třída: RefCounted
@@ -401,6 +414,16 @@ MainMenu.gd
 - Třída: Control
 - Navazuje na: GameManager.gd
 
+Settings.gd
+- Popis: Nastavení hry (aktuálně volba jazyka)
+- Třída: CanvasLayer
+- Klíčové funkce:
+  * _setup_language_options() - nastaví jazyky v UI
+  * _load_current_language(), _save_language_preference()
+  * _update_ui_texts() - obnoví překlady
+  * show_settings(), hide_settings()
+- Navazuje na: TranslationServer, GameManager.gd
+
 GlobalUI.gd
 - Popis: Globální UI lišta (HP, zlato, patro, artefakty)
 - Třída: CanvasLayer
@@ -462,6 +485,14 @@ PlayerHandUI.gd
   * set_selected_card(card_node) - zvýrazní vybranou kartu
   * _arrange_cards() - uspořádá karty do vějíře
 - Navazuje na: CardUI.gd, BattleScene.gd
+
+CardTooltip.gd
+- Popis: Tooltip s detailním popisem karty při hoveru
+- Třída: PanelContainer
+- Klíčové funkce:
+  * show_tooltip(card_data, position) - zobrazí tooltip
+  * hide_tooltip() - skryje tooltip
+- Navazuje na: CardData.gd, CardUI.gd
 
 FloatingText.gd
 - Popis: Plovoucí text pro poškození/léčení
@@ -664,7 +695,7 @@ PlayerData.gd
   * has_revive, global_card_damage_bonus, starting_retained_block
   * critical_chance, heal_end_of_turn, aura_enhancement, atd. - pasivní efekty
   * adrenaline_cards_this_turn, has_adrenaline_addiction - adrenalin systém
-  * ng_plus_level
+  * loop_level - úroveň NG+ / loopu
 - Klíčové funkce:
   * start_new_run_state() - reset pro nový běh
   * start_ng_plus_state() - reset pro NG+
@@ -759,13 +790,13 @@ EventManager.gd
   * combat_buffs: Array[String] - buffy pro souboj
 - Klíčové funkce:
   * _filter_events_for_floor(events, floor) -> Array - filtruje eventy
+  * filter_events_for_floor(events, floor) -> Array - public wrapper
   * mark_event_as_used(event) - označí jako použitý
   * add_combat_buff(buff_id) - přidá buff
   * get_and_clear_combat_buffs() -> Array[String]
   * start_new_run() - reset pro nový běh
   * _debug_available_events(events, floor) - debug info
-- CHYBA: Funkce _filter_events_for_floor a _debug_available_events jsou private,
-  ale EventScene.gd je volá jako public. Chybí public wrapper funkce!
+  * debug_available_events(events, floor) - public wrapper
 - Navazuje na: EventData.gd, EventScene.gd
 
 SaveManager.gd
@@ -784,8 +815,7 @@ SaveManager.gd
   * load_run() -> Dictionary - načte běh
   * has_saved_run() -> bool
   * delete_saved_run() - smaže uložený běh
-- CHYBA: V save_run() používá player_data.health a player_data.max_health,
-  ale PlayerData používá current_hp a max_hp!
+  * recalculate_skill_points() - přepočítá skill points a resetuje alokace
 - Navazuje na: MetaProgress.gd, PlayerData.gd, GameManager.gd
 
 DebugLogger.gd
@@ -816,12 +846,6 @@ EnemyAIBase.gd
   * create_pass_action(), create_attack_action(), create_move_action()
   * create_rush_action() - vytvoří RUSH akci
 - Navazuje na: Unit.gd, BattleGrid.gd, všechny AI implementace
-
-EnemyAIController.gd
-- Popis: Starý AI controller (možná nepoužívaný?)
-- Třída: Object
-- Používá AStar2D pro pathfinding
-- Navazuje na: BattleGrid.gd
 
 FighterAI.gd
 - Popis: Jednoduchá melee AI - jdi a zaútoč
@@ -855,6 +879,47 @@ BerserkerAI.gd
   * find_path_with_movement_limit() -> Array[Vector2i]
   * get_adjacent_walkable_cells() -> Array[Vector2i]
 - Navazuje na: EnemyAIBase.gd, BattleGrid.gd, Unit.gd (berserker_frustration)
+
+AssassinAI.gd
+- Popis: Assassin - rychlý pohyb, double attack, dodge
+- Třída: extends EnemyAIBase
+- Klíčové funkce:
+  * get_next_action() -> AIAction
+  * find_path_to_adjacent() -> Array[Vector2i]
+- Navazuje na: EnemyAIBase.gd, BattleGrid.gd, Unit.gd
+
+MageAI.gd
+- Popis: Mage - ranged útoky, elementální dmg, meteorit po X kolech
+- Třída: extends EnemyAIBase
+- Klíčové funkce:
+  * get_next_action() -> AIAction
+  * find_escape_move() -> Dictionary
+- Navazuje na: EnemyAIBase.gd, BattleGrid.gd, Unit.gd
+
+HealerAI.gd
+- Popis: Healer/Cleric - léčí spojence, holy dmg proti undead
+- Třída: extends EnemyAIBase
+- Klíčové funkce:
+  * get_next_action() -> AIAction
+  * find_allies_in_range() -> Array[Unit]
+- Navazuje na: EnemyAIBase.gd, BattleGrid.gd, Unit.gd
+
+DruidAI.gd
+- Popis: Druid - spawnuje spirity, občas ochránce
+- Třída: extends EnemyAIBase
+- Klíčové funkce:
+  * get_next_action() -> AIAction
+  * count_allies_of_type() -> int
+- Navazuje na: EnemyAIBase.gd, BattleGrid.gd, Unit.gd
+
+MonkAI.gd
+- Popis: Monk - nebije, buffuje spojence
+- Třída: extends EnemyAIBase
+- Klíčové funkce:
+  * get_next_action() -> AIAction
+  * find_allies_in_range() -> Array[Unit]
+  * find_nearest_ally() -> Unit
+- Navazuje na: EnemyAIBase.gd, BattleGrid.gd, Unit.gd
 
 4.3 MAP (scripts/map/)
 ----------------------
@@ -1060,6 +1125,22 @@ DeckEntry.gd
   * count: int
 - Navazuje na: SubclassData.gd
 
+TranslationHelper.gd
+- Popis: Pomocná utilita pro překlady s parametry
+- Třída: RefCounted
+- Klíčové funkce:
+  * tr_format(key, params) -> String
+  * tr_single(key, value) -> String
+- Navazuje na: TranslationServer
+
+test_skill_tree_config.gd
+- Popis: Testovací skript pro konfigurační systém skill tree
+- Třída: Node
+- Klíčové funkce:
+  * _ready() - spustí test
+  * test_paladin_config() - validace a porovnání stromu
+- Navazuje na: SkillTreeGenerator.gd, SkillTreeConfig.gd
+
 ================================================================================
 5. ZÁVISLOSTI A PROPOJENÍ MEZI SKRIPTY
 ================================================================================
@@ -1185,260 +1266,6 @@ EventScene
   ├─> EventData
   ├─> EventManager (filtrování)
   └─> EventChoiceButton (UI)
-
-================================================================================
-6. NALEZENÉ CHYBY
-================================================================================
-
-6.1 KRITICKÉ CHYBY
-------------------
-1. EventManager.gd - CHYBÍ PUBLIC FUNKCE
-   Soubor: scripts/autoload/EventManager.gd
-   Problém: Funkce _filter_events_for_floor() a _debug_available_events() jsou
-            private (začínají _), ale EventScene.gd je volá jako public.
-   Řešení: Přidat public wrapper funkce:
-           func filter_events_for_floor(events: Array, floor: int) -> Array:
-               return _filter_events_for_floor(events, floor)
-           
-           func debug_available_events(events: Array, floor: int):
-               _debug_available_events(events, floor)
-
-2. SaveManager.gd - ŠPATNÉ NÁZVY PROMĚNNÝCH
-   Soubor: scripts/autoload/SaveManager.gd, řádky 64-65
-   Problém: Používá player_data.health a player_data.max_health, ale PlayerData
-            používá current_hp a max_hp.
-   Řešení: Změnit na:
-           "health": player_data.current_hp,
-           "max_health": player_data.max_hp
-
-3. GameManager.gd - ŠPATNÉ NÁZVY PROMĚNNÝCH
-   Soubor: scripts/autoload/GameManager.gd, řádky 400-401
-   Problém: V load_and_start_saved_run() používá loaded_data.get("health") a
-            loaded_data.get("max_health"), ale SaveManager ukládá jako "health"
-            a "max_health" místo "current_hp" a "max_hp".
-   POZNÁMKA: Toto je konzistentní s SaveManager, ale mělo by se změnit na
-            current_hp a max_hp pro konzistenci s PlayerData.
-   Řešení: Změnit v SaveManager.gd i GameManager.gd na current_hp a max_hp
-
-6.2 VAROVÁNÍ
-------------
-1. BattleScene.gd - NEDEFINOVANÁ PROMĚNNÁ
-   Soubor: scenes/battle/BattleScene.gd, řádek 114
-   Problém: Používá _cam_target_rot_x, ale není deklarována na začátku třídy
-            (na rozdíl od _cam_target_rot_y, _cam_target_pos, _cam_target_zoom).
-   Řešení: Přidat deklaraci na řádek 17:
-           var _cam_target_rot_x: float
-
-2. EventManager.gd - CHYBÍ PUBLIC FUNKCE (již zmíněno výše)
-   Mělo by být přidáno pro správnou enkapsulaci.
-
-3. Map.gd a MapNode.gd - NENÍ DUPLIKÁT
-   - scenes/map/Map.gd - scénový skript pro vizuální mapu
-   - scripts/map/Map.gd - datový/logický skript (možná nepoužívaný?)
-   - scenes/map/MapNode.gd - vizuální uzel na mapě
-   - scripts/map/MapNode.gd - datový/logický uzel (možná nepoužívaný?)
-   POZNÁMKA: Zkontrolovat, zda scripts/map/ verze jsou skutečně používány
-
-================================================================================
-7. SHRNUTÍ
-================================================================================
-
-7.1 STRUKTURA PROJEKTU
-----------------------
-Projekt obsahuje:
-- 17 data skriptů (Resource třídy)
-- 32 scene skriptů (UI a herní logika)
-- 32 script skriptů (autoload, AI, map, resources, debug)
-
-Celkem: ~81 GDScript souborů
-
-7.2 HLAVNÍ SYSTÉMY
-------------------
-1. Battle System - tahový systém s iniciativou, 3D mřížka, AI
-2. Card System - karetní systém s efekty
-3. Artifact System - artefakty s různými triggery
-4. Skill Tree System - pasivní dovednosti
-5. Map System - procedurální generování mapy
-6. Event System - náhodné události
-7. Save System - ukládání a načítání
-
-7.3 KLÍČOVÉ ZÁVISLOSTI
----------------------
-- Všechny scény závisí na GameManager
-- Všechny skripty používají PlayerData pro data hráče
-- Battle systém závisí na TurnManager
-- Artefakty spravuje ArtifactManager
-- Ukládání spravuje SaveManager
-- Debugging přes DebugLogger
-
-7.4 DOPORUČENÍ
---------------
-1. Opravit chyby uvedené v sekci 6
-2. Zkontrolovat duplicitní soubory (Map.gd, MapNode.gd)
-3. Zvážit refaktoring některých dlouhých skriptů (BattleScene.gd má 1174 řádků)
-4. Přidat více error handlingu v kritických místech
-
-================================================================================
-8. CUSTOM EFEKTY ARTEFAKTŮ A KARET
-================================================================================
-
-8.1 PŘEHLED SYSTÉMU CUSTOM EFEKTŮ
----------------------------------
-Custom efekty umožňují implementovat složitější logiku, která přesahuje
-standardní enum-based efekty. Systém je implementován pro artefakty, karty
-používají pouze standardní CardEffectData.EffectType enum.
-
-8.2 CUSTOM EFEKTY ARTEFAKTŮ
-----------------------------
-Custom efekty artefaktů jsou implementovány přes:
-- ArtifactsData.custom_effect_id: String - ID custom efektu
-- ArtifactEffect._apply_custom_effect() - volá ArtifactManager.handle_custom_effect()
-- ArtifactManager.handle_custom_effect() - hlavní logika všech custom efektů
-
-8.2.1 IMPLEMENTOVANÉ CUSTOM EFEKTY ARTEFAKTŮ
----------------------------------------------
-
-1. "adrenaline_addiction_advanced" / "adrenaline_addiction"
-   Popis: Závislost na Adrenalin kartách - tolerance 2, pak předávkování
-   Trigger: ON_CARD_PLAYED (když se zahraje Adrenalin karta)
-   Mechanika:
-     - První 2 Adrenalin karty: BEZ POSTIHU (tolerance)
-     - 3+ Adrenalin karty: PŘEDÁVKOVÁNÍ
-       * -5 HP
-       * -2 energie
-       * Vulnerable status (2 kola)
-   Context: {"card": CardData}
-   Použití: curse/adrenaline_addiction.tres
-
-2. "block_per_enemy"
-   Popis: Blok podle počtu živých nepřátel
-   Mechanika:
-     - Blok = počet nepřátel × primary_value
-     - Počítá pouze živé nepřátele
-   Použití: Dračí šupina (pokud existuje)
-
-3. "dragon_heart_combo"
-   Popis: Srdce draka - blok podle max HP (limit 2x za souboj)
-   Trigger: ON_BLOCK_GAINED
-   Mechanika:
-     - Blok = 100% aktuálních max HP
-     - Limit: 2 použití za souboj
-     - Resetuje se na začátku každého souboje
-   Meta data: uses_this_combat (int)
-   Použití: legendary/SrdceDraka.tres
-
-4. "cursed_ring_combo"
-   Popis: Prokletý prsten - +max HP jednorázově, -energie každý tah
-   Mechanika:
-     - Při získání: +secondary_value max HP (jednorázově)
-     - Každý tah: -1 energie (aplikováno přes ENERGY_LOSS)
-   Meta data: hp_bonus_applied (bool)
-   Použití: (pokud existuje)
-
-5. "blood_chalice_combo"
-   Popis: Krvavý grál - tradeoff HP za heal
-   Mechanika:
-     - -secondary_value HP (poškození)
-     - +primary_value heal (léčení)
-   Použití: (pokud existuje)
-
-6. "mage_book_limit"
-   Popis: Mágova kniha s limitem karet za tah
-   Trigger: ON_DRAW_CARDS
-   Mechanika:
-     - Dobírá primary_value karet
-     - Limit: secondary_value karet za tah
-     - Sleduje cards_drawn_this_turn v context
-   Context: {"cards_drawn_this_turn": int}
-   Použití: (pokud existuje)
-
-7. "scaling_damage"
-   Popis: Meč nekonečna - +damage za zabitého nepřítele
-   Trigger: ON_ENEMY_DEATH
-   Mechanika:
-     - +primary_value do PlayerData.global_card_damage_bonus
-     - Bonus platí pouze pro aktuální souboj
-   Použití: boss/infinity_sword.tres
-
-8. "extra_turn"
-   Popis: Časový krystal - extra tah
-   Mechanika:
-     - Označí že bude extra tah
-     - Realizace probíhá v BattleScene
-   Použití: legendary/ČasovýKrystal.tres
-
-8.2.2 JAK PŘIDAT NOVÝ CUSTOM EFEKT
------------------------------------
-1. V ArtifactsData.tres nastav custom_effect_id na unikátní string ID
-2. V ArtifactManager.handle_custom_effect() přidej nový case:
-   
-   match artifact.custom_effect_id:
-       "novy_efekt_id":
-           # Tvoje logika zde
-           return true
-       _:
-           print("Neznámý custom efekt: %s" % artifact.custom_effect_id)
-           return false
-
-3. Pokud potřebuješ context, ujisti se, že volající předává správné hodnoty
-4. Pokud potřebuješ meta data, použij artifact.set_meta() a artifact.get_meta()
-
-8.2.3 CONTEXT DICTIONARY
-------------------------
-Context je Dictionary předávaný do handle_custom_effect() s informacemi:
-- "card": CardData - zahraná karta (pro ON_CARD_PLAYED)
-- "target": Unit - cílová jednotka
-- "amount": int - množství (damage, heal, atd.)
-- "attacker": Unit - útočník
-- "current_hp": int - aktuální HP hráče
-- "max_hp": int - max HP hráče
-- "current_energy": int - aktuální energie
-- "cards_drawn_this_turn": int - počet karet dobraných tento tah
-- A další podle potřeby...
-
-8.3 CUSTOM EFEKTY KARET
------------------------
-Karty NEMAJÍ custom efekty - používají pouze standardní CardEffectData.EffectType enum.
-
-Všechny efekty karet jsou implementovány v BattleScene._apply_single_effect() přes
-match statement na CardEffectData.EffectType.
-
-Pokud potřebuješ složitější logiku pro kartu:
-1. Použij kombinaci více CardEffectData v CardData.effects
-2. Nebo přidej nový EffectType do CardEffectData.EffectType enum
-3. Implementuj logiku v BattleScene._apply_single_effect()
-
-8.4 ROZDÍLY MEZI ARTEFAKTY A KARTAMI
-------------------------------------
-ARTEFAKTY:
-- Mají custom_effect_id pro složité efekty
-- Custom efekty v ArtifactManager.handle_custom_effect()
-- Flexibilnější systém pro komplexní logiku
-
-KARTY:
-- Pouze standardní CardEffectData.EffectType enum
-- Všechny efekty v BattleScene._apply_single_effect()
-- Jednodušší, ale méně flexibilní systém
-
-8.5 PŘÍKLADY POUŽITÍ
---------------------
-Příklad 1: Adrenalin závislost
-- Artifact: curse/adrenaline_addiction.tres
-- custom_effect_id: "adrenaline_addiction_advanced"
-- Trigger: ON_CARD_PLAYED
-- Když se zahraje Adrenalin karta, zkontroluje počet a aplikuje postih
-
-Příklad 2: Srdce draka
-- Artifact: legendary/SrdceDraka.tres
-- custom_effect_id: "dragon_heart_combo"
-- Trigger: ON_BLOCK_GAINED
-- Při získání bloku dá blok = max HP, max 2x za souboj
-
-Příklad 3: Meč nekonečna
-- Artifact: boss/infinity_sword.tres
-- custom_effect_id: "scaling_damage"
-- Trigger: ON_ENEMY_DEATH
-- Při zabití nepřítele +1 damage bonus pro zbytek souboje
 
 ================================================================================
                     KONEC DOKUMENTACE

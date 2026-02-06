@@ -31,7 +31,12 @@ func _ready():
 	popup_menu.back_to_menu_pressed.connect(_on_popup_back_to_menu_pressed)
 
 	# Prvotní nastavení všech hodnot v UI
+	_update_ui_texts()
 	_update_all_displays()
+
+func _update_ui_texts():
+	if menu_button:
+		menu_button.text = tr("ui.global.menu")
 
 # --- Aktualizace UI ---
 
@@ -43,19 +48,19 @@ func _update_all_displays():
 	_on_player_loop_level_changed(PlayerData.loop_level)
 
 func _on_player_health_changed(new_health, new_max_health):
-	hp_label.text = "HP: %d/%d" % [new_health, new_max_health]
+	hp_label.text = TranslationHelper.tr_format("ui.global.hp", {"current": new_health, "max": new_max_health})
 
 func _on_player_gold_changed(new_gold):
-	gold_label.text = "Zlato: %d" % new_gold
+	gold_label.text = TranslationHelper.tr_format("ui.global.gold", {"value": new_gold})
 
 func _on_player_deck_changed():
-	deck_button.text = "Balíček (%d)" % PlayerData.master_deck.size()
+	deck_button.text = TranslationHelper.tr_format("ui.global.deck", {"value": PlayerData.master_deck.size()})
 
 func _on_player_floor_changed(new_floor):
-	floor_label.text = "Patro: %d" % new_floor
+	floor_label.text = TranslationHelper.tr_format("ui.global.floor", {"value": new_floor})
 
 func _on_player_loop_level_changed(new_level):
-	ng_plus_label.text = "Loop: %d" % new_level
+	ng_plus_label.text = TranslationHelper.tr_format("ui.global.loop", {"value": new_level})
 
 # --- Obsluha tlačítek v hlavní liště ---
 

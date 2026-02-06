@@ -5,8 +5,8 @@
 
 [resource]
 script = ExtResource("1_u1lwa")
-artifact_name = "Srdce draka"
-description = "Na začátku prvních 2 tahů souboje získáš blok rovný svým maximálním životům. Maximální zdraví -10."
+artifact_name = "artifact.srdce_draka"
+description = "artifact.srdce_draka.desc"
 texture = ExtResource("2_2udoi")
 artifact_type = 3
 trigger_type = 2

@@ -5,8 +5,8 @@
 
 [resource]
 script = ExtResource("1_qwet2")
-artifact_name = "Mana Krystal"
-description = "Na začátku každého tahu získáš {value} energie navíc."
+artifact_name = "artifact.mana_krystal"
+description = "artifact.mana_krystal.desc"
 texture = ExtResource("2_qwet2")
 artifact_type = 1
 trigger_type = 2

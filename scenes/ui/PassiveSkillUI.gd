@@ -104,67 +104,67 @@ func display(data: PassiveSkillNode, is_unlocked: bool, can_unlock: bool):
 
 func _create_simple_tooltip(data: PassiveSkillNode, is_unlocked: bool, can_unlock: bool) -> String:
 	"""Vytvoří prostý tooltip text bez BBCode"""
-	var tooltip = "%s\n" % data.skill_name
-	tooltip += "%s" % data.description
+	var tooltip = "%s\n" % data.get_localized_name()
+	tooltip += "%s" % data.get_localized_description()
 	
 	# Přidáme informace o efektech
 	if "effects" in data and not data.effects.is_empty():
-		tooltip += "\n\nEfekty:"
+		tooltip += "\n\n" + tr("skill.tooltip.effects")
 		for effect in data.effects:
 			tooltip += "\n• %s" % _format_effect_simple(effect)
 	
 	# Přidáme informace o tieru
 	if "tier" in data:
-		tooltip += "\n\nTier %d" % data.tier
+		tooltip += "\n\n" + TranslationHelper.tr_format("skill.tooltip.tier_plain", {"value": data.tier})
 	
 	# Přidáme typ uzlu
 	if "node_type" in data:
 		match data.node_type:
 			PassiveSkillNode.NodeType.NOTABLE: 
-				tooltip += " • Notable"
+				tooltip += " • " + tr("skill.tooltip.notable_plain")
 			PassiveSkillNode.NodeType.KEYSTONE: 
-				tooltip += " • Keystone"
+				tooltip += " • " + tr("skill.tooltip.keystone_plain")
 			PassiveSkillNode.NodeType.MASTERY: 
-				tooltip += " • Mastery"
+				tooltip += " • " + tr("skill.tooltip.mastery_plain")
 			PassiveSkillNode.NodeType.STARTER:
-				tooltip += " • Starter"
+				tooltip += " • " + tr("skill.tooltip.starter_plain")
 	
 	# Přidáme stav
 	if is_unlocked:
-		tooltip += "\n\n✓ Odemčeno"
+		tooltip += "\n\n" + tr("skill.tooltip.unlocked")
 	elif can_unlock:
 		var cost = data.get_cost_for_tier() if data.has_method("get_cost_for_tier") else data.cost
-		tooltip += "\n\nCena: %d bodů" % cost
-		tooltip += "\nKlikni pro odemčení"
+		tooltip += "\n\n" + TranslationHelper.tr_format("skill.tooltip.cost", {"value": cost})
+		tooltip += "\n" + tr("skill.tooltip.click_to_unlock")
 	else:
-		tooltip += "\n\nZamčeno"
+		tooltip += "\n\n" + tr("skill.tooltip.locked")
 	
 	return tooltip
 
 func _format_effect_simple(effect) -> String:
 	"""Jednoduché formátování efektů bez BBCode"""
 	if not is_instance_valid(effect):
-		return "Neplatný efekt"
+		return tr("skill.effect.invalid")
 		
 	if not "effect_type" in effect:
-		return "Neznámý efekt"
+		return tr("skill.effect.unknown")
 	
 	var value = effect.value if "value" in effect else 0
 	
 	if effect.effect_type == PassiveEffectData.EffectType.ADD_MAX_HP:
-		return "+%d maximálního zdraví" % value
+		return TranslationHelper.tr_format("skill.effect.add_max_hp", {"value": value})
 	elif effect.effect_type == PassiveEffectData.EffectType.ADD_STARTING_GOLD:
-		return "+%d startovního zlata" % value  
+		return TranslationHelper.tr_format("skill.effect.add_starting_gold", {"value": value})  
 	elif effect.effect_type == PassiveEffectData.EffectType.ADD_MAX_ENERGY:
-		return "+%d maximální energie" % value
+		return TranslationHelper.tr_format("skill.effect.add_max_energy", {"value": value})
 	elif effect.effect_type == PassiveEffectData.EffectType.GRANT_REVIVE:
-		return "Možnost oživení" if value > 0 else ""
+		return tr("skill.effect.grant_revive") if value > 0 else ""
 	elif effect.effect_type == PassiveEffectData.EffectType.ADD_CARD_DAMAGE:
-		return "+%d poškození všech karet" % value
+		return TranslationHelper.tr_format("skill.effect.add_card_damage", {"value": value})
 	elif effect.effect_type == PassiveEffectData.EffectType.ADD_RETAINED_BLOCK:
-		return "+%d startovního bloku" % value
+		return TranslationHelper.tr_format("skill.effect.add_retained_block", {"value": value})
 	else:
-		return "Speciální efekt"
+		return tr("skill.effect.special")
 
 # Visual effects a styling - VYLEPŠENÉ
 func _set_unlocked_state(data: PassiveSkillNode):

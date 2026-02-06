@@ -13,6 +13,11 @@ target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [sub_resource type="Resource" id="Resource_hknight2"]
@@ -24,6 +29,11 @@ target_type = 1
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 1
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [sub_resource type="Resource" id="Resource_hknight3"]
@@ -35,13 +45,18 @@ target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_hknight")
 card_id = "holy_knight"
-card_name = "Svatý Rytíř"
-card_description = "Získej 6 bloku. Způsob 8 svatého poškození. Vyléč se za 4 HP."
+card_name = "card.holy_knight"
+card_description = "card.holy_knight.desc"
 cost = 2
 range_type = 2
 range_value = 1

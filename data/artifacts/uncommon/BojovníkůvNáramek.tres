@@ -5,8 +5,8 @@
 
 [resource]
 script = ExtResource("1_k4xv0")
-artifact_name = "Bojovníkův náramek"
-description = "Na začátku každého tahu získáš {value} bloku."
+artifact_name = "artifact.bojovnikuv_naramek"
+description = "artifact.bojovnikuv_naramek.desc"
 texture = ExtResource("2_bxug3")
 artifact_type = 1
 trigger_type = 2

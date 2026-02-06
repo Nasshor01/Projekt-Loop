@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=11 format=3 uid="uid://c3j0rb5a1iqtp"]
+
+[ext_resource type="Script" uid="uid://tp0lo3xqiiqb" path="res://data/encounters/EncounterEntry.gd" id="1_52hxk"]
+[ext_resource type="Resource" uid="uid://bg8u7pptesl13" path="res://data/units/goblin_unit.tres" id="2_52hxk"]
+[ext_resource type="Resource" uid="uid://docki8v38seuq" path="res://data/units/elves_druid.tres" id="3_1dxui"]
+[ext_resource type="Resource" uid="uid://dun4lhibn4eb8" path="res://data/units/orc_monk.tres" id="3_eygki"]
+[ext_resource type="Resource" uid="uid://dxtfbn5elewga" path="res://data/units/elves_cleric.tres" id="4_dd0en"]
+[ext_resource type="Script" uid="uid://dq86v2djx6q1m" path="res://data/encounters/EncounterData.gd" id="5_nsbt1"]
+
+[sub_resource type="Resource" id="Resource_xypau"]
+script = ExtResource("1_52hxk")
+unit_data = ExtResource("2_52hxk")
+grid_position = Vector2i(0, 0)
+metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
+
+[sub_resource type="Resource" id="Resource_w0i24"]
+script = ExtResource("1_52hxk")
+unit_data = ExtResource("3_1dxui")
+grid_position = Vector2i(0, 0)
+metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
+
+[sub_resource type="Resource" id="Resource_vddxm"]
+script = ExtResource("1_52hxk")
+unit_data = ExtResource("3_eygki")
+grid_position = Vector2i(0, 0)
+metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
+
+[sub_resource type="Resource" id="Resource_1dxui"]
+script = ExtResource("1_52hxk")
+unit_data = ExtResource("4_dd0en")
+grid_position = Vector2i(0, 0)
+metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
+
+[resource]
+script = ExtResource("5_nsbt1")
+encounter_type = 1
+xp_reward = 50
+enemies = Array[ExtResource("1_52hxk")]([SubResource("Resource_xypau"), SubResource("Resource_w0i24"), SubResource("Resource_vddxm"), SubResource("Resource_1dxui")])
+metadata/_custom_type_script = "uid://dq86v2djx6q1m"

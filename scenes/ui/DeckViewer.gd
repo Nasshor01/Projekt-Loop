@@ -4,12 +4,20 @@ signal card_selected(card_data: CardData)
 
 @onready var grid_container: GridContainer = %GridContainer
 @onready var close_button: Button = %CloseButton
+@onready var title_label: Label = $MarginContainer/VBoxContainer/HBoxContainer/Label
 
 var card_scene = preload("res://scenes/ui/CardUI.tscn")
 
 func _ready():
 	close_button.pressed.connect(hide)
+	_update_ui_texts()
 	hide() # Začíná skrytý
+
+func _update_ui_texts():
+	if title_label:
+		title_label.text = tr("ui.deck_viewer.title_full")
+	if close_button:
+		close_button.text = tr("ui.common.close")
 
 
 ## Zobrazí každou kartu individuálně.
@@ -66,7 +74,7 @@ func display_deck(deck: Array[CardData]):
 
 		# Přidáme label s počtem karet
 		var count_label = Label.new()
-		count_label.text = "x%d" % card_info["count"]
+		count_label.text = TranslationHelper.tr_format("ui.deck_viewer.count", {"value": card_info["count"]})
 		count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		count_label.set("theme_override_font_sizes/font_size", 24)
 		count_label.set("theme_override_colors/font_color", Color.WHITE)
@@ -83,7 +91,7 @@ func display_deck(deck: Array[CardData]):
 ## Zavolá se, když se klikne na kartu zobrazenou přes 'display_deck'
 func _on_card_gui_input(event: InputEvent, card_data: CardData):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
-		print("Detail karty: ", card_data.card_name)
+		print(tr("ui.deck_viewer.detail_card") + " " + card_data.get_localized_name())
 		# Zde se v budoucnu může zobrazit detailní popup
 
 

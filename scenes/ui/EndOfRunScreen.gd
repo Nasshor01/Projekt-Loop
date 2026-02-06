@@ -17,14 +17,14 @@ func setup(p_xp_earned: int, p_run_was_a_victory: bool):
 
 	# Zobrazíme správné texty
 	if run_was_a_victory:
-		result_label.text = "VÍTĚZSTVÍ!"
-		play_again_button.text = "Další běh (NG+)"
+		result_label.text = tr("ui.end_run.victory")
+		play_again_button.text = tr("ui.end_run.play_again_ng")
 	else:
-		result_label.text = "Porážka"
-		play_again_button.text = "Hrát znovu"
+		result_label.text = tr("ui.end_run.defeat")
+		play_again_button.text = tr("ui.end_run.play_again")
 		
-	xp_label.text = "Získáno XP: %d" % xp_earned
-	end_run_button.text = "Main Menu"
+	xp_label.text = TranslationHelper.tr_format("ui.end_run.xp", {"value": xp_earned})
+	end_run_button.text = tr("ui.end_run.main_menu")
 	
 	# Připojíme signály k tlačítkům
 	play_again_button.pressed.connect(_on_play_again_pressed)

@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=4 format=3 uid="uid://dxtfbn5elewga"]
+
+[ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_elh3s"]
+[ext_resource type="Script" uid="uid://dtb2wnnc3742p" path="res://scripts/ai/HealerAI.gd" id="1_iun5m"]
+[ext_resource type="Texture2D" uid="uid://cu0jt80lo6wxi" path="res://art/sprites/units/elves_cleric.png" id="3_rn17p"]
+
+[resource]
+script = ExtResource("1_elh3s")
+unit_id = "elves_cleric"
+unit_name = "unit.elves_cleric"
+description = "unit.elves_cleric.desc"
+faction = 1
+unit_type = 0
+max_health = 25
+attack_damage = 4
+movement_range = 2
+attack_range = 2
+initiative = 10
+sprite_texture = ExtResource("3_rn17p")
+ai_script = ExtResource("1_iun5m")
+metadata/_custom_type_script = "uid://celcfyrl033bg"

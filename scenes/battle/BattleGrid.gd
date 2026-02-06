@@ -98,15 +98,14 @@ func build_from_shape(shape_array: Array):
 					tile.name = "Tile_%d_%d" % [x, y]
 					
 					# --- ŠACHOVNICOVÁ LOGIKA ---
-					# Pokud nemáme materiály, necháme základní barvu meshe
 					if material_light and material_dark:
 						if (x + y) % 2 == 0:
 							tile.material_override = material_light
 						else:
 							tile.material_override = material_dark
-					# ---------------------------
 					
 					_terrain_container.add_child(tile)
+					# Fixní výška podlahy
 					tile.position = Vector3(x * cell_size_3d, -0.1, y * cell_size_3d)
 
 func is_cell_active(grid_position: Vector2i) -> bool:
@@ -169,14 +168,27 @@ func update_visual_highlights():
 		mesh_inst.mesh = cursor_mesh
 		
 		var mat = StandardMaterial3D.new()
-		mat.albedo_color = color
+		# Vnitřek necháme lehce průhledný
+		mat.albedo_color = Color(color.r, color.g, color.b, 0.25)
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		
+		# --- TADY JE TEN NEON ---
+		mat.emission_enabled = true
+		# Násobíme barvu 4.0x, aby "přebila" prostředí a zářila přes Glow
+		mat.emission = Color(color.r * 4.0, color.g * 4.0, color.b * 4.0)
+		mat.emission_energy_multiplier = 1.0 
+		
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		# Render priority zajistí, že se highlighty vykreslí nad podlahou
+		mat.render_priority = 10
+		
 		mesh_inst.material_override = mat
 		
 		_highlights_container.add_child(mesh_inst)
-		mesh_inst.position = Vector3(cell.x * cell_size_3d, 0.05, cell.y * cell_size_3d)
+		# Pozice 0.02 je těsně nad podlahou, aby to neproblikávalo (Z-fighting)
+		mesh_inst.position = Vector3(cell.x * cell_size_3d, 0.02, cell.y * cell_size_3d)
 
+	# Vykreslení všech tvých původních vrstev
 	for cell in _danger_cells: create_cursor.call(cell, danger_zone_color)
 	for cell in _movable_cells: create_cursor.call(cell, movement_highlight_color)
 	for cell in _warning_cells: create_cursor.call(cell, movement_warning_color)

@@ -13,13 +13,18 @@ target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_rcksv")
 card_id = "lesser_heal"
-card_name = "Menší léčení"
-card_description = "Vyléč si 4 životy."
+card_name = "card.lesser_heal"
+card_description = "card.lesser_heal.desc"
 cost = 1
 range_type = 2
 range_value = 1

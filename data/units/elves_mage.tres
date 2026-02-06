@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=4 format=3 uid="uid://dqqyhn325vsu4"]
+
+[ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_1yqy2"]
+[ext_resource type="Script" uid="uid://djiw6t5x6xxes" path="res://scripts/ai/MageAI.gd" id="1_sxxas"]
+[ext_resource type="Texture2D" uid="uid://cssfjfghcyatb" path="res://art/sprites/units/elves_mage.png" id="3_o7buk"]
+
+[resource]
+script = ExtResource("1_1yqy2")
+unit_id = "elves_mage"
+unit_name = "unit.elves_mage"
+description = "unit.elves_mage.desc"
+faction = 1
+unit_type = 0
+max_health = 30
+attack_damage = 6
+movement_range = 2
+attack_range = 5
+initiative = 10
+sprite_texture = ExtResource("3_o7buk")
+ai_script = ExtResource("1_sxxas")
+metadata/_custom_type_script = "uid://celcfyrl033bg"

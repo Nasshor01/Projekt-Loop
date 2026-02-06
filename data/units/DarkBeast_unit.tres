@@ -7,9 +7,10 @@
 [resource]
 script = ExtResource("1_kas2d")
 unit_id = "beast"
-unit_name = "Big Black Monster"
-description = "Popis jednotky."
+unit_name = "unit.dark_beast"
+description = "unit.dark_beast.desc"
 faction = 1
+unit_type = 3
 max_health = 100
 attack_damage = 11
 movement_range = 2

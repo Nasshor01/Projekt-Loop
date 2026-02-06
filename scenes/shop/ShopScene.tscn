@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://f1bfi2viwtrk" path="res://scenes/shop/ShopScene.gd" id="1_y0td3"]
 [ext_resource type="PackedScene" uid="uid://pjdtf3hky6c6" path="res://scenes/ui/CardPileViewer.tscn" id="2_d8mpu"]
+[ext_resource type="PackedScene" uid="uid://dah2k3m4n5p6q" path="res://scenes/ui/CardTooltip.tscn" id="3_tooltip"]
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_b06mc"]
 
@@ -89,3 +90,7 @@ text = "Odejít"
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
+
+[node name="CardTooltip" parent="CanvasLayer" instance=ExtResource("3_tooltip")]
+unique_name_in_owner = true
+visible = false

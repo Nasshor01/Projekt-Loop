@@ -13,13 +13,18 @@ target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_fort")
 card_id = "fortification"
-card_name = "Opevnění"
-card_description = "Získej 15 bloku. Tento blok nezmizí na konci tahu."
+card_name = "card.fortification"
+card_description = "card.fortification.desc"
 cost = 2
 range_type = 1
 range_value = 1

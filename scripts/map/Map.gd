@@ -14,11 +14,14 @@ var monster_encounters = [
 	"res://data/encounters/goblin_duo.tres",
 	"res://data/encounters/one_orc.tres",
 	"res://data/encounters/Skeleton.tres",
-	
+	"res://data/encounters/demon_assassin.tres",
+	"res://data/encounters/assassin_squad.tres"
 ]
 var elite_encounters = [
 	"res://data/encounters/elite_battle.tres",
-	"res://data/encounters/Skeleton_army.tres"
+	"res://data/encounters/Skeleton_army.tres",
+	"res://data/encounters/support_team.tres",
+	"res://data/encounters/elite_mix.tres"
 ]
 var boss_encounters = ["res://data/encounters/boss_battle.tres"]
 
@@ -36,13 +39,13 @@ var map_data: MapData
 var map_nodes_visual: Dictionary = {}
 
 var node_names = {
-	MapNodeResource.NodeType.MONSTER: "Běžný souboj",
-	MapNodeResource.NodeType.ELITE: "Elitní souboj",
-	MapNodeResource.NodeType.EVENT: "Událost",
-	MapNodeResource.NodeType.REST: "Odpočinek",
-	MapNodeResource.NodeType.SHOP: "Obchod",
-	MapNodeResource.NodeType.TREASURE: "Poklad",
-	MapNodeResource.NodeType.BOSS: "Boss"
+	MapNodeResource.NodeType.MONSTER: "ui.map.node.monster",
+	MapNodeResource.NodeType.ELITE: "ui.map.node.elite",
+	MapNodeResource.NodeType.EVENT: "ui.map.node.event",
+	MapNodeResource.NodeType.REST: "ui.map.node.rest",
+	MapNodeResource.NodeType.SHOP: "ui.map.node.shop",
+	MapNodeResource.NodeType.TREASURE: "ui.map.node.treasure",
+	MapNodeResource.NodeType.BOSS: "ui.map.node.boss"
 }
 
 @onready var legend_container = $CanvasLayer/LegendPanel/LegendContainer
@@ -61,8 +64,15 @@ func _ready():
 	generate_seed_button.pressed.connect(_on_generate_custom_seed_pressed)
 	random_seed_button.pressed.connect(_on_generate_random_seed_pressed)
 	dev_console.command_submitted.connect(_on_dev_command)
+	_update_ui_texts()
 	initialize_map()
 	_setup_legend()
+
+func _update_ui_texts():
+	if generate_seed_button:
+		generate_seed_button.text = tr("ui.map.generate_seed")
+	if random_seed_button:
+		random_seed_button.text = tr("ui.map.random_seed")
 
 func _on_generate_random_seed_pressed():
 	# Funkce pro tlačítko náhodného seedu
@@ -99,7 +109,7 @@ func initialize_map():
 	else:
 		self.map_data = GameManager.current_map_data
 	
-	seed_label.text = "Seed: " + str(GameManager.current_seed)
+	seed_label.text = TranslationHelper.tr_format("ui.map.seed", {"value": GameManager.current_seed})
 	seed_line_edit.text = str(GameManager.current_seed)
 	
 	_render_map_visuals()
@@ -453,7 +463,7 @@ func _setup_legend():
 		
 		# Vytvoříme popisek
 		var label = Label.new()
-		label.text = " " + node_names[node_type]
+		label.text = " " + tr(node_names[node_type])
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		
@@ -467,6 +477,6 @@ func _setup_legend():
 		# Přidáme řádek do legendy
 		legend_container.add_child(row)
 		
-		print("Přidána legenda pro: ", node_names[node_type])
+		print("Přidána legenda pro: ", tr(node_names[node_type]))
 
 	print("Legenda dokončena s ", legend_container.get_child_count(), " položkami")

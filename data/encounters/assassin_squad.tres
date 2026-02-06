@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=8 format=3 uid="uid://c3s8kmea1n6gp"]
+
+[ext_resource type="Script" uid="uid://tp0lo3xqiiqb" path="res://data/encounters/EncounterEntry.gd" id="1_fxl24"]
+[ext_resource type="Resource" uid="uid://mloliiix2qah" path="res://data/units/demon_assassin.tres" id="2_urdp5"]
+[ext_resource type="Resource" uid="uid://dun4lhibn4eb8" path="res://data/units/orc_monk.tres" id="3_fxl24"]
+[ext_resource type="Script" uid="uid://dq86v2djx6q1m" path="res://data/encounters/EncounterData.gd" id="5_p5ftw"]
+
+[sub_resource type="Resource" id="Resource_xypau"]
+script = ExtResource("1_fxl24")
+unit_data = ExtResource("2_urdp5")
+grid_position = Vector2i(0, 0)
+metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
+
+[sub_resource type="Resource" id="Resource_w0i24"]
+script = ExtResource("1_fxl24")
+unit_data = ExtResource("2_urdp5")
+grid_position = Vector2i(0, 0)
+metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
+
+[sub_resource type="Resource" id="Resource_vddxm"]
+script = ExtResource("1_fxl24")
+unit_data = ExtResource("3_fxl24")
+grid_position = Vector2i(0, 0)
+metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
+
+[resource]
+script = ExtResource("5_p5ftw")
+encounter_type = 0
+xp_reward = 50
+enemies = Array[ExtResource("1_fxl24")]([SubResource("Resource_xypau"), SubResource("Resource_w0i24"), SubResource("Resource_vddxm")])
+metadata/_custom_type_script = "uid://dq86v2djx6q1m"

@@ -7,8 +7,8 @@
 [resource]
 script = ExtResource("1_c8k7v")
 unit_id = "berserker"
-unit_name = "Nasraný Orc"
-description = "Popis jednotky."
+unit_name = "unit.orc_berserker"
+description = "unit.orc_berserker.desc"
 faction = 1
 max_health = 25
 attack_damage = 10

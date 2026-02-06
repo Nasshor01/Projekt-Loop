@@ -51,11 +51,11 @@ func apply_cost():
 	if remove_random_card and not PlayerData.master_deck.is_empty():
 		var card_to_remove = PlayerData.master_deck.pick_random()
 		PlayerData.master_deck.erase(card_to_remove)
-		print("Odstraněna karta: %s" % card_to_remove.card_name)
+		print(TranslationHelper.tr_format("event.cost.removed_card", {"name": card_to_remove.get_localized_name()}))
 	
 	if remove_specific_card and PlayerData.master_deck.has(remove_specific_card):
 		PlayerData.master_deck.erase(remove_specific_card)
-		print("Odstraněna specifická karta: %s" % remove_specific_card.card_name)
+		print(TranslationHelper.tr_format("event.cost.removed_specific_card", {"name": remove_specific_card.get_localized_name()}))
 	
 	# Přidání curse
 	if add_curse:
@@ -65,33 +65,33 @@ func apply_cost():
 			curse_card = load("res://data/cards/curse/curse_basic.tres")
 		if curse_card:
 			PlayerData.master_deck.append(curse_card)
-			print("Přidána curse karta: %s" % curse_card.card_name)
+			print(TranslationHelper.tr_format("event.cost.added_curse", {"name": curse_card.get_localized_name()}))
 	
 	# Odstranění artefaktu
 	if remove_artifact:
 		PlayerData.remove_artifact(remove_artifact)
-		print("Odstraněn artefakt: %s" % remove_artifact.artifact_name)
+		print(TranslationHelper.tr_format("event.cost.removed_artifact", {"name": remove_artifact.get_localized_name()}))
 
 func get_cost_description() -> String:
 	"""Vrátí textový popis ceny"""
 	var parts = []
 	if gold > 0:
-		parts.append("[color=yellow]-%d Gold[/color]" % gold)
+		parts.append("[color=yellow]" + TranslationHelper.tr_format("event.cost.gold", {"value": gold}) + "[/color]")
 	if hp > 0:
-		parts.append("[color=red]-%d HP[/color]" % hp)
+		parts.append("[color=red]" + TranslationHelper.tr_format("event.cost.hp", {"value": hp}) + "[/color]")
 	if max_hp > 0:
-		parts.append("[color=darkred]-%d Max HP[/color]" % max_hp)
+		parts.append("[color=darkred]" + TranslationHelper.tr_format("event.cost.max_hp", {"value": max_hp}) + "[/color]")
 	if add_curse:
 		if curse_to_add:
-			parts.append("[color=purple]Získáš prokletí: %s[/color]" % curse_to_add.card_name)
+			parts.append("[color=purple]" + TranslationHelper.tr_format("event.cost.curse_named", {"name": curse_to_add.get_localized_name()}) + "[/color]")
 		else:
-			parts.append("[color=purple]Získáš prokletí[/color]")
+			parts.append("[color=purple]" + tr("event.cost.curse") + "[/color]")
 	if remove_random_card:
-		parts.append("[color=gray]Ztratíš náhodnou kartu[/color]")
+		parts.append("[color=gray]" + tr("event.cost.remove_random_card") + "[/color]")
 	if remove_specific_card:
-		parts.append("[color=gray]Ztratíš kartu: %s[/color]" % remove_specific_card.card_name)
+		parts.append("[color=gray]" + TranslationHelper.tr_format("event.cost.remove_specific_card", {"name": remove_specific_card.get_localized_name()}) + "[/color]")
 	if remove_artifact:
-		parts.append("[color=orange]Ztratíš artefakt: %s[/color]" % remove_artifact.artifact_name)
+		parts.append("[color=orange]" + TranslationHelper.tr_format("event.cost.remove_artifact", {"name": remove_artifact.get_localized_name()}) + "[/color]")
 	
 	if parts.is_empty():
 		return ""

@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://drcylmyjefmn0"]
+[gd_scene load_steps=13 format=3 uid="uid://drcylmyjefmn0"]
 
 [ext_resource type="Script" uid="uid://d3ytuwmimqlg4" path="res://scenes/battle/BattleScene.gd" id="1_vd1me"]
 [ext_resource type="Resource" uid="uid://d118t8olbc47a" path="res://data/encounters/first_battle.tres" id="2_q8wks"]
@@ -9,12 +9,15 @@
 [ext_resource type="PackedScene" uid="uid://b5ybgxi0pnlk7" path="res://scenes/ui/CardPileViewer.tscn" id="6_q8wks"]
 [ext_resource type="PackedScene" uid="uid://ckvi6eu1vd02a" path="res://scenes/ui/DevConsole.tscn" id="8_5282s"]
 [ext_resource type="PackedScene" uid="uid://d1e2f3g4h5i6j" path="res://scenes/ui/initiative_bar/InitiativeBar.tscn" id="9_abcde"]
+[ext_resource type="PackedScene" uid="uid://dah2k3m4n5p6q" path="res://scenes/ui/CardTooltip.tscn" id="10_tooltip"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nnhtb"]
 albedo_color = Color(0.762404, 0.762404, 0.762404, 1)
+roughness = 0.5
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rpe18"]
 albedo_color = Color(0.230315, 0.230315, 0.230315, 1)
+roughness = 0.5
 
 [node name="BattleScene" type="Node3D" node_paths=PackedStringArray("camera_3d")]
 script = ExtResource("1_vd1me")
@@ -31,6 +34,14 @@ size = 20.0
 material_light = SubResource("StandardMaterial3D_nnhtb")
 material_dark = SubResource("StandardMaterial3D_rpe18")
 grid_line_color = Color(0.5, 0.5, 0.5, 0.5)
+highlight_color = Color(1, 1, 0, 0.588235)
+movement_highlight_color = Color(0.2, 0.8, 0.2, 0.588235)
+attack_highlight_color = Color(1, 0.2, 0.2, 0.588235)
+support_highlight_color = Color(0.2, 0.501961, 1, 0.588235)
+aoe_highlight_color = Color(0.8, 0.2, 1, 0.588235)
+player_spawn_highlight_color = Color(0.2, 0.901961, 0.901961, 0.588235)
+movement_warning_color = Color(0.901961, 0.8, 0.101961, 0.588235)
+danger_zone_color = Color(0.8, 0.2, 0.2, 0.588235)
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
@@ -125,11 +136,19 @@ text = "Tah: 1"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="CardTooltip" parent="CanvasLayer" instance=ExtResource("10_tooltip")]
+unique_name_in_owner = true
+visible = false
+offset_left = 384.0
+offset_top = 168.0
+offset_right = 734.0
+offset_bottom = 418.0
+
 [node name="DevConsole" parent="." instance=ExtResource("8_5282s")]
 visible = false
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, 0, 0, 0)
+transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, -0.00160217, 0.0261517, -0.0161982)
 shadow_enabled = true
 
 [connection signal="pressed" from="CanvasLayer/EndTurnButton" to="." method="_on_end_turn_button_pressed"]

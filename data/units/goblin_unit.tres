@@ -7,8 +7,8 @@
 [resource]
 script = ExtResource("1_kb0s8")
 unit_id = "goblin"
-unit_name = "Goblin"
-description = "Nemylosrdný zabijácký goblin"
+unit_name = "unit.goblin"
+description = "unit.goblin.desc"
 faction = 1
 max_health = 15
 attack_damage = 3

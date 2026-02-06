@@ -13,13 +13,18 @@ target_type = 6
 area_of_effect_type = 1
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 1
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_hif7o")
 card_id = "holy_wave"
-card_name = "Svatá Vlna"
-card_description = "Způsobí 4 poškození všem nepřátelům v řadě."
+card_name = "card.holy_wave"
+card_description = "card.holy_wave.desc"
 cost = 2
 range_type = 5
 range_value = 5

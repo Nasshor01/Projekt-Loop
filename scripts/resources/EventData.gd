@@ -25,3 +25,11 @@ enum EventRarity { COMMON, UNCOMMON, RARE, LEGENDARY }
 
 @export_group("Volby")
 @export var choices: Array[EventChoice] = []
+
+func get_localized_name() -> String:
+	"""Vrátí lokalizovaný název eventu"""
+	return tr(event_name)
+
+func get_localized_description() -> String:
+	"""Vrátí lokalizovaný popis eventu"""
+	return tr(description)

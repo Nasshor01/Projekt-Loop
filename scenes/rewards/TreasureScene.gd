@@ -17,7 +17,7 @@ func _generate_artifact_choices():
 	var available_artifacts = get_available_artifacts(ARTIFACT_POOL.artifacts)
 	
 	if available_artifacts.is_empty():
-		print("⚠️ TreasureScene: Žádné dostupné artefakty pro výběr!")
+		print(tr("log.treasure.no_artifacts"))
 		_create_skip_option()
 		return
 
@@ -44,7 +44,7 @@ func _generate_artifact_choices():
 	# --- KONEC NOVÉ LOGIKY ---
 
 	if artifact_choices.is_empty():
-		print("⚠️ TreasureScene: Nepodařilo se vygenerovat žádné volby i přes dostupné artefakty!")
+		print(tr("log.treasure.no_choices"))
 		_create_skip_option()
 		return
 
@@ -78,7 +78,7 @@ func _get_weighted_random_artifact(pool: Array, chance_for_first: float, type1: 
 
 func _create_skip_option():
 	var skip_button = Button.new()
-	skip_button.text = "Pokračovat"
+	skip_button.text = tr("ui.common.continue")
 	skip_button.pressed.connect(_on_skip_pressed)
 	choices_container.add_child(skip_button)
 
@@ -89,5 +89,5 @@ func _on_artifact_chosen(artifact_data: ArtifactsData):
 	if PlayerData.add_artifact(artifact_data):
 		GameManager.treasure_collected()
 	else:
-		print("❌ Chyba: Tento artefakt nelze získat!")
+		print(tr("log.treasure.cannot_gain_artifact"))
 		# Zde by se mohlo zobrazit nějaké upozornění pro hráče

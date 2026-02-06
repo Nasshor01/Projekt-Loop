@@ -1,0 +1,887 @@
+keys,en,cs
+"game.title","Projekt Loop","Projekt Loop"
+"ui.main_menu.new_game","New Game","Nová hra"
+"ui.main_menu.load_run","Load Run","Načíst run"
+"ui.main_menu.how_to_play","How to Play","Jak hrát"
+"ui.main_menu.settings","Settings","Nastavení"
+"ui.main_menu.exit","Exit","Ukončit"
+"ui.settings.title","Settings","Nastavení"
+"ui.settings.language","Language / Jazyk:","Jazyk / Language:"
+"ui.settings.close","Close","Zavřít"
+"ui.map.node.monster","Common battle","Běžný souboj"
+"ui.map.node.elite","Elite battle","Elitní souboj"
+"ui.map.node.event","Event","Událost"
+"ui.map.node.rest","Rest","Odpočinek"
+"ui.map.node.shop","Shop","Obchod"
+"ui.map.node.treasure","Treasure","Poklad"
+"ui.map.node.boss","Boss","Boss"
+"ui.map.seed","Seed: {value}","Seed: {value}"
+"ui.map.generate_seed","Generate seed","Generovat seed"
+"ui.map.random_seed","Random seed","Náhodný seed"
+"skill.paladin_start.name","Holy Oath","Svatý Závazek"
+"skill.paladin_start.desc","Paladin starting point. Increase max health by 5.","Startovní bod Paladina. Zvýší maximální zdraví o 5."
+"skill.paladin_block_1.name","Shield Training","Výcvik se štítem"
+"skill.paladin_block_1.desc","Start each combat with 3 block.","Začni každý souboj s 3 body bloku."
+"skill.paladin_hp_1.name","Vitality","Vitalita"
+"skill.paladin_hp_1.desc","Increase max health by 8.","Zvýší maximální zdraví o 8."
+"skill.iron_skin.name","Iron Skin","Železná kůže"
+"skill.iron_skin.desc","Increase max health by 6.","Zvýší maximální zdraví o 6."
+"skill.defensive_stance.name","Defensive Stance","Obranný postoj"
+"skill.defensive_stance.desc","Start each combat with 2 extra block.","Začni každý souboj s 2 body bloku navíc."
+"skill.righteous_anger.name","Righteous Anger","Spravedlivý hněv"
+"skill.righteous_anger.desc","All cards deal 1 extra damage.","Všechny karty způsobí o 1 poškození navíc."
+"skill.swift_justice.name","Swift Justice","Rychlá spravedlnost"
+"skill.swift_justice.desc","Start each combat with 1 extra energy.","Začni každý souboj s 1 extra energií."
+"skill.holy_power.name","Holy Power","Svatá síla"
+"skill.holy_power.desc","All cards deal 1 extra damage.","Všechny karty způsobí o 1 poškození navíc."
+"skill.battle_fervor.name","Battle Fervor","Bojové nadšení"
+"skill.battle_fervor.desc","Start each combat with 1 extra energy.","Začni každý souboj s 1 extra energií."
+"skill.blessed_gold.name","Blessed Gold","Požehnané zlato"
+"skill.blessed_gold.desc","Start each combat with 10 extra gold.","Začni každý souboj s 10 zlatem navíc."
+"skill.divine_insight.name","Divine Insight","Božský vhled"
+"skill.divine_insight.desc","Draw an extra card on the first turn.","Líznutí karty navíc v prvním kole."
+"skill.sacred_wisdom.name","Sacred Wisdom","Svatá moudrost"
+"skill.sacred_wisdom.desc","Start each combat with 5 extra gold.","Začni každý souboj s 5 zlatem navíc."
+"skill.fortress.name","Fortress","Pevnost"
+"skill.fortress.desc","Start each combat with 8 block.","Začni každý souboj s 8 body bloku."
+"skill.iron_will.name","Iron Will","Železná vůle"
+"skill.iron_will.desc","Increase max health by 10.","Zvýší maximální zdraví o 10."
+"skill.unbreakable.name","Unbreakable","Nezlomný"
+"skill.unbreakable.desc","Increase max health by 12.","Zvýší maximální zdraví o 12."
+"skill.shield_mastery.name","Shield Mastery","Mistrovství se štítem"
+"skill.shield_mastery.desc","Start each combat with 5 extra block.","Začni každý souboj s 5 body bloku navíc."
+"skill.guardian_spirit.name","Guardian Spirit","Ochranný duch"
+"skill.guardian_spirit.desc","Start each combat with 4 extra block.","Začni každý souboj s 4 body bloku navíc."
+"skill.divine_wrath.name","Divine Wrath","Božský hněv"
+"skill.divine_wrath.desc","All cards deal 2 extra damage.","Všechny karty způsobí o 2 poškození navíc."
+"skill.holy_strike.name","Holy Strike","Svatý úder"
+"skill.holy_strike.desc","Start each combat with 2 extra energy.","Začni každý souboj s 2 extra energií."
+"skill.smiting_power.name","Smiting Power","Síla trestu"
+"skill.smiting_power.desc","All cards deal 2 extra damage.","Všechny karty způsobí o 2 poškození navíc."
+"skill.consecrated_blade.name","Consecrated Blade","Požehnaná čepel"
+"skill.consecrated_blade.desc","Start each combat with 1 extra energy.","Začni každý souboj s 1 extra energií."
+"skill.wrathful_strike.name","Wrathful Strike","Hněvivý úder"
+"skill.wrathful_strike.desc","All cards deal 1 extra damage.","Všechny karty způsobí o 1 poškození navíc."
+"skill.divine_favor.name","Divine Favor","Božská přízeň"
+"skill.divine_favor.desc","Draw an extra card on the first turn.","Líznutí karty navíc v prvním kole."
+"skill.golden_touch.name","Golden Touch","Zlatý dotek"
+"skill.golden_touch.desc","Start each combat with 15 extra gold.","Začni každý souboj s 15 zlatem navíc."
+"skill.blessed_hand.name","Blessed Hand","Požehnaná ruka"
+"skill.blessed_hand.desc","Draw an extra card on the first turn.","Líznutí karty navíc v prvním kole."
+"skill.divine_prosperity.name","Divine Prosperity","Božský blahobyt"
+"skill.divine_prosperity.desc","Start each combat with 12 extra gold.","Začni každý souboj s 12 zlatem navíc."
+"skill.divine_protection.name","Divine Protection","Božská ochrana"
+"skill.divine_protection.desc","Start each combat with 15 block.","Začni každý souboj s 15 body bloku."
+"skill.sacred_thorns.name","Sacred Thorns","Svaté trny"
+"skill.sacred_thorns.desc","Start each combat with 10 block. Enemies that hit you take 2 damage.","Začni každý souboj s 10 body bloku. Nepřátelé, kteří tě zasáhnou, utrpí 2 poškození."
+"skill.immovable_fortress.name","Immovable Fortress","Nepohnutelná pevnost"
+"skill.immovable_fortress.desc","Increase max health by 20. Start each combat with 5 block.","Zvýší maximální zdraví o 20. Začni každý souboj s 5 body bloku."
+"skill.righteous_fury.name","Righteous Fury","Spravedlivá zuřivost"
+"skill.righteous_fury.desc","All cards deal 3 extra damage.","Všechny karty způsobí o 3 poškození navíc."
+"skill.divine_retribution.name","Divine Retribution","Božská odplata"
+"skill.divine_retribution.desc","All cards deal 4 extra damage. Start each combat with 1 extra energy.","Všechny karty způsobí o 4 poškození navíc. Začni každý souboj s 1 extra energií."
+"skill.holy_avenger.name","Holy Avenger","Svatý mstitel"
+"skill.holy_avenger.desc","All cards deal 3 extra damage. Start each combat with 2 extra energy.","Všechny karty způsobí o 3 poškození navíc. Začni každý souboj s 2 extra energií."
+"skill.blessed_recovery.name","Blessed Recovery","Požehnané uzdravení"
+"skill.blessed_recovery.desc","Start each combat with 20 extra gold.","Začni každý souboj s 20 zlatem navíc."
+"skill.divine_wealth.name","Divine Wealth","Božské bohatství"
+"skill.divine_wealth.desc","Start each combat with 25 extra gold. Draw an extra card on the first turn.","Začni každý souboj s 25 zlatem navíc. Líznutí karty navíc v prvním kole."
+"skill.aura_mastery.name","Aura Mastery","Mistrovství aur"
+"skill.aura_mastery.desc","All auras are 50% stronger.","Všechny aury jsou o 50% silnější."
+"skill.avatar_of_light.name","Avatar of Light","Avatár světla"
+"skill.avatar_of_light.desc","At the start of combat, gain block equal to 2x your max health. Requires all other nodes unlocked.","Na začátku souboje získej blok rovný 2x tvému maximálnímu zdraví. Vyžaduje všechny ostatní uzly odemčené."
+"ui.how_to_play.title","How to Play","Jak hrát"
+"ui.how_to_play.close","Close","Zavřít"
+"ui.settings.title","Settings","Nastavení"
+"ui.settings.language","Language","Jazyk"
+"ui.settings.close","Close","Zavřít"
+"card.basic_attack","Basic Attack","Základní Útok"
+"card.description.placeholder","Card description","Popis efektu karty"
+"card.name.placeholder","Card name","Název karty"
+"damage.holy","holy","svatého"
+"damage.normal","damage","poškození"
+"damage.effective","✨ Effective!","✨ EFEKTIVNÍ!"
+"status.aura_devotion","At start of turn: +{value} block","Na začátku tahu: +{value} blok"
+"status.aura_devotion_plus","At start of turn: +{value} permanent block","Na začátku tahu: +{value} permanentní blok"
+"status.regeneration","At end of turn: +{value} HP","Na konci tahu: +{value} HP"
+"status.consecrated_weapon","Next attack: +{value} holy dmg","Příští útok: +{value} svatého dmg"
+"status.vulnerable","Vulnerable ({value})","Zranitelný ({value})"
+"status.burning","Burning ({value})","Hoření ({value})"
+"status.chilled","Chilled ({value})","Prochlazený ({value})"
+"status.frozen","Frozen","Zmražený"
+"status.aiming","Aiming (+{value}% dmg)","Míří (+{value}% dmg)"
+"card.effect.deal_damage","{value} dmg","{value} dmg"
+"card.effect.gain_block","+{value} block","+{value} blok"
+"card.effect.heal","+{value} HP","+{value} HP"
+"card.effect.draw_cards","+{value} card","+{value} karta"
+"card.effect.gain_energy","+{value} energy","+{value} energie"
+"card.effect.exhaust","Exhausts","Vyčerpá se"
+"card.condition.if_above_hp","If >{value}% HP:","Pokud >{value}% HP:"
+"card.condition.if_below_hp","If <{value}% HP:","Pokud <{value}% HP:"
+"card.condition.if_you_above_hp","If you have >{value}% HP:","Pokud máš >{value}% HP:"
+"card.condition.if_you_below_hp","If you have <{value}% HP:","Pokud máš <{value}% HP:"
+"card.condition.if_block_above","If >{value} block:","Pokud >{value} bloku:"
+"card.condition.if_block_below","If <{value} block:","Pokud <{value} bloku:"
+"card.condition.if_has_debuff","If has debuff:","Pokud má debuff:"
+"card.condition.per_block","Per block: +1","Za každý blok: +1"
+"card.condition.took_damage","If you took damage:","Pokud jsi utrpěl poškození:"
+"enemy.type.undead","UNDEAD","NEMRTVÝ"
+"enemy.type.demon","DEMON","DÉMON"
+"enemy.type.spirit","SPIRIT","DUCH"
+"enemy.type.human","HUMAN","ČLOVĚK"
+"enemy.type.beast","BEAST","ZVÍŘE"
+"enemy.type.elemental","ELEMENTAL","ELEMENTÁLNÍ"
+"enemy.type.construct","CONSTRUCT","MECHANICKÝ"
+"enemy.type.dragon","DRAGON","DRAK"
+"damage.type.holy","holy","svaté"
+"damage.type.normal","normal","běžné"
+"damage.type.fire","fire","ohnivé"
+"damage.type.ice","ice","ledové"
+"damage.type.lightning","lightning","bleskové"
+"damage.type.poison","poison","jedovaté"
+"damage.type.arcane","arcane","tajemné"
+"card.rarity.common","COMMON","BĚŽNÁ"
+"card.rarity.uncommon","UNCOMMON","NEOBVYKLÁ"
+"card.rarity.rare","RARE","VZÁCNÁ"
+"card.rarity.epic","EPIC","EPICKÁ"
+"card.rarity.legendary","LEGENDARY","LEGENDÁRNÍ"
+"card.rarity.basic","BASIC","ZÁKLADNÍ"
+"card.effect.full_heal","Full HP","Plné HP"
+"card.effect.to_all","To all:","Všem:"
+"card.target.all","all","všem"
+"card.target.allies","allies","spojencům"
+"card.condition.target_above_hp","If >{value}% HP","Pokud >{value}% HP"
+"card.condition.target_below_hp","If <{value}% HP","Pokud <{value}% HP"
+"card.effect.holy","holy","svatého"
+"card.condition.default","If condition","Pokud podmínka"
+"card.effect.dmg","{value} dmg","{value} dmg"
+"card.effect.holy_dmg","{value} holy dmg","{value} svatého dmg"
+"card.effect.plus_holy_dmg","+{value} holy dmg","+{value} svatého dmg"
+"ui.common.close","Close","Zavřít"
+"ui.common.continue","Continue","Pokračovat"
+"ui.common.back","Back","Zpět"
+"ui.settings.lang.english","English","Angličtina"
+"ui.settings.lang.czech","Czech","Čeština"
+"ui.main_menu.no_saved_run","No saved run found.","Žádný uložený run nenalezen."
+"ui.deck_viewer.title","Deck","Balíček"
+"ui.deck_viewer.title_full","Full Deck","Celý balíček"
+"ui.deck_viewer.count","x{value}","x{value}"
+"ui.deck_viewer.detail_card","Card detail:","Detail karty:"
+"ui.global.menu","Menu","Menu"
+"ui.global.hp","HP: {current}/{max}","HP: {current}/{max}"
+"ui.global.gold","Gold: {value}","Zlato: {value}"
+"ui.global.deck","Deck ({value})","Balíček ({value})"
+"ui.global.floor","Floor: {value}","Patro: {value}"
+"ui.global.loop","Loop: {value}","Loop: {value}"
+"ui.menu.restart_run","Restart run","Restartovat run"
+"ui.menu.save_run","Save run","Uložit run"
+"ui.menu.back_to_char_select","Back to character select","Zpět na výběr postavy"
+"ui.menu.save_and_quit","Save and quit","Uložit a ukončit"
+"ui.menu.back_to_menu","Back to main menu","Zpět do menu"
+"ui.menu.back_to_game","Back to game","Zpět do hry"
+"ui.reward.gold","Gold gained: {value}","Získáno zlata: {value}"
+"ui.reward.choose_card","Choose a card","Vyber si kartu"
+"ui.reward.title","Reward!","Odměna!"
+"ui.reward.skip_card","Skip card","Přeskočit kartu"
+"ui.rest.heal","Rest (+{value} HP)","Odpočinout si (+{value} HP)"
+"ui.rest.upgrade","Upgrade a card","Vylepšit kartu"
+"ui.rest.leave","Leave","Odejít"
+"ui.rest.title","Campfire Rest","Odpočinek u táboráku"
+"ui.rest.choose_card","Choose a card to upgrade","Vyber kartu k vylepšení"
+"ui.char_select.title","Choose your hero","Vyber si hrdinu"
+"ui.char_select.level","Level: {value}","Level: {value}"
+"ui.char_select.continue","Continue","Pokračovat"
+"ui.run_prep.title","Character setup","Výběr postavy"
+"ui.run_prep.start","Start","Start"
+"ui.run_prep.level","Level: {value}","Level: {value}"
+"ui.run_prep.points","Skill points: {value}","Dovednostní body: {value}"
+"ui.run_prep.xp","XP: {current} / {max}","XP: {current} / {max}"
+"ui.end_run.victory","VICTORY!","VÍTĚZSTVÍ!"
+"ui.end_run.play_again_ng","Next run (NG+)","Další běh (NG+)"
+"ui.end_run.defeat","Defeat","Porážka"
+"ui.end_run.play_again","Play again","Hrát znovu"
+"ui.end_run.xp","XP gained: {value}","Získáno XP: {value}"
+"ui.end_run.main_menu","Main Menu","Hlavní menu"
+"ui.game_over.title","Game Over","Konec hry"
+"ui.game_over.restart","Try again","Nový pokus"
+"ui.unit_info.hp","HP: {current} / {max}","HP: {current} / {max}"
+"ui.unit_info.block","Block: {value}","Blok: {value}"
+"ui.unit_info.block_retained","Block: {current} ({retained})","Blok: {current} ({retained})"
+"ui.unit_info.block_tooltip","Total block","Celkový blok"
+"ui.unit_info.block_tooltip_retained","Total block (retained in parentheses)","Celkový blok (v závorce udržitelný pro další kolo)"
+"ui.unit_info.attack","Attack: {value}","Útok: {value}"
+"status.label.aiming","🎯 Aiming (+{value}% dmg)","🎯 Míří (+{value}% dmg)"
+"status.label.aura_devotion","✨ Aura of Devotion (+{value} block)","✨ Aura oddanosti (+{value} blok)"
+"status.label.aura_devotion_plus","✨ Aura of Devotion+ (+{value} block)","✨ Aura oddanosti+ (+{value} blok)"
+"ui.initiative.tooltip","{name}\nInitiative: {value}","{name}\nIniciativa: {value}"
+"ui.initiative.unknown_unit","Unknown unit","Neznámá jednotka"
+"ui.battle.end_turn","End Turn","Ukončit tah"
+"ui.battle.victory","Victory","Výhra"
+"ui.battle.instant_win","Instant win","Okamžitá výhra"
+"ui.battle.turn","Turn: {value}","Tah: {value}"
+"ui.battle.energy","Energy: {value}","Energie: {value}"
+"ui.battle.frozen_warning","You are frozen! You can't play cards.","Jsi zmrazen! Nemůžeš hrát karty."
+"ui.battle.frozen_notice","❄️ FROZEN!","❄️ ZMRAZEN!"
+"ui.battle.not_enough_energy","Not enough energy for {name}.","Nedostatek energie pro kartu: {name}."
+"ui.battle.card_limit","⚠️ Limit: {current}/{max}","⚠️ Limit: {current}/{max}"
+"ui.battle.no_valid_target","Card '{name}' found no valid target.","Karta '{name}' nenašla žádný platný cíl."
+"ui.battle.debuff_damage","-{value} HP","-{value} HP"
+"ui.battle.debuff_energy","-{value} EN","-{value} EN"
+"ui.battle.limit_exceeded","💀 LIMIT EXCEEDED!","💀 PŘEKROČEN LIMIT!"
+"ui.battle.limit_exceeded_log","Card {name} exceeded the limit, debuff applied.","Karta {name} překročila limit použití, aplikován debuff"
+"ui.shop.remove_card","Remove a card ({value}g)","Odstranit kartu ({value}g)"
+"ui.shop.leave","Leave","Odejít"
+"ui.shop.purchased","Purchased","Koupeno"
+"ui.shop.price","Price: {value}","Cena: {value}"
+"ui.shop.sale_price","SALE: {value} (was {original})","SLEVA: {value} (původně {original})"
+"ui.shop.sale","SALE!","SLEVA!"
+"ui.shop.gold","Gold: {value}","Zlato: {value}"
+"ui.shop.not_enough_gold_remove","You don't have enough gold to remove a card!","Nemáš dostatek zlata na odstranění karty!"
+"ui.shop.buy","Buy","Koupit"
+"log.shop.no_cards","WARNING: No available cards for shop","VAROVÁNÍ: Žádné dostupné karty pro obchod"
+"log.shop.purchased","Purchased: {name}","Koupeno: {name}"
+"log.shop.artifact_purchased","✅ Artifact purchased successfully!","✅ Artefakt úspěšně koupen!"
+"log.shop.cannot_buy_artifact","❌ Error: You can't buy this artifact!","❌ Chyba: Nemůžeš koupit tento artefakt!"
+"log.shop.not_enough_gold","Not enough gold!","Nedostatek zlata!"
+"log.unit.turn_start","--- {name} STARTS TURN ---","--- {name} ZAČÍNÁ TAH ---"
+"log.unit.turn_end","--- {name} ENDS TURN ---","--- {name} KONČÍ TAH ---"
+"log.unit.used_action","{name} used an action (played a card).","{name} použil akci (zahrál kartu)."
+"event.choice.success_chance","[color=gray]({value}%)[/color]","[color=gray]({value}%)[/color]"
+"event.choice.possible_rewards","Possible rewards:","Možné odměny:"
+"event.error.title","ERROR: No events","CHYBA: Žádné eventy"
+"event.error.description","[color=red]Failed to load any event![/color]\n\nPossible causes:\n• Event Pool file is missing or empty\n• No events are suitable for floor {floor}\n• Events have incorrect min_floor/max_floor","[color=red]Nepodařilo se načíst žádný event![/color]\n\nMožné příčiny:\n• Event Pool soubor neexistuje nebo je prázdný\n• Žádné eventy nejsou vhodné pro patro {floor}\n• Eventy mají špatně nastavené min_floor/max_floor"
+"event.error.return_to_map","Return to map","Vrátit se na mapu"
+"event.result.paid","You paid:","Zaplatil jsi:"
+"event.result.success","✓ Success!","✓ Úspěch!"
+"event.result.failure","✗ Failure!","✗ Selhání!"
+"event.result.additional_cost","Additional cost:","Dodatečná cena:"
+"event.result.continue","You continue on your journey.","Pokračuješ v cestě."
+"event.card_removed","Card '{name}' was removed from the deck.","Karta '{name}' byla odstraněna z balíčku."
+"event.result.removed_card","Removed card: {name}","Odstraněna karta: {name}"
+"event.card_upgraded","Card upgraded: {from} → {to}","Karta vylepšena: {from} → {to}"
+"log.event.selected","Event selected: {name} for floor {floor}","EventScene: Vybrán event: {name} pro patro {floor}"
+"log.event.choice_selected","Event choice selected: {text}","Zvolena volba eventu: {text}"
+"log.treasure.no_artifacts","TreasureScene: No available artifacts to choose from!","TreasureScene: Žádné dostupné artefakty pro výběr!"
+"log.treasure.no_choices","TreasureScene: Failed to generate any choices even though artifacts are available!","TreasureScene: Nepodařilo se vygenerovat žádné volby i přes dostupné artefakty!"
+"log.treasure.cannot_gain_artifact","❌ Error: This artifact cannot be obtained!","❌ Chyba: Tento artefakt nelze získat!"
+"log.rest.card_upgraded","Card '{from}' upgraded to '{to}'","Karta '{from}' vylepšena na '{to}'"
+"artifact.stacks","[Stacks: {current}/{max}]","[Stacky: {current}/{max}]"
+"artifact.uses","[Uses: {current}/{max}]","[Použití: {current}/{max}]"
+"skill.tooltip.tier","[color=yellow]Tier {value}[/color]","[color=yellow]Úroveň {value}[/color]"
+"skill.tooltip.notable","[color=gold]• Notable[/color]","[color=gold]• Notable[/color]"
+"skill.tooltip.keystone","[color=red]• Keystone[/color]","[color=red]• Keystone[/color]"
+"skill.tooltip.mastery","[color=cyan]• Mastery[/color]","[color=cyan]• Mastery[/color]"
+"skill.tooltip.stackable","[color=gray]Stackable (max {value})[/color]","[color=gray]Stackovatelné (max {value})[/color]"
+"skill.tooltip.effects","Effects:","Efekty:"
+"skill.tooltip.tier_plain","Tier {value}","Úroveň {value}"
+"skill.tooltip.notable_plain","Notable","Notable"
+"skill.tooltip.keystone_plain","Keystone","Keystone"
+"skill.tooltip.mastery_plain","Mastery","Mastery"
+"skill.tooltip.starter_plain","Starter","Startovací"
+"skill.tooltip.unlocked","✓ Unlocked","✓ Odemčeno"
+"skill.tooltip.cost","Cost: {value} points","Cena: {value} bodů"
+"skill.tooltip.click_to_unlock","Click to unlock","Klikni pro odemčení"
+"skill.tooltip.locked","Locked","Zamčeno"
+"skill.effect.invalid","Invalid effect","Neplatný efekt"
+"skill.effect.unknown","Unknown effect","Neznámý efekt"
+"skill.effect.add_max_hp","+{value} max HP","+{value} maximálního zdraví"
+"skill.effect.add_starting_gold","+{value} starting gold","+{value} startovního zlata"
+"skill.effect.add_max_energy","+{value} max energy","+{value} maximální energie"
+"skill.effect.grant_revive","Revive once","Možnost oživení"
+"skill.effect.add_card_damage","+{value} card damage","+{value} poškození všech karet"
+"skill.effect.add_retained_block","+{value} starting block","+{value} startovního bloku"
+"skill.effect.special","Special effect","Speciální efekt"
+"card.tooltip.cost","Cost: {value} energy","Cena: {value} energie"
+"card.tooltip.range.none","Range: None","Dosah: Žádný"
+"card.tooltip.range.self","Range: Self","Dosah: Sám sebe"
+"card.tooltip.range.melee","Range: Adjacent ({value})","Dosah: Sousední pole ({value})"
+"card.tooltip.range.ranged_fixed","Range: Distance ({value} tiles)","Dosah: Vzdálenost ({value} polí)"
+"card.tooltip.range.ranged_line","Range: Line ({value} tiles)","Dosah: Linie ({value} polí)"
+"card.tooltip.range.grid_aoe","Range: Grid area","Dosah: Oblast na mřížce"
+"card.tooltip.range.full_board","Range: Full board","Dosah: Celé bojiště"
+"card.tooltip.rarity","Rarity: {value}","Vzácnost: {value}"
+"card.tooltip.upgraded","✅ Upgraded","✅ Upgradovaná"
+"event.reward.gain_gold","You gained {value} gold!","Získal jsi {value} zlata!"
+"event.reward.heal_hp","You healed {value} HP","Vyléčil jsi {value} HP"
+"event.reward.max_hp_gain","You gained +{value} Max HP!","Získal jsi +{value} Max HP!"
+"event.reward.max_hp_loss","You lost {value} Max HP","Ztratil jsi {value} Max HP"
+"event.reward.card","You gained a card: {name}","Získal jsi kartu: {name}"
+"event.reward.random_card","You gained a random card: {name}","Získal jsi náhodnou kartu: {name}"
+"event.reward.remove_card_select","Choose a card to remove...","Vyber kartu k odstranění..."
+"event.reward.remove_card","Removed card: {name}","Odstraněna karta: {name}"
+"event.reward.artifact","You gained an artifact: {name}","Získal jsi artefakt: {name}"
+"event.reward.random_artifact","You gained a random artifact: {name}","Získal jsi náhodný artefakt: {name}"
+"event.reward.special_artifact","You gained a special artifact: {name}","Získal jsi speciální artefakt: {name}"
+"event.reward.next_combat_buff","You gained a bonus for the next combat!","Získal jsi bonus pro příští souboj!"
+"event.reward.pick_card","Choose a card...","Vyber si kartu..."
+"event.reward.upgrade_none","No cards can be upgraded","Žádné karty nelze vylepšit"
+"event.reward.upgraded_card","Upgraded card: {from} → {to}","Vylepšena karta: {from} → {to}"
+"event.reward.upgraded_count","Upgraded {value} cards!","Vylepšeno {value} karet!"
+"event.reward.transformed_card","Transformed: {from} → {to}","Proměna: {from} → {to}"
+"event.reward.desc_gold","+{value} Gold","+{value} zlata"
+"event.reward.desc_full_heal","Full heal","Plné vyléčení"
+"event.reward.desc_heal","+{value} HP","+{value} HP"
+"event.reward.desc_max_hp","+{value} Max HP","+{value} Max HP"
+"event.reward.desc_card","Card: {name}","Karta: {name}"
+"event.reward.desc_random_card","Random {rarity} card","Náhodná {rarity} karta"
+"event.reward.desc_upgrade_random","Upgrade a random card","Vylepšení náhodné karty"
+"event.reward.desc_upgrade_all","Upgrade all cards","Vylepšení všech karet"
+"event.reward.desc_remove_card","Remove a card","Odstranění karty"
+"event.reward.desc_transform_card","Transform a card","Proměna karty"
+"event.reward.desc_artifact","Artifact: {name}","Artefakt: {name}"
+"event.reward.desc_random_artifact","Random artifact","Náhodný artefakt"
+"event.reward.desc_random_special_artifact","Random special artifact","Náhodný speciální artefakt"
+"event.reward.desc_none","No reward","Žádná odměna"
+"event.cost.removed_card","Removed card: {name}","Odstraněna karta: {name}"
+"event.cost.removed_specific_card","Removed specific card: {name}","Odstraněna specifická karta: {name}"
+"event.cost.added_curse","Added curse card: {name}","Přidána curse karta: {name}"
+"event.cost.removed_artifact","Removed artifact: {name}","Odstraněn artefakt: {name}"
+"event.cost.gold","-{value} Gold","-{value} zlata"
+"event.cost.hp","-{value} HP","-{value} HP"
+"event.cost.max_hp","-{value} Max HP","-{value} Max HP"
+"event.cost.curse_named","You gain a curse: {name}","Získáš prokletí: {name}"
+"event.cost.curse","You gain a curse","Získáš prokletí"
+"event.cost.remove_random_card","You lose a random card","Ztratíš náhodnou kartu"
+"event.cost.remove_specific_card","You lose a card: {name}","Ztratíš kartu: {name}"
+"event.cost.remove_artifact","You lose an artifact: {name}","Ztratíš artefakt: {name}"
+"event.wizard_altar.name","Wizard's Altar","Čarodějův oltář"
+"event.wizard_altar.desc","You find an ancient altar covered in pulsing runes. You feel raw magical power that could strengthen your abilities... for the right price.","Nacházíš prastarý oltář pokrytý pulzujícími runami. Cítíš z něj syrovou magickou moc, která by mohla posílit tvé schopnosti... za správnou cenu."
+"event.wizard_altar.choice.1","Sacrifice gold","Obětovat zlato"
+"event.wizard_altar.choice.1.tooltip","Upgrades one random card in your deck.","Vylepší jednu náhodnou kartu v balíčku."
+"event.wizard_altar.choice.2","Perform a blood ritual","Provést krvavý rituál"
+"event.wizard_altar.choice.2.tooltip","Upgrades ALL cards in your deck at the cost of your health.","Vylepší VŠECHNY karty v balíčku za cenu tvého zdraví."
+"event.wizard_altar.choice.3","Leave","Odejít"
+"event.traveling_blacksmith.name","Traveling Blacksmith","Potulný kovář"
+"event.traveling_blacksmith.desc","A bearded blacksmith sits by a small roadside forge. For a small fee, he offers his services.","U cesty sedí u malé polní výhně vousatý kovář. Za drobný poplatek ti nabízí své služby."
+"event.traveling_blacksmith.choice.1","Upgrade a random card","Vylepšit náhodnou kartu"
+"event.traveling_blacksmith.choice.2","Remove a card from the deck","Odstranit kartu z balíčku"
+"event.traveling_blacksmith.choice.3","Thank him and leave","Poděkovat a odejít"
+"event.golden_idol.name","Golden Idol","Zlatý idol"
+"event.golden_idol.desc","You enter a small, dusty shrine. In the center lies a shining golden idol on a pedestal. It looks immensely valuable, but surely protected.","Vstupuješ do malé, prachem zapadané svatyně. Uprostřed na podstavci leží zářící zlatý idol. Vypadá nesmírně cenně, ale určitě je nějak chráněný."
+"event.golden_idol.choice.1","Take the idol","Vzít si idol"
+"event.golden_idol.choice.1.tooltip","You gain a lot of gold, but also a curse.","Získáš hodně zlata, ale také prokletí."
+"event.golden_idol.choice.2","Try to disarm the trap","Pokusit se past deaktivovat"
+"event.golden_idol.choice.3","Leave it and go","Nechat to být a odejít"
+"event.mysterious_merchant.name","Mysterious Merchant","Tajemný obchodník"
+"event.mysterious_merchant.desc","A hooded figure, shrouded in shadows, offers you its services without a word. It seems to understand the nature of your cards.","Podivná postava v kápi, zahalená stíny, ti beze slova nabízí své služby. Zdá se, že rozumí podstatě tvých karet."
+"event.mysterious_merchant.choice.1","Purification","Očištění"
+"event.mysterious_merchant.choice.1.tooltip","Remove a card from the deck.","Odstraň kartu z balíčku."
+"event.mysterious_merchant.choice.2","Transmutation","Transmutace"
+"event.mysterious_merchant.choice.2.tooltip","Transform a random card into another of the same rarity.","Proměň náhodnou kartu v jinou stejné vzácnosti."
+"event.mysterious_merchant.choice.3","Mass upgrade","Masové vylepšení"
+"event.mysterious_merchant.choice.3.tooltip","Upgrade all cards in your deck for the price of blood.","Vylepší všechny karty v balíčku za cenu krve."
+"event.mysterious_merchant.choice.4","Leave","Odejít"
+"event.cursed_well.name","Cursed Well","Prokletá studna"
+"event.cursed_well.desc","You find an old stone well. The water is unnaturally dark and bubbling. You hear whispers from the depths, and something glitters at the bottom.","Nacházíš starou, kamennou studnu. Voda v ní je nepřirozeně temná a bublá. Zdá se, že z hlubin slyšíš šepot a na dně se něco třpytí."
+"event.cursed_well.choice.1","Reach into the dark water","Sáhnout do temné vody"
+"event.cursed_well.choice.1.tooltip","You are guaranteed to gain a curse. 70% chance for a big reward, otherwise you gain another curse.","Zaručeně získáš prokletí. 70% šance na velkou odměnu, jinak získáš další prokletí."
+"event.cursed_well.choice.2","Ignore the well and move on","Ignorovat studnu a jít dál"
+"class.paladin","Paladin","Paladin"
+"class.paladin.desc","Holy warrior","Svatý bojovník"
+"class.tank","Tank","Tank"
+"class.tank.desc","A durable class focused on defense.","Odolná třída zaměřená na obranu."
+"unit.paladin","Paladin","Paladin"
+"unit.paladin.desc","Holy knight of light.","Svatý rytíř světla."
+"unit.skeleton","Skeleton warrior","Skeleton warior"
+"unit.skeleton.desc","Unit description.","Popis jednotky."
+"unit.skeleton_archer","Skeleton archer","Skeleton archer"
+"unit.skeleton_archer.desc","A regular skeleton, but beware! He has a bow and arrows!","obyčejný kostlivec ale pozor! ON má luk a šípy!"
+"unit.demon_assassin","Demon assassin","Demon assassin"
+"unit.demon_assassin.desc","Fast assassin with dodge and double attack","Rychlý zabiják s dodge a double attack"
+"unit.elves_mage","Elven Mage","Elves Mage"
+"unit.elves_mage.desc","Mage with elemental damage and a meteor.","Kouzelník s elementálním poškozením a meteoritem"
+"unit.elves_druid","Elven Druid","Elves Druid"
+"unit.elves_druid.desc","Nature mage who spawns spirits to help.","Přírodní mág, spawnuje spirity na pomoc"
+"unit.elves_cleric","Elven Cleric","Elves Cleric"
+"unit.elves_cleric.desc","Healer with holy damage against undead.","Léčitel s holy damage proti nemrtvým"
+"unit.guardian_spirit","Guardian Spirit","Guardian Spirit"
+"unit.guardian_spirit.desc","Guardian spawned by the druid — stronger than a normal spirit.","Ochránce, spawnovaný druidem - silnější než normální spirit"
+"unit.wolf_spirit","Wolf Spirit","Wolf Spirit"
+"unit.wolf_spirit.desc","Nature wolf spirit spawned by the druid.","Přírodní duch vlka, spawnovaný druidem"
+"unit.orc_monk","Orc Monk","Orc Monk"
+"unit.orc_monk.desc","Monk who buffs allies instead of attacking.","Mniš, buffuje spojence místo útoku"
+"unit.goblin","Goblin","Goblin"
+"unit.goblin.desc","Ruthless killer goblin.","Nemylosrdný zabijácký goblin"
+"unit.orc_berserker","Furious Orc","Nasraný Orc"
+"unit.orc_berserker.desc","Unit description.","Popis jednotky."
+"unit.dark_beast","Dark Beast","Big Black Monster"
+"unit.dark_beast.desc","Unit description.","Popis jednotky."
+"unit.boss_demon_girl","Demon Girl","Demon Bitch"
+"unit.boss_demon_girl.desc","Unit description.","Popis jednotky."
+"terrain.rock","Rock","Skála"
+"terrain.rock.desc","Impassable obstacle.","Neprůchodná překážka."
+"terrain.mud","Mud","Bahno"
+"terrain.mud.desc","Description of what this terrain does.","Popis, co tento terén dělá."
+"artifact.zdrave_jablko","Healthy Apple","Zdravé jablko"
+"artifact.zdrave_jablko.desc","Gain {value} max HP.","Získáš {value} maximálního zdraví."
+"artifact.mana_krystal","Mana Crystal","Mana Krystal"
+"artifact.mana_krystal.desc","At the start of each turn, gain {value} extra energy.","Na začátku každého tahu získáš {value} energie navíc."
+"artifact.bojovnikuv_naramek","Warrior's Bracelet","Bojovníkův náramek"
+"artifact.bojovnikuv_naramek.desc","At the start of each turn, gain {value} block.","Na začátku každého tahu získáš {value} bloku."
+"artifact.berserkerova_zurivost","Berserker's Fury","Berserkerova zuřivost"
+"artifact.berserkerova_zurivost.desc","When you have less than 50% HP, your cards deal {value} extra damage.","Když máš méně než 50% HP, tvé karty způsobí {value} extra poškození."
+"artifact.stit_odrazeni","Reflecting Shield","štít odražení"
+"artifact.stit_odrazeni.desc","Whenever you take damage, the attacker takes {value} damage back.","Pokaždé když utrpíš poškození, útočník utrpí {value} poškození zpět."
+"artifact.fenixovo_pero","Phoenix Feather","Fénixovo pero"
+"artifact.fenixovo_pero.desc","Once per combat: when your HP drops below 25%, heal to 50% HP.","Jednou za souboj: když tvé zdraví klesne pod 25%, vyléč se na 50% HP."
+"artifact.srdce_draka","Dragon Heart","Srdce draka"
+"artifact.srdce_draka.desc","At the start of the first 2 turns of combat, gain block equal to your max HP. Max HP -10.","Na začátku prvních 2 tahů souboje získáš blok rovný svým maximálním životům. Maximální zdraví -10."
+"artifact.casovy_krystal","Time Crystal","Časový Krystal"
+"artifact.casovy_krystal.desc","Every 3rd turn of this combat, you get an extra turn.","Každý 3. tah tohoto souboje dostaneš extra tah."
+"artifact.oko_pravdy","Eye of Truth","Oko pravdy"
+"artifact.oko_pravdy.desc","All your attacks have a {value}% chance to crit (2x damage).","Všechny tvé útoky mají {value}% šanci na kritický zásah (2x poškození)."
+"artifact.mec_nekonecna","Infinity Sword","Meč nekonečna"
+"artifact.mec_nekonecna.desc","For each enemy you kill, gain +1 card damage (this combat).","Za každého zabitého nepřítele získáš +1 poškození karet (tento souboj)."
+"artifact.zahadna_kostka","Mysterious Dice","Záhadná kostka"
+"artifact.zahadna_kostka.desc","At the start of each turn: 50% chance to gain 2 energy or lose 1 energy.","Na začátku každého tahu: 50% šance na získání 2 energie nebo ztrátu 1 energie."
+"card.adrenaline","Adrenaline","Adrenalin"
+"card.adrenaline.desc","Gain 1 Energy. At the end of your turn, draw 1 extra card.","Získej 1 Energii. Na konci tahu si lízněte o 1 kartu navíc."
+"card.adrenaline+","Adrenaline+","Adrenalin+"
+"card.adrenaline+.desc","Gain 2 Energy. At the end of your turn, draw 2 extra cards.","Získej 2 Energii. Na konci tahu si lízněte o 2 kartu navíc."
+"card.defend","Defend","Obrana"
+"card.defend.desc","Gain 5 block.","Získej 5 bloku."
+"card.defend+","Defend+","Obrana+"
+"card.defend+.desc","Gain 6 block.","Získej 6 bloku."
+"card.quick_strike","Quick Strike","Rychlý úder"
+"card.quick_strike.desc","Deal 4 damage.","Způsob 4 poškození."
+"card.quick_strike+","Quick Strike+","Rychlý úder+"
+"card.quick_strike+.desc","Deal 7 damage.","Způsob 7 poškození."
+"card.quick_step","Quick Step","Rychlý krok"
+"card.quick_step.desc","Increase your initiative by 5 for the next round.","Zvyš svou iniciativu o 5 pro příští kolo."
+"card.fortify","Fortify","Opevnění"
+"card.fortify.desc","Gain 12 block.","Získej 12 bloku."
+"card.fortify+","Fortify+","Opevnění+"
+"card.fortify+.desc","Gain 34 block.","Získej 34 bloku."
+"card.heavy_strike","Heavy Strike","Silný úder"
+"card.heavy_strike.desc","Deal 10 damage.","Způsob 10 poškození."
+"card.heavy_strike+","Heavy Strike+","Silný úder+"
+"card.heavy_strike+.desc","Deal 15 damage.","Způsob 15 poškození."
+"card.nimble_move","Nimble Move","Hbitý pohyb"
+"card.nimble_move.desc","You can move 1. Draw 1 card.","Můžeš se pohnout 1. Lízni si 1 kartu."
+"card.nimble_move+","Nimble Move+","Hbitý pohyb+"
+"card.nimble_move+.desc","You can move 2. Draw 1 card.","Můžeš se pohnout 2. Lízni si 1 kartu."
+"card.regroup","Regroup","Přeskupení"
+"card.regroup.desc","Draw 1 card.","Lízni si 1 kartu."
+"card.regroup+","Regroup+","Přeskupení+"
+"card.regroup+.desc","Draw 3 cards.","Lízni si 3 karty."
+"card.aura_of_devotion","Aura of Devotion","Aura oddanosti"
+"card.aura_of_devotion.desc","At the start of each of your turns, gain 2 block.","Na začátku každého tvého tahu získej 2 bloku."
+"card.aura_of_devotion+","Aura of Devotion+","Aura oddanosti+"
+"card.aura_of_devotion+.desc","At the start of each of your turns, gain 4 permanent block.","Na začátku každého tvého tahu získej 4 permanentního bloku."
+"card.consecration","Consecration","Svěcení"
+"card.consecration.desc","Deal 3 holy damage to all enemies.","Všem nepřátelům způsob 3 svatého poškození."
+"card.consecration+","Consecration+","Svěcení+"
+"card.consecration+.desc","Deal 6 holy damage to all enemies.","Všem nepřátelům způsob 6 svatého poškození."
+"card.divine_wrath","Divine Wrath","Boží hněv"
+"card.divine_wrath.desc","Deal 10 holy damage to all enemies.","Způsob 10 svatého poškození všem nepřátelům."
+"card.divine_wrath+","Divine Wrath+","Boží hněv+"
+"card.divine_wrath+.desc","Deal 20 holy damage to all enemies.","Způsob 20 svatého poškození všem nepřátelům."
+"card.divine_grace","Divine Grace","Božská Milost"
+"card.divine_grace.desc","Heal to full health. Exhaust.","Vyléč se na plné zdraví. Tato karta se vyčerpá."
+"card.divine_judgment","Divine Judgment","Božský Soud"
+"card.divine_judgment.desc","Deal 25 holy damage to all enemies. Exhaust.","Způsob 25 svatého poškození všem nepřátelům. Tato karta se vyčerpá."
+"card.divine_justice","Divine Justice","Božská Spravedlnost"
+"card.divine_justice.desc","Deal 20 holy damage. If the enemy has more than 50% health, deal +15 holy damage.","Způsob 20 svatého poškození. Pokud má nepřítel více než 50% zdraví, způsob +15 svatého poškození."
+"card.divine_protection","Divine Protection","Božská Ochrana"
+"card.divine_protection.desc","Gain 15 block. Heal 10 HP. Deal 12 holy damage to all enemies.","Získej 15 bloku. Vyléč se za 10 HP. Způsob 12 svatého poškození všem nepřátelům."
+"card.excommunication","Excommunication","Exkomunikace"
+"card.excommunication.desc","Deal 10 holy damage. The enemy gains Vulnerable for 2 turns.","Způsob 10 svatého poškození. Nepřítel získá debuff 'Zranitelný' na 2 kola."
+"card.gods_lightning","God's Lightning","Boží Blesk"
+"card.gods_lightning.desc","Deal 18 holy damage. If you kill an enemy, gain 2 energy.","Způsob 18 svatého poškození. Pokud zabiješ nepřítele, získej 2 energie."
+"card.gods_wrath","God's Wrath","Boží Hněv"
+"card.gods_wrath.desc","Deal 15 holy damage. If the enemy has a debuff, deal +10 holy damage.","Způsob 15 svatého poškození. Pokud má nepřítel debuff, způsob +10 svatého poškození."
+"card.holy_armor","Holy Armor","Svatá Zbroj"
+"card.holy_armor.desc","Gain 8 block. If you have more than 20 block, gain +3 block.","Získej 8 bloku. Pokud máš více než 20 bloku, získej +3 bloku navíc."
+"card.holy_blessing","Holy Blessing","Svaté Požehnání"
+"card.holy_blessing.desc","Heal 12 HP. Gain 3 block.","Vyléč se za 12 HP. Získej 3 bloku."
+"card.holy_defense","Holy Defense","Svatá Obrana"
+"card.holy_defense.desc","Gain 10 block. Deal 10 holy damage.","Získej 10 bloku. Způsob 10 svatého poškození."
+"card.holy_knight","Holy Knight","Svatý Rytíř"
+"card.holy_knight.desc","Gain 6 block. Deal 8 holy damage. Heal 4 HP.","Získej 6 bloku. Způsob 8 svatého poškození. Vyléč se za 4 HP."
+"card.holy_shield","Holy Shield","Svatý Štít"
+"card.holy_shield.desc","Gain 12 block. If you have less than 50% health, gain +8 block.","Získej 12 bloku. Pokud máš méně než 50% zdraví, získej +8 bloku."
+"card.holy_strike","Holy Strike","Svatý Úder"
+"card.holy_strike.desc","Deal 8 holy damage.","Způsob 8 svatého poškození."
+"card.holy_vengeance","Holy Vengeance","Svatá Pomsta"
+"card.holy_vengeance.desc","Deal 6 holy damage. For each block you have, deal +1 damage.","Způsob 6 svatého poškození. Za každý blok, který máš, způsob +1 poškození."
+"card.holy_wave","Holy Wave","Svatá Vlna"
+"card.holy_wave.desc","Deal 4 holy damage to all enemies in a line.","Způsob 4 svatého poškození všem nepřátelům v řadě."
+"card.holy_wave+","Holy Wave+","Svatá Vlna+"
+"card.holy_wave+.desc","Deal 8 holy damage to all enemies in a line.","Způsob 8 svatého poškození všem nepřátelům v řadě."
+"card.holy_wrath","Holy Wrath","Svatý Hněv"
+"card.holy_wrath.desc","Deal 12 holy damage. If you have more than 15 block, deal +8 holy damage.","Způsob 12 svatého poškození. Pokud máš více než 15 bloku, způsob +8 svatého poškození."
+"card.healing_aura","Healing Aura","Léčivá Aura"
+"card.healing_aura.desc","Heal 10 HP. All allies heal 5 HP.","Vyléč se za 10 HP. Všichni spojenci se vyléčí za 5 HP."
+"card.healing_light","Healing Light","Léčivé Světlo"
+"card.healing_light.desc","Heal 8 HP.","Vyléč se za 8 HP."
+"card.massive_healing","Massive Healing","Masivní Léčení"
+"card.massive_healing.desc","Heal 20 HP. If you have less than 30% health, heal 30 HP.","Vyléč se za 20 HP. Pokud máš méně než 30% zdraví, vyléč se za 30 HP."
+"card.consecrated_barrier","Consecrated Barrier","Posvěcená Bariéra"
+"card.consecrated_barrier.desc","Gain 6 block. If you took damage last turn, gain +4 block.","Získej 6 bloku. Pokud jsi v posledním tahu utrpěl poškození, získej +4 bloku."
+"card.consecrated_weapon","Consecrated Weapon","Posvěcená Zbraň"
+"card.consecrated_weapon.desc","Deal 9 holy damage. Your next attack deals +5 holy damage.","Způsob 9 svatého poškození. Příští útok způsobí +5 svatého poškození."
+"card.defensive_stance","Defensive Stance","Obranný Postoj"
+"card.defensive_stance.desc","Gain 4 block. The next attack against you deals 50% less damage.","Získej 4 bloku. Příští útok proti tobě způsobí o 50% méně poškození."
+"card.fortification","Fortification","Opevnění"
+"card.fortification.desc","Gain 15 block. This block doesn't disappear at end of turn.","Získej 15 bloku. Tento blok nezmizí na konci tahu."
+"card.impregnable_shield","Impenetrable Shield","Neprůstřelný Štít"
+"card.impregnable_shield.desc","Gain 10 block. Remove all debuffs.","Získej 10 bloku. Odstraň všechny debuffy."
+"card.protective_aura","Protective Aura","Ochranná Aura"
+"card.protective_aura.desc","Gain 5 block. All allies gain 2 block.","Získej 5 bloku. Všichni spojenci získají 2 bloku."
+"card.protective_hand","Protective Hand","Ochranná Ruka"
+"card.protective_hand.desc","Gain 8 block. Heal 5 HP.","Získej 8 bloku. Vyléč se za 5 HP."
+"card.purification","Purification","Očista"
+"card.purification.desc","Remove all debuffs and gain 5 block.","Odstraň všechny debuffy a získej 5 bloku."
+"card.regeneration","Regeneration","Regenerace"
+"card.regeneration.desc","Gain Regeneration (heals 3 HP at the end of each turn) for 3 turns.","Získej status 'Regenerace' (léčí 3 HP na konci každého tahu) na 3 kola."
+"card.sacred_healing","Sacred Healing","Posvátné Vyléčení"
+"card.sacred_healing.desc","Heal 15 HP. Remove all debuffs.","Vyléč se za 15 HP. Odstraň všechny debuffy."
+"card.shield_bash","Shield Bash","Úder štítem"
+"card.shield_bash.desc","Deal damage equal to your current block.","Způsob poškození rovné tvému aktuálnímu bloku."
+"card.shield_bash+","Shield Bash+","Úder štítem+"
+"card.shield_bash+.desc","Deal double damage equal to your current block.","Způsob dvojnásobné poškození rovné tvému aktuálnímu bloku."
+"card.shield_strike","Shield Strike","Štítový Úder"
+"card.shield_strike.desc","Gain 5 block. Deal 6 damage.","Získej 5 bloku. Způsob 6 poškození."
+"card.smite","Smite","Svatý úder"
+"card.smite.desc","Deal 6 holy damage.","Způsob 6 svatého poškození."
+"card.smite+","Smite+","Svatý úder"
+"card.smite+.desc","Deal 12 holy damage.","Způsob 12 svatého poškození."
+"card.lay_on_hands","Lay on Hands","Vkládání rukou"
+"card.lay_on_hands.desc","Heal to full health. Exhaust.","Vyléč se do plných životů. Vyčerpat."
+"card.lay_on_hands+","Lay on Hands+","Vkládání rukou+"
+"card.lay_on_hands+.desc","Heal to full health.","Vyléč se do plných životů"
+"card.lesser_heal","Lesser Heal","Menší léčení"
+"card.lesser_heal.desc","Heal 4 HP.","Vyléč si 4 životy."
+"card.lesser_heal+","Lesser Heal+","Menší léčení+"
+"card.lesser_heal+.desc","Heal 6 HP.","Vyléč si 6 životy."
+"card.light_pillar","Pillar of Light","Sloup Světla"
+"card.light_pillar.desc","Deal 6 holy damage to all enemies in the column.","Způsob 6 svatého poškození všem nepřátelům ve sloupci."
+"card.light_pillar+","Pillar of Light+","Sloup Světla+"
+"card.light_pillar+.desc","Deal 9 holy damage to all enemies in the column.","Způsob 9 svatého poškození všem nepřátelům ve sloupci."
+"card.pious_defense","Pious Defense","Zbožná obrana"
+"card.pious_defense.desc","Gain 7 block.","Získej 7 bloku."
+"card.pious_defense+","Pious Defense+","Zbožná obrana+"
+"card.pious_defense+.desc","Gain 10 block.","Získej 10 bloku."
+"card.purging_burst","Purging Burst","Očistný Výbuch"
+"card.purging_burst.desc","Deal 3 holy damage to enemies in a 2x2 area.","Způsob 3 svatého poškození nepřátelům v oblasti 2x2."
+"card.purging_burst+","Purging Burst+","Očistný Výbuch+"
+"card.purging_burst+.desc","Deal 6 holy damage to enemies in a 4x4 area.","Způsob 6 svatého poškození nepřátelům v oblasti 4x4."
+"card.unbreakable_faith","Unbreakable Faith","Neprůstřelná Víra"
+"card.unbreakable_faith.desc","Gain block equal to your max health. Exhaust.","Získej bloku rovný tvému maximálnímu zdraví. Tato karta se vyčerpá."
+"card.curse_basic","Curse","Prokletí"
+"card.curse_basic.desc","A useless card that only takes space in your hand.","Zbytečná karta, která ti jen zabírá místo na ruce."
+"card.curse_pain","Curse: Pain","Prokletí: Bolest"
+"card.curse_pain.desc","Unplayable. At the end of your turn, you take 2 damage.","Nehratelná. Na konci tvého tahu ti způsobí 2 poškození."
+"card.curse_weakness","Curse: Weakness","Prokletí: Slabost"
+"card.curse_weakness.desc","Exhausts. When drawn, lose 1 energy.","Vyřadí se. Při líznutí ztratíš 1 energii."
+"ui.how_to_play.content","[center][b][font_size=24]PROJECT LOOP[/font_size][/b][/center]
+
+[center]Roguelike card game with tactical combat[/center]
+
+[font_size=20][b]🎯 GAME GOAL[/b][/font_size]
+Traverse the map, defeat enemies and reach the boss. Every run is different thanks to a procedurally generated map and random rewards.
+
+[font_size=20][b]⚔️ COMBAT SYSTEM[/b][/font_size]
+• [b]Initiative:[/b] Units with higher initiative act first
+• [b]Turns:[/b] Player and enemies alternate according to initiative
+• [b]Movement:[/b] Each unit has limited movement per turn
+• [b]Attack:[/b] Basic attack deals damage based on unit strength
+
+[font_size=20][b]🃏 CARDS AND ENERGY[/b][/font_size]
+• [b]Energy:[/b] Each card costs energy (shown in the top-left corner of the card)
+• [b]Refresh:[/b] Energy refreshes at the start of each turn
+• [b]Deck:[/b] You have a deck of cards you draw from at the start of your turn
+• [b]Hand:[/b] You can play cards from your hand during your turn
+• [b]Discard:[/b] Played cards go to the discard pile
+• [b]Exhaust:[/b] Some cards exhaust after use (they are removed from the deck)
+
+[font_size=20][b]🛡️ CORE MECHANICS[/b][/font_size]
+
+[b]DAMAGE:[/b]
+• Damage reduces HP
+• If HP drops to 0, the unit dies
+• You lose if your HP drops to 0
+
+[b]BLOCK:[/b]
+• Block absorbs damage before it is subtracted from HP
+• Block usually resets at end of turn (except permanent block)
+• If you have 10 block and take 15 damage, you lose 10 block and 5 HP
+
+[b]HEALING:[/b]
+• Healing restores HP
+• You cannot heal above max HP
+• Some cards and effects heal automatically
+
+[b]STATUS EFFECTS:[/b]
+• [b]Regeneration:[/b] Heals at the end of each turn
+• [b]Burning:[/b] Deals damage at the end of each turn
+• [b]Vulnerable:[/b] Increases damage taken
+• [b]Chilled:[/b] Reduces movement
+• [b]Frozen:[/b] Prevents movement and playing cards
+• [b]Aura of Devotion:[/b] Grants block at the start of each turn
+
+[font_size=20][b]👹 ENEMY TYPES[/b][/font_size]
+
+Enemies have different types that affect damage effectiveness:
+
+[b]UNDEAD:[/b]
+• Skeletons, zombies, specters
+• [color=yellow]✨ Holy damage is +50% effective against them![/color]
+
+[b]DEMON:[/b]
+• Demons and infernal beings
+• [color=yellow]✨ Holy damage is +50% effective against them![/color]
+
+[b]SPIRIT:[/b]
+• Spirits and wraiths
+• [color=yellow]✨ Holy damage is +25% effective against them![/color]
+
+[b]HUMAN:[/b]
+• Human beings, bandits
+
+[b]BEAST:[/b]
+• Wild animals, beasts
+
+[b]ELEMENTAL:[/b]
+• Fire and ice beings
+
+[b]CONSTRUCT:[/b]
+• Golems, mechanical beings
+
+[b]DRAGON:[/b]
+• Dragons and draconic beings
+
+[font_size=20][b]⚡ DAMAGE TYPES[/b][/font_size]
+
+[b]NORMAL:[/b]
+• Standard physical damage
+• Works the same against all types
+
+[b]HOLY:[/b]
+• Holy damage from Paladin cards
+• [color=yellow]✨ +50% damage against UNDEAD and DEMON[/color]
+• [color=yellow]✨ +25% damage against SPIRIT[/color]
+• Effective damage is shown in gold with a ✨ symbol
+
+[b]Other types (to be added):[/b]
+• FIRE
+• ICE
+• LIGHTNING
+• POISON
+• ARCANE
+
+[font_size=20][b]🎴 CARD TYPES[/b][/font_size]
+
+[b]ATTACK:[/b]
+• Deal damage to enemies
+
+[b]SPELL:[/b]
+• Magical effects, often holy damage
+
+[b]BUFF:[/b]
+• Grant positive effects (block, healing, statuses)
+
+[b]DEBUFF:[/b]
+• Apply negative effects to enemies
+
+[b]HEAL:[/b]
+• Restore HP
+
+[b]MOVE:[/b]
+• Enable extra movement
+
+[b]UTILITY:[/b]
+• Various utility effects
+
+[font_size=20][b]💎 CARD RARITY[/b][/font_size]
+
+Cards have different rarities that determine their power and rarity:
+• [b]COMMON:[/b] Basic cards, white color
+• [b]UNCOMMON:[/b] Green color
+• [b]RARE:[/b] Blue color
+• [b]EPIC:[/b] Purple color
+• [b]LEGENDARY:[/b] Gold color
+• [b]BASIC:[/b] Starter cards, gray color
+
+[font_size=20][b]🎯 TACTICAL TIPS[/b][/font_size]
+
+• [b]Block is important:[/b] Protect yourself with block
+• [b]Effective damage:[/b] Use holy cards against undead and demons
+• [b]Energy:[/b] Plan how you use energy efficiently
+• [b]Movement:[/b] Move strategically to avoid danger
+• [b]Status effects:[/b] Combine different statuses for maximum effect
+• [b]Deck:[/b] Build a deck that works together
+
+[font_size=20][b]🗺️ MAP AND PROGRESSION[/b][/font_size]
+
+• [b]Nodes:[/b] Each node on the map is a different type (battle, shop, reward, boss)
+• [b]Rewards:[/b] After victory you gain cards, artifacts, or gold
+• [b]Shop:[/b] Buy cards and artifacts for gold
+• [b]Skill Tree:[/b] Improve your hero between runs
+• [b]Boss:[/b] A powerful boss awaits at the end of the map
+
+[font_size=20][b]💡 MORE INFORMATION[/b][/font_size]
+
+• Cards automatically generate compact descriptions from effects
+• Conditional effects are shown in card descriptions
+• Critical hits deal double damage
+• Some cards have a per-turn use limit
+• Permanent block carries over between turns
+
+[center][i]Good luck in battle![/i][/center]","[center][b][font_size=24]PROJEKT LOOP[/font_size][/b][/center]
+
+[center]Roguelike karetní hra s taktickým bojem[/center]
+
+[font_size=20][b]🎯 CÍL HRY[/b][/font_size]
+Projdi mapu, poraz nepřátele a dostaň se k bossovi. Každý run je jiný díky procedurálně generované mapě a náhodným odměnám.
+
+[font_size=20][b]⚔️ SOUBOJOVÝ SYSTÉM[/b][/font_size]
+• [b]Iniciativa:[/b] Jednotky s vyšší iniciativou útočí dříve
+• [b]Tahy:[/b] Hráč a nepřátelé se střídají podle iniciativy
+• [b]Pohyb:[/b] Každá jednotka má omezený pohyb na tah
+• [b]Útok:[/b] Základní útok způsobí poškození podle síly jednotky
+
+[font_size=20][b]🃏 KARTY A ENERGIE[/b][/font_size]
+• [b]Energie:[/b] Každá karta stojí energii (zobrazuje se v levém horním rohu karty)
+• [b]Obnova:[/b] Energie se obnovuje na začátku každého tahu
+• [b]Balíček:[/b] Máš balíček karet, ze kterého lízneš karty na začátku tahu
+• [b]Ruka:[/b] Karty v ruce můžeš zahrát během svého tahu
+• [b]Odhozené:[/b] Zahrané karty jdou do odhozu
+• [b]Vyčerpání:[/b] Některé karty se po použití vyčerpají (zmizí z balíčku)
+
+[font_size=20][b]🛡️ ZÁKLADNÍ MECHANIKY[/b][/font_size]
+
+[b]POŠKOZENÍ:[/b]
+• Poškození snižuje životy (HP)
+• Pokud HP klesne na 0, jednotka umře
+• Hráč prohraje, pokud jeho HP klesne na 0
+
+[b]BLOK:[/b]
+• Blok absorbuje poškození před tím, než se odečte z HP
+• Blok se obvykle resetuje na konci tahu (kromě permanentního bloku)
+• Pokud máš 10 bloku a dostaneš 15 poškození, ztratíš 10 bloku a 5 HP
+
+[b]LÉČENÍ:[/b]
+• Léčení obnovuje HP
+• Nemůžeš se vyléčit nad maximální HP
+• Některé karty a efekty léčí automaticky
+
+[b]STATUS EFEKTY:[/b]
+• [b]Regenerace:[/b] Léčí na konci každého tahu
+• [b]Hoření:[/b] Způsobuje poškození na konci tahu
+• [b]Zranitelný:[/b] Zvyšuje přijímané poškození
+• [b]Prochlazený:[/b] Snižuje pohyb
+• [b]Zmražený:[/b] Blokuje pohyb a hraní karet
+• [b]Aura oddanosti:[/b] Dává blok na začátku každého tahu
+
+[font_size=20][b]👹 TYPY NEPŘÁTEL[/b][/font_size]
+
+Nepřátelé mají různé typy, které ovlivňují efektivitu poškození:
+
+[b]UNDEAD (Nemrtví):[/b]
+• Skeletoni, zombie, přízraky
+• [color=yellow]✨ Svaté poškození je proti nim +50% efektivní![/color]
+
+[b]DEMON (Démoni):[/b]
+• Démoni a pekelné bytosti
+• [color=yellow]✨ Svaté poškození je proti nim +50% efektivní![/color]
+
+[b]SPIRIT (Duchové):[/b]
+• Duchové a přízraky
+• [color=yellow]✨ Svaté poškození je proti nim +25% efektivní![/color]
+
+[b]HUMAN (Lidé):[/b]
+• Lidské bytosti, bandité
+
+[b]BEAST (Zvířata):[/b]
+• Divoká zvířata, bestie
+
+[b]ELEMENTAL (Elementální):[/b]
+• Ohnivé, ledové bytosti
+
+[b]CONSTRUCT (Mechanické):[/b]
+• Golemové, mechanické bytosti
+
+[b]DRAGON (Draci):[/b]
+• Draci a dračí bytosti
+
+[font_size=20][b]⚡ TYPY POŠKOZENÍ[/b][/font_size]
+
+[b]NORMAL (Běžné):[/b]
+• Standardní fyzické poškození
+• Funguje stejně proti všem typům
+
+[b]HOLY (Svaté):[/b]
+• Svaté poškození z Paladin karet
+• [color=yellow]✨ +50% poškození proti UNDEAD a DEMON[/color]
+• [color=yellow]✨ +25% poškození proti SPIRIT[/color]
+• Efektivní poškození se zobrazuje zlatou barvou s ✨ symbolem
+
+[b]Další typy (budou přidány):[/b]
+• FIRE (Ohnivé)
+• ICE (Ledové)
+• LIGHTNING (Bleskové)
+• POISON (Jedovaté)
+• ARCANE (Tajemné)
+
+[font_size=20][b]🎴 TYPY KARET[/b][/font_size]
+
+[b]ATTACK (Útok):[/b]
+• Způsobují poškození nepřátelům
+
+[b]SPELL (Kouzlo):[/b]
+• Magické efekty, často svaté poškození
+
+[b]BUFF (Posílení):[/b]
+• Dávají pozitivní efekty (blok, léčení, statusy)
+
+[b]DEBUFF (Oslabení):[/b]
+• Dávají negativní efekty nepřátelům
+
+[b]HEAL (Léčení):[/b]
+• Léčí HP
+
+[b]MOVE (Pohyb):[/b]
+• Umožňují další pohyb
+
+[b]UTILITY (Užitkové):[/b]
+• Různé pomocné efekty
+
+[font_size=20][b]💎 VZÁCNOST KARET[/b][/font_size]
+
+Karty mají různé rarity, které určují jejich sílu a vzácnost:
+• [b]COMMON (Běžné):[/b] Základní karty, bílá barva
+• [b]UNCOMMON (Neobvyklé):[/b] Zelená barva
+• [b]RARE (Vzácné):[/b] Modrá barva
+• [b]EPIC (Epické):[/b] Fialová barva
+• [b]LEGENDARY (Legendární):[/b] Zlatá barva
+• [b]BASIC (Základní):[/b] Startovní karty, šedá barva
+
+[font_size=20][b]🎯 TAKTICKÉ TIPY[/b][/font_size]
+
+• [b]Blok je důležitý:[/b] Chraň se před poškozením pomocí bloku
+• [b]Efektivní poškození:[/b] Používej svaté karty proti nemrtvým a démonům
+• [b]Energie:[/b] Plánuj, jak využiješ energii efektivně
+• [b]Pohyb:[/b] Strategicky se pohybuj, abys se vyhnul nebezpečí
+• [b]Status efekty:[/b] Kombinuj různé statusy pro maximální efekt
+• [b]Balíček:[/b] Stav si balíček, který se doplňuje
+
+[font_size=20][b]🗺️ MAPA A PROGRESE[/b][/font_size]
+
+• [b]Uzly:[/b] Každý uzel na mapě je jiný typ (souboj, obchod, odměna, boss)
+• [b]Odměny:[/b] Po vítězství získáš karty, artefakty nebo zlato
+• [b]Obchod:[/b] Kupuj karty a artefakty za zlato
+• [b]Skill Tree:[/b] Vylepšuj svého hrdinu mezi runy
+• [b]Boss:[/b] Na konci mapy čeká silný boss
+
+[font_size=20][b]💡 DALŠÍ INFORMACE[/b][/font_size]
+
+• Karty se automaticky generují stručné popisy z efektů
+• Podmíněné efekty se zobrazují v popisech karet
+• Kritické zásahy zdvojnásobují poškození
+• Některé karty mají limit použití za tah
+• Permanentní blok se přenáší mezi tahy
+
+[center][i]Hodně štěstí v boji![/i][/center]"
+"ui.how_to_play.title","How to Play","Jak hrát"
+"ui.how_to_play.close","Close","Zavřít"

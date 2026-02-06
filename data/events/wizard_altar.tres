@@ -35,8 +35,8 @@ metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
 
 [sub_resource type="Resource" id="Resource_voybk"]
 script = ExtResource("1_2xn56")
-choice_text = "Obětovat zlato"
-choice_tooltip = "Vylepší jednu náhodnou kartu v balíčku."
+choice_text = "event.wizard_altar.choice.1"
+choice_tooltip = "event.wizard_altar.choice.1.tooltip"
 cost = SubResource("Resource_v0gvm")
 reward = SubResource("Resource_r1qsw")
 success_chance = 1.0
@@ -77,8 +77,8 @@ metadata/_custom_type_script = "uid://kiqgk2wb3ugp"
 
 [sub_resource type="Resource" id="Resource_vgt5d"]
 script = ExtResource("1_2xn56")
-choice_text = "Provést krvavý rituál"
-choice_tooltip = "Vylepší VŠECHNY karty v balíčku za cenu tvého zdraví."
+choice_text = "event.wizard_altar.choice.2"
+choice_tooltip = "event.wizard_altar.choice.2.tooltip"
 cost = SubResource("Resource_t2uph")
 reward = SubResource("Resource_w2q4i")
 success_chance = 1.0
@@ -91,7 +91,7 @@ metadata/_custom_type_script = "uid://dlyussc7fd6oa"
 
 [sub_resource type="Resource" id="Resource_prfuc"]
 script = ExtResource("1_2xn56")
-choice_text = "Odejít"
+choice_text = "event.wizard_altar.choice.3"
 choice_tooltip = ""
 success_chance = 1.0
 show_success_chance = true
@@ -104,8 +104,8 @@ metadata/_custom_type_script = "uid://dlyussc7fd6oa"
 [resource]
 script = ExtResource("2_hny0t")
 event_id = "wizard_altar"
-event_name = "Čarodějův oltář"
-description = "Nacházíš prastarý oltář pokrytý pulzujícími runami. Cítíš z něj syrovou magickou moc, která by mohla posílit tvé schopnosti... za správnou cenu."
+event_name = "event.wizard_altar.name"
+description = "event.wizard_altar.desc"
 event_type = 1
 rarity = 1
 min_floor = 0

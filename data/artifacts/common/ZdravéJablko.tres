@@ -5,8 +5,8 @@
 
 [resource]
 script = ExtResource("1_5f1np")
-artifact_name = "Zdravé jablko"
-description = "Získáš {value} maximálního zdraví."
+artifact_name = "artifact.zdrave_jablko"
+description = "artifact.zdrave_jablko.desc"
 texture = ExtResource("2_kkwjj")
 artifact_type = 0
 trigger_type = 0

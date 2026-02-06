@@ -104,8 +104,8 @@ ai_script = res://scripts/ai/HealerAI.gd
    - `encounter_type = 0` (NORMAL) nebo `1` (ELITE)
    - `xp_reward = 15` (nebo jiná hodnota)
    - V `enemies` přidej `EncounterEntry`:
-     - `unit_data` = odkaz na tvůj nový UnitData
-     - `grid_position` = pozice na gridu (např. `Vector2i(5, 3)`)
+	 - `unit_data` = odkaz na tvůj nový UnitData
+	 - `grid_position` = pozice na gridu (např. `Vector2i(5, 3)`)
 
 ### **KROK 4: Otestovat v hře**
 
@@ -131,9 +131,9 @@ ai_script = res://scripts/ai/HealerAI.gd
 3. **Otestuj:**
    - Spusť hru a vytvoř encounter s Assassinem
    - Měl by:
-     - ✅ Rychle se pohybovat (5 polí)
-     - ✅ Mít 25% šanci na double attack
-     - ✅ Mít 35% šanci na dodge
+	 - ✅ Rychle se pohybovat (5 polí)
+	 - ✅ Mít 25% šanci na double attack
+	 - ✅ Mít 35% šanci na dodge
 
 ---
 
@@ -168,4 +168,3 @@ Nejjednodušší způsob, jak otestovat:
 ---
 
 **Máš otázky? Zkus to a dej vědět, pokud něco nefunguje!** 🚀
-

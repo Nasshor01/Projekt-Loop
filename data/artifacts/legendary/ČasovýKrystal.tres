@@ -5,8 +5,8 @@
 
 [resource]
 script = ExtResource("1_x28o6")
-artifact_name = "Časový Krystal"
-description = "Každý 3. tah tohoto souboje dostaneš extra tah."
+artifact_name = "artifact.casovy_krystal"
+description = "artifact.casovy_krystal.desc"
 texture = ExtResource("2_mb1jc")
 artifact_type = 3
 trigger_type = 13

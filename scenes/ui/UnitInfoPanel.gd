@@ -20,13 +20,13 @@ func update_stats(unit_node: Node):
 	visible = true
 	var data = unit_node.get_unit_data()
 	
-	name_label.text = data.unit_name
+	name_label.text = data.get_localized_name()
 	
 	# Zobrazení HP (zůstává stejné)
 	if data.faction == UnitData.Faction.PLAYER:
-		hp_label.text = "HP: %d / %d" % [unit_node.current_health, PlayerData.max_hp]
+		hp_label.text = TranslationHelper.tr_format("ui.unit_info.hp", {"current": unit_node.current_health, "max": PlayerData.max_hp})
 	else:
-		hp_label.text = "HP: %d / %d" % [unit_node.current_health, data.max_health]
+		hp_label.text = TranslationHelper.tr_format("ui.unit_info.hp", {"current": unit_node.current_health, "max": data.max_health})
 	
 	# --- NOVÁ VYLEPŠENÁ LOGIKA PRO BLOK ---
 	if unit_node.current_block > 0:
@@ -36,13 +36,13 @@ func update_stats(unit_node: Node):
 		if unit_node.retained_block > 0:
 			# Pokud ano, zobrazíme ho v závorce pro lepší přehlednost
 			# Příklad: Blok: 50 (20)
-			block_label.text = "Blok: %d (%d)" % [unit_node.current_block, unit_node.retained_block]
-			block_label.tooltip_text = "Celkový blok (z toho v závorce je udržitelný pro další kolo)"
+			block_label.text = TranslationHelper.tr_format("ui.unit_info.block_retained", {"current": unit_node.current_block, "retained": unit_node.retained_block})
+			block_label.tooltip_text = tr("ui.unit_info.block_tooltip_retained")
 		else:
 			# Pokud je všechen blok jen dočasný, ukážeme jen celkovou hodnotu
 			# Příklad: Blok: 10
-			block_label.text = "Blok: %d" % unit_node.current_block
-			block_label.tooltip_text = "Celkový blok"
+			block_label.text = TranslationHelper.tr_format("ui.unit_info.block", {"value": unit_node.current_block})
+			block_label.tooltip_text = tr("ui.unit_info.block_tooltip")
 	else:
 		# Pokud není žádný blok, label skryjeme
 		block_label.visible = false
@@ -50,7 +50,7 @@ func update_stats(unit_node: Node):
 	
 	# Zobrazení útoku (zůstává stejné)
 	if data.faction != UnitData.Faction.PLAYER:
-		attack_label.text = "Útok: %d" % data.attack_damage
+		attack_label.text = TranslationHelper.tr_format("ui.unit_info.attack", {"value": data.attack_damage})
 		attack_label.visible = true
 	else:
 		attack_label.visible = false
@@ -76,13 +76,13 @@ func _update_status_display(unit_node: Node):
 		# Speciální zobrazení pro různé typy statusů
 		match status_id:
 			"aiming":
-				status_label.text = "🎯 Míří (+%d%% dmg)" % (status_data.value - 100)
+				status_label.text = TranslationHelper.tr_format("status.label.aiming", {"value": status_data.value - 100})
 				status_label.add_theme_color_override("font_color", Color.ORANGE)
 			"aura_devotion":
-				status_label.text = "✨ Aura oddanosti (+%d blok)" % status_data.value
+				status_label.text = TranslationHelper.tr_format("status.label.aura_devotion", {"value": status_data.value})
 				status_label.add_theme_color_override("font_color", Color.LIGHT_BLUE)
 			"aura_devotion_plus":
-				status_label.text = "✨ Aura oddanosti+ (+%d blok)" % status_data.value  
+				status_label.text = TranslationHelper.tr_format("status.label.aura_devotion_plus", {"value": status_data.value})  
 				status_label.add_theme_color_override("font_color", Color.CYAN)
 			_:
 				# Výchozí zobrazení
@@ -101,9 +101,9 @@ func update_from_player_data():
 		hide_panel()
 		return
 		
-	name_label.text = unit_data.unit_name
+	name_label.text = unit_data.get_localized_name()
 	# Aktuální HP vezmeme přímo z PlayerData
-	hp_label.text = "HP: %d / %d" % [PlayerData.current_hp, PlayerData.max_hp]
+	hp_label.text = TranslationHelper.tr_format("ui.unit_info.hp", {"current": PlayerData.current_hp, "max": PlayerData.max_hp})
 	
 	# Ostatní věci, které hráč na začátku nemá, skryjeme
 	block_label.visible = false

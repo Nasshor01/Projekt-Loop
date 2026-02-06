@@ -5,10 +5,8 @@
 
 [resource]
 script = ExtResource("1_f0shn")
-artifact_name = "Meč nekonečna"
-description = "Za každého zabitého nepřítele získáš +1 poškození karet (tento souboj).
-
-"
+artifact_name = "artifact.mec_nekonecna"
+description = "artifact.mec_nekonecna.desc"
 texture = ExtResource("2_gtamx")
 artifact_type = 5
 trigger_type = 9

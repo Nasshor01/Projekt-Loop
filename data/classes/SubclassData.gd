@@ -12,3 +12,9 @@ extends Resource
 func _init(p_id: String = "", p_name: String = "Podtřída"):
 	subclass_id = p_id
 	subclass_name = p_name
+
+func get_localized_name() -> String:
+	return tr(subclass_name)
+
+func get_localized_description() -> String:
+	return tr(description)

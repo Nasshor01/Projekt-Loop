@@ -13,13 +13,18 @@ target_type = 1
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_qr80l")
 card_id = "shield_bash"
-card_name = "Úder štítem"
-card_description = "Způsob poškození rovné tvému aktuálnímu bloku."
+card_name = "card.shield_bash"
+card_description = "card.shield_bash.desc"
 cost = 2
 range_type = 2
 range_value = 1

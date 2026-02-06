@@ -5,8 +5,8 @@
 
 [resource]
 script = ExtResource("1_txutl")
-artifact_name = "Oko pravdy"
-description = "Všechny tvé útoky mají {value}% šanci na kritický zásah (2x poškození)."
+artifact_name = "artifact.oko_pravdy"
+description = "artifact.oko_pravdy.desc"
 texture = ExtResource("2_c3jdf")
 artifact_type = 3
 trigger_type = 0

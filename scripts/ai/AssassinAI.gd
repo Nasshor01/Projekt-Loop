@@ -31,15 +31,12 @@ func get_next_action(enemy_unit: Unit, all_player_units: Array, battle_grid: Bat
 		return action
 	
 	# 2. Pokud nemůžeme zaútočit, pokusíme se přiblížit (s bonusovým pohybem)
-	var movement_range = enemy_unit.get_current_movement_range() + EXTRA_MOVEMENT
-	var path = find_path_with_movement_limit(enemy_unit, player_unit.grid_position, battle_grid, movement_range)
+	# Použijeme find_path_to_adjacent, abychom našli cestu k sousednímu poli hráče
+	var path = find_path_to_adjacent(enemy_unit, player_unit, battle_grid)
 	if not path.is_empty():
-		# Omezíme na maximální pohyb
-		var limited_path: Array[Vector2i] = []
-		for i in range(min(path.size(), movement_range + 1)):
-			limited_path.append(path[i])
-		return create_move_action(limited_path)
+		# find_path_to_adjacent vrací cestu k nejbližšímu sousednímu poli
+		# Assassin má movement_range 5 + EXTRA_MOVEMENT 2 = 7, takže cesta by měla být vždy dosažitelná
+		return create_move_action(path)
 	
 	# 3. Nemůžeme se pohnout ani zaútočit
 	return create_pass_action()
-

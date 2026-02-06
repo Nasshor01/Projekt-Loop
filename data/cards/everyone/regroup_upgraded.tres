@@ -12,13 +12,18 @@ target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_bibr2")
 card_id = "regroup+"
-card_name = "Přeskupení+"
-card_description = " Lízněte si 3 karty."
+card_name = "card.regroup+"
+card_description = "card.regroup+.desc"
 cost = 0
 range_type = 0
 range_value = 0

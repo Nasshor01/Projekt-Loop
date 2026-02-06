@@ -1,0 +1,27 @@
+# Batch opravy karet - co je potřeba opravit
+
+## ✅ OPRAVENÉ:
+1. aura_of_devotion - změněno z GAIN_ENERGY na APPLY_STATUS ✅
+2. nimble_move - opraven popis ✅
+3. holy_strike - přidán damage_type = 1 ✅
+4. consecrated_weapon - přidán damage_type = 1 ✅
+
+## ⚠️ KARTY K OPRAVĚ - damage_type:
+
+### Karty které by měly být HOLY damage (podle názvu):
+- divine_wrath.tres - "Boží hněv" → měla by být holy (10 poškození → 10 svatého poškození)
+- divine_wrath_upgraded.tres - "Boží hněv+" → měla by být holy (20 poškození → 20 svatého poškození)
+- holy_wave.tres - "Svatá Vlna" → měla by být holy (4 poškození → 4 svatého poškození)
+- holy_wave_upgraded.tres - "Svatá Vlna+" → měla by být holy (8 poškození → 8 svatého poškození)
+- purging_burst.tres - "Očistný Výbuch" → možná holy? (3 poškození)
+- purging_burst_upgraded.tres - → možná holy?
+- light_pillar.tres - "Sloup Světla" → možná holy? (6 poškození)
+- light_pillar_upgraded.tres - → možná holy?
+- consecration.tres - "Svěcení" → měla by být holy (3 poškození → 3 svatého poškození)
+- consecration_upgraded.tres - → měla by být holy
+
+## 📝 DALŠÍ KONTROLY:
+- Zkontrolovat všechny karty, jestli mají správné target_type
+- Zkontrolovat všechny karty, jestli mají správné area_of_effect_type
+- Zkontrolovat všechny podmíněné efekty
+

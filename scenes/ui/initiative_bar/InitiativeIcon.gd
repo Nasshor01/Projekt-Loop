@@ -69,10 +69,10 @@ func _apply_setup_data():
 			mod = _turn_manager.get_initiative_modifier_for_unit(unit)
 		var total_initiative = base_init + mod
 
-		tooltip_label.text = "%s\\nIniciativa: %d" % [unit.unit_data.unit_name, total_initiative]
+		tooltip_label.text = TranslationHelper.tr_format("ui.initiative.tooltip", {"name": unit.unit_data.get_localized_name(), "value": total_initiative})
 	else:
 		portrait.texture = null
-		tooltip_label.text = "Neznámá jednotka"
+		tooltip_label.text = tr("ui.initiative.unknown_unit")
 
 	tooltip.hide()
 

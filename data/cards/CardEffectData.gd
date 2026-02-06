@@ -46,6 +46,18 @@ enum AreaOfEffectType {
 @export var aoe_param_x: int = 1
 @export var aoe_param_y: int = 1
 
+# Typ poškození pro systém efektivity
+enum DamageType {
+	NORMAL,     # Běžné fyzické poškození
+	HOLY,       # Svaté poškození (silné proti UNDEAD, DEMON)
+	FIRE,       # Ohnivé poškození
+	ICE,        # Ledové poškození
+	LIGHTNING,  # Bleskové poškození
+	POISON,     # Jedovaté poškození
+	ARCANE      # Tajemné/arčanské poškození
+}
+@export var damage_type: DamageType = DamageType.NORMAL
+
 # Podmíněné efekty
 @export var has_condition: bool = false
 @export var condition_type: String = ""  # "block_above", "block_below", "health_below_percent", "health_above_percent", "target_has_debuff", "damage_per_block", "took_damage_last_turn", "target_health_above_percent"

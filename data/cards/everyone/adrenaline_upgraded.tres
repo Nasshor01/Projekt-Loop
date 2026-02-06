@@ -12,6 +12,11 @@ target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [sub_resource type="Resource" id="Resource_67ins"]
@@ -23,14 +28,18 @@ target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_moxy1")
 card_id = "adrenaline+"
-card_name = "Adrenalin+"
-card_description = "Získej 2 Energii. Na konci tahu si lízněte o 2 kartu navíc.
-"
+card_name = "card.adrenaline+"
+card_description = "card.adrenaline+.desc"
 cost = 1
 range_type = 0
 range_value = 1

@@ -13,13 +13,18 @@ target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_caywb")
 card_id = "defend"
-card_name = "Obrana"
-card_description = "Získej 5 bloku."
+card_name = "card.defend"
+card_description = "card.defend.desc"
 cost = 1
 range_type = 2
 range_value = 1

@@ -30,7 +30,7 @@ func can_afford() -> bool:
 
 func get_full_text() -> String:
 	"""Vrátí kompletní text pro tlačítko"""
-	var text = choice_text
+	var text = tr(choice_text)
 	
 	# Přidej cenu
 	if cost:
@@ -40,17 +40,17 @@ func get_full_text() -> String:
 	
 	# Přidej šanci
 	if success_chance < 1.0 and show_success_chance:
-		text += " [color=gray](%d%%)[/color]" % int(success_chance * 100)
+		text += " " + TranslationHelper.tr_format("event.choice.success_chance", {"value": int(success_chance * 100)})
 	
 	return text
 
 func get_tooltip() -> String:
 	"""Vrátí tooltip text"""
 	if choice_tooltip != "":
-		return choice_tooltip
+		return tr(choice_tooltip)
 	
 	# Automaticky vygeneruj tooltip z rewards
 	if reward:
-		return "Možné odměny: " + reward.get_reward_description()
+		return tr("event.choice.possible_rewards") + " " + reward.get_reward_description()
 	
 	return ""

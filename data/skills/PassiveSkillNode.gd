@@ -110,21 +110,33 @@ func get_cost_for_tier() -> int:
 # Příklad: SaveManager.meta_progress.allocated_skills.get(String(id), 0) < max_allocations
 
 func get_formatted_description() -> String:
-	var desc = description
+	var desc = get_localized_description()
 	
 	# Přidáme informace o tieru
-	desc += "\n\n[color=yellow]Tier %d[/color]" % tier
+	desc += "\n\n" + TranslationHelper.tr_format("skill.tooltip.tier", {"value": tier})
 	
 	# Přidáme typ uzlu
 	match node_type:
-		NodeType.NOTABLE: desc += " [color=gold]• Notable[/color]"
-		NodeType.KEYSTONE: desc += " [color=red]• Keystone[/color]"
-		NodeType.MASTERY: desc += " [color=cyan]• Mastery[/color]"
+		NodeType.NOTABLE: desc += " " + tr("skill.tooltip.notable")
+		NodeType.KEYSTONE: desc += " " + tr("skill.tooltip.keystone")
+		NodeType.MASTERY: desc += " " + tr("skill.tooltip.mastery")
 	
 	# Přidáme stackování pokud je možné
 	if max_allocations > 1:
 		# POZNÁMKA: allocation_count byl odstraněn - použij SaveManager
 		# Příklad: var count = SaveManager.meta_progress.allocated_skills.get(String(id), 0)
-		desc += "\n[color=gray]Stackovatelné (max %d)[/color]" % max_allocations
+		desc += "\n" + TranslationHelper.tr_format("skill.tooltip.stackable", {"value": max_allocations})
 	
 	return desc
+
+func get_localized_name() -> String:
+	"""Vrátí lokalizovaný název dovednosti"""
+	var key = "skill.%s.name" % String(id)
+	var translated = tr(key)
+	return translated if translated != key else tr(skill_name)
+
+func get_localized_description() -> String:
+	"""Vrátí lokalizovaný popis dovednosti"""
+	var key = "skill.%s.desc" % String(id)
+	var translated = tr(key)
+	return translated if translated != key else tr(description)

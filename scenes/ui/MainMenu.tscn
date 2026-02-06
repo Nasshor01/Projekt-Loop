@@ -31,7 +31,7 @@ offset_right = 54.0
 offset_bottom = 73.104
 grow_horizontal = 2
 theme_override_font_sizes/font_size = 24
-text = "Projekt Loop"
+text = "PROJEKT LOOP"
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 custom_minimum_size = Vector2(200, 100)
@@ -51,17 +51,21 @@ theme_override_constants/separation = 20
 
 [node name="PlayButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-text = "Nová hra"
+text = "NEW GAME"
 
 [node name="LoadRunButton" type="Button" parent="VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Načíst run"
+text = "LOAD RUN"
 
 [node name="HowToPlayButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-text = "Jak hrát"
+text = "HOW TO PLAY"
+
+[node name="SettingsButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "SETTINGS"
 
 [node name="ExitButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
-text = "Ukončit"
+text = "EXIT"

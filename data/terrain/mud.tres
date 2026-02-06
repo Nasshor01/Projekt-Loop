@@ -6,8 +6,8 @@
 [resource]
 script = ExtResource("1_5fo6p")
 terrain_id = "mud"
-terrain_name = "Bahno"
-description = "Popis, co tento terén dělá."
+terrain_name = "terrain.mud"
+description = "terrain.mud.desc"
 sprite = ExtResource("2_6m5g2")
 is_walkable = true
 blocks_line_of_sight = false

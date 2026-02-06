@@ -7,12 +7,20 @@ extends Control
 @export var character_subclass: SubclassData
 
 @onready var paladin_panel: PanelContainer = $VBoxContainer/CharactersContainer/PaladinPanel
+@onready var title_label: Label = $VBoxContainer/TitleLabel
+@onready var name_label: Label = $VBoxContainer/CharactersContainer/PaladinPanel/VBoxContainer/NameLabel
 @onready var level_label: Label = $VBoxContainer/CharactersContainer/PaladinPanel/VBoxContainer/LevelLabel
 @onready var continue_button: Button = $VBoxContainer/ContinueButton
 @onready var back_button: Button = $VBoxContainer/BackButton
 
 func _ready():
-	level_label.text = "Level: %d" % SaveManager.meta_progress.player_level
+	if title_label:
+		title_label.text = tr("ui.char_select.title")
+	if name_label and character_class:
+		name_label.text = character_class.get_localized_name()
+	level_label.text = TranslationHelper.tr_format("ui.char_select.level", {"value": SaveManager.meta_progress.player_level})
+	continue_button.text = tr("ui.char_select.continue")
+	back_button.text = tr("ui.common.back")
 	
 	continue_button.pressed.connect(_on_continue_pressed)
 	back_button.pressed.connect(GameManager.go_to_main_menu)
