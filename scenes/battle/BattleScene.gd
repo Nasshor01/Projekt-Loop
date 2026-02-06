@@ -1159,20 +1159,26 @@ func can_attack_target(attacker: Unit, target: Unit, battle_grid: BattleGrid) ->
 func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D) -> Array:
 	var targets: Array = []
 	var clicked_grid_cell = get_grid_cell_under_mouse() # OPRAVA: Použití 3D Raycast funkce místo get_global_mouse_position
+	var grid_ref = battle_grid_instance
+	if not grid_ref and has_node("BattleGrid"):
+		grid_ref = get_node("BattleGrid")
 	
 	if effect.target_type == CardEffectData.TargetType.ANY_GRID_CELL:
-		var affected_cells = battle_grid_instance.get_cells_for_aoe(clicked_grid_cell, effect.area_of_effect_type, effect.aoe_param_x, effect.aoe_param_y)
+		if not grid_ref:
+			return targets
+		var affected_cells = grid_ref.get_cells_for_aoe(clicked_grid_cell, effect.area_of_effect_type, effect.aoe_param_x, effect.aoe_param_y)
 		for cell in affected_cells:
-			var unit_on_cell = battle_grid_instance.get_object_on_cell(cell)
+			var unit_on_cell = grid_ref.get_object_on_cell(cell)
 			if is_instance_valid(unit_on_cell) and unit_on_cell.get_unit_data().faction == UnitData.Faction.ENEMY:
 				targets.append(unit_on_cell)
 		return targets
 	match effect.target_type:
 		CardEffectData.TargetType.SELF_UNIT:
-			targets.append(_player_unit_node)
+			if is_instance_valid(_player_unit_node):
+				targets.append(_player_unit_node)
 		CardEffectData.TargetType.SELECTED_ENEMY_UNIT:
 			if is_instance_valid(initial_target_node) and initial_target_node.get_unit_data().faction == UnitData.Faction.ENEMY:
-				if battle_grid_instance.get_distance(_player_unit_node.grid_position, initial_target_node.grid_position) <= _selected_card_data.range_value:
+				if grid_ref and is_instance_valid(_player_unit_node) and grid_ref.get_distance(_player_unit_node.grid_position, initial_target_node.grid_position) <= _selected_card_data.range_value:
 					targets.append(initial_target_node)
 		CardEffectData.TargetType.ALL_ENEMY_UNITS:
 			targets.assign(_enemy_units)

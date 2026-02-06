@@ -18,8 +18,13 @@ static func generate_crash_report(error_msg: String) -> String:
 	report.append("=== GAME STATE ===")
 	if PlayerData:
 		report.append("HP: %d/%d" % [PlayerData.current_hp, PlayerData.max_hp])
-		report.append("Floor: %d" % PlayerData.floors_cleared)
+		report.append("Floor: %d" % (PlayerData.floors_cleared + 1))
 		report.append("Cards in deck: %d" % PlayerData.master_deck.size())
+		if not PlayerData.artifacts.is_empty():
+			report.append("Artifacts:")
+			for artifact in PlayerData.artifacts:
+				if is_instance_valid(artifact):
+					report.append("  - %s" % artifact.artifact_name)
 	if GameManager and GameManager.current_scene:
 		report.append("Current scene: %s" % GameManager.current_scene.name)
 	report.append("")
@@ -32,5 +37,7 @@ static func generate_crash_report(error_msg: String) -> String:
 	var crash_file = FileAccess.open("user://crash_report_%s.txt" % Time.get_unix_time_from_system(), FileAccess.WRITE)
 	if crash_file:
 		crash_file.store_string(report_text)
-	DebugLogger.log_critical(report_text, "CRASH")
+	DebugLogger.log_info("Crash report generated.", "CRASH")
+	if DebugLogger and DebugLogger.has_method("send_crash_report_to_discord"):
+		DebugLogger.send_crash_report_to_discord(report_text)
 	return report_text

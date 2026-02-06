@@ -4,11 +4,26 @@ extends Node
 const LOG_FILE_NAME = "game_debug_log.txt"
 const MAX_LOG_SIZE_MB = 10
 const MAX_BACKUP_FILES = 3
+const FEEDBACK_WEBHOOK_URL = "https://discord.com/api/webhooks/1469338422517698733/OjSD8PfDJbIaRnwY_B1XYO2DdsNqNurEMP6_9dFHVnyYIxEZhkxzxPBDsmk7RqAiUXEx"
+const CRASH_WEBHOOK_URL = "https://discord.com/api/webhooks/1469442970066358404/zfiNxY6svG1hcu0_IYVy-jE-Fg09KU44TQOadrgDcDFMpa2zqso3tlu2XRiY9tt3FCH8"
+const DISCORD_COLOR_INFO = 0x0000FF
+const DISCORD_COLOR_WARNING = 0xF1C40F
+const DISCORD_COLOR_ERROR = 0xFF0000
+const SESSION_LOCK_PATH = "user://session.lock"
 
 var log_file_path: String
 var log_file: FileAccess
 var session_start_time: String
 @export var log_level: LogLevel = LogLevel.INFO
+@export var discord_enabled: bool = true
+@export var discord_feedback_includes_state: bool = true
+@export var discord_feedback_includes_system_info: bool = true
+@export var is_quitting_legally: bool = false
+@export var can_send_reports: bool = true
+var report_consent_known: bool = false
+var _pending_reports_processed: bool = false
+
+var _discord_http: HTTPRequest
 
 enum LogLevel {
 	DEBUG,
@@ -39,12 +54,27 @@ func _ready():
 	if not Engine.is_editor_hint():
 		# Zachytávej printy a errory
 		OS.set_environment("GODOT_LOG_LEVEL", "verbose")
+
+	_setup_discord()
 	
 	log_info("DebugLogger inicializován")
 	log_info("Log soubor: %s" % OS.get_user_data_dir() + "/" + LOG_FILE_NAME)
 	
 	# Zaloguj základní system info
 	log_system_info()
+	
+	can_send_reports = _load_report_preference()
+	if report_consent_known and can_send_reports:
+		call_deferred("_process_pending_crash_reports")
+	
+	# Debug-only crash simulation
+	if OS.is_debug_build():
+		set_process_input(true)
+
+func _input(event):
+	if OS.is_debug_build() and event is InputEventKey and event.pressed and not event.is_echo():
+		if event.keycode == KEY_F10:
+			CrashReporter.generate_crash_report("SIMULATED_CRASH_TEST")
 
 func _write_header():
 	var separator = ""
@@ -104,6 +134,15 @@ func log_debug(message: String, category: String = "GAME"):
 		print(formatted)
 
 func log_info(message: String, category: String = "GAME"):
+	if message.begins_with("[PLAYER_FEEDBACK]"):
+		var feedback_text = message.replace("[PLAYER_FEEDBACK]", "").strip_edges()
+		var body = "Player feedback:\n%s" % feedback_text
+		if discord_feedback_includes_system_info:
+			body += "\n\n" + _build_system_info_text()
+		if discord_feedback_includes_state:
+			body += "\n\n" + _build_full_game_state_text()
+		_send_to_discord(FEEDBACK_WEBHOOK_URL, "Player Feedback", body, DISCORD_COLOR_INFO)
+	
 	if log_level <= LogLevel.INFO:
 		var formatted = _format_message("INFO", category, message)
 		_write_line(formatted)
@@ -115,24 +154,25 @@ func log_warning(message: String, category: String = "GAME"):
 		_write_line(formatted)
 		push_warning(formatted)
 
-func log_error(message: String, category: String = "GAME"):
+func log_error(message: String, category: String = "GAME", force_discord: bool = false):
 	if log_level <= LogLevel.ERROR:
 		var formatted = _format_message("ERROR", category, message)
 		_write_line(formatted)
 		push_error(formatted)
 		_write_line("Stack trace:")
 		_write_line(str(get_stack()))
+		
+		if force_discord:
+			# Stejná úroveň detailů jako u kritických chyb
+			log_full_game_state()
+			var full_state_text = _build_full_game_state_text()
+			var body = formatted + "\n\n" + full_state_text
+			_send_to_discord(CRASH_WEBHOOK_URL, "Error", body, DISCORD_COLOR_ERROR, true)
+			_send_crash_log_file()
 
 func log_critical(message: String, category: String = "GAME"):
 	var formatted = _format_message("CRITICAL", category, message)
-	_write_line(formatted)
-	push_error(formatted)
-	_write_line("Stack trace:")
-	_write_line(str(get_stack()))
-	
-	# Při kritické chybě okamžitě flush
-	if log_file:
-		log_file.flush()
+	_log_critical_internal(formatted, "Critical Error")
 
 # === SPECIALIZOVANÉ LOGGING FUNKCE ===
 
@@ -183,7 +223,26 @@ func log_resource_loaded(resource_path: String, success: bool):
 		log_error("Failed to load resource: %s" % resource_path, "RESOURCE")
 
 func log_exception(exception: String, context: String = ""):
-	log_critical("EXCEPTION: %s | Context: %s" % [exception, context], "EXCEPTION")
+	var message = "EXCEPTION: %s | Context: %s" % [exception, context]
+	var formatted = _format_message("CRITICAL", "EXCEPTION", message)
+	_log_critical_internal(formatted, "Exception")
+
+func _log_critical_internal(formatted_message: String, title: String):
+	_write_line(formatted_message)
+	push_error(formatted_message)
+	_write_line("Stack trace:")
+	_write_line(str(get_stack()))
+	
+	# Při kritické chybě okamžitě flush
+	if log_file:
+		log_file.flush()
+	
+	# Kompletní stav hry do logu i na Discord
+	log_full_game_state()
+	var full_state_text = _build_full_game_state_text()
+	var body = formatted_message + "\n\n" + full_state_text
+	_send_to_discord(CRASH_WEBHOOK_URL, title, body, DISCORD_COLOR_ERROR, true)
+	_send_crash_log_file()
 
 # === NOVÉ ROZŠÍŘENÉ LOGGING FUNKCE ===
 
@@ -429,6 +488,11 @@ func log_full_game_state():
 	log_map_state()
 	log_meta_progress()
 	
+	# Pokud je aktivní battle scene, přidej stav boje a gridu
+	var active_battle = _get_active_battle_scene()
+	if active_battle:
+		log_battle_state(active_battle)
+	
 	log_info("==========================================", "FULL_STATE")
 	log_info("=== END FULL GAME STATE DUMP ===", "FULL_STATE")
 	log_info("==========================================", "FULL_STATE")
@@ -493,16 +557,420 @@ func _on_tree_exiting():
 
 func _notification(what):
 	# Zachyť crash nebo force quit
-	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_CRASH:
-		log_critical("Aplikace se nečekaně ukončuje!", "SYSTEM")
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		if is_quitting_legally:
+			_remove_session_lock()
+			return
 		
-		# Pokus se zalogovat co nejvíc informací před crashem
+		CrashReporter.generate_crash_report("AUTOMATIC_CRASH_REPORT")
+		log_critical("Aplikace se nečekaně ukončuje!", "SYSTEM")
+		log_player_stats()
+		log_deck_state()
+		
+		await get_tree().create_timer(0.5).timeout
+		
+		if log_file:
+			log_file.flush()
+			log_file.close()
+	elif what == NOTIFICATION_CRASH:
+		CrashReporter.generate_crash_report("AUTOMATIC_CRASH_REPORT")
+		log_critical("Aplikace se nečekaně ukončuje!", "SYSTEM")
 		log_player_stats()
 		log_deck_state()
 		
 		if log_file:
 			log_file.flush()
 			log_file.close()
+
+# === DISCORD INTEGRATION ===
+
+func _setup_discord():
+	if not discord_enabled:
+		return
+	if not has_node("DiscordHTTPRequest"):
+		_discord_http = HTTPRequest.new()
+		_discord_http.name = "DiscordHTTPRequest"
+		add_child(_discord_http)
+	else:
+		_discord_http = get_node("DiscordHTTPRequest")
+
+func _send_to_discord(webhook_url: String, title: String, body: String, color: int, high_priority: bool = false):
+	if not discord_enabled:
+		return
+	if not can_send_reports:
+		return
+	if webhook_url.is_empty():
+		return
+	
+	if high_priority:
+		var urgent_request = HTTPRequest.new()
+		add_child(urgent_request)
+		urgent_request.request_completed.connect(func(_result, _code, _headers, _body):
+			urgent_request.queue_free()
+		)
+		
+		var urgent_payload = {
+			"embeds": [
+				{
+					"title": title,
+					"description": _truncate_embed_text(body),
+					"color": color,
+					"timestamp": _get_iso_timestamp()
+				}
+			]
+		}
+		
+		var urgent_headers = ["Content-Type: application/json"]
+		var urgent_json_body = JSON.stringify(urgent_payload)
+		urgent_request.request(webhook_url, urgent_headers, HTTPClient.METHOD_POST, urgent_json_body)
+		return
+	
+	if not _discord_http:
+		_setup_discord()
+	if not _discord_http:
+		return
+	if _discord_http.get_http_client_status() == HTTPClient.STATUS_REQUESTING:
+		return
+	
+	var payload = {
+		"embeds": [
+			{
+				"title": title,
+				"description": _truncate_embed_text(body),
+				"color": color,
+				"timestamp": _get_iso_timestamp()
+			}
+		]
+	}
+	
+	var headers = ["Content-Type: application/json"]
+	var json_body = JSON.stringify(payload)
+	_discord_http.request(webhook_url, headers, HTTPClient.METHOD_POST, json_body)
+
+func _send_file_to_discord(webhook_url: String, filename: String, bytes: PackedByteArray, title: String, body: String, color: int):
+	if not discord_enabled:
+		return
+	if not can_send_reports:
+		return
+	if webhook_url.is_empty():
+		return
+	var file_request = HTTPRequest.new()
+	add_child(file_request)
+	file_request.request_completed.connect(func(_result, _code, _headers, _body):
+		file_request.queue_free()
+	)
+	
+	var payload = {
+		"embeds": [
+			{
+				"title": title,
+				"description": _truncate_embed_text(body),
+				"color": color,
+				"timestamp": _get_iso_timestamp()
+			}
+		]
+	}
+	var boundary = "----GodotDiscordBoundary" + str(Time.get_ticks_msec())
+	var headers = ["Content-Type: multipart/form-data; boundary=%s" % boundary]
+	var body_bytes = PackedByteArray()
+	
+	var payload_part = ""
+	payload_part += "--%s\r\n" % boundary
+	payload_part += "Content-Disposition: form-data; name=\"payload_json\"\r\n"
+	payload_part += "Content-Type: application/json\r\n\r\n"
+	payload_part += JSON.stringify(payload) + "\r\n"
+	body_bytes.append_array(payload_part.to_utf8_buffer())
+	
+	var file_header = ""
+	file_header += "--%s\r\n" % boundary
+	file_header += "Content-Disposition: form-data; name=\"files[0]\"; filename=\"%s\"\r\n" % filename
+	file_header += "Content-Type: text/plain\r\n\r\n"
+	body_bytes.append_array(file_header.to_utf8_buffer())
+	body_bytes.append_array(bytes)
+	body_bytes.append_array("\r\n".to_utf8_buffer())
+	
+	var closing = "--%s--\r\n" % boundary
+	body_bytes.append_array(closing.to_utf8_buffer())
+	
+	file_request.request_raw(webhook_url, headers, HTTPClient.METHOD_POST, body_bytes)
+
+func _get_iso_timestamp() -> String:
+	var timestamp = Time.get_datetime_string_from_system()
+	return timestamp.replace(" ", "T")
+
+func _truncate_embed_text(text: String, limit: int = 3900) -> String:
+	if text.length() <= limit:
+		return text
+	return text.substr(0, limit) + "\n... [truncated]"
+
+func _build_system_info_text() -> String:
+	var lines = []
+	lines.append("=== SYSTEM INFO ===")
+	lines.append("Godot: %s" % Engine.get_version_info().string)
+	lines.append("OS: %s" % OS.get_name())
+	lines.append("CPU cores: %d" % OS.get_processor_count())
+	lines.append("Video adapter: %s" % RenderingServer.get_video_adapter_name())
+	lines.append("Screen size: %s" % str(DisplayServer.screen_get_size()))
+	lines.append("FPS Limit: %d" % Engine.max_fps)
+	lines.append("VSync: %s" % DisplayServer.window_get_vsync_mode())
+	lines.append("Memory Usage: %.2f MB" % (OS.get_static_memory_usage() / 1048576.0))
+	lines.append("User data dir: %s" % OS.get_user_data_dir())
+	lines.append("===================")
+	return "\n".join(lines)
+
+func _build_full_game_state_text() -> String:
+	var lines = []
+	var battle_scene = _get_active_battle_scene()
+	var in_battle = battle_scene != null
+	lines.append("=== FULL GAME STATE DUMP ===")
+	lines.append("Time: %s" % Time.get_datetime_string_from_system())
+	lines.append("")
+	
+	# Player stats
+	lines.append("=== PLAYER STATS ===")
+	if PlayerData:
+		lines.append("HP: %d/%d" % [PlayerData.current_hp, PlayerData.max_hp])
+		lines.append("Energy: %d/%d" % [PlayerData.current_energy, PlayerData.max_energy])
+		lines.append("Gold: %d" % PlayerData.gold)
+		lines.append("Floors cleared: %d" % PlayerData.floors_cleared)
+	else:
+		lines.append("PlayerData not available")
+	lines.append("")
+	
+	# Skill tree
+	lines.append("=== SKILL TREE ===")
+	if PlayerData and is_instance_valid(PlayerData.active_skill_tree) and SaveManager:
+		var allocated_skills: Dictionary = SaveManager.meta_progress.allocated_skills
+		lines.append("Skill nodes: %d" % PlayerData.active_skill_tree.skill_nodes.size())
+		lines.append("Allocated skills: %d" % allocated_skills.size())
+		for skill_id in allocated_skills.keys():
+			lines.append("  - %s (x%d)" % [skill_id, allocated_skills.get(skill_id, 0)])
+	else:
+		lines.append("No active skill tree")
+	lines.append("")
+	
+	# Deck state
+	lines.append("=== DECK STATE ===")
+	if PlayerData:
+		lines.append("Master deck: %d" % PlayerData.master_deck.size())
+		if in_battle:
+			lines.append("Hand: %d" % PlayerData.current_hand.size())
+			lines.append("Draw pile: %d" % PlayerData.draw_pile.size())
+			lines.append("Discard pile: %d" % PlayerData.discard_pile.size())
+			lines.append("Exhaust pile: %d" % PlayerData.exhaust_pile.size())
+		else:
+			lines.append("Hand: %d" % PlayerData.current_hand.size())
+			lines.append("Draw pile: %d" % PlayerData.draw_pile.size())
+			lines.append("Discard pile: %d" % PlayerData.discard_pile.size())
+			lines.append("Exhaust pile: %d" % PlayerData.exhaust_pile.size())
+		
+		if in_battle:
+			var hand_names = _get_card_names(PlayerData.current_hand)
+			var draw_names = _get_card_names(PlayerData.draw_pile)
+			var discard_names = _get_card_names(PlayerData.discard_pile)
+			if not hand_names.is_empty():
+				lines.append("Hand cards: %s" % ", ".join(hand_names))
+			if not draw_names.is_empty():
+				lines.append("Draw pile cards: %s" % ", ".join(draw_names))
+			if not discard_names.is_empty():
+				lines.append("Discard pile cards: %s" % ", ".join(discard_names))
+	else:
+		lines.append("PlayerData not available")
+	lines.append("")
+	
+	# Artifacts
+	lines.append("=== ARTIFACTS ===")
+	if PlayerData and not PlayerData.artifacts.is_empty():
+		for artifact in PlayerData.artifacts:
+			if is_instance_valid(artifact):
+				lines.append("- %s (stacks: %d/%d)" % [artifact.artifact_name, artifact.current_stacks, artifact.max_stacks])
+	else:
+		lines.append("No artifacts")
+	lines.append("")
+	
+	# Map and progression
+	lines.append("=== MAP ===")
+	if GameManager and GameManager.current_map_data:
+		lines.append("Seed: %d" % GameManager.current_seed)
+		var path_count = PlayerData.path_taken.size() if PlayerData else 0
+		lines.append("Path taken: %d nodes" % path_count)
+		if PlayerData:
+			lines.append("Current floor: %d" % (PlayerData.floors_cleared + 1))
+		if PlayerData and PlayerData.get_current_node():
+			var column_index = _extract_column_index(PlayerData.get_current_node())
+			if column_index != null:
+				lines.append("Current column: %d" % column_index)
+	else:
+		lines.append("No map data available")
+	lines.append("")
+	
+	lines.append("=== META PROGRESS ===")
+	if SaveManager:
+		lines.append("Total XP: %d" % SaveManager.meta_progress.total_xp)
+		lines.append("Player level: %d" % SaveManager.meta_progress.player_level)
+		lines.append("Skill points: %d" % SaveManager.meta_progress.skill_points)
+	else:
+		lines.append("Meta progress not available")
+	lines.append("")
+	
+	# Battle and grid state
+	lines.append("=== BATTLE/GRID ===")
+	if battle_scene:
+		var grid = battle_scene.get("battle_grid_instance")
+		if not grid and battle_scene.has_node("BattleGrid"):
+			grid = battle_scene.get_node("BattleGrid")
+		if grid:
+			lines.append("Grid size: %dx%d" % [grid.grid_columns, grid.grid_rows])
+		
+		if PlayerData:
+			lines.append("Energy: %d/%d" % [PlayerData.current_energy, PlayerData.max_energy])
+		
+		var turn_number = battle_scene.get("_current_turn_number")
+		if turn_number != null:
+			lines.append("Turn: %d" % turn_number)
+		
+		var player_unit = battle_scene.get("_player_unit_node")
+		if is_instance_valid(player_unit):
+			lines.append("Player [ %s ]" % str(player_unit.grid_position))
+		
+		var enemy_units = battle_scene.get("_enemy_units")
+		if enemy_units is Array:
+			lines.append("Enemy units: %d" % enemy_units.size())
+			for unit in enemy_units:
+				if is_instance_valid(unit):
+					var enemy_name = unit.unit_data.unit_name if unit.unit_data else "Enemy"
+					lines.append("%s [%s]" % [enemy_name, str(unit.grid_position)])
+	else:
+		lines.append("No active battle scene")
+	lines.append("")
+	
+	lines.append("=== END FULL GAME STATE DUMP ===")
+	return "\n".join(lines)
+
+func _get_active_battle_scene():
+	var candidates = []
+	if GameManager and GameManager.current_scene:
+		candidates.append(GameManager.current_scene)
+	if GameManager and GameManager.scene_container:
+		for child in GameManager.scene_container.get_children():
+			if not candidates.has(child):
+				candidates.append(child)
+	if get_tree() and get_tree().current_scene:
+		var tree_scene = get_tree().current_scene
+		if tree_scene and not candidates.has(tree_scene):
+			candidates.append(tree_scene)
+	
+	for scene in candidates:
+		if not scene:
+			continue
+		if scene.get("battle_grid_instance") or scene.get("_player_unit_node") or scene.get("_enemy_units"):
+			return scene
+		if scene.has_node("BattleGrid"):
+			return scene
+	return null
+
+func _get_card_names(cards: Array) -> Array:
+	var names: Array = []
+	for card in cards:
+		if is_instance_valid(card):
+			var name = card.get("card_name")
+			if name != null:
+				names.append(String(name))
+	return names
+
+func _extract_column_index(node) -> Variant:
+	if node == null:
+		return null
+	if typeof(node) == TYPE_DICTIONARY:
+		if node.has("column"):
+			return int(node["column"]) + 1
+		if node.has("position") and node["position"] is Vector2:
+			return int(node["position"].x) + 1
+	if node.get("column") != null:
+		return int(node.get("column")) + 1
+	var pos = node.get("position")
+	if pos is Vector2:
+		return int(pos.x) + 1
+	return null
+
+func send_crash_report_to_discord(report_text: String):
+	var body = "=== CRASH REPORT ===\n" + report_text
+	_send_to_discord(CRASH_WEBHOOK_URL, "Crash Report", body, DISCORD_COLOR_ERROR, true)
+	_send_crash_log_file()
+	await get_tree().create_timer(0.25).timeout
+
+func mark_quitting_legally():
+	is_quitting_legally = true
+
+func _load_report_preference() -> bool:
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+	if err == OK and config.has_section_key("settings", "can_send_reports"):
+		report_consent_known = true
+		return bool(config.get_value("settings", "can_send_reports", true))
+	report_consent_known = false
+	return false
+
+func _save_report_preference(value: bool):
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+	if err != OK:
+		config = ConfigFile.new()
+	config.set_value("settings", "can_send_reports", value)
+	config.save("user://settings.cfg")
+
+func apply_report_consent(value: bool):
+	can_send_reports = value
+	report_consent_known = true
+	_save_report_preference(value)
+	if can_send_reports and not _pending_reports_processed:
+		_process_pending_crash_reports()
+
+func _process_pending_crash_reports():
+	if _pending_reports_processed:
+		return
+	_pending_reports_processed = true
+	var dir = DirAccess.open("user://")
+	if not dir:
+		return
+	var files = dir.get_files()
+	for file_name in files:
+		if file_name.begins_with("crash_report_") and file_name.ends_with(".txt"):
+			var path = "user://" + file_name
+			var file = FileAccess.open(path, FileAccess.READ)
+			if not file:
+				continue
+			var report_text = file.get_as_text()
+			file.close()
+			await send_crash_report_to_discord(report_text)
+			DirAccess.remove_absolute(path)
+
+func _remove_session_lock():
+	if FileAccess.file_exists(SESSION_LOCK_PATH):
+		DirAccess.remove_absolute(SESSION_LOCK_PATH)
+
+func _send_crash_log_file():
+	var path = "user://" + LOG_FILE_NAME
+	if not FileAccess.file_exists(path):
+		return
+	var file = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		return
+	var bytes: PackedByteArray
+	var size_bytes = file.get_length()
+	if size_bytes > 5 * 1024 * 1024:
+		# Fallback: ořízni na posledních 500 řádků
+		var last_lines: Array = []
+		while not file.eof_reached():
+			last_lines.append(file.get_line())
+			if last_lines.size() > 500:
+				last_lines.pop_front()
+		var trimmed_text = "\n".join(last_lines)
+		bytes = trimmed_text.to_utf8_buffer()
+	else:
+		bytes = file.get_buffer(size_bytes)
+	file.close()
+	_send_file_to_discord(CRASH_WEBHOOK_URL, LOG_FILE_NAME, bytes, "Crash Log File", "Attached game_debug_log.txt", DISCORD_COLOR_ERROR)
 
 # === HELPER FUNKCE ===
 

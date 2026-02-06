@@ -478,6 +478,8 @@ func _show_floating_text(amount: int, type: String):
 			instance.position = viewport_size * 0.5
 			
 		instance.start(text_to_display, color)
+	else:
+		instance.queue_free()
 
 func show_status_text(text_to_show: String, color_type: String):
 	var instance = FloatingTextScene.instantiate()
@@ -530,7 +532,9 @@ func show_status_text(text_to_show: String, color_type: String):
 			var viewport_size = get_viewport().get_visible_rect().size
 			instance.position = viewport_size * 0.5
 
-	instance.start(text_to_show, color)
+		instance.start(text_to_show, color)
+	else:
+		instance.queue_free()
 
 func start_turn() -> int:
 	print(TranslationHelper.tr_format("log.unit.turn_start", {"name": unit_data.get_localized_name()}))

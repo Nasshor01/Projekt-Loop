@@ -16,6 +16,7 @@ var global_ui_scene = preload("res://scenes/ui/GlobalUI.tscn")
 var event_scene = "res://scenes/events/EventScene.tscn"
 var how_to_play_scene = "res://scenes/ui/HowToPlay.tscn"
 var settings_scene = "res://scenes/ui/Settings.tscn"
+var consent_popup_scene = preload("res://scenes/ui/ConsentPopup.tscn")
 
 var current_scene: Node = null
 var current_seed: int
@@ -25,6 +26,7 @@ var has_saved_camera_state: bool = false
 var saved_camera_position: Vector2 = Vector2.ZERO
 var saved_camera_zoom: Vector2 = Vector2(1.0, 1.0)
 var global_ui_instance: CanvasLayer = null
+var consent_popup_instance: Control = null
 var last_battle_gold_reward: int = 0
 var last_run_xp_earned: int = 0
 var scene_container: Node = null
@@ -40,8 +42,12 @@ var ELITE_ARTIFACT_POOL = null
 var BOSS_ARTIFACT_POOL = null
 
 var last_battle_rewards := {}
+const SESSION_LOCK_PATH = "user://session.lock"
+var crash_recovery_dialog: ConfirmationDialog = null
 
 func _ready():
+	_setup_crash_recovery()
+
 	if has_node("/root/DebugLogger"):
 		DebugLogger.log_info("=== GAME MANAGER STARTED ===")
 	DebugLogger.log_info("=== GAME MANAGER STARTED ===")
@@ -61,7 +67,46 @@ func _ready():
 	
 	global_ui_instance = global_ui_scene.instantiate()
 	add_child(global_ui_instance)
+	_show_report_consent_if_needed()
 	go_to_main_menu()
+
+func _show_report_consent_if_needed():
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+	if err == OK and config.has_section_key("settings", "can_send_reports"):
+		return
+	if consent_popup_instance and is_instance_valid(consent_popup_instance):
+		return
+	consent_popup_instance = consent_popup_scene.instantiate()
+	add_child(consent_popup_instance)
+	consent_popup_instance.open()
+
+func _setup_crash_recovery():
+	var had_lock = FileAccess.file_exists(SESSION_LOCK_PATH)
+	if had_lock:
+		_show_crash_recovery_dialog()
+		_remove_session_lock()
+	_create_session_lock()
+
+func _create_session_lock():
+	var file = FileAccess.open(SESSION_LOCK_PATH, FileAccess.WRITE)
+	if file:
+		file.store_string(Time.get_datetime_string_from_system())
+
+func _remove_session_lock():
+	if FileAccess.file_exists(SESSION_LOCK_PATH):
+		DirAccess.remove_absolute(SESSION_LOCK_PATH)
+
+func _show_crash_recovery_dialog():
+	crash_recovery_dialog = ConfirmationDialog.new()
+	crash_recovery_dialog.dialog_text = "Vypadá to, že hra minule spadla. Chceš odeslat diagnostická data vývojáři?"
+	crash_recovery_dialog.confirmed.connect(_on_crash_recovery_confirmed)
+	get_tree().root.add_child(crash_recovery_dialog)
+	crash_recovery_dialog.popup_centered()
+
+func _on_crash_recovery_confirmed():
+	if has_node("/root/DebugLogger"):
+		DebugLogger.log_critical("AUTOMATIC_CRASH_REPORT", "SYSTEM")
 
 func start_new_run(rng_seed = null):
 	SaveManager.delete_saved_run()
@@ -85,6 +130,10 @@ func start_new_run(rng_seed = null):
 	DebugLogger.log_full_game_state()
 	
 	_change_scene(map_scene)
+
+func _notification(what):
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		_remove_session_lock()
 
 func start_new_game_plus(rng_seed = null):
 	if rng_seed == null:
@@ -417,6 +466,8 @@ func _on_popup_back_to_char_select():
 
 func _on_popup_save_and_quit():
 	SaveManager.save_run(PlayerData)
+	if has_node("/root/DebugLogger"):
+		DebugLogger.mark_quitting_legally()
 	get_tree().quit()
 
 func _on_popup_back_to_menu():

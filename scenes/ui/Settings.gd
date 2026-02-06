@@ -3,6 +3,7 @@ extends CanvasLayer
 @onready var title_label: Label = $Panel/VBoxContainer/TitleLabel
 @onready var language_label: Label = $Panel/VBoxContainer/LanguageSection/LanguageLabel
 @onready var language_option: OptionButton = %LanguageOptionButton
+@onready var reports_checkbox: CheckBox = %ReportsCheckBox
 @onready var close_button: Button = $Panel/VBoxContainer/CloseButton
 
 var current_locale: String = "en"
@@ -10,9 +11,11 @@ var current_locale: String = "en"
 func _ready():
 	close_button.pressed.connect(_on_close_pressed)
 	language_option.item_selected.connect(_on_language_selected)
+	reports_checkbox.toggled.connect(_on_reports_toggled)
 	
 	_setup_language_options()
 	_load_current_language()
+	_load_report_preference()
 	_update_ui_texts()
 
 func _setup_language_options():
@@ -76,6 +79,9 @@ func _update_ui_texts():
 		language_label.text = tr("ui.settings.language")
 	if close_button:
 		close_button.text = tr("ui.settings.close")
+	if reports_checkbox:
+		reports_checkbox.text = "Odesílat hlášení o pádu"
+		reports_checkbox.tooltip_text = "Anonymní technická data nám pomáhají najít a opravit chyby v hře."
 
 func _update_main_menu_if_visible():
 	"""Aktualizuje MainMenu texty, pokud je viditelný"""
@@ -93,6 +99,30 @@ func _on_close_pressed():
 func show_settings():
 	show()
 	_load_current_language()
+	_load_report_preference()
+
+func _on_reports_toggled(value: bool):
+	if has_node("/root/DebugLogger"):
+		DebugLogger.apply_report_consent(value)
+	else:
+		_save_report_preference(value)
+
+func _load_report_preference():
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+	var value = true
+	if err == OK and config.has_section_key("settings", "can_send_reports"):
+		value = bool(config.get_value("settings", "can_send_reports", true))
+	if reports_checkbox:
+		reports_checkbox.button_pressed = value
+
+func _save_report_preference(value: bool):
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+	if err != OK:
+		config = ConfigFile.new()
+	config.set_value("settings", "can_send_reports", value)
+	config.save("user://settings.cfg")
 
 func hide_settings():
 	hide()

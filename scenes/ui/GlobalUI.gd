@@ -9,6 +9,7 @@ extends CanvasLayer
 @onready var menu_button = $MainPanel/MarginContainer/MainLayout/RightSection/MenuButton
 @onready var deck_viewer = $DeckViewer
 @onready var popup_menu = %PopupMenu
+@onready var feedback_panel = %PlayerFeedback
 
 func _ready():
 	# Připojení k signálům z PlayerData pro aktualizaci UI
@@ -29,6 +30,7 @@ func _ready():
 	popup_menu.back_to_char_select_pressed.connect(_on_popup_back_to_char_select_pressed)
 	popup_menu.save_and_quit_pressed.connect(_on_popup_save_and_quit_pressed)
 	popup_menu.back_to_menu_pressed.connect(_on_popup_back_to_menu_pressed)
+	popup_menu.feedback_pressed.connect(_on_popup_feedback_pressed)
 
 	# Prvotní nastavení všech hodnot v UI
 	_update_ui_texts()
@@ -108,3 +110,7 @@ func _on_popup_save_and_quit_pressed():
 func _on_popup_back_to_menu_pressed():
 	get_tree().paused = false
 	GameManager._on_popup_back_to_menu()
+
+func _on_popup_feedback_pressed():
+	if feedback_panel:
+		feedback_panel.open()

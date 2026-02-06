@@ -17,7 +17,11 @@ func _ready():
 	load_run_button.pressed.connect(_on_load_run_button_pressed)
 	how_to_play_button.pressed.connect(GameManager.go_to_how_to_play)
 	settings_button.pressed.connect(GameManager.go_to_settings)
-	exit_button.pressed.connect(func(): get_tree().quit())
+	exit_button.pressed.connect(func():
+		if has_node("/root/DebugLogger"):
+			DebugLogger.mark_quitting_legally()
+		get_tree().quit()
+	)
 	
 	_update_load_button_state()
 	_update_ui_texts()
