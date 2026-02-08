@@ -17,9 +17,13 @@ const ArtifactChoiceUIScene = preload("res://scenes/ui/ArtifactChoiceUI.tscn")
 @onready var artifact_container: HBoxContainer = $VBoxContainer/ArtifactContainer
 @onready var skip_button: Button = $VBoxContainer/SkipButton
 @onready var card_tooltip: CardTooltip = $CanvasLayer/CardTooltip
+@onready var tutorial_hint_label: Label = $VBoxContainer/TutorialHintLabel
+@onready var tutorial_card_added_label: Label = $VBoxContainer/TutorialCardAddedLabel
 
 # Tooltip management
 var _current_tooltip_card_data: CardData = null
+var _tutorial_return_to_menu := false
+var _tutorial_hint_text := ""
 
 func _ready():
 	# Jen inicializace, ŽÁDNÁ logika pro UI
@@ -34,6 +38,8 @@ func setup_ui():
 	print("DEBUG: card_choices.size() = ", card_choices.size())
 	print("DEBUG: artifact_rewards.size() = ", artifact_rewards.size())
 	
+	_apply_tutorial_overrides()
+	
 	# 1. Zlato
 	PlayerData.add_gold(gold_reward)
 	if gold_reward > 0:
@@ -45,10 +51,19 @@ func setup_ui():
 	# 2. Karty
 	if not card_choices.is_empty():
 		title_label.text = tr("ui.reward.choose_card")
+		card_container.alignment = BoxContainer.ALIGNMENT_CENTER
+		card_container.add_theme_constant_override("separation", 50)
+		if tutorial_card_added_label:
+			tutorial_card_added_label.text = tr("ui.reward.tutorial_card_added")
 		for card_data in card_choices:
 			var card_ui = CardUIScene.instantiate()
 			card_container.add_child(card_ui)
 			card_ui.load_card(card_data)
+			if card_ui is CardUI:
+				card_ui.is_draggable = false
+				card_ui.custom_minimum_size = Vector2(200, 300)
+				card_ui.pivot_offset = card_ui.custom_minimum_size * 0.5
+				call_deferred("_sync_reward_card_layout", card_ui)
 			card_ui.gui_input.connect(_on_card_gui_input.bind(card_data))
 	else:
 		card_container.visible = false
@@ -72,14 +87,14 @@ func setup_ui():
 	# TEPRVE NYNÍ nastavujeme tlačítko, když už máme správné hodnoty
 	if card_choices.is_empty() and artifact_rewards.is_empty():
 		skip_button.text = tr("ui.common.continue")
-		skip_button.pressed.connect(GameManager.reward_chosen)
+		skip_button.pressed.connect(_finish_reward)
 	# Pokud jsou jen artefakty na výběr (např. po bossovi)
 	elif card_choices.is_empty() and not artifact_rewards.is_empty():
 		skip_button.visible = false # Po bossovi si musíš vybrat
 	# Standardní situace s výběrem karty
 	else:
 		skip_button.text = tr("ui.reward.skip_card")
-		skip_button.pressed.connect(GameManager.reward_chosen)
+		skip_button.pressed.connect(_finish_reward)
 
 func _on_card_gui_input(event: InputEvent, card_to_add: CardData):
 	if event is InputEventMouseButton:
@@ -96,12 +111,15 @@ func _on_card_gui_input(event: InputEvent, card_to_add: CardData):
 			
 			# Pokud nejsou na výběr artefakty, rovnou končíme
 			if artifact_container.get_child_count() == 0:
-				GameManager.reward_chosen()
+				if _tutorial_return_to_menu:
+					_show_tutorial_card_added()
+					await get_tree().create_timer(0.8).timeout
+				_finish_reward()
 			# Pokud ano, změníme text tlačítka na "Pokračovat"
 			else:
 				skip_button.text = tr("ui.common.continue")
 				skip_button.disabled = false
-				skip_button.pressed.connect(GameManager.reward_chosen)
+				skip_button.pressed.connect(_finish_reward)
 		elif event.button_index == MOUSE_BUTTON_RIGHT and event.is_pressed():
 			# Pravý klik - toggle tooltip
 			_on_card_right_clicked(card_to_add)
@@ -115,7 +133,7 @@ func _on_artifact_selected(artifact_to_add: ArtifactsData):
 			child.modulate = Color(0.5, 0.5, 0.5)
 	skip_button.disabled = true
 	# Po výběru artefaktu rovnou jdeme na mapu
-	GameManager.reward_chosen()
+	_finish_reward()
 
 func _on_card_right_clicked(card_data: CardData):
 	"""Toggle tooltip při pravém kliknutí na kartu"""
@@ -157,3 +175,31 @@ func _show_card_tooltip():
 		tooltip_pos.y = 10
 	
 	card_tooltip.show_tooltip(_current_tooltip_card_data, tooltip_pos)
+
+func _apply_tutorial_overrides():
+	if not Engine.is_editor_hint() and has_node("/root/GameManager"):
+		var rewards = GameManager.last_battle_rewards
+		if rewards.has("tutorial_return_to_menu"):
+			_tutorial_return_to_menu = bool(rewards.get("tutorial_return_to_menu", false))
+		if rewards.has("tutorial_hint_text"):
+			_tutorial_hint_text = str(rewards.get("tutorial_hint_text", ""))
+	
+	if is_instance_valid(tutorial_hint_label) and _tutorial_hint_text != "":
+		tutorial_hint_label.visible = true
+		tutorial_hint_label.text = _tutorial_hint_text
+
+func _show_tutorial_card_added():
+	if is_instance_valid(tutorial_card_added_label):
+		tutorial_card_added_label.visible = true
+
+func _sync_reward_card_layout(card_ui: CardUI):
+	if not is_instance_valid(card_ui):
+		return
+	card_ui.set_target_position(card_ui.position)
+
+func _finish_reward():
+	if _tutorial_return_to_menu:
+		SaveManager.set_tutorial_completed(true)
+		GameManager.go_to_main_menu()
+	else:
+		GameManager.reward_chosen()

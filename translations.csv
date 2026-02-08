@@ -1,10 +1,18 @@
 keys,en,cs
 "game.title","Projekt Loop","Projekt Loop"
 "ui.main_menu.new_game","New Game","Nová hra"
+"ui.main_menu.tutorial","Tutorial","Tutoriál"
 "ui.main_menu.load_run","Load Run","Načíst run"
-"ui.main_menu.how_to_play","How to Play","Jak hrát"
 "ui.main_menu.settings","Settings","Nastavení"
 "ui.main_menu.exit","Exit","Ukončit"
+"ui.tutorial.title","Tutorial","Tutoriál"
+"ui.tutorial.description","Complete the tutorial to unlock New Game.","Dokonči tutoriál pro odemčení Nové hry."
+"ui.tutorial.complete","Complete Tutorial","Dokončit tutoriál"
+"ui.tutorial.placement_hint","Welcome! First, click on the highlighted tile to deploy your hero.","Vítej! Nejprve klikni na zvýrazněný hex pro umístění svého hrdiny."
+"ui.tutorial.camera_hint","Rozhlédni se: WASD pro pohyb, Kolečko pro Zoom, Držení kolečka pro Rotaci.","Rozhlédni se: WASD pro pohyb, Kolečko pro Zoom, Držení kolečka pro Rotaci."
+"ui.tutorial.move_hint","Select your character, then click on the green tiles to move.","Přibliž se k nepříteli a ukonči tah (End Turn). Pamatuj, že i nepřítel se hýbe!"
+"ui.tutorial.combat_loop_hint","Play the 'Quick Strike' card to defeat the enemy.","Využij svou energii na útok nebo pohyb. Pak znovu ukonči tah."
+"ui.tutorial.reward_hint","Po každém vítězství získáš kartu. Na mapě si pak vybíráš svou další cestu k bossovi.","Po každém vítězství získáš kartu. Na mapě si pak vybíráš svou další cestu k bossovi."
 "ui.settings.title","Settings","Nastavení"
 "ui.settings.language","Language / Jazyk:","Jazyk / Language:"
 "ui.settings.close","Close","Zavřít"
@@ -90,8 +98,6 @@ keys,en,cs
 "skill.aura_mastery.desc","All auras are 50% stronger.","Všechny aury jsou o 50% silnější."
 "skill.avatar_of_light.name","Avatar of Light","Avatár světla"
 "skill.avatar_of_light.desc","At the start of combat, gain block equal to 2x your max health. Requires all other nodes unlocked.","Na začátku souboje získej blok rovný 2x tvému maximálnímu zdraví. Vyžaduje všechny ostatní uzly odemčené."
-"ui.how_to_play.title","How to Play","Jak hrát"
-"ui.how_to_play.close","Close","Zavřít"
 "ui.settings.title","Settings","Nastavení"
 "ui.settings.language","Language","Jazyk"
 "ui.settings.close","Close","Zavřít"
@@ -574,314 +580,23 @@ keys,en,cs
 "card.curse_pain.desc","Unplayable. At the end of your turn, you take 2 damage.","Nehratelná. Na konci tvého tahu ti způsobí 2 poškození."
 "card.curse_weakness","Curse: Weakness","Prokletí: Slabost"
 "card.curse_weakness.desc","Exhausts. When drawn, lose 1 energy.","Vyřadí se. Při líznutí ztratíš 1 energii."
-"ui.how_to_play.content","[center][b][font_size=24]PROJECT LOOP[/font_size][/b][/center]
-
-[center]Roguelike card game with tactical combat[/center]
-
-[font_size=20][b]🎯 GAME GOAL[/b][/font_size]
-Traverse the map, defeat enemies and reach the boss. Every run is different thanks to a procedurally generated map and random rewards.
-
-[font_size=20][b]⚔️ COMBAT SYSTEM[/b][/font_size]
-• [b]Initiative:[/b] Units with higher initiative act first
-• [b]Turns:[/b] Player and enemies alternate according to initiative
-• [b]Movement:[/b] Each unit has limited movement per turn
-• [b]Attack:[/b] Basic attack deals damage based on unit strength
-
-[font_size=20][b]🃏 CARDS AND ENERGY[/b][/font_size]
-• [b]Energy:[/b] Each card costs energy (shown in the top-left corner of the card)
-• [b]Refresh:[/b] Energy refreshes at the start of each turn
-• [b]Deck:[/b] You have a deck of cards you draw from at the start of your turn
-• [b]Hand:[/b] You can play cards from your hand during your turn
-• [b]Discard:[/b] Played cards go to the discard pile
-• [b]Exhaust:[/b] Some cards exhaust after use (they are removed from the deck)
-
-[font_size=20][b]🛡️ CORE MECHANICS[/b][/font_size]
-
-[b]DAMAGE:[/b]
-• Damage reduces HP
-• If HP drops to 0, the unit dies
-• You lose if your HP drops to 0
-
-[b]BLOCK:[/b]
-• Block absorbs damage before it is subtracted from HP
-• Block usually resets at end of turn (except permanent block)
-• If you have 10 block and take 15 damage, you lose 10 block and 5 HP
-
-[b]HEALING:[/b]
-• Healing restores HP
-• You cannot heal above max HP
-• Some cards and effects heal automatically
-
-[b]STATUS EFFECTS:[/b]
-• [b]Regeneration:[/b] Heals at the end of each turn
-• [b]Burning:[/b] Deals damage at the end of each turn
-• [b]Vulnerable:[/b] Increases damage taken
-• [b]Chilled:[/b] Reduces movement
-• [b]Frozen:[/b] Prevents movement and playing cards
-• [b]Aura of Devotion:[/b] Grants block at the start of each turn
-
-[font_size=20][b]👹 ENEMY TYPES[/b][/font_size]
-
-Enemies have different types that affect damage effectiveness:
-
-[b]UNDEAD:[/b]
-• Skeletons, zombies, specters
-• [color=yellow]✨ Holy damage is +50% effective against them![/color]
-
-[b]DEMON:[/b]
-• Demons and infernal beings
-• [color=yellow]✨ Holy damage is +50% effective against them![/color]
-
-[b]SPIRIT:[/b]
-• Spirits and wraiths
-• [color=yellow]✨ Holy damage is +25% effective against them![/color]
-
-[b]HUMAN:[/b]
-• Human beings, bandits
-
-[b]BEAST:[/b]
-• Wild animals, beasts
-
-[b]ELEMENTAL:[/b]
-• Fire and ice beings
-
-[b]CONSTRUCT:[/b]
-• Golems, mechanical beings
-
-[b]DRAGON:[/b]
-• Dragons and draconic beings
-
-[font_size=20][b]⚡ DAMAGE TYPES[/b][/font_size]
-
-[b]NORMAL:[/b]
-• Standard physical damage
-• Works the same against all types
-
-[b]HOLY:[/b]
-• Holy damage from Paladin cards
-• [color=yellow]✨ +50% damage against UNDEAD and DEMON[/color]
-• [color=yellow]✨ +25% damage against SPIRIT[/color]
-• Effective damage is shown in gold with a ✨ symbol
-
-[b]Other types (to be added):[/b]
-• FIRE
-• ICE
-• LIGHTNING
-• POISON
-• ARCANE
-
-[font_size=20][b]🎴 CARD TYPES[/b][/font_size]
-
-[b]ATTACK:[/b]
-• Deal damage to enemies
-
-[b]SPELL:[/b]
-• Magical effects, often holy damage
-
-[b]BUFF:[/b]
-• Grant positive effects (block, healing, statuses)
-
-[b]DEBUFF:[/b]
-• Apply negative effects to enemies
-
-[b]HEAL:[/b]
-• Restore HP
-
-[b]MOVE:[/b]
-• Enable extra movement
-
-[b]UTILITY:[/b]
-• Various utility effects
-
-[font_size=20][b]💎 CARD RARITY[/b][/font_size]
-
-Cards have different rarities that determine their power and rarity:
-• [b]COMMON:[/b] Basic cards, white color
-• [b]UNCOMMON:[/b] Green color
-• [b]RARE:[/b] Blue color
-• [b]EPIC:[/b] Purple color
-• [b]LEGENDARY:[/b] Gold color
-• [b]BASIC:[/b] Starter cards, gray color
-
-[font_size=20][b]🎯 TACTICAL TIPS[/b][/font_size]
-
-• [b]Block is important:[/b] Protect yourself with block
-• [b]Effective damage:[/b] Use holy cards against undead and demons
-• [b]Energy:[/b] Plan how you use energy efficiently
-• [b]Movement:[/b] Move strategically to avoid danger
-• [b]Status effects:[/b] Combine different statuses for maximum effect
-• [b]Deck:[/b] Build a deck that works together
-
-[font_size=20][b]🗺️ MAP AND PROGRESSION[/b][/font_size]
-
-• [b]Nodes:[/b] Each node on the map is a different type (battle, shop, reward, boss)
-• [b]Rewards:[/b] After victory you gain cards, artifacts, or gold
-• [b]Shop:[/b] Buy cards and artifacts for gold
-• [b]Skill Tree:[/b] Improve your hero between runs
-• [b]Boss:[/b] A powerful boss awaits at the end of the map
-
-[font_size=20][b]💡 MORE INFORMATION[/b][/font_size]
-
-• Cards automatically generate compact descriptions from effects
-• Conditional effects are shown in card descriptions
-• Critical hits deal double damage
-• Some cards have a per-turn use limit
-• Permanent block carries over between turns
-
-[center][i]Good luck in battle![/i][/center]","[center][b][font_size=24]PROJEKT LOOP[/font_size][/b][/center]
-
-[center]Roguelike karetní hra s taktickým bojem[/center]
-
-[font_size=20][b]🎯 CÍL HRY[/b][/font_size]
-Projdi mapu, poraz nepřátele a dostaň se k bossovi. Každý run je jiný díky procedurálně generované mapě a náhodným odměnám.
-
-[font_size=20][b]⚔️ SOUBOJOVÝ SYSTÉM[/b][/font_size]
-• [b]Iniciativa:[/b] Jednotky s vyšší iniciativou útočí dříve
-• [b]Tahy:[/b] Hráč a nepřátelé se střídají podle iniciativy
-• [b]Pohyb:[/b] Každá jednotka má omezený pohyb na tah
-• [b]Útok:[/b] Základní útok způsobí poškození podle síly jednotky
-
-[font_size=20][b]🃏 KARTY A ENERGIE[/b][/font_size]
-• [b]Energie:[/b] Každá karta stojí energii (zobrazuje se v levém horním rohu karty)
-• [b]Obnova:[/b] Energie se obnovuje na začátku každého tahu
-• [b]Balíček:[/b] Máš balíček karet, ze kterého lízneš karty na začátku tahu
-• [b]Ruka:[/b] Karty v ruce můžeš zahrát během svého tahu
-• [b]Odhozené:[/b] Zahrané karty jdou do odhozu
-• [b]Vyčerpání:[/b] Některé karty se po použití vyčerpají (zmizí z balíčku)
-
-[font_size=20][b]🛡️ ZÁKLADNÍ MECHANIKY[/b][/font_size]
-
-[b]POŠKOZENÍ:[/b]
-• Poškození snižuje životy (HP)
-• Pokud HP klesne na 0, jednotka umře
-• Hráč prohraje, pokud jeho HP klesne na 0
-
-[b]BLOK:[/b]
-• Blok absorbuje poškození před tím, než se odečte z HP
-• Blok se obvykle resetuje na konci tahu (kromě permanentního bloku)
-• Pokud máš 10 bloku a dostaneš 15 poškození, ztratíš 10 bloku a 5 HP
-
-[b]LÉČENÍ:[/b]
-• Léčení obnovuje HP
-• Nemůžeš se vyléčit nad maximální HP
-• Některé karty a efekty léčí automaticky
-
-[b]STATUS EFEKTY:[/b]
-• [b]Regenerace:[/b] Léčí na konci každého tahu
-• [b]Hoření:[/b] Způsobuje poškození na konci tahu
-• [b]Zranitelný:[/b] Zvyšuje přijímané poškození
-• [b]Prochlazený:[/b] Snižuje pohyb
-• [b]Zmražený:[/b] Blokuje pohyb a hraní karet
-• [b]Aura oddanosti:[/b] Dává blok na začátku každého tahu
-
-[font_size=20][b]👹 TYPY NEPŘÁTEL[/b][/font_size]
-
-Nepřátelé mají různé typy, které ovlivňují efektivitu poškození:
-
-[b]UNDEAD (Nemrtví):[/b]
-• Skeletoni, zombie, přízraky
-• [color=yellow]✨ Svaté poškození je proti nim +50% efektivní![/color]
-
-[b]DEMON (Démoni):[/b]
-• Démoni a pekelné bytosti
-• [color=yellow]✨ Svaté poškození je proti nim +50% efektivní![/color]
-
-[b]SPIRIT (Duchové):[/b]
-• Duchové a přízraky
-• [color=yellow]✨ Svaté poškození je proti nim +25% efektivní![/color]
-
-[b]HUMAN (Lidé):[/b]
-• Lidské bytosti, bandité
-
-[b]BEAST (Zvířata):[/b]
-• Divoká zvířata, bestie
-
-[b]ELEMENTAL (Elementální):[/b]
-• Ohnivé, ledové bytosti
-
-[b]CONSTRUCT (Mechanické):[/b]
-• Golemové, mechanické bytosti
-
-[b]DRAGON (Draci):[/b]
-• Draci a dračí bytosti
-
-[font_size=20][b]⚡ TYPY POŠKOZENÍ[/b][/font_size]
-
-[b]NORMAL (Běžné):[/b]
-• Standardní fyzické poškození
-• Funguje stejně proti všem typům
-
-[b]HOLY (Svaté):[/b]
-• Svaté poškození z Paladin karet
-• [color=yellow]✨ +50% poškození proti UNDEAD a DEMON[/color]
-• [color=yellow]✨ +25% poškození proti SPIRIT[/color]
-• Efektivní poškození se zobrazuje zlatou barvou s ✨ symbolem
-
-[b]Další typy (budou přidány):[/b]
-• FIRE (Ohnivé)
-• ICE (Ledové)
-• LIGHTNING (Bleskové)
-• POISON (Jedovaté)
-• ARCANE (Tajemné)
-
-[font_size=20][b]🎴 TYPY KARET[/b][/font_size]
-
-[b]ATTACK (Útok):[/b]
-• Způsobují poškození nepřátelům
-
-[b]SPELL (Kouzlo):[/b]
-• Magické efekty, často svaté poškození
-
-[b]BUFF (Posílení):[/b]
-• Dávají pozitivní efekty (blok, léčení, statusy)
-
-[b]DEBUFF (Oslabení):[/b]
-• Dávají negativní efekty nepřátelům
-
-[b]HEAL (Léčení):[/b]
-• Léčí HP
-
-[b]MOVE (Pohyb):[/b]
-• Umožňují další pohyb
-
-[b]UTILITY (Užitkové):[/b]
-• Různé pomocné efekty
-
-[font_size=20][b]💎 VZÁCNOST KARET[/b][/font_size]
-
-Karty mají různé rarity, které určují jejich sílu a vzácnost:
-• [b]COMMON (Běžné):[/b] Základní karty, bílá barva
-• [b]UNCOMMON (Neobvyklé):[/b] Zelená barva
-• [b]RARE (Vzácné):[/b] Modrá barva
-• [b]EPIC (Epické):[/b] Fialová barva
-• [b]LEGENDARY (Legendární):[/b] Zlatá barva
-• [b]BASIC (Základní):[/b] Startovní karty, šedá barva
-
-[font_size=20][b]🎯 TAKTICKÉ TIPY[/b][/font_size]
-
-• [b]Blok je důležitý:[/b] Chraň se před poškozením pomocí bloku
-• [b]Efektivní poškození:[/b] Používej svaté karty proti nemrtvým a démonům
-• [b]Energie:[/b] Plánuj, jak využiješ energii efektivně
-• [b]Pohyb:[/b] Strategicky se pohybuj, abys se vyhnul nebezpečí
-• [b]Status efekty:[/b] Kombinuj různé statusy pro maximální efekt
-• [b]Balíček:[/b] Stav si balíček, který se doplňuje
-
-[font_size=20][b]🗺️ MAPA A PROGRESE[/b][/font_size]
-
-• [b]Uzly:[/b] Každý uzel na mapě je jiný typ (souboj, obchod, odměna, boss)
-• [b]Odměny:[/b] Po vítězství získáš karty, artefakty nebo zlato
-• [b]Obchod:[/b] Kupuj karty a artefakty za zlato
-• [b]Skill Tree:[/b] Vylepšuj svého hrdinu mezi runy
-• [b]Boss:[/b] Na konci mapy čeká silný boss
-
-[font_size=20][b]💡 DALŠÍ INFORMACE[/b][/font_size]
-
-• Karty se automaticky generují stručné popisy z efektů
-• Podmíněné efekty se zobrazují v popisech karet
-• Kritické zásahy zdvojnásobují poškození
-• Některé karty mají limit použití za tah
-• Permanentní blok se přenáší mezi tahy
-
-[center][i]Hodně štěstí v boji![/i][/center]"
-"ui.how_to_play.title","How to Play","Jak hrát"
-"ui.how_to_play.close","Close","Zavřít"
+"ui.settings.reports_checkbox","Send crash reports","Odesílat hlášení o pádu"
+"ui.settings.reports_tooltip","Anonymous technical data helps us find and fix bugs in the game.","Anonymní technická data nám pomáhají najít a opravit chyby v hře."
+"ui.reward.tutorial_card_added","You just added this card to your deck!","Tuto kartu jsi právě přidal do svého balíčku!"
+"ui.shop.title","Merchant","Obchodník"
+"ui.shop.artifact.new","New","Nový"
+"log.shop.card_removed","Card '{name}' was removed from the deck.","Karta '{name}' byla odstraněna z balíčku."
+"log.shop.removal_error","Error: Not enough gold to remove card.","Chyba: Nedostatek zlata při pokusu o odstranění."
+"ui.menu.feedback","Feedback","Feedback"
+"ui.feedback.title","Feedback","Feedback"
+"ui.feedback.placeholder","Describe the problem or idea...","Popiš problém nebo nápad..."
+"ui.feedback.cancel","Cancel","Zrušit"
+"ui.feedback.submit","Submit","Odeslat"
+"ui.consent.title","Sending Reports","Odesílání reportů"
+"ui.consent.message","Do you want to allow sending crash reports and diagnostics to the developer?","Chceš povolit odesílání crash reportů a diagnostiky vývojáři?"
+"ui.consent.no","No","Ne"
+"ui.consent.yes","Yes","Ano"
+"ui.treasure.title","You found a treasure! Choose an artifact.","Našel jsi poklad! Vyber si artefakt."
+"ui.deck_viewer.title","Deck","Balíček"
+"ui.skill.tier","Tier {value}","Úroveň {value}"
+"ui.skill.branch","Branch {value}","Větev {value}"

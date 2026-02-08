@@ -34,7 +34,10 @@ func show_cards(cards: Array[CardData], card_scale: Vector2 = Vector2(1.0, 1.0))
 		
 		# Použijeme metodu 'load_card' z tvého skriptu
 		card_instance.load_card(card_data) 
-		card_instance.scale = card_scale
+		if card_instance is CardUI:
+			card_instance.set_target_scale(card_scale)
+		else:
+			card_instance.scale = card_scale
 		
 		# 3. Připoj signál pro kliknutí k NOVÉMU handleru
 		card_instance.gui_input.connect(_on_card_selected_input.bind(card_data))

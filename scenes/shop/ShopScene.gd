@@ -19,6 +19,7 @@ const ARTIFACT_PRICE = 200
 const CARD_REMOVAL_COST = 75
 
 @onready var gold_label: Label = $CanvasLayer/MainContainer/VBoxContainer/Header/GoldDisplay/HBoxContainer/GoldLabel
+@onready var title_label: Label = $CanvasLayer/MainContainer/VBoxContainer/Header/TitleLabel
 @onready var items_grid: GridContainer = $CanvasLayer/MainContainer/VBoxContainer/ItemsPanel/ScrollContainer/ItemsGrid
 @onready var remove_card_button: Button = $CanvasLayer/MainContainer/VBoxContainer/ServicesPanel/HBoxContainer/RemoveCardButton
 @onready var leave_button: Button = $CanvasLayer/MainContainer/VBoxContainer/LeaveButton
@@ -41,6 +42,8 @@ func _ready():
 	_update_gold_label(PlayerData.gold)
 	_generate_shop_inventory()
 func _update_ui_texts():
+	if title_label:
+		title_label.text = tr("ui.shop.title")
 	if remove_card_button:
 		remove_card_button.text = TranslationHelper.tr_format("ui.shop.remove_card", {"value": CARD_REMOVAL_COST})
 	if leave_button:
@@ -100,7 +103,7 @@ func _generate_shop_inventory():
 			
 			# Zobrazíme stack info v názvu
 			var stack_info = PlayerData.get_artifact_stack_info(artifact_to_sell.artifact_name)
-			if stack_info != "Nový":
+			if stack_info != tr("ui.shop.artifact.new"):
 				artifact_to_sell = artifact_to_sell.duplicate()  # Duplikujeme aby jsme mohli změnit název
 				artifact_to_sell.artifact_name += " [%s]" % stack_info
 			
@@ -226,7 +229,7 @@ func _on_card_in_viewer_clicked(event: InputEvent, card_data: CardData):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
 		if PlayerData.spend_gold(CARD_REMOVAL_COST):
 			PlayerData.master_deck.erase(card_data)
-			print("Karta '%s' byla odstraněna z balíčku." % card_data.card_name)
+			print(TranslationHelper.tr_format("log.shop.card_removed", {"name": card_data.card_name}))
 			card_pile_viewer.hide()
 		else:
-			print("Chyba: Nedostatek zlata při pokusu o odstranění.")
+			print(tr("log.shop.removal_error"))

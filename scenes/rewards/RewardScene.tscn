@@ -34,6 +34,22 @@ text = "Odměny"
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="TutorialHintLabel" type="Label" parent="VBoxContainer"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Tutorial hint"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="TutorialCardAddedLabel" type="Label" parent="VBoxContainer"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Tuto kartu jsi právě přidal do svého balíčku!"
+horizontal_alignment = 1
+autowrap_mode = 3
+
 [node name="GoldRewardDisplay" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
 alignment = 1

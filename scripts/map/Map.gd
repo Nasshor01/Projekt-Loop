@@ -64,9 +64,23 @@ func _ready():
 	generate_seed_button.pressed.connect(_on_generate_custom_seed_pressed)
 	random_seed_button.pressed.connect(_on_generate_random_seed_pressed)
 	dev_console.command_submitted.connect(_on_dev_command)
+	_apply_seed_controls_visibility()
 	_update_ui_texts()
 	initialize_map()
 	_setup_legend()
+
+func _apply_seed_controls_visibility():
+	var show_seed_controls = OS.is_debug_build()
+	if is_instance_valid(seed_label):
+		seed_label.visible = true
+	if has_node("CanvasLayer/Panel"):
+		$CanvasLayer/Panel.visible = show_seed_controls
+	if is_instance_valid(seed_line_edit):
+		seed_line_edit.visible = show_seed_controls
+	if is_instance_valid(generate_seed_button):
+		generate_seed_button.visible = show_seed_controls
+	if is_instance_valid(random_seed_button):
+		random_seed_button.visible = show_seed_controls
 
 func _update_ui_texts():
 	if generate_seed_button:

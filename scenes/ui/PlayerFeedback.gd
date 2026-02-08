@@ -1,5 +1,6 @@
 extends Control
 
+@onready var title_label: Label = %TitleLabel
 @onready var feedback_text: TextEdit = %FeedbackText
 @onready var submit_button: Button = %SubmitButton
 @onready var cancel_button: Button = %CancelButton
@@ -9,6 +10,17 @@ func _ready():
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	submit_button.pressed.connect(_on_submit_pressed)
 	cancel_button.pressed.connect(_on_cancel_pressed)
+	_update_ui_texts()
+
+func _update_ui_texts():
+	if title_label:
+		title_label.text = tr("ui.feedback.title")
+	if feedback_text:
+		feedback_text.placeholder_text = tr("ui.feedback.placeholder")
+	if cancel_button:
+		cancel_button.text = tr("ui.feedback.cancel")
+	if submit_button:
+		submit_button.text = tr("ui.feedback.submit")
 
 func open():
 	show()

@@ -25,6 +25,7 @@ extends Node3D
 @export var player_spawn_highlight_color: Color = Color(0.2, 0.9, 0.9, 0.4)
 @export var movement_warning_color: Color = Color(0.9, 0.8, 0.1, 0.4)
 @export var danger_zone_color: Color = Color(0.8, 0.2, 0.2, 0.35)
+@export var enemy_range_highlight_color: Color = Color(0.9, 0.4, 0.4, 0.25)
 
 @onready var units_container: Node3D = $UnitsContainer
 var _terrain_container: Node3D
@@ -43,7 +44,10 @@ var _aoe_cells: Array[Vector2i] = []
 var _player_spawn_cells: Array[Vector2i] = []
 var _warning_cells: Array[Vector2i] = []
 var _danger_cells: Array[Vector2i] = []
+var _enemy_range_cells: Array[Vector2i] = []
 var _targetable_cells_color: Color = attack_highlight_color
+var _spawn_highlight_nodes: Array[MeshInstance3D] = []
+var _spawn_pulse_active: bool = false
 
 func _ready():
 	_terrain_container = Node3D.new()
@@ -159,10 +163,11 @@ func get_all_objects_on_grid() -> Array:
 func update_visual_highlights():
 	for child in _highlights_container.get_children():
 		child.queue_free()
+	_spawn_highlight_nodes.clear()
 	
 	if not cursor_mesh: return
 
-	var create_cursor = func(cell: Vector2i, color: Color):
+	var create_cursor = func(cell: Vector2i, color: Color, is_spawn: bool = false):
 		if not is_cell_active(cell): return
 		var mesh_inst = MeshInstance3D.new()
 		mesh_inst.mesh = cursor_mesh
@@ -187,17 +192,44 @@ func update_visual_highlights():
 		_highlights_container.add_child(mesh_inst)
 		# Pozice 0.02 je těsně nad podlahou, aby to neproblikávalo (Z-fighting)
 		mesh_inst.position = Vector3(cell.x * cell_size_3d, 0.02, cell.y * cell_size_3d)
+		
+		if is_spawn:
+			_spawn_highlight_nodes.append(mesh_inst)
+			if _spawn_pulse_active:
+				_start_spawn_pulse_on_mesh(mesh_inst)
 
 	# Vykreslení všech tvých původních vrstev
 	for cell in _danger_cells: create_cursor.call(cell, danger_zone_color)
+	for cell in _enemy_range_cells: create_cursor.call(cell, enemy_range_highlight_color)
 	for cell in _movable_cells: create_cursor.call(cell, movement_highlight_color)
 	for cell in _warning_cells: create_cursor.call(cell, movement_warning_color)
-	for cell in _player_spawn_cells: create_cursor.call(cell, player_spawn_highlight_color)
+	for cell in _player_spawn_cells: create_cursor.call(cell, player_spawn_highlight_color, true)
 	for cell in _targetable_cells: create_cursor.call(cell, _targetable_cells_color)
 	for cell in _aoe_cells: create_cursor.call(cell, aoe_highlight_color)
 	
 	if is_valid_grid_position(_mouse_over_cell) and is_cell_active(_mouse_over_cell):
 		create_cursor.call(_mouse_over_cell, highlight_color)
+
+func start_spawn_pulse():
+	_spawn_pulse_active = true
+	for mesh_inst in _spawn_highlight_nodes:
+		_start_spawn_pulse_on_mesh(mesh_inst)
+
+func _start_spawn_pulse_on_mesh(mesh_inst: MeshInstance3D):
+	if not is_instance_valid(mesh_inst):
+		return
+	var start_color = Color(1, 1, 1, 1)
+	var pulse_color = Color(0.4, 0.4, 1, 0.5)
+	var tween = create_tween().set_loops()
+	if mesh_inst.has_method("set_modulate"):
+		tween.tween_property(mesh_inst, "modulate", start_color, 0.7)
+		tween.tween_property(mesh_inst, "modulate", pulse_color, 0.7)
+	else:
+		var mat := mesh_inst.material_override as StandardMaterial3D
+		if not is_instance_valid(mat):
+			return
+		tween.tween_property(mat, "albedo_color", start_color, 0.7)
+		tween.tween_property(mat, "albedo_color", pulse_color, 0.7)
 
 func show_targetable_cells(cells: Array[Vector2i], is_attack: bool):
 	_targetable_cells = cells
@@ -207,6 +239,58 @@ func show_targetable_cells(cells: Array[Vector2i], is_attack: bool):
 func hide_targetable_cells():
 	_targetable_cells.clear()
 	update_visual_highlights()
+
+func show_enemy_range(enemy_node: Node):
+	_enemy_range_cells.clear()
+	if not is_instance_valid(enemy_node) or not is_instance_valid(enemy_node.unit_data):
+		update_visual_highlights()
+		return
+	
+	var move_range = enemy_node.get_current_movement_range()
+	var start_cell = enemy_node.grid_position
+	var costs = {start_cell: 0}
+	var to_visit = [start_cell]
+	
+	while not to_visit.is_empty():
+		var current_cell = to_visit[0]
+		for cell in to_visit:
+			if costs[cell] < costs[current_cell]:
+				current_cell = cell
+		
+		to_visit.erase(current_cell)
+		var cost_to_current = costs[current_cell]
+		
+		for neighbor_offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+			var neighbor_cell = current_cell + neighbor_offset
+			
+			if not is_cell_active(neighbor_cell) or get_object_on_cell(neighbor_cell):
+				continue
+			var terrain = get_terrain_on_cell(neighbor_cell)
+			if terrain and not terrain.is_walkable:
+				continue
+			
+			var cost_to_enter = 1
+			if terrain:
+				cost_to_enter = terrain.movement_cost
+			
+			var new_cost = cost_to_current + cost_to_enter
+			
+			if new_cost <= move_range and (not costs.has(neighbor_cell) or new_cost < costs[neighbor_cell]):
+				costs[neighbor_cell] = new_cost
+				if not to_visit.has(neighbor_cell):
+					to_visit.append(neighbor_cell)
+	
+	costs.erase(start_cell)
+	for cell in costs.keys():
+		if not _enemy_range_cells.has(cell):
+			_enemy_range_cells.append(cell)
+	
+	update_visual_highlights()
+
+func hide_enemy_range():
+	if not _enemy_range_cells.is_empty():
+		_enemy_range_cells.clear()
+		update_visual_highlights()
 
 func show_movable_range(unit: Node):
 	hide_movable_range()

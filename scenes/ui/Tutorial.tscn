@@ -1,0 +1,32 @@
+[gd_scene load_steps=3 format=3 uid="uid://tutorialscene018"]
+
+[ext_resource type="PackedScene" uid="uid://drcylmyjefmn0" path="res://scenes/battle/BattleScene.tscn" id="1_5fb6q"]
+[ext_resource type="Script" uid="uid://b40v0y5l2r6jw" path="res://scenes/ui/Tutorial.gd" id="2_5xbk1"]
+
+[node name="Tutorial" instance=ExtResource("1_5fb6q")]
+script = ExtResource("2_5xbk1")
+
+[node name="TutorialHintLabel" type="Label" parent="CanvasLayer"]
+anchors_preset = 10
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -340.0
+offset_top = 19.0
+offset_right = 340.0
+offset_bottom = 59.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 20
+horizontal_alignment = 1
+text = "Welcome! First, click on the highlighted tile to deploy your hero."
+
+[node name="CompleteTutorialButton" type="Button" parent="CanvasLayer"]
+visible = false
+anchors_preset = 10
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 66.0
+offset_right = 120.0
+offset_bottom = 98.0
+grow_horizontal = 2
+text = "Complete Tutorial"

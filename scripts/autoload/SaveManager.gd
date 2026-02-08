@@ -157,3 +157,22 @@ func delete_saved_run():
 		DebugLogger.log_error("Failed to delete saved run file! Error: %d" % error, "SAVE")
 	else:
 		DebugLogger.log_save_load("delete_saved_run", true, "Saved run deleted.")
+
+#==============================================================================
+# Tutorial Progress
+#==============================================================================
+
+func is_tutorial_completed() -> bool:
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+	if err != OK:
+		return false
+	return bool(config.get_value("settings", "tutorial_completed", false))
+
+func set_tutorial_completed(value: bool):
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+	if err != OK:
+		config = ConfigFile.new()
+	config.set_value("settings", "tutorial_completed", value)
+	config.save("user://settings.cfg")

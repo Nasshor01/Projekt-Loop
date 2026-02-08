@@ -80,8 +80,8 @@ func _update_ui_texts():
 	if close_button:
 		close_button.text = tr("ui.settings.close")
 	if reports_checkbox:
-		reports_checkbox.text = "Odesílat hlášení o pádu"
-		reports_checkbox.tooltip_text = "Anonymní technická data nám pomáhají najít a opravit chyby v hře."
+		reports_checkbox.text = tr("ui.settings.reports_checkbox")
+		reports_checkbox.tooltip_text = tr("ui.settings.reports_tooltip")
 
 func _update_main_menu_if_visible():
 	"""Aktualizuje MainMenu texty, pokud je viditelný"""

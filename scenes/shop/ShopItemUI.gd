@@ -89,8 +89,13 @@ func _display_item_content():
 			card_ui.load_card(item_data)
 		else:
 			card_ui.card_data = item_data
-		card_ui.scale = Vector2(0.6, 0.6) 
-		card_ui.position = Vector2(40, 0)
+		if card_ui is CardUI:
+			card_ui.is_draggable = false
+			card_ui.set_target_scale(Vector2(0.6, 0.6))
+			card_ui.set_target_position(Vector2(40, 0))
+		else:
+			card_ui.scale = Vector2(0.6, 0.6) 
+			card_ui.position = Vector2(40, 0)
 		# Po vytvoření CardUI připojíme tooltip signály
 		call_deferred("_connect_card_tooltip_signals_deferred")
 		

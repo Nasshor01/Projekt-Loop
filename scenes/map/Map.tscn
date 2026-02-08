@@ -24,6 +24,7 @@ offset_right = 42.0
 offset_bottom = 645.0
 
 [node name="Panel" type="Panel" parent="CanvasLayer"]
+visible = false
 offset_left = 5.0
 offset_top = 462.0
 offset_right = 186.0

@@ -95,6 +95,8 @@ func _ready():
 	PlayerData.reset_battle_stats()
 	PlayerData.energy_changed.connect(_on_energy_changed)
 	player_hand_ui_instance.hand_card_was_clicked.connect(_on_player_hand_card_clicked)
+	player_hand_ui_instance.hand_card_drag_started.connect(_on_player_hand_card_drag_started)
+	player_hand_ui_instance.hand_card_drag_released.connect(_on_player_hand_card_drag_released)
 	player_hand_ui_instance.card_right_clicked.connect(_on_card_right_clicked)
 	
 	# Tooltip se nyní zobrazuje/schovává pomocí pravého kliknutí - žádné timery nejsou potřeba
@@ -102,6 +104,9 @@ func _ready():
 	discard_pile_button.pile_clicked.connect(_on_discard_pile_clicked)
 	if not win_button.pressed.is_connected(_on_win_button_pressed):
 		win_button.pressed.connect(_on_win_button_pressed)
+	if is_instance_valid(win_button):
+		if not OS.is_debug_build():
+			win_button.hide()
 	
 	player_hand_ui_instance.card_draw_animation_finished.connect(_on_card_draw_animation_finished)
 	player_hand_ui_instance.hand_discard_animation_finished.connect(_on_hand_discard_animation_finished)
@@ -174,8 +179,10 @@ func _process(delta):
 	var unit_under_mouse = battle_grid_instance.get_object_on_cell(grid_cell)
 	if is_instance_valid(unit_under_mouse) and unit_under_mouse.get_unit_data().faction == UnitData.Faction.ENEMY:
 		enemy_info_panel.update_stats(unit_under_mouse)
+		battle_grid_instance.show_enemy_range(unit_under_mouse)
 	else:
 		enemy_info_panel.hide_panel()
+		_clear_enemy_hover_highlights()
 		
 	if _player_action_state == PlayerActionState.CARD_SELECTED:
 		_update_card_target_preview()
@@ -227,33 +234,7 @@ func _unhandled_input(event: InputEvent):
 
 		# Logika KARTY
 		if _player_action_state == PlayerActionState.CARD_SELECTED:
-			var has_self_effect = false
-			var has_enemy_effect = false
-			if is_instance_valid(_selected_card_data):
-				has_self_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
-				has_enemy_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
-			
-			# Pokud karta má pouze SELF efekty (bez ENEMY efektů), použij hráče jako cíl
-			if has_self_effect and not has_enemy_effect:
-				if is_instance_valid(_player_unit_node):
-					try_play_card(_selected_card_data, _player_unit_node)
-					get_viewport().set_input_as_handled()
-				else:
-					_reset_player_selection()
-					get_viewport().set_input_as_handled()
-				return
-			
-			var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
-			
-			# Kontrola: Pokud karta vyžaduje nepřítele jako cíl, musí být target_node validní nepřítel
-			if has_enemy_effect:
-				if not is_instance_valid(target_node) or not target_node is Unit or not target_node.get_unit_data().faction == UnitData.Faction.ENEMY:
-					# Karta vyžaduje nepřítele, ale klikli jsme na prázdnou buňku nebo ne-nepřítele
-					DebugLogger.log_warning("Karta vyžaduje vybraného nepřítele!")
-					get_viewport().set_input_as_handled()
-					return
-			
-			try_play_card(_selected_card_data, target_node)
+			_try_play_selected_card_at_cell(clicked_grid_cell)
 			get_viewport().set_input_as_handled()
 			
 		# Logika POHYB
@@ -324,7 +305,6 @@ func _start_player_initiative_turn(_player_unit: Unit, extra_draw: int = 0):
 	
 	# Zobraz AI záměry
 	set_enemy_intents()
-	battle_grid_instance.show_danger_zone(_enemy_units)
 
 func _start_enemy_initiative_turn(enemy_unit: Unit):
 	"""Zahájí tah nepřítele v iniciativním systému"""
@@ -752,6 +732,32 @@ func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: Car
 	_selected_card_data = card_data_resource
 	player_hand_ui_instance.set_selected_card(card_ui_node)
 	_show_valid_targets_for_card(card_data_resource)
+
+func _on_player_hand_card_drag_started(card_ui_node: Control, card_data_resource: CardData):
+	if _current_battle_state != BattleState.PLAYER_TURN:
+		player_hand_ui_instance.cancel_drag_ui()
+		return
+	if PlayerData.current_energy < card_data_resource.cost:
+		player_hand_ui_instance.cancel_drag_ui()
+		return
+	_reset_player_selection()
+	_player_action_state = PlayerActionState.CARD_SELECTED
+	_selected_card_ui = card_ui_node
+	_selected_card_data = card_data_resource
+	_show_valid_targets_for_card(card_data_resource)
+
+func _on_player_hand_card_drag_released(card_ui_node: Control, _card_data_resource: CardData):
+	if _current_battle_state != BattleState.PLAYER_TURN:
+		return
+	if _player_action_state != PlayerActionState.CARD_SELECTED:
+		return
+	if _selected_card_ui != card_ui_node:
+		return
+	
+	var target_cell = get_grid_cell_under_mouse()
+	var did_play = _try_play_selected_card_at_cell(target_cell)
+	if not did_play:
+		_reset_player_selection()
 
 # OPRAVA: Argument je Node3D (nebo Unit, ale Node3D je obecnější pro 3D svět)
 func try_play_card(card: CardData, initial_target: Node3D) -> void:
@@ -1244,6 +1250,7 @@ func _physics_process(_delta):
 		enemy_info_panel.update_stats(unit_under_mouse)
 	else:
 		enemy_info_panel.hide_panel()
+		_clear_enemy_hover_highlights()
 		
 	if _player_action_state == PlayerActionState.CARD_SELECTED:
 		_update_card_target_preview()
@@ -1263,6 +1270,12 @@ func _show_valid_targets_for_card(card: CardData):
 				is_attack = false
 				if not valid_target_cells.has(_player_unit_node.grid_position): valid_target_cells.append(_player_unit_node.grid_position)
 	battle_grid_instance.show_targetable_cells(valid_target_cells, is_attack)
+
+func _clear_enemy_hover_highlights():
+	if battle_grid_instance and battle_grid_instance.has_method("clear_highlights"):
+		battle_grid_instance.clear_highlights()
+	else:
+		battle_grid_instance.hide_enemy_range()
 
 func _update_pile_counts():
 	if is_instance_valid(draw_pile_button): draw_pile_button.update_count(PlayerData.draw_pile.size())
@@ -1378,6 +1391,42 @@ func _update_card_target_preview():
 			if battle_grid_instance.is_cell_active(cell): final_aoe_cells.append(cell)
 			
 	battle_grid_instance.show_aoe_highlight(final_aoe_cells)
+
+func _try_play_selected_card_at_cell(clicked_grid_cell: Vector2i) -> bool:
+	if _player_action_state != PlayerActionState.CARD_SELECTED:
+		return false
+	if not is_instance_valid(_selected_card_data):
+		return false
+	
+	var has_self_effect = false
+	var has_enemy_effect = false
+	if is_instance_valid(_selected_card_data):
+		has_self_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
+		has_enemy_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
+	
+	# Pokud karta má pouze SELF efekty (bez ENEMY efektů), použij hráče jako cíl
+	if has_self_effect and not has_enemy_effect:
+		if is_instance_valid(_player_unit_node):
+			try_play_card(_selected_card_data, _player_unit_node)
+			return true
+		return false
+	
+	var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
+	
+	# Kontrola: Pokud karta vyžaduje nepřítele jako cíl, musí být target_node validní nepřítel
+	if has_enemy_effect:
+		if not is_instance_valid(target_node) or not target_node is Unit or not target_node.get_unit_data().faction == UnitData.Faction.ENEMY:
+			# Karta vyžaduje nepřítele, ale klikli jsme na prázdnou buňku nebo ne-nepřítele
+			DebugLogger.log_warning("Karta vyžaduje vybraného nepřítele!")
+			return false
+		if is_instance_valid(_player_unit_node) and battle_grid_instance:
+			var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, target_node.grid_position)
+			if distance > _selected_card_data.range_value:
+				DebugLogger.log_warning("Cíl je mimo dosah karty!")
+				return false
+	
+	try_play_card(_selected_card_data, target_node)
+	return true
 
 func _place_terrain_features():
 	var terrains_to_spawn = [ {"data": preload("res://data/terrain/rock.tres"), "count": 3}, {"data": preload("res://data/terrain/mud.tres"), "count": 2} ]

@@ -5,9 +5,12 @@ const ArtifactChoiceScene = preload("res://scenes/ui/ArtifactChoiceUI.tscn")
 # ZMĚNA: Používáme správný pool pro pokladnice!
 const ARTIFACT_POOL = preload("res://data/artifacts/pool/treasure_room_pool.tres")
 
+@onready var title_label: Label = $Label
 @onready var choices_container: HBoxContainer = $HBoxContainer
 
 func _ready():
+	if title_label:
+		title_label.text = tr("ui.treasure.title")
 	_generate_artifact_choices()
 
 func _generate_artifact_choices():

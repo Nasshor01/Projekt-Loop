@@ -154,7 +154,7 @@ func _draw_background_lines():
 			
 			# Přidáme label pro tier
 			var label = Label.new()
-			label.text = "Tier %d" % tier
+			label.text = TranslationHelper.tr_format("ui.skill.tier", {"value": tier})
 			label.position = Vector2(-380, y - 10)
 			label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 			background_lines_container.add_child(label)
@@ -172,7 +172,7 @@ func _draw_background_lines():
 			
 			# Přidáme label pro branch
 			var label = Label.new()
-			label.text = branch.capitalize()
+			label.text = TranslationHelper.tr_format("ui.skill.branch", {"value": branch.capitalize()})
 			label.position = Vector2(x - 30, -20)
 			label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 			background_lines_container.add_child(label)

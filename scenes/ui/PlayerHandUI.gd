@@ -5,6 +5,8 @@ signal hand_card_was_clicked(card_ui_instance: Control, card_data_resource: Card
 signal card_right_clicked(card_data_resource: CardData)
 signal card_draw_animation_finished() # Nový signál, který oznámí dokončení animace dobrání
 signal hand_discard_animation_finished() # Nový signál pro dokončení odhození
+signal hand_card_drag_started(card_ui_instance: Control, card_data_resource: CardData)
+signal hand_card_drag_released(card_ui_instance: Control, card_data_resource: CardData)
 
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 
@@ -16,12 +18,14 @@ const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 
 @export_group("Interakce")
 @export var hover_y_offset: float = -60.0
-@export var hover_scale: float = 1.0
+@export var hover_scale: float = 1.15
 
 @onready var _arrange_timer: Timer = $ArrangeTimer
 
 var _hovered_card: Control = null
 var _selected_card: Control = null
+var _dragging_card: Control = null
+var _hidden_cards: Array[Control] = []
 
 
 func _ready():
@@ -42,8 +46,14 @@ func add_card_animated(card_data: CardData, from_pos: Vector2):
 	card_ui_instance.mouse_entered.connect(_on_card_mouse_entered.bind(card_ui_instance))
 	card_ui_instance.mouse_exited.connect(_on_card_mouse_exited.bind(card_ui_instance))
 	card_ui_instance.gui_input.connect(_on_card_gui_input.bind(card_ui_instance))
+	if card_ui_instance is CardUI:
+		card_ui_instance.is_draggable = true
+		card_ui_instance.drag_started.connect(_on_card_drag_started)
+		card_ui_instance.drag_released.connect(_on_card_drag_released)
 	
 	card_ui_instance.global_position = from_pos
+	if card_ui_instance is CardUI:
+		card_ui_instance.set_target_scale(Vector2.ZERO)
 	card_ui_instance.scale = Vector2.ZERO
 	card_ui_instance.rotation_degrees = randf_range(-15, 15)
 	
@@ -68,6 +78,9 @@ func discard_hand_animated(to_pos: Vector2):
 	for i in range(card_count):
 		var card = cards[i]
 		if not is_instance_valid(card): continue
+		if card is CardUI:
+			card.set_target_position(to_pos)
+			card.set_target_scale(Vector2.ZERO)
 		
 		# Vypneme možnost na kartu klikat
 		card.set_mouse_filter(MOUSE_FILTER_IGNORE)
@@ -105,6 +118,10 @@ func add_card_to_hand(card_data_resource: CardData):
 	card_ui_instance.mouse_entered.connect(_on_card_mouse_entered.bind(card_ui_instance))
 	card_ui_instance.mouse_exited.connect(_on_card_mouse_exited.bind(card_ui_instance))
 	card_ui_instance.gui_input.connect(_on_card_gui_input.bind(card_ui_instance))
+	if card_ui_instance is CardUI:
+		card_ui_instance.is_draggable = true
+		card_ui_instance.drag_started.connect(_on_card_drag_started)
+		card_ui_instance.drag_released.connect(_on_card_drag_released)
 
 func clear_hand():
 	_hovered_card = null
@@ -116,6 +133,25 @@ func clear_hand():
 func set_selected_card(card_node: Control):
 	_selected_card = card_node
 	_request_arrange()
+
+func _hide_other_cards(drag_card: Control):
+	_hidden_cards.clear()
+	for child in get_children():
+		if child is CardUI and child != drag_card:
+			child.visible = false
+			child.mouse_filter = MOUSE_FILTER_IGNORE
+			_hidden_cards.append(child)
+
+func _restore_hidden_cards():
+	for card in _hidden_cards:
+		if is_instance_valid(card):
+			card.visible = true
+			card.mouse_filter = MOUSE_FILTER_STOP
+	_hidden_cards.clear()
+
+func cancel_drag_ui():
+	_dragging_card = null
+	_restore_hidden_cards()
 
 func _arrange_cards():
 	var cards = get_children().filter(func(c): return c is CardUI)
@@ -148,18 +184,26 @@ func _arrange_cards():
 		var target_pos = Vector2(base_x, base_y)
 		var target_scale = card.original_scale
 		var target_z_index = i
+		var is_dragging = card is CardUI and card.is_dragging
 		
-		if card == _selected_card or card == _hovered_card:
+		if (card == _selected_card or card == _hovered_card) and not is_dragging:
 			target_pos.y = size.y - (card.custom_minimum_size.y * hover_scale) + hover_y_offset
-			target_scale = Vector2(hover_scale, hover_scale)
+			target_scale = card.original_scale * hover_scale
 			target_z_index = num_cards + 1
+		elif is_dragging:
+			target_z_index = num_cards + 2
 		
 		card.z_index = target_z_index
 		
+		if card is CardUI:
+			if not is_dragging:
+				card.set_target_position(target_pos)
+				card.set_target_scale(target_scale)
+		else:
+			card.position = target_pos
+			card.scale = target_scale
+		
 		var tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
-		tween.set_parallel(true)
-		tween.tween_property(card, "position", target_pos, 0.15)
-		tween.tween_property(card, "scale", target_scale, 0.15)
 		tween.tween_property(card, "rotation_degrees", 0, 0.15)
 
 func _on_card_mouse_entered(card: Control):
@@ -175,8 +219,21 @@ func _on_card_mouse_exited(card: Control):
 
 func _on_card_gui_input(event: InputEvent, card_node: Control):
 	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+			if card_node is CardUI and (card_node.is_dragging or card_node.consume_drag_release()):
+				return
 			emit_signal("hand_card_was_clicked", card_node, card_node.card_data)
 		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 			# Pravý klik - toggle tooltip
 			emit_signal("card_right_clicked", card_node.card_data)
+
+func _on_card_drag_started(card_node: Control, _original_pos: Vector2 = Vector2.ZERO):
+	_dragging_card = card_node
+	_hide_other_cards(card_node)
+	emit_signal("hand_card_drag_started", card_node, card_node.card_data)
+
+func _on_card_drag_released(card_node: Control, _release_pos = null):
+	if _dragging_card == card_node:
+		_dragging_card = null
+	_restore_hidden_cards()
+	emit_signal("hand_card_drag_released", card_node, card_node.card_data)

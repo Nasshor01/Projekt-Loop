@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=3 format=3 uid="uid://dnggst1ubfl5w"]
+
+[ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_4tfyj"]
+[ext_resource type="Texture2D" uid="uid://c6jgiqq6bv3ip" path="res://art/sprites/units/statue_spirit.png" id="2_0sl1u"]
+
+[resource]
+script = ExtResource("1_4tfyj")
+unit_id = "training_dummy"
+unit_name = "Training Dummy"
+description = "Passive target that does not attack."
+faction = 1
+unit_type = 5
+max_health = 2
+attack_damage = 1
+movement_range = 50
+attack_range = 1
+initiative = 1
+sprite_texture = ExtResource("2_0sl1u")
+metadata/_custom_type_script = "uid://celcfyrl033bg"

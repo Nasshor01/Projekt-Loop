@@ -4,9 +4,10 @@ extends Control
 @onready var title_label: Label = $Label
 @onready var play_button: Button = $VBoxContainer/PlayButton
 @onready var load_run_button: Button = %LoadRunButton
-@onready var how_to_play_button: Button = $VBoxContainer/HowToPlayButton
+@onready var tutorial_button: Button = $VBoxContainer/TutorialButton
 @onready var settings_button: Button = $VBoxContainer/SettingsButton
 @onready var exit_button: Button = $VBoxContainer/ExitButton 
+@onready var version_label: Label = $VersionLabel
 
 func _enter_tree():
 	# Přidáme do skupiny pro snadné nalezení
@@ -15,7 +16,7 @@ func _enter_tree():
 func _ready():
 	play_button.pressed.connect(GameManager.go_to_character_select)
 	load_run_button.pressed.connect(_on_load_run_button_pressed)
-	how_to_play_button.pressed.connect(GameManager.go_to_how_to_play)
+	tutorial_button.pressed.connect(GameManager.go_to_tutorial)
 	settings_button.pressed.connect(GameManager.go_to_settings)
 	exit_button.pressed.connect(func():
 		if has_node("/root/DebugLogger"):
@@ -25,6 +26,8 @@ func _ready():
 	
 	_update_load_button_state()
 	_update_ui_texts()
+	_update_tutorial_gate()
+	_update_version_label()
 
 func _update_ui_texts():
 	"""Aktualizuje UI texty pomocí překladů"""
@@ -32,14 +35,26 @@ func _update_ui_texts():
 		title_label.text = tr("game.title")
 	if play_button:
 		play_button.text = tr("ui.main_menu.new_game")
-	if how_to_play_button:
-		how_to_play_button.text = tr("ui.main_menu.how_to_play")
+	if tutorial_button:
+		tutorial_button.text = tr("ui.main_menu.tutorial")
 	if settings_button:
 		settings_button.text = tr("ui.main_menu.settings")
 	if exit_button:
 		exit_button.text = tr("ui.main_menu.exit")
 	if load_run_button:
 		load_run_button.text = tr("ui.main_menu.load_run")
+
+func _update_tutorial_gate():
+	"""Uzamkne nové hry, dokud není tutorial dokončen."""
+	var completed = SaveManager.is_tutorial_completed()
+	if play_button:
+		play_button.disabled = not completed
+
+func _update_version_label():
+	"""Vypíše aktuální verzi do rohu menu."""
+	if version_label:
+		var version = str(ProjectSettings.get_setting("application/config/version", "0.0.0"))
+		version_label.text = "Pre-Alpha " + version
 
 func _on_load_run_button_pressed():
 	if not SaveManager.has_saved_run():

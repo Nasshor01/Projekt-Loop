@@ -47,7 +47,7 @@ func _update_ui_texts():
 	if back_to_game_button:
 		back_to_game_button.text = tr("ui.menu.back_to_game")
 	if feedback_button:
-		feedback_button.text = "Feedback"
+		feedback_button.text = tr("ui.menu.feedback")
 
 func _unhandled_input(event):
 	# Pokud je menu viditelné a hráč stiskne 'Esc' (ui_cancel)

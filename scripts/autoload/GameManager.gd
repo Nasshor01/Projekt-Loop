@@ -14,7 +14,7 @@ var shop_scene = "res://scenes/shop/ShopScene.tscn"
 var rest_scene = "res://scenes/camp/RestScene.tscn"
 var global_ui_scene = preload("res://scenes/ui/GlobalUI.tscn")
 var event_scene = "res://scenes/events/EventScene.tscn"
-var how_to_play_scene = "res://scenes/ui/HowToPlay.tscn"
+var tutorial_scene = "res://scenes/ui/Tutorial.tscn"
 var settings_scene = "res://scenes/ui/Settings.tscn"
 var consent_popup_scene = preload("res://scenes/ui/ConsentPopup.tscn")
 
@@ -102,7 +102,7 @@ func _show_crash_recovery_dialog():
 	crash_recovery_dialog = ConfirmationDialog.new()
 	crash_recovery_dialog.dialog_text = "Vypadá to, že hra minule spadla. Chceš odeslat diagnostická data vývojáři?"
 	crash_recovery_dialog.confirmed.connect(_on_crash_recovery_confirmed)
-	get_tree().root.add_child(crash_recovery_dialog)
+	get_tree().root.add_child.call_deferred(crash_recovery_dialog)
 	crash_recovery_dialog.popup_centered()
 
 func _on_crash_recovery_confirmed():
@@ -212,8 +212,8 @@ func go_to_main_menu():
 func go_to_character_select():
 	_change_scene(character_select_scene)
 
-func go_to_how_to_play():
-	_change_scene(how_to_play_scene)
+func go_to_tutorial():
+	_change_scene(tutorial_scene)
 
 func go_to_settings():
 	_change_scene(settings_scene)
