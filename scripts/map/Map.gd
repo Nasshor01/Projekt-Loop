@@ -37,6 +37,7 @@ var node_textures = {
 
 var map_data: MapData
 var map_nodes_visual: Dictionary = {}
+var _tutorial_nodes: Dictionary = {}
 
 var node_names = {
 	MapNodeResource.NodeType.MONSTER: "ui.map.node.monster",
@@ -117,11 +118,15 @@ func _on_generate_custom_seed_pressed():
 func initialize_map():
 	_clear_map()
 
-	if GameManager.current_map_data == null:
-		self.map_data = generator_node.generate_map(GameManager.current_seed)
+	if _is_tutorial_map():
+		self.map_data = _build_tutorial_map()
 		GameManager.current_map_data = self.map_data
 	else:
-		self.map_data = GameManager.current_map_data
+		if GameManager.current_map_data == null:
+			self.map_data = generator_node.generate_map(GameManager.current_seed)
+			GameManager.current_map_data = self.map_data
+		else:
+			self.map_data = GameManager.current_map_data
 	
 	seed_label.text = TranslationHelper.tr_format("ui.map.seed", {"value": GameManager.current_seed})
 	seed_line_edit.text = str(GameManager.current_seed)
@@ -173,6 +178,11 @@ func _on_map_node_clicked(clicked_node: MapNode):
 	var destination_node = clicked_node.node_data
 	
 	var is_valid_move = false
+	if _is_tutorial_map():
+		var allowed = _get_tutorial_allowed_node()
+		if allowed != null and destination_node != allowed:
+			return
+	
 	if current_node == null:
 		if map_data.starting_nodes.has(destination_node): is_valid_move = true
 	else:
@@ -180,12 +190,33 @@ func _on_map_node_clicked(clicked_node: MapNode):
 	
 	if is_valid_move:
 		PlayerData.path_taken.append(destination_node)
+		_update_highlighting()
 		_trigger_node_action(destination_node)
 	else:
 		print("Neplatný tah!")
 
 func _trigger_node_action(node_data: MapNodeResource):
 	var encounter_to_start: EncounterData = null
+	if _is_tutorial_map() and node_data == _tutorial_nodes.get("final"):
+		encounter_to_start = load("res://data/encounters/tutorial_final_battle.tres")
+		if encounter_to_start:
+			GameManager.tutorial_step = GameManager.TUTORIAL_STEP_FINAL_BATTLE
+		else:
+			printerr("Tutorial encounter missing.")
+		# Uložíme stav kamery
+		GameManager.saved_camera_position = camera.position
+		GameManager.saved_camera_zoom = camera.zoom
+		GameManager.has_saved_camera_state = true
+		GameManager.start_battle(encounter_to_start)
+		return
+	elif _is_tutorial_map() and node_data == _tutorial_nodes.get("camp"):
+		GameManager.tutorial_step = GameManager.TUTORIAL_STEP_CAMP_UPGRADE
+		# Uložíme stav kamery
+		GameManager.saved_camera_position = camera.position
+		GameManager.saved_camera_zoom = camera.zoom
+		GameManager.has_saved_camera_state = true
+		GameManager.go_to_rest_scene()
+		return
 
 	match node_data.type:
 		MapNodeResource.NodeType.MONSTER:
@@ -245,6 +276,80 @@ func _trigger_node_action(node_data: MapNodeResource):
 		# Pokud se data souboje nenačetla, vypíšeme chybu a jen aktualizujeme mapu.
 		printerr("Nepodařilo se načíst data souboje pro typ: ", MapNodeResource.NodeType.keys()[node_data.type])
 		_update_highlighting()
+
+func _is_tutorial_map() -> bool:
+	if not has_node("/root/GameManager"):
+		return false
+	return GameManager.tutorial_active and (
+		GameManager.tutorial_step == GameManager.TUTORIAL_STEP_MAP_CAMP
+		or GameManager.tutorial_step == GameManager.TUTORIAL_STEP_MAP_FINAL
+	)
+
+func _build_tutorial_map() -> MapData:
+	_tutorial_nodes.clear()
+	var data = MapData.new()
+	var start_node = MapNodeResource.new()
+	var camp_node = MapNodeResource.new()
+	var final_node = MapNodeResource.new()
+	
+	start_node.type = MapNodeResource.NodeType.EVENT
+	camp_node.type = MapNodeResource.NodeType.REST
+	final_node.type = MapNodeResource.NodeType.MONSTER
+	
+	start_node.row = 0
+	start_node.column = 0
+	camp_node.row = 1
+	camp_node.column = 0
+	final_node.row = 2
+	final_node.column = 0
+	
+	var spacing_x = generator_node.vis_x_spacing if is_instance_valid(generator_node) else 128
+	var spacing_y = generator_node.vis_y_spacing if is_instance_valid(generator_node) else 80
+	start_node.position = Vector2(0, 0)
+	camp_node.position = Vector2(0, -spacing_y)
+	final_node.position = Vector2(0, -spacing_y * 2)
+	
+	start_node.connections = [camp_node]
+	camp_node.incoming_connections = [start_node]
+	camp_node.connections = [final_node]
+	final_node.incoming_connections = [camp_node]
+	
+	data.all_nodes = [start_node, camp_node, final_node]
+	data.starting_nodes = [start_node]
+	data.boss_node = final_node
+	
+	_tutorial_nodes["start"] = start_node
+	_tutorial_nodes["camp"] = camp_node
+	_tutorial_nodes["final"] = final_node
+	
+	var previous_path: Array = PlayerData.path_taken.duplicate()
+	PlayerData.path_taken.clear()
+	
+	for old_node in previous_path:
+		if not is_instance_valid(old_node):
+			continue
+		for new_node in [start_node, camp_node, final_node]:
+			if old_node.row == new_node.row and old_node.column == new_node.column:
+				PlayerData.path_taken.append(new_node)
+				break
+	
+	if PlayerData.path_taken.is_empty():
+		PlayerData.path_taken.append(start_node)
+	elif GameManager.tutorial_step == GameManager.TUTORIAL_STEP_MAP_FINAL:
+		# Ensure Camp is marked visited after returning from Camp
+		if PlayerData.path_taken.size() == 1 and PlayerData.path_taken[0] == start_node:
+			PlayerData.path_taken.append(camp_node)
+	
+	return data
+
+func _get_tutorial_allowed_node() -> MapNodeResource:
+	if not _is_tutorial_map():
+		return null
+	if GameManager.tutorial_step == GameManager.TUTORIAL_STEP_MAP_CAMP:
+		return _tutorial_nodes.get("camp")
+	if GameManager.tutorial_step == GameManager.TUTORIAL_STEP_MAP_FINAL:
+		return _tutorial_nodes.get("final")
+	return null
 func _update_highlighting():
 	# Smažeme staré čáry, abychom je překreslili s novými barvami.
 	for child in connections_container.get_children():
@@ -326,8 +431,15 @@ func _update_highlighting():
 			connections_container.add_child(line)
 func _setup_camera():
 	if map_nodes_visual.is_empty(): return
-
-	if GameManager.has_saved_camera_state:
+	
+	if _is_tutorial_map():
+		var map_rect = Rect2(map_nodes_visual.values()[0].position, Vector2.ZERO)
+		for node in map_nodes_visual.values():
+			map_rect = map_rect.expand(node.position)
+		map_rect = map_rect.grow(120.0)
+		camera.position = map_rect.get_center()
+		camera.zoom = Vector2(0.8, 0.8)
+	elif GameManager.has_saved_camera_state:
 		# Načteme uloženou pozici a zoom.
 		camera.position = GameManager.saved_camera_position
 		camera.zoom = GameManager.saved_camera_zoom

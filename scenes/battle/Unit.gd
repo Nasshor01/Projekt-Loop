@@ -2,6 +2,18 @@ class_name Unit
 extends Node3D
 
 const FloatingTextScene = preload("res://scenes/ui/FloatingText.tscn")
+const IntentIconScene = preload("res://scenes/ui/IntentIcon.tscn")
+const INTENT_ICON_AIMING = preload("res://art/icons/skills/6.png")
+const INTENT_ICON_RUSH = preload("res://art/icons/Artifacts/berserkova zuřivost-1.png.png")
+const INTENT_ICON_METEOR = preload("res://art/icons/skills/52.png")
+const INTENT_ICON_ATTACK = preload("res://art/icons/skills/151.png")
+const INTENT_ICON_MOVE = preload("res://art/icons/skills/167.png")
+
+const ARCHER_AIM_DAMAGE_MULTIPLIER = 2.5
+const BERSERKER_RAGE_TURNS_REQUIRED = 5
+const BERSERKER_RUSH_DAMAGE_MULTIPLIER = 3.0
+const MAGE_METEOR_TURNS_REQUIRED = 10
+const MAGE_METEOR_DAMAGE_MULTIPLIER = 2.0
 
 signal died(unit_node)
 signal stats_changed(unit_node)
@@ -20,6 +32,9 @@ var has_used_base_move: bool = false
 var extra_moves: int = 0
 var _has_acted_this_turn: bool = false
 var last_attacker: Unit = null
+var current_intent_id: String = ""
+var current_intent_text: String = ""
+var _intent_visibility_allowed: bool = false
 
 # Elementární status efekty
 var is_frozen: bool = false  # Frozen - nemůže hrát karty ani se hýbat
@@ -33,7 +48,8 @@ var is_permanently_enraged: bool = false
 #---------------------------------------------
 
 @onready var _sprite_node: Sprite3D = $Sprite3D
-@onready var _intent_ui: Control = $IntentUI
+var _intent_icon: Node2D = null
+var _intent_world_padding_ratio: float = 0.08
 
 func _ready():
 	if unit_data:
@@ -59,14 +75,23 @@ func _ready():
 	if _sprite_node and unit_data.sprite_texture:
 		_sprite_node.texture = unit_data.sprite_texture
 	
-	if _intent_ui:
-		_intent_ui.visible = false
+	if unit_data and unit_data.faction == UnitData.Faction.ENEMY:
+		var canvas = get_tree().root.find_child("CanvasLayer", true, false)
+		if canvas:
+			_intent_icon = IntentIconScene.instantiate()
+			canvas.add_child(_intent_icon)
+			_intent_icon.visible = false
 	
 	# Pozice ve 3D - zarovnání na zem
 	position.y = 0
 	
 	await get_tree().process_frame
 	emit_signal("stats_changed", self)
+
+func _process(_delta: float) -> void:
+	if _intent_icon and _intent_icon.visible:
+		_update_intent_icon_screen_position()
+		_update_intent_icon_scale()
 
 func set_last_attacker(attacker: Unit):
 	last_attacker = attacker
@@ -347,6 +372,10 @@ func heal_to_full():
 	_update_stats_and_emit_signal()
 
 func _die():
+	hide_intent()
+	_intent_visibility_allowed = false
+	if _intent_icon and is_instance_valid(_intent_icon):
+		_intent_icon.queue_free()
 	if unit_data.faction == UnitData.Faction.ENEMY:
 		if PlayerData.energy_on_kill > 0:
 			PlayerData.process_energy_on_kill()
@@ -403,14 +432,221 @@ func set_selected_visual(selected: bool):
 			_sprite_node.modulate = Color.WHITE
 
 func show_intent(attack_damage: int = 0):
-	if not _intent_ui: return
-	var label = _intent_ui.get_node_or_null("Label")
-	if label:
-		label.text = str(attack_damage) if attack_damage > 0 else ""
-		_intent_ui.visible = attack_damage > 0
+	if not _intent_icon or not _intent_visibility_allowed:
+		return
+	if _intent_icon.has_method("set_intent"):
+		var label_text = str(attack_damage) if attack_damage > 0 else ""
+		_intent_icon.set_intent(_get_intent_icon_for_id(current_intent_id), label_text)
+	_intent_icon.visible = true
+	_update_intent_icon_screen_position()
+	_update_intent_icon_scale()
 
 func hide_intent():
-	if _intent_ui: _intent_ui.visible = false
+	if _intent_icon:
+		_intent_icon.visible = false
+
+func set_intent_visibility_allowed(allowed: bool) -> void:
+	_intent_visibility_allowed = allowed
+	if not allowed:
+		hide_intent()
+
+func update_intent(player_unit: Unit, battle_grid: BattleGrid) -> void:
+	if not is_instance_valid(unit_data) or unit_data.faction != UnitData.Faction.ENEMY:
+		return
+	if not is_instance_valid(battle_grid):
+		return
+	var intent_data = _calculate_intent(player_unit, battle_grid)
+	current_intent_id = intent_data.id
+	current_intent_text = intent_data.text
+	if _intent_icon and _intent_icon.has_method("set_intent"):
+		_intent_icon.set_intent(intent_data.icon, intent_data.short_text)
+		if _intent_visibility_allowed and intent_data.id != "":
+			_intent_icon.show_intent()
+		else:
+			_intent_icon.hide_intent()
+
+func _update_intent_icon_screen_position() -> void:
+	if not _intent_icon:
+		return
+	var camera = get_viewport().get_camera_3d()
+	if not camera:
+		return
+	var center = global_position + Vector3(0, _get_sprite_world_center_offset_y(), 0)
+	var half_height = _get_sprite_world_height() * 0.5
+	var world_pos = center + Vector3(0, half_height + (_get_sprite_world_height() * _intent_world_padding_ratio), 0)
+	var screen_pos = camera.unproject_position(world_pos)
+	if _intent_icon.has_method("set_screen_position"):
+		_intent_icon.set_screen_position(screen_pos)
+	else:
+		_intent_icon.position = screen_pos
+
+func _update_intent_icon_scale() -> void:
+	if not _intent_icon:
+		return
+	if not _intent_icon.has_method("get_icon_texture_size") or not _intent_icon.has_method("set_icon_scale"):
+		return
+	var camera = get_viewport().get_camera_3d()
+	if not camera:
+		return
+	var sprite_screen_height = _get_sprite_screen_height(camera)
+	if sprite_screen_height <= 0:
+		return
+	var target_icon_height = clamp(sprite_screen_height * 0.25, 18.0, 48.0)
+	var icon_size: Vector2 = _intent_icon.get_icon_texture_size()
+	if icon_size.y <= 0:
+		return
+	var scale_value = target_icon_height / icon_size.y
+	_intent_icon.set_icon_scale(scale_value)
+
+func _get_sprite_world_height() -> float:
+	if not is_instance_valid(_sprite_node) or not is_instance_valid(unit_data) or not unit_data.sprite_texture:
+		return 1.0
+	var tex_size: Vector2 = unit_data.sprite_texture.get_size()
+	var scale_y = _sprite_node.global_transform.basis.get_scale().y
+	return tex_size.y * _sprite_node.pixel_size * scale_y
+
+func _get_sprite_world_center_offset_y() -> float:
+	if not is_instance_valid(_sprite_node):
+		return 0.0
+	var scale_y = _sprite_node.global_transform.basis.get_scale().y
+	return _sprite_node.offset.y * _sprite_node.pixel_size * scale_y
+
+func _get_sprite_screen_height(camera: Camera3D) -> float:
+	var half_height = _get_sprite_world_height() * 0.5
+	var center = global_position + Vector3(0, _get_sprite_world_center_offset_y(), 0)
+	var world_bottom = center + Vector3(0, -half_height, 0)
+	var world_top = center + Vector3(0, half_height, 0)
+	var screen_bottom = camera.unproject_position(world_bottom)
+	var screen_top = camera.unproject_position(world_top)
+	return abs(screen_bottom.y - screen_top.y)
+
+func get_intent_display_text() -> String:
+	return current_intent_text
+
+func get_intent_ui() -> Node2D:
+	return _intent_icon
+
+func get_enemy_class_display() -> String:
+	if not is_instance_valid(unit_data) or not is_instance_valid(unit_data.ai_script):
+		return tr("Class: Unknown")
+	var class_name_text = _get_ai_class_name(unit_data.ai_script.resource_path)
+	return tr("Class: ") + class_name_text
+
+func get_enemy_passives_display() -> String:
+	var passives = _get_passives_text()
+	return tr("Passives: ") + passives
+
+func get_status_counters_display() -> String:
+	var counters: Array[String] = []
+	if is_aiming:
+		counters.append(tr("Aiming: YES"))
+	if berserker_frustration > 0:
+		counters.append(tr("Rage: %d/%d turns") % [berserker_frustration, BERSERKER_RAGE_TURNS_REQUIRED])
+	if has_meta("mage_turn_count"):
+		var turn_count = int(get_meta("mage_turn_count"))
+		if turn_count > 0:
+			counters.append(tr("Meteor: %d/%d turns") % [turn_count, MAGE_METEOR_TURNS_REQUIRED])
+	if counters.is_empty():
+		return tr("Status/Counters: None")
+	return tr("Status/Counters: ") + ", ".join(counters)
+
+func _calculate_intent(player_unit: Unit, battle_grid: BattleGrid) -> Dictionary:
+	var intent_id = "move"
+	var intent_short = tr("MOVE")
+	var intent_text = tr("Next Move: Move")
+	var icon = INTENT_ICON_MOVE
+	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data.ai_script) else ""
+	
+	if ai_path.contains("ArcherAI") and is_aiming:
+		intent_id = "aiming"
+		intent_short = tr("AIMING")
+		intent_text = tr("Next Move: Aiming (250% DMG)")
+		icon = INTENT_ICON_AIMING
+	elif ai_path.contains("BerserkerAI") and _is_aligned_with_player(player_unit) and berserker_frustration >= BERSERKER_RAGE_TURNS_REQUIRED:
+		intent_id = "rush"
+		intent_short = tr("RUSH")
+		intent_text = tr("Next Move: Rush (300% DMG)")
+		icon = INTENT_ICON_RUSH
+	elif ai_path.contains("MageAI"):
+		var turn_count = int(get_meta("mage_turn_count")) if has_meta("mage_turn_count") else 0
+		if turn_count >= MAGE_METEOR_TURNS_REQUIRED:
+			intent_id = "meteor"
+			intent_short = tr("METEOR")
+			intent_text = tr("Next Move: Meteor (200% DMG)")
+			icon = INTENT_ICON_METEOR
+	
+	if intent_id == "move":
+		if _can_attack_player(player_unit, battle_grid):
+			intent_id = "attack"
+			intent_short = tr("ATTACK")
+			intent_text = tr("Next Move: Attack")
+			icon = INTENT_ICON_ATTACK
+	
+	return {
+		"id": intent_id,
+		"short_text": intent_short,
+		"text": intent_text,
+		"icon": icon
+	}
+
+func _can_attack_player(player_unit: Unit, battle_grid: BattleGrid) -> bool:
+	if not is_instance_valid(player_unit):
+		return false
+	var distance = battle_grid.get_distance(grid_position, player_unit.grid_position)
+	return distance <= unit_data.attack_range
+
+func _is_aligned_with_player(player_unit: Unit) -> bool:
+	if not is_instance_valid(player_unit):
+		return false
+	return grid_position.x == player_unit.grid_position.x or grid_position.y == player_unit.grid_position.y
+
+func _get_ai_class_name(ai_path: String) -> String:
+	if ai_path.contains("AssassinAI"):
+		return tr("Assassin")
+	if ai_path.contains("BerserkerAI"):
+		return tr("Berserker")
+	if ai_path.contains("ArcherAI"):
+		return tr("Archer")
+	if ai_path.contains("MageAI"):
+		return tr("Mage")
+	if ai_path.contains("HealerAI"):
+		return tr("Healer")
+	if ai_path.contains("DruidAI"):
+		return tr("Druid")
+	if ai_path.contains("MonkAI"):
+		return tr("Monk")
+	if ai_path.contains("FighterAI"):
+		return tr("Fighter")
+	return tr("Unknown")
+
+func _get_passives_text() -> String:
+	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data.ai_script) else ""
+	if ai_path.contains("AssassinAI"):
+		return tr("35% Dodge, 25% Double Strike")
+	if ai_path.contains("BerserkerAI"):
+		return tr("Rage after 5 turns, Rush 300% DMG")
+	if ai_path.contains("ArcherAI"):
+		return tr("Aim for 250% DMG")
+	if ai_path.contains("MageAI"):
+		return tr("Meteor after 10 turns")
+	if ai_path.contains("HealerAI"):
+		return tr("Heals allies")
+	if ai_path.contains("DruidAI"):
+		return tr("Summons spirits")
+	if ai_path.contains("MonkAI"):
+		return tr("Blesses allies")
+	if ai_path.contains("FighterAI"):
+		return tr("Balanced strikes")
+	return tr("None")
+
+func _get_intent_icon_for_id(intent_id: String) -> Texture2D:
+	match intent_id:
+		"aiming": return INTENT_ICON_AIMING
+		"rush": return INTENT_ICON_RUSH
+		"meteor": return INTENT_ICON_METEOR
+		"attack": return INTENT_ICON_ATTACK
+		"move": return INTENT_ICON_MOVE
+	return INTENT_ICON_MOVE
 
 func _show_floating_text(amount: int, type: String):
 	if amount <= 0:

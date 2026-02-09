@@ -89,6 +89,8 @@ func _ready():
 		TurnManager.round_started.connect(_on_round_started)
 		TurnManager.turn_started.connect(_on_turn_started)
 		TurnManager.combat_ended.connect(_on_combat_ended)
+		if TurnManager.has_signal("initiative_modifiers_changed"):
+			TurnManager.initiative_modifiers_changed.connect(_on_initiative_modifiers_changed)
 	else:
 		printerr("CHYBA: TurnManager není dostupný!")
 
@@ -97,6 +99,7 @@ func _ready():
 	player_hand_ui_instance.hand_card_was_clicked.connect(_on_player_hand_card_clicked)
 	player_hand_ui_instance.hand_card_drag_started.connect(_on_player_hand_card_drag_started)
 	player_hand_ui_instance.hand_card_drag_released.connect(_on_player_hand_card_drag_released)
+	player_hand_ui_instance.hand_card_drag_cancelled.connect(_on_player_hand_card_drag_cancelled)
 	player_hand_ui_instance.card_right_clicked.connect(_on_card_right_clicked)
 	
 	# Tooltip se nyní zobrazuje/schovává pomocí pravého kliknutí - žádné timery nejsou potřeba
@@ -217,6 +220,11 @@ func _unhandled_input(event: InputEvent):
 	if card_pile_viewer.visible and event.is_action_pressed("ui_cancel"):
 		card_pile_viewer.hide()
 		return
+	
+	if event.is_action_pressed("ui_cancel") and _player_action_state == PlayerActionState.CARD_SELECTED:
+		player_hand_ui_instance.cancel_drag_ui()
+		_reset_player_selection()
+		return
 
 	# KLIKÁNÍ NA MŘÍŽKU (RAYCAST)
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -267,6 +275,8 @@ func _on_turn_started(unit: Unit):
 	"""Volá se když je na řadě další jednotka"""
 	if is_instance_valid(initiative_bar):
 		initiative_bar.set_active_unit(unit)
+		if initiative_bar.has_method("advance_to_active"):
+			initiative_bar.advance_to_active(unit)
 
 	if not is_instance_valid(unit):
 		TurnManager.next_turn()
@@ -280,6 +290,10 @@ func _on_turn_started(unit: Unit):
 		_start_player_initiative_turn(unit, extra_draw)
 	else:
 		_start_enemy_initiative_turn(unit)
+
+func _on_initiative_modifiers_changed(_unit: Unit, _total_initiative: int):
+	if is_instance_valid(initiative_bar):
+		initiative_bar.refresh_initiatives()
 
 func _start_player_initiative_turn(_player_unit: Unit, extra_draw: int = 0):
 	"""Zahájí tah hráče v iniciativním systému"""
@@ -304,6 +318,7 @@ func _start_player_initiative_turn(_player_unit: Unit, extra_draw: int = 0):
 	_draw_next_card_in_queue()
 	
 	# Zobraz AI záměry
+	_set_enemy_intents_visible(true)
 	set_enemy_intents()
 
 func _start_enemy_initiative_turn(enemy_unit: Unit):
@@ -312,6 +327,7 @@ func _start_enemy_initiative_turn(enemy_unit: Unit):
 	end_turn_button.disabled = true
 	
 	battle_grid_instance.hide_danger_zone()
+	_set_enemy_intents_visible(false)
 	enemy_unit.hide_intent()
 	
 	await _process_single_enemy_action(enemy_unit)
@@ -759,6 +775,9 @@ func _on_player_hand_card_drag_released(card_ui_node: Control, _card_data_resour
 	if not did_play:
 		_reset_player_selection()
 
+func _on_player_hand_card_drag_cancelled(_card_ui_node: Control, _card_data_resource: CardData):
+	_reset_player_selection()
+
 # OPRAVA: Argument je Node3D (nebo Unit, ale Node3D je obecnější pro 3D svět)
 func try_play_card(card: CardData, initial_target: Node3D) -> void:
 	DebugLogger.log_card_played(card.card_name, str(initial_target.name) if initial_target else "none")
@@ -828,6 +847,7 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 			card_ui_to_remove.queue_free()
 		player_hand_ui_instance._request_arrange()
 		_update_pile_counts()
+		set_enemy_intents()
 	else:
 		DebugLogger.log_warning(TranslationHelper.tr_format("ui.battle.no_valid_target", {"name": card.get_localized_name()}))
 		PlayerData.gain_energy(card.cost)
@@ -926,6 +946,8 @@ func _execute_move(unit_to_move: Unit, target_cell: Vector2i):
 		# Voláme přímo funkci na jednotce, která efekt zpracuje
 		unit_to_move.process_terrain_effects(terrain_on_cell)
 	_reset_player_selection()
+	if unit_to_move == _player_unit_node:
+		set_enemy_intents()
 
 # Kontrola podmínek pro efekt
 func _check_condition(effect: CardEffectData, target: Node3D) -> bool:
@@ -1212,8 +1234,8 @@ func _reset_player_selection():
 
 
 
-func _on_draw_pile_clicked(): card_pile_viewer.show_cards(PlayerData.draw_pile)
-func _on_discard_pile_clicked(): card_pile_viewer.show_cards(PlayerData.discard_pile)
+func _on_draw_pile_clicked(): card_pile_viewer.show_cards(PlayerData.draw_pile, Vector2(0.7, 0.7))
+func _on_discard_pile_clicked(): card_pile_viewer.show_cards(PlayerData.discard_pile, Vector2(0.7, 0.7))
 func _on_end_turn_button_pressed():
 	if _current_battle_state != BattleState.PLAYER_TURN:
 		return
@@ -1293,29 +1315,14 @@ func set_enemy_intents():
 		if not is_instance_valid(enemy_unit):
 			continue
 		
-		if not enemy_unit.has_method("show_intent"):
+		if not enemy_unit.has_method("update_intent"):
 			continue
-		
-		# ===== UPRAVENO: Získej akci z AI =====
-		var player_units_array: Array = [_player_unit_node]
-		
-		var ai_instance = null
-		if is_instance_valid(enemy_unit.unit_data) and is_instance_valid(enemy_unit.unit_data.ai_script):
-			ai_instance = enemy_unit.unit_data.ai_script.new()
-		else:
-			continue
-		
-		var action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
-		
-		# Zobraz záměr podle typu akce
-		match action.type:
-			EnemyAIBase.AIAction.ActionType.ATTACK, EnemyAIBase.AIAction.ActionType.RUSH:
-				var damage = enemy_unit.unit_data.attack_damage
-				if action.damage_multiplier != 1.0:
-					damage = int(damage * action.damage_multiplier)
-				enemy_unit.show_intent(damage)
-			_:
-				enemy_unit.hide_intent()
+		enemy_unit.update_intent(_player_unit_node, battle_grid_instance)
+
+func _set_enemy_intents_visible(visible: bool) -> void:
+	for enemy_unit in _enemy_units:
+		if is_instance_valid(enemy_unit) and enemy_unit.has_method("set_intent_visibility_allowed"):
+			enemy_unit.set_intent_visibility_allowed(visible)
 
 # OPRAVA: Return type je Unit (což je Node3D, takže ok, ale explicitní Unit je lepší)
 func _spawn_unit(unit_data: UnitData, grid_pos: Vector2i) -> Unit:

@@ -89,7 +89,6 @@ func _generate_shop_inventory():
 				
 				items_grid.add_child(shop_item_ui)
 				shop_item_ui.item_purchased.connect(_on_item_purchased)
-				# Připojíme tooltip signály pro karty
 				shop_item_ui.card_right_clicked.connect(_on_card_right_clicked)
 
 	# ARTEFAKTY - NOVÉ: Filtrujeme dostupné artefakty
@@ -103,11 +102,7 @@ func _generate_shop_inventory():
 			
 			# Zobrazíme stack info v názvu
 			var stack_info = PlayerData.get_artifact_stack_info(artifact_to_sell.artifact_name)
-			if stack_info != tr("ui.shop.artifact.new"):
-				artifact_to_sell = artifact_to_sell.duplicate()  # Duplikujeme aby jsme mohli změnit název
-				artifact_to_sell.artifact_name += " [%s]" % stack_info
-			
-			shop_item_ui.setup_item(artifact_to_sell, ARTIFACT_PRICE)
+			shop_item_ui.setup_item(artifact_to_sell, ARTIFACT_PRICE, false, 0, stack_info)
 			items_grid.add_child(shop_item_ui)
 			shop_item_ui.item_purchased.connect(_on_item_purchased)
 
@@ -126,7 +121,11 @@ func _on_item_purchased(item_data: Resource, button_node: Button):
 		return
 
 	if PlayerData.spend_gold(cost):
-		var item_name = item_data.get("card_name") or item_data.get("artifact_name")
+		var item_name = ""
+		if item_data is CardData:
+			item_name = item_data.card_name
+		elif item_data is ArtifactsData:
+			item_name = item_data.artifact_name
 		print(TranslationHelper.tr_format("log.shop.purchased", {"name": tr(item_name)}))
 
 		if item_data is CardData:
@@ -170,7 +169,10 @@ func _update_gold_label(new_amount: int):
 
 func _on_remove_card_button_pressed():
 	if PlayerData.gold >= CARD_REMOVAL_COST:
-		card_pile_viewer.show_cards(PlayerData.master_deck)
+		card_pile_viewer.show_cards(PlayerData.master_deck, Vector2(0.7, 0.7))
+		if not card_pile_viewer.is_connected("card_clicked_in_viewer", _on_card_selected_for_removal):
+			card_pile_viewer.card_clicked_in_viewer.connect(_on_card_selected_for_removal)
+		_connect_pile_card_clicks()
 	else:
 		print(tr("ui.shop.not_enough_gold_remove"))
 		remove_card_button.self_modulate = Color.RED
@@ -180,10 +182,15 @@ func _on_remove_card_button_pressed():
 
 func _on_viewer_visibility_changed():
 	if card_pile_viewer.visible:
-		for card_ui in card_pile_viewer.grid_container.get_children():
-			if card_ui is CardUI:
-				if not card_ui.is_connected("gui_input", _on_card_in_viewer_clicked):
-					card_ui.gui_input.connect(_on_card_in_viewer_clicked.bind(card_ui.card_data))
+		_connect_pile_card_clicks()
+
+func _connect_pile_card_clicks():
+	for card_ui in card_pile_viewer.grid_container.get_children():
+		if card_ui is CardUI:
+			if not card_ui.is_connected("card_clicked", _on_card_selected_for_removal):
+				card_ui.card_clicked.connect(_on_card_selected_for_removal)
+			if not card_ui.is_connected("card_right_clicked", _on_card_right_clicked):
+				card_ui.card_right_clicked.connect(_on_card_right_clicked)
 
 func _on_card_right_clicked(card_data: CardData):
 	"""Toggle tooltip při pravém kliknutí na kartu"""
@@ -225,11 +232,22 @@ func _show_card_tooltip():
 	
 	card_tooltip.show_tooltip(_current_tooltip_card_data, tooltip_pos)
 
-func _on_card_in_viewer_clicked(event: InputEvent, card_data: CardData):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
-		if PlayerData.spend_gold(CARD_REMOVAL_COST):
-			PlayerData.master_deck.erase(card_data)
-			print(TranslationHelper.tr_format("log.shop.card_removed", {"name": card_data.card_name}))
-			card_pile_viewer.hide()
-		else:
-			print(tr("log.shop.removal_error"))
+func _on_card_hovered(card_data: CardData):
+	if not card_tooltip:
+		return
+	_current_tooltip_card_data = card_data
+	_show_card_tooltip()
+
+func _on_card_hover_exited():
+	if not card_tooltip:
+		return
+	card_tooltip.hide_tooltip()
+	_current_tooltip_card_data = null
+
+func _on_card_selected_for_removal(card_data: CardData):
+	if PlayerData.spend_gold(CARD_REMOVAL_COST):
+		PlayerData.master_deck.erase(card_data)
+		print(TranslationHelper.tr_format("log.shop.card_removed", {"name": card_data.card_name}))
+		card_pile_viewer.hide()
+	else:
+		print(tr("log.shop.removal_error"))

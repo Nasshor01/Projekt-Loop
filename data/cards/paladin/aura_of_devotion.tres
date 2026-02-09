@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_1dtwm"]
 script = ExtResource("1_1dtwm")
 effect_type = 5
-value = 2
+value = 1
 string_value = "aura_devotion"
 target_type = 0
 area_of_effect_type = 0

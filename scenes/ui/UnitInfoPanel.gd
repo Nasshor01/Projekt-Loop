@@ -5,11 +5,15 @@ extends PanelContainer
 @onready var hp_label: Label = %HPLabel
 @onready var block_label: Label = %BlockLabel
 @onready var attack_label: Label = %AttackLabel
+@onready var class_label: Label = %ClassLabel
+@onready var passives_label: Label = %PassivesLabel
+@onready var counters_label: Label = %CountersLabel
+@onready var intent_label: Label = %IntentLabel
 @onready var status_effects_list: VBoxContainer = %StatusEffectsList
 
 func update_stats(unit_node: Node):
-	if not name_label or not hp_label or not block_label or not attack_label or not status_effects_list:
-		printerr("UnitInfoPanel: Některé z Label/Kontejner uzlů nebyly nalezeny!")
+	if not name_label or not hp_label or not block_label or not attack_label or not status_effects_list or not class_label or not passives_label or not counters_label or not intent_label:
+		printerr(tr("UnitInfoPanel: Missing required label/container nodes!"))
 		visible = false
 		return
 		
@@ -54,8 +58,43 @@ func update_stats(unit_node: Node):
 		attack_label.visible = true
 	else:
 		attack_label.visible = false
+	
+	_update_enemy_details(unit_node, data)
 		
 	_update_status_display(unit_node)
+
+func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
+	if data.faction != UnitData.Faction.ENEMY:
+		class_label.visible = false
+		passives_label.visible = false
+		counters_label.visible = false
+		intent_label.visible = false
+		return
+	
+	class_label.visible = true
+	passives_label.visible = true
+	counters_label.visible = true
+	intent_label.visible = true
+	
+	if unit_node.has_method("get_enemy_class_display"):
+		class_label.text = unit_node.get_enemy_class_display()
+	else:
+		class_label.text = tr("Class: Unknown")
+	
+	if unit_node.has_method("get_enemy_passives_display"):
+		passives_label.text = unit_node.get_enemy_passives_display()
+	else:
+		passives_label.text = tr("Passives: None")
+	
+	if unit_node.has_method("get_status_counters_display"):
+		counters_label.text = unit_node.get_status_counters_display()
+	else:
+		counters_label.text = tr("Status/Counters: None")
+	
+	if unit_node.has_method("get_intent_display_text"):
+		intent_label.text = unit_node.get_intent_display_text()
+	else:
+		intent_label.text = tr("Next Move: Unknown")
 
 func _update_status_display(unit_node: Node):
 	# Vymaž staré statusy
@@ -109,4 +148,8 @@ func update_from_player_data():
 	block_label.visible = false
 	attack_label.visible = false
 	status_effects_list.visible = false
+	class_label.visible = false
+	passives_label.visible = false
+	counters_label.visible = false
+	intent_label.visible = false
 	show()

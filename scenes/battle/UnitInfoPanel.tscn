@@ -34,6 +34,26 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Blok: 0"
 
+[node name="ClassLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Class: Unknown"
+
+[node name="PassivesLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Passives: None"
+
+[node name="IntentLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Next Move: Unknown"
+
+[node name="CountersLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Status/Counters: None"
+
 [node name="StatusEffectsList" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2

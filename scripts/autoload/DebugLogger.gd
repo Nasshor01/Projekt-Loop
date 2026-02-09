@@ -560,17 +560,8 @@ func _on_tree_exiting():
 func _notification(what):
 	# Zachyť crash nebo force quit
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
-		if is_quitting_legally:
-			_remove_session_lock()
-			return
-		
-		CrashReporter.generate_crash_report("AUTOMATIC_CRASH_REPORT")
-		log_critical("Aplikace se nečekaně ukončuje!", "SYSTEM")
-		log_player_stats()
-		log_deck_state()
-		
-		await get_tree().create_timer(0.5).timeout
-		
+		_remove_session_lock()
+		log_info("Ukončení přes okno/Alt+F4.", "SYSTEM")
 		if log_file:
 			log_file.flush()
 			log_file.close()

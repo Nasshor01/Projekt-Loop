@@ -23,3 +23,7 @@ func display_artifact(data: ArtifactsData):
 	description_label.text = data.get_formatted_description()
 	if data.texture:
 		icon.texture = data.texture
+
+func set_stack_info(stack_info: String):
+	if not stack_info.is_empty() and name_label:
+		name_label.text = "%s [%s]" % [name_label.text, stack_info]

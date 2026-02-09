@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="Resource_1dtwm"]
 script = ExtResource("1_jclt2")
 effect_type = 5
-value = 4
+value = 2
 string_value = "aura_devotion_plus"
 target_type = 0
 area_of_effect_type = 0

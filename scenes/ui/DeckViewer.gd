@@ -1,6 +1,7 @@
 extends PanelContainer
 
 signal card_selected(card_data: CardData)
+signal card_clicked_in_viewer(card_data)
 
 @onready var grid_container: GridContainer = %GridContainer
 @onready var close_button: Button = %CloseButton
@@ -21,7 +22,7 @@ func _update_ui_texts():
 
 
 ## Zobrazí každou kartu individuálně.
-func show_cards(cards: Array[CardData], card_scale: Vector2 = Vector2(1.0, 1.0)):
+func show_cards(cards: Array[CardData], card_scale: Vector2 = Vector2(0.7, 0.7)):
 	# 1. Vyčisti všechny staré karty
 	_clear_grid()
 
@@ -35,7 +36,15 @@ func show_cards(cards: Array[CardData], card_scale: Vector2 = Vector2(1.0, 1.0))
 		# Použijeme metodu 'load_card' z tvého skriptu
 		card_instance.load_card(card_data) 
 		if card_instance is CardUI:
+			card_instance.is_draggable = false
+			card_instance.static_layout = true
+			card_instance.custom_minimum_size = Vector2(200, 300)
+			card_instance.pivot_offset = card_instance.custom_minimum_size * 0.5
 			card_instance.set_target_scale(card_scale)
+			card_instance.scale = card_scale
+			if not card_instance.is_connected("card_clicked", _on_card_clicked_in_viewer):
+				card_instance.card_clicked.connect(_on_card_clicked_in_viewer)
+			call_deferred("_sync_deck_card_layout", card_instance)
 		else:
 			card_instance.scale = card_scale
 		
@@ -74,6 +83,16 @@ func display_deck(deck: Array[CardData]):
 		var card_info = card_counts[card_name]
 		var card_instance = card_scene.instantiate()
 		card_instance.load_card(card_info["data"]) # Používáme 'load_card'
+		if card_instance is CardUI:
+			card_instance.is_draggable = false
+			card_instance.static_layout = true
+			card_instance.custom_minimum_size = Vector2(200, 300)
+			card_instance.pivot_offset = card_instance.custom_minimum_size * 0.5
+			card_instance.set_target_scale(Vector2(0.7, 0.7))
+			card_instance.scale = Vector2(0.7, 0.7)
+			if not card_instance.is_connected("card_clicked", _on_card_clicked_in_viewer):
+				card_instance.card_clicked.connect(_on_card_clicked_in_viewer)
+			call_deferred("_sync_deck_card_layout", card_instance)
 
 		# Přidáme label s počtem karet
 		var count_label = Label.new()
@@ -106,3 +125,12 @@ func hide_and_clear():
 func _clear_grid():
 	for child in grid_container.get_children():
 		child.queue_free()
+
+func _sync_deck_card_layout(card_ui: CardUI):
+	if not is_instance_valid(card_ui):
+		return
+	card_ui.set_target_position(card_ui.position)
+	card_ui.set_target_scale(card_ui.scale)
+
+func _on_card_clicked_in_viewer(card_data: CardData):
+	card_clicked_in_viewer.emit(card_data)

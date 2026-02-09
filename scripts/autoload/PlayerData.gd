@@ -773,12 +773,12 @@ func get_artifact_stack_info(artifact_name: String) -> String:
 	"""Vrátí info o stackech pro UI"""
 	var existing = find_artifact_by_name(artifact_name)
 	if not existing:
-		return "Nový"
+		return tr("ui.shop.artifact.new")
 	
 	if existing.max_stacks > 1:
-		return "Stack +1 (%d/%d)" % [existing.current_stacks + 1, existing.max_stacks]
+		return TranslationHelper.tr_format("ui.shop.artifact.stack", {"current": existing.current_stacks + 1, "max": existing.max_stacks})
 	else:
-		return "Už vlastníš"
+		return tr("ui.shop.artifact.owned")
 
 # V PlayerData.gd - NOVÁ POMOCNÁ FUNKCE:
 func _find_stackable_artifact(new_artifact: ArtifactsData) -> ArtifactsData:

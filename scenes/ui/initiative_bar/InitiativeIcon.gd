@@ -17,6 +17,11 @@ var _is_setup_pending: bool = false
 # Tato funkce se zavolá AŽ POTÉ, co jsou všechny @onready
 # proměnné (jako %Portrait) úspěšně načteny.
 func _ready():
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	if is_instance_valid(portrait):
+		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if is_instance_valid(tooltip):
+		tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	# Pokud byl setup() zavolán PŘEDTÍM, než bylo _ready hotové,
 	# musíme teď ta data aplikovat.
 	if _is_setup_pending:
@@ -62,19 +67,26 @@ func _apply_setup_data():
 			portrait.texture = unit.unit_data.sprite_texture
 		else:
 			portrait.texture = null
-
-		var base_init = unit.unit_data.initiative
-		var mod = 0
-		if _turn_manager and _turn_manager.has_method("get_initiative_modifier_for_unit"):
-			mod = _turn_manager.get_initiative_modifier_for_unit(unit)
-		var total_initiative = base_init + mod
-
-		tooltip_label.text = TranslationHelper.tr_format("ui.initiative.tooltip", {"name": unit.unit_data.get_localized_name(), "value": total_initiative})
+		
+		_update_tooltip_text()
 	else:
 		portrait.texture = null
 		tooltip_label.text = tr("ui.initiative.unknown_unit")
 
 	tooltip.hide()
+
+func refresh_initiative():
+	_update_tooltip_text()
+
+func _update_tooltip_text():
+	if not is_instance_valid(unit) or not is_instance_valid(unit.unit_data):
+		return
+	var base_init = unit.unit_data.initiative
+	var mod = 0
+	if _turn_manager and _turn_manager.has_method("get_initiative_modifier_for_unit"):
+		mod = _turn_manager.get_initiative_modifier_for_unit(unit)
+	var total_initiative = base_init + mod
+	tooltip_label.text = TranslationHelper.tr_format("ui.initiative.tooltip", {"name": unit.unit_data.get_localized_name(), "value": total_initiative})
 
 
 func set_active(is_active: bool):

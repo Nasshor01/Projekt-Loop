@@ -18,6 +18,15 @@ var tutorial_scene = "res://scenes/ui/Tutorial.tscn"
 var settings_scene = "res://scenes/ui/Settings.tscn"
 var consent_popup_scene = preload("res://scenes/ui/ConsentPopup.tscn")
 
+const TUTORIAL_STEP_BATTLE_1 = "battle_1"
+const TUTORIAL_STEP_REWARD_1 = "reward_1"
+const TUTORIAL_STEP_MAP_CAMP = "map_camp"
+const TUTORIAL_STEP_CAMP_UPGRADE = "camp_upgrade"
+const TUTORIAL_STEP_MAP_FINAL = "map_final"
+const TUTORIAL_STEP_FINAL_BATTLE = "final_battle"
+const TUTORIAL_STEP_FINAL_REWARD = "final_reward"
+const TUTORIAL_STEP_COMPLETE = "complete"
+
 var current_scene: Node = null
 var current_seed: int
 var current_encounter: EncounterData
@@ -44,6 +53,8 @@ var BOSS_ARTIFACT_POOL = null
 var last_battle_rewards := {}
 const SESSION_LOCK_PATH = "user://session.lock"
 var crash_recovery_dialog: ConfirmationDialog = null
+var tutorial_active: bool = false
+var tutorial_step: String = ""
 
 func _ready():
 	_setup_crash_recovery()
@@ -213,6 +224,10 @@ func go_to_character_select():
 	_change_scene(character_select_scene)
 
 func go_to_tutorial():
+	tutorial_active = true
+	tutorial_step = TUTORIAL_STEP_BATTLE_1
+	current_map_data = null
+	PlayerData.path_taken.clear()
 	_change_scene(tutorial_scene)
 
 func go_to_settings():
@@ -351,6 +366,23 @@ func _change_scene(scene_path: String):
 
 func _prepare_battle_rewards():
 	last_battle_rewards.clear()
+	if tutorial_active and tutorial_step == TUTORIAL_STEP_FINAL_BATTLE:
+		var available_cards = []
+		if is_instance_valid(CARD_REWARD_POOL):
+			available_cards = CARD_REWARD_POOL.get_available_cards(
+				PlayerData.selected_class,
+				PlayerData.selected_subclass,
+				PlayerData.unlocked_cards
+			)
+		if not available_cards.is_empty():
+			available_cards.shuffle()
+		last_battle_rewards["gold"] = 0
+		last_battle_rewards["cards"] = available_cards.slice(0, 3)
+		last_battle_rewards["artifacts"] = []
+		last_battle_rewards["tutorial_hint_text"] = tr("ui.tutorial.complete_hint")
+		tutorial_step = TUTORIAL_STEP_FINAL_REWARD
+		return
+
 	var encounter_type = current_encounter.encounter_type if current_encounter else EncounterData.EncounterType.NORMAL
 
 	print("DEBUG: Připravuji odměny pro encounter typu: ", encounter_type)

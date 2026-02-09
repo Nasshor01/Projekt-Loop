@@ -7,6 +7,7 @@ signal card_draw_animation_finished() # Nový signál, který oznámí dokončen
 signal hand_discard_animation_finished() # Nový signál pro dokončení odhození
 signal hand_card_drag_started(card_ui_instance: Control, card_data_resource: CardData)
 signal hand_card_drag_released(card_ui_instance: Control, card_data_resource: CardData)
+signal hand_card_drag_cancelled(card_ui_instance: Control, card_data_resource: CardData)
 
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 
@@ -17,8 +18,8 @@ const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 @export var hand_arc: float = 40.0
 
 @export_group("Interakce")
-@export var hover_y_offset: float = -60.0
-@export var hover_scale: float = 1.15
+@export var hover_y_offset: float = -5.0
+@export var hover_scale: float = 1.05
 
 @onready var _arrange_timer: Timer = $ArrangeTimer
 
@@ -26,6 +27,8 @@ var _hovered_card: Control = null
 var _selected_card: Control = null
 var _dragging_card: Control = null
 var _hidden_cards: Array[Control] = []
+var _suppress_hover_until_lmb_release: bool = false
+var _suppress_click_until_lmb_release: bool = false
 
 
 func _ready():
@@ -150,8 +153,16 @@ func _restore_hidden_cards():
 	_hidden_cards.clear()
 
 func cancel_drag_ui():
+	if _dragging_card and _dragging_card is CardUI:
+		_dragging_card.cancel_drag()
+		emit_signal("hand_card_drag_cancelled", _dragging_card, _dragging_card.card_data)
 	_dragging_card = null
+	_selected_card = null
+	_hovered_card = null
+	_suppress_hover_until_lmb_release = true
+	_suppress_click_until_lmb_release = true
 	_restore_hidden_cards()
+	_request_arrange()
 
 func _arrange_cards():
 	var cards = get_children().filter(func(c): return c is CardUI)
@@ -208,24 +219,54 @@ func _arrange_cards():
 
 func _on_card_mouse_entered(card: Control):
 	"""Hover pro vizuální efekty - karta se zvedne"""
+	if _suppress_hover_until_lmb_release:
+		return
 	_hovered_card = card
 	_request_arrange()
 
 func _on_card_mouse_exited(card: Control):
 	"""Konec hoveru - karta se vrátí na normální pozici"""
+	if _suppress_hover_until_lmb_release:
+		return
 	if _hovered_card == card:
 		_hovered_card = null
 		_request_arrange()
 
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+		if _suppress_hover_until_lmb_release or _suppress_click_until_lmb_release:
+			call_deferred("_clear_suppress_after_lmb_release")
+
 func _on_card_gui_input(event: InputEvent, card_node: Control):
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+			if _suppress_click_until_lmb_release:
+				accept_event()
+				return
 			if card_node is CardUI and (card_node.is_dragging or card_node.consume_drag_release()):
 				return
 			emit_signal("hand_card_was_clicked", card_node, card_node.card_data)
 		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-			# Pravý klik - toggle tooltip
-			emit_signal("card_right_clicked", card_node.card_data)
+			if _dragging_card == card_node:
+				cancel_drag_ui()
+			elif _selected_card == card_node:
+				_selected_card = null
+				_hovered_card = null
+				_suppress_click_until_lmb_release = true
+				emit_signal("hand_card_drag_cancelled", card_node, card_node.card_data)
+				_request_arrange()
+			else:
+				# Pravý klik - toggle tooltip
+				emit_signal("card_right_clicked", card_node.card_data)
+			accept_event()
+
+func _clear_suppress_after_lmb_release():
+	if _suppress_hover_until_lmb_release:
+		_suppress_hover_until_lmb_release = false
+		_hovered_card = null
+		_request_arrange()
+	if _suppress_click_until_lmb_release:
+		_suppress_click_until_lmb_release = false
 
 func _on_card_drag_started(card_node: Control, _original_pos: Vector2 = Vector2.ZERO):
 	_dragging_card = card_node

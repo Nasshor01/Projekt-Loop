@@ -9,6 +9,8 @@ var artifact_rewards: Array = []
 # --- Přednačtené scény ---
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 const ArtifactChoiceUIScene = preload("res://scenes/ui/ArtifactChoiceUI.tscn")
+const REWARD_CARD_SIZE = Vector2(170, 255)
+const REWARD_CARD_SCALE = Vector2(0.6, 0.6)
 
 # --- Cesty k UI prvkům ---
 @onready var title_label: Label = $VBoxContainer/CenterContainer/TitleLabel
@@ -24,6 +26,7 @@ const ArtifactChoiceUIScene = preload("res://scenes/ui/ArtifactChoiceUI.tscn")
 var _current_tooltip_card_data: CardData = null
 var _tutorial_return_to_menu := false
 var _tutorial_hint_text := ""
+var _tutorial_final_reward := false
 
 func _ready():
 	# Jen inicializace, ŽÁDNÁ logika pro UI
@@ -61,10 +64,15 @@ func setup_ui():
 			card_ui.load_card(card_data)
 			if card_ui is CardUI:
 				card_ui.is_draggable = false
-				card_ui.custom_minimum_size = Vector2(200, 300)
+				card_ui.static_layout = true
+				card_ui.custom_minimum_size = REWARD_CARD_SIZE
 				card_ui.pivot_offset = card_ui.custom_minimum_size * 0.5
+				card_ui.set_target_scale(REWARD_CARD_SCALE)
+				card_ui.scale = REWARD_CARD_SCALE
+				card_ui.set_process(false)
 				call_deferred("_sync_reward_card_layout", card_ui)
-			card_ui.gui_input.connect(_on_card_gui_input.bind(card_data))
+			card_ui.card_clicked.connect(_on_card_clicked)
+			card_ui.card_right_clicked.connect(_on_card_right_clicked)
 	else:
 		card_container.visible = false
 		
@@ -95,34 +103,32 @@ func setup_ui():
 	else:
 		skip_button.text = tr("ui.reward.skip_card")
 		skip_button.pressed.connect(_finish_reward)
+	
+	if has_node("/root/GameManager") and GameManager.tutorial_active and GameManager.tutorial_step == GameManager.TUTORIAL_STEP_REWARD_1:
+		skip_button.visible = false
 
-func _on_card_gui_input(event: InputEvent, card_to_add: CardData):
-	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
-			# Levý klik - výběr karty
-			PlayerData.master_deck.append(card_to_add)
-			
-			# Deaktivujeme možnost vybrat další kartu
-			for child in card_container.get_children():
-				child.mouse_filter = MOUSE_FILTER_IGNORE
-			
-			card_container.visible = false
-			skip_button.disabled = true
-			
-			# Pokud nejsou na výběr artefakty, rovnou končíme
-			if artifact_container.get_child_count() == 0:
-				if _tutorial_return_to_menu:
-					_show_tutorial_card_added()
-					await get_tree().create_timer(0.8).timeout
-				_finish_reward()
-			# Pokud ano, změníme text tlačítka na "Pokračovat"
-			else:
-				skip_button.text = tr("ui.common.continue")
-				skip_button.disabled = false
-				skip_button.pressed.connect(_finish_reward)
-		elif event.button_index == MOUSE_BUTTON_RIGHT and event.is_pressed():
-			# Pravý klik - toggle tooltip
-			_on_card_right_clicked(card_to_add)
+func _on_card_clicked(card_to_add: CardData):
+	# Levý klik - výběr karty
+	PlayerData.master_deck.append(card_to_add)
+
+	# Deaktivujeme možnost vybrat další kartu
+	for child in card_container.get_children():
+		child.mouse_filter = MOUSE_FILTER_IGNORE
+
+	card_container.visible = false
+	skip_button.disabled = true
+
+	# Pokud nejsou na výběr artefakty, rovnou končíme
+	if artifact_container.get_child_count() == 0:
+		if _tutorial_return_to_menu:
+			_show_tutorial_card_added()
+			await get_tree().create_timer(0.8).timeout
+		_finish_reward()
+	# Pokud ano, změníme text tlačítka na "Pokračovat"
+	else:
+		skip_button.text = tr("ui.common.continue")
+		skip_button.disabled = false
+		skip_button.pressed.connect(_finish_reward)
 
 func _on_artifact_selected(artifact_to_add: ArtifactsData):
 	PlayerData.add_artifact(artifact_to_add)
@@ -148,6 +154,18 @@ func _on_card_right_clicked(card_data: CardData):
 		# Jinak zobrazíme tooltip pro tuto kartu
 		_current_tooltip_card_data = card_data
 		_show_card_tooltip()
+
+func _on_card_hovered(card_data: CardData):
+	if not card_tooltip:
+		return
+	_current_tooltip_card_data = card_data
+	_show_card_tooltip()
+
+func _on_card_hover_exited():
+	if not card_tooltip:
+		return
+	card_tooltip.hide_tooltip()
+	_current_tooltip_card_data = null
 
 func _show_card_tooltip():
 	"""Zobrazí tooltip pro aktuálně vybranou kartu"""
@@ -183,6 +201,8 @@ func _apply_tutorial_overrides():
 			_tutorial_return_to_menu = bool(rewards.get("tutorial_return_to_menu", false))
 		if rewards.has("tutorial_hint_text"):
 			_tutorial_hint_text = str(rewards.get("tutorial_hint_text", ""))
+		if GameManager.tutorial_active and GameManager.tutorial_step == GameManager.TUTORIAL_STEP_FINAL_REWARD:
+			_tutorial_final_reward = true
 	
 	if is_instance_valid(tutorial_hint_label) and _tutorial_hint_text != "":
 		tutorial_hint_label.visible = true
@@ -198,8 +218,16 @@ func _sync_reward_card_layout(card_ui: CardUI):
 	card_ui.set_target_position(card_ui.position)
 
 func _finish_reward():
-	if _tutorial_return_to_menu:
+	if _tutorial_final_reward and has_node("/root/GameManager"):
+		SaveManager.set_tutorial_completed(true)
+		GameManager.tutorial_active = false
+		GameManager.tutorial_step = GameManager.TUTORIAL_STEP_COMPLETE
+		GameManager.go_to_main_menu()
+	elif _tutorial_return_to_menu:
 		SaveManager.set_tutorial_completed(true)
 		GameManager.go_to_main_menu()
+	elif has_node("/root/GameManager") and GameManager.tutorial_active and GameManager.tutorial_step == GameManager.TUTORIAL_STEP_REWARD_1:
+		GameManager.tutorial_step = GameManager.TUTORIAL_STEP_MAP_CAMP
+		GameManager.reward_chosen()
 	else:
 		GameManager.reward_chosen()

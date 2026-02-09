@@ -14,14 +14,6 @@ billboard = 2
 alpha_cut = 1
 texture_filter = 0
 
-[node name="IntentUI" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 0
-offset_left = -21.0
-offset_top = -43.0
-offset_right = 19.0
-offset_bottom = -3.0
-
 [node name="StatusEffectContainer" type="HBoxContainer" parent="."]
 offset_left = -24.0
 offset_top = -60.0

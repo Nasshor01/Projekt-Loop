@@ -7,10 +7,10 @@
 [sub_resource type="Resource" id="Resource_mmxbr"]
 script = ExtResource("1_mmxbr")
 effect_type = 0
-value = 3
+value = 2
 string_value = ""
-target_type = 3
-area_of_effect_type = 4
+target_type = 6
+area_of_effect_type = 3
 aoe_param_x = 1
 aoe_param_y = 1
 damage_type = 1
@@ -27,7 +27,7 @@ card_name = "card.consecration"
 card_description = "card.consecration.desc"
 cost = 2
 range_type = 5
-range_value = 1
+range_value = 3
 tags = Array[int]([0])
 rarity = 0
 effects = Array[ExtResource("1_mmxbr")]([SubResource("Resource_mmxbr")])

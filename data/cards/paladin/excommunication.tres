@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_excom1"]
 script = ExtResource("1_excom")
 effect_type = 0
-value = 10
+value = 6
 string_value = ""
 target_type = 1
 area_of_effect_type = 0

@@ -6,6 +6,7 @@ extends Node
 signal round_started(round_number: int)
 signal turn_started(unit: Unit)
 signal combat_ended(player_won: bool)
+signal initiative_modifiers_changed(unit: Unit, total_initiative: int)
 
 # Interní stav
 var _combatants: Array[Unit] = []
@@ -206,6 +207,10 @@ func modify_initiative_next_round(unit: Unit, change: int):
 	var unit_id = unit.get_instance_id()
 	var current_mod = _initiative_modifiers.get(unit_id, 0)
 	_initiative_modifiers[unit_id] = current_mod + change
+	
+	var base_init = unit.unit_data.initiative if unit.unit_data else 0
+	var total_initiative = base_init + _initiative_modifiers[unit_id]
+	emit_signal("initiative_modifiers_changed", unit, total_initiative)
 	
 	print("TurnManager: Iniciativa %s bude v PŘÍŠTÍM KOLE změněna o %d (Nový modifikátor: %d)" % [
 		unit.unit_data.unit_name,

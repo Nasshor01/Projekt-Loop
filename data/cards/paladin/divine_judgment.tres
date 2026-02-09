@@ -7,10 +7,10 @@
 [sub_resource type="Resource" id="Resource_djudge1"]
 script = ExtResource("1_djudge")
 effect_type = 0
-value = 25
+value = 20
 string_value = ""
-target_type = 3
-area_of_effect_type = 4
+target_type = 6
+area_of_effect_type = 3
 aoe_param_x = 1
 aoe_param_y = 1
 damage_type = 1
@@ -43,7 +43,7 @@ card_name = "card.divine_judgment"
 card_description = "card.divine_judgment.desc"
 cost = 3
 range_type = 6
-range_value = 1
+range_value = 3
 tags = Array[int]([0, 1])
 rarity = 3
 required_subclass = ExtResource("3_djudge")

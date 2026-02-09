@@ -7,8 +7,8 @@
 [sub_resource type="Resource" id="Resource_ufaith1"]
 script = ExtResource("1_ufaith")
 effect_type = 2
-value = 0
-string_value = "max_hp"
+value = 25
+string_value = ""
 target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1

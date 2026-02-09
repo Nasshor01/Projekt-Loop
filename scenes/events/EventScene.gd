@@ -234,30 +234,29 @@ func _open_card_removal_screen():
 	
 	# Zobraz karty
 	card_removal_viewer.visible = true
-	card_removal_viewer.show_cards(PlayerData.master_deck)
+	card_removal_viewer.show_cards(PlayerData.master_deck, Vector2(0.7, 0.7))
 	
 	# Připoj signály pro kliknutí na karty
 	for card_ui in card_removal_viewer.get_node("MarginContainer/VBoxContainer/ScrollContainer/GridContainer").get_children():
-		if card_ui.has_signal("gui_input"):
-			if not card_ui.is_connected("gui_input", _on_removal_card_clicked):
-				card_ui.gui_input.connect(_on_removal_card_clicked.bind(card_ui.card_data))
+		if card_ui.has_signal("card_clicked"):
+			if not card_ui.is_connected("card_clicked", _on_removal_card_clicked):
+				card_ui.card_clicked.connect(_on_removal_card_clicked.bind(card_ui.card_data))
 
-func _on_removal_card_clicked(event: InputEvent, card_data: CardData):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
-		# Odstraň kartu
-		PlayerData.master_deck.erase(card_data)
-		print(TranslationHelper.tr_format("event.card_removed", {"name": card_data.get_localized_name()}))
+func _on_removal_card_clicked(card_data: CardData):
+	# Odstraň kartu
+	PlayerData.master_deck.erase(card_data)
+	print(TranslationHelper.tr_format("event.card_removed", {"name": card_data.get_localized_name()}))
+	
+	cards_to_remove_count -= 1
+	
+	# Pokud už není co odstranit, pokračuj
+	if cards_to_remove_count <= 0:
+		pending_card_removal = false
+		card_removal_viewer.visible = false
+		result_panel.visible = true
 		
-		cards_to_remove_count -= 1
-		
-		# Pokud už není co odstranit, pokračuj
-		if cards_to_remove_count <= 0:
-			pending_card_removal = false
-			card_removal_viewer.visible = false
-			result_panel.visible = true
-			
-			# Aktualizuj result text
-			result_text.append_text("\n[color=gray]" + TranslationHelper.tr_format("event.result.removed_card", {"name": card_data.get_localized_name()}) + "[/color]")
+		# Aktualizuj result text
+		result_text.append_text("\n[color=gray]" + TranslationHelper.tr_format("event.result.removed_card", {"name": card_data.get_localized_name()}) + "[/color]")
 
 func _open_card_upgrade_screen():
 	"""Otevře obrazovku pro výběr karty k vylepšení"""
@@ -281,26 +280,25 @@ func _open_card_upgrade_screen():
 	
 	# Zobraz upgradeable karty
 	card_removal_viewer.visible = true
-	card_removal_viewer.show_cards(upgradeable_cards)
+	card_removal_viewer.show_cards(upgradeable_cards, Vector2(0.7, 0.7))
 	
 	# Připoj signály
 	for card_ui in card_removal_viewer.get_node("MarginContainer/VBoxContainer/ScrollContainer/GridContainer").get_children():
-		if card_ui.has_signal("gui_input"):
-			if not card_ui.is_connected("gui_input", _on_upgrade_card_clicked):
-				card_ui.gui_input.connect(_on_upgrade_card_clicked.bind(card_ui.card_data))
+		if card_ui.has_signal("card_clicked"):
+			if not card_ui.is_connected("card_clicked", _on_upgrade_card_clicked):
+				card_ui.card_clicked.connect(_on_upgrade_card_clicked.bind(card_ui.card_data))
 
-func _on_upgrade_card_clicked(event: InputEvent, card_data: CardData):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
-		# Vylepši kartu
-		var index = PlayerData.master_deck.find(card_data)
-		if index != -1 and card_data.upgraded_version:
-			var upgraded = card_data.upgraded_version
-			PlayerData.master_deck[index] = upgraded
-			print(TranslationHelper.tr_format("event.card_upgraded", {"from": card_data.get_localized_name(), "to": upgraded.get_localized_name()}))
-			
-			pending_card_upgrade = false
-			card_removal_viewer.visible = false
-			result_panel.visible = true
-			
-			# Aktualizuj result text
-			result_text.append_text("\n[color=cyan]" + TranslationHelper.tr_format("event.reward.upgraded_card", {"from": card_data.get_localized_name(), "to": upgraded.get_localized_name()}) + "[/color]")
+func _on_upgrade_card_clicked(card_data: CardData):
+	# Vylepši kartu
+	var index = PlayerData.master_deck.find(card_data)
+	if index != -1 and card_data.upgraded_version:
+		var upgraded = card_data.upgraded_version
+		PlayerData.master_deck[index] = upgraded
+		print(TranslationHelper.tr_format("event.card_upgraded", {"from": card_data.get_localized_name(), "to": upgraded.get_localized_name()}))
+		
+		pending_card_upgrade = false
+		card_removal_viewer.visible = false
+		result_panel.visible = true
+		
+		# Aktualizuj result text
+		result_text.append_text("\n[color=cyan]" + TranslationHelper.tr_format("event.reward.upgraded_card", {"from": card_data.get_localized_name(), "to": upgraded.get_localized_name()}) + "[/color]")
