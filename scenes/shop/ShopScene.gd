@@ -16,7 +16,9 @@ const CARD_PRICES = {
 	# Můžeš doplnit další vzácnosti, např. EPIC, LEGENDARY
 }
 const ARTIFACT_PRICE = 200
-const CARD_REMOVAL_COST = 75
+const CARD_REMOVAL_BASE_COST = 75
+const CARD_REMOVAL_INCREMENT = 25
+var rare_card_chance: float = 0.1
 
 @onready var gold_label: Label = $CanvasLayer/MainContainer/VBoxContainer/Header/GoldDisplay/HBoxContainer/GoldLabel
 @onready var title_label: Label = $CanvasLayer/MainContainer/VBoxContainer/Header/TitleLabel
@@ -45,7 +47,7 @@ func _update_ui_texts():
 	if title_label:
 		title_label.text = tr("ui.shop.title")
 	if remove_card_button:
-		remove_card_button.text = TranslationHelper.tr_format("ui.shop.remove_card", {"value": CARD_REMOVAL_COST})
+		remove_card_button.text = TranslationHelper.tr_format("ui.shop.remove_card", {"value": get_card_removal_cost()})
 	if leave_button:
 		leave_button.text = tr("ui.shop.leave")
 	
@@ -57,18 +59,17 @@ func _generate_shop_inventory():
 	for child in items_grid.get_children():
 		child.queue_free()
 
-	# KARTY - filtrujeme podle třídy a odemčených karet
-	var available_cards = SHOP_CARD_POOL.get_available_cards(
+	# KARTY - weighted by rarity (rare_card_chance)
+	var cards_to_sell = SHOP_CARD_POOL.pick_weighted_cards(
+		3,
+		rare_card_chance,
 		PlayerData.selected_class,
 		PlayerData.selected_subclass,
 		PlayerData.unlocked_cards
 	)
-	if available_cards.is_empty():
+	if cards_to_sell.is_empty():
 		print(tr("log.shop.no_cards"))
 		return
-	
-	available_cards.shuffle()
-	var cards_to_sell = available_cards.slice(0, 3)
 	
 	if not cards_to_sell.is_empty():
 		var sale_card = cards_to_sell.pick_random()
@@ -167,8 +168,11 @@ func _update_gold_label(new_amount: int):
 	if is_instance_valid(gold_label):
 		gold_label.text = TranslationHelper.tr_format("ui.shop.gold", {"value": new_amount})
 
+func get_card_removal_cost() -> int:
+	return CARD_REMOVAL_BASE_COST + PlayerData.shop_card_removals_count * CARD_REMOVAL_INCREMENT
+
 func _on_remove_card_button_pressed():
-	if PlayerData.gold >= CARD_REMOVAL_COST:
+	if PlayerData.gold >= get_card_removal_cost():
 		card_pile_viewer.show_cards(PlayerData.master_deck, Vector2(0.7, 0.7))
 		if not card_pile_viewer.is_connected("card_clicked_in_viewer", _on_card_selected_for_removal):
 			card_pile_viewer.card_clicked_in_viewer.connect(_on_card_selected_for_removal)
@@ -245,8 +249,11 @@ func _on_card_hover_exited():
 	_current_tooltip_card_data = null
 
 func _on_card_selected_for_removal(card_data: CardData):
-	if PlayerData.spend_gold(CARD_REMOVAL_COST):
+	var cost = get_card_removal_cost()
+	if PlayerData.spend_gold(cost):
+		PlayerData.shop_card_removals_count += 1
 		PlayerData.master_deck.erase(card_data)
+		remove_card_button.text = TranslationHelper.tr_format("ui.shop.remove_card", {"value": get_card_removal_cost()})
 		print(TranslationHelper.tr_format("log.shop.card_removed", {"name": card_data.card_name}))
 		card_pile_viewer.hide()
 	else:

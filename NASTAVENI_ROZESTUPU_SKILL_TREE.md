@@ -83,4 +83,3 @@ line.add_point(Vector2(x, 2000))  # Konec níž
 ---
 
 **Poznámka:** Po změně hodnot v `SkillTreeGenerator.gd` musíš znovu vygenerovat skill tree v editoru, aby se změny projevily!
-

@@ -67,6 +67,7 @@ var _selected_unit: Unit = null
 var _enemy_units: Array[Unit] = []
 
 var _is_action_processing: bool = false
+var _card_play_in_progress: bool = false  # blokuje druhý vstup do _try_play_selected_card_at_cell (např. dvojí signál)
 var _cards_to_draw_queue: int = 0
 var _is_drawing_cards: bool = false
 var _is_first_turn: bool = true
@@ -77,6 +78,7 @@ var _took_damage_last_turn: bool = false  # Tracking poškození pro consecrated
 var _current_tooltip_card_data: CardData = null
 
 func _ready():
+	add_to_group("battle_scene")
 	DebugLogger.log_info("Battle scene loaded", "BATTLE")
 	player_info_panel.update_from_player_data()
 	_current_battle_state = BattleState.SETUP
@@ -113,6 +115,9 @@ func _ready():
 	
 	player_hand_ui_instance.card_draw_animation_finished.connect(_on_card_draw_animation_finished)
 	player_hand_ui_instance.hand_discard_animation_finished.connect(_on_hand_discard_animation_finished)
+	
+	if has_node("/root/ArtifactManager") and not ArtifactManager.extra_turn_requested.is_connected(_on_artifact_extra_turn_requested):
+		ArtifactManager.extra_turn_requested.connect(_on_artifact_extra_turn_requested)
 
 	_update_ui_texts()
 	
@@ -136,6 +141,9 @@ func _update_ui_texts():
 		victory_label.text = tr("ui.battle.victory")
 	if is_instance_valid(win_button):
 		win_button.text = tr("ui.battle.instant_win")
+	# Energie se zobrazuje v PlayerInfoPanelu (Unit Info Panel), samostatný label skryt
+	if is_instance_valid(energy_label):
+		energy_label.visible = false
 	_update_turn_display()
 	_on_energy_changed(PlayerData.current_energy)
 
@@ -188,7 +196,10 @@ func _process(delta):
 		_clear_enemy_hover_highlights()
 		
 	if _player_action_state == PlayerActionState.CARD_SELECTED:
-		_update_card_target_preview()
+		if _selected_card_data and not PlayerData.current_hand.has(_selected_card_data):
+			_reset_player_selection()
+		else:
+			_update_card_target_preview()
 
 func _unhandled_input(event: InputEvent):
 	if _is_action_processing: return
@@ -240,9 +251,23 @@ func _unhandled_input(event: InputEvent):
 		
 		if _current_battle_state != BattleState.PLAYER_TURN: return
 
-		# Logika KARTY
+		# Logika KARTY — blokovat dvojí odehrání; hned skrýt highlight a teprve pak odehrát
 		if _player_action_state == PlayerActionState.CARD_SELECTED:
-			_try_play_selected_card_at_cell(clicked_grid_cell)
+			if _card_play_in_progress:
+				get_viewport().set_input_as_handled()
+				return
+			if _selected_card_data and not PlayerData.current_hand.has(_selected_card_data):
+				_reset_player_selection()
+				get_viewport().set_input_as_handled()
+				return
+			var card_to_play: CardData = _selected_card_data
+			_card_play_in_progress = true
+			# Okamžitě zrušit výběr a skrýt targetable highlight — další klik už uvidí IDLE
+			_clear_card_selection_state_before_play()
+			var did_play = _execute_card_play_at_cell(card_to_play, clicked_grid_cell)
+			if not did_play:
+				_card_play_in_progress = false
+				player_hand_ui_instance.cancel_drag_ui()
 			get_viewport().set_input_as_handled()
 			
 		# Logika POHYB
@@ -253,12 +278,16 @@ func _unhandled_input(event: InputEvent):
 				_reset_player_selection()
 			get_viewport().set_input_as_handled()
 		
-		# Logika VÝBĚR JEDNOTKY
+		# Logika VÝBĚR JEDNOTKY (klik na vlastní postavu pro pohyb); klik na nepřítele/prázdno jen zkonzumujeme
 		elif _player_action_state == PlayerActionState.IDLE:
 			var unit_clicked = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
 			if unit_clicked and unit_clicked is Unit:
 				if unit_clicked.unit_data.faction == UnitData.Faction.PLAYER and unit_clicked.can_move():
 					_on_unit_selected_on_grid(unit_clicked)
+					get_viewport().set_input_as_handled()
+				else:
+					# Klik na nepřítele nebo jinou jednotku — jen zkonzumovat, aby se nikde jinde nezpracoval jako „zahrát kartu“
+					get_viewport().set_input_as_handled()
 
 # ===== NOVÉ FUNKCE PRO INICIATIVNÍ SYSTÉM =====
 
@@ -330,7 +359,9 @@ func _start_enemy_initiative_turn(enemy_unit: Unit):
 	_set_enemy_intents_visible(false)
 	enemy_unit.hide_intent()
 	
+	await get_tree().create_timer(0.4).timeout
 	await _process_single_enemy_action(enemy_unit)
+	await get_tree().create_timer(0.4).timeout
 	
 	# Zavolej end_turn na jednotce
 	enemy_unit.end_turn()
@@ -363,7 +394,8 @@ func _process_single_enemy_action(enemy_unit: Unit):
 			# Elementální poškození (Mage)
 			if action.special_data.get("elemental_damage", false):
 				var element_type = action.special_data.get("element_type", "fire")
-				await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+				var extra = _damage_multiplier_to_extra(enemy_unit, action.damage_multiplier)
+				await enemy_unit.attack(action.target_unit, extra, CardEffectData.DamageType.NORMAL, false)
 				# Aplikuj elementální efekt
 				if is_instance_valid(action.target_unit) and action.target_unit is Unit:
 					match element_type:
@@ -375,12 +407,14 @@ func _process_single_enemy_action(enemy_unit: Unit):
 							action.target_unit.apply_status("shocked", 1, 1)
 			# Assassin double attack
 			elif action.special_data.get("double_attack", false):
-				await enemy_unit.attack(action.target_unit, action.damage_multiplier)
-				await get_tree().create_timer(0.3).timeout  # Krátká pauza mezi útoky
-				await enemy_unit.attack(action.target_unit, action.damage_multiplier)
-			# Holy damage (Healer) - už je v multiplier
+				var extra = _damage_multiplier_to_extra(enemy_unit, action.damage_multiplier)
+				await enemy_unit.attack(action.target_unit, extra, CardEffectData.DamageType.NORMAL, false)
+				await get_tree().create_timer(0.3).timeout
+				await enemy_unit.attack(action.target_unit, extra, CardEffectData.DamageType.NORMAL, false)
 			else:
-				await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+				var extra = _damage_multiplier_to_extra(enemy_unit, action.damage_multiplier)
+				var dmg_type = CardEffectData.DamageType.HOLY if action.special_data.get("holy_damage", false) else CardEffectData.DamageType.NORMAL
+				await enemy_unit.attack(action.target_unit, extra, dmg_type, false)
 		
 		EnemyAIBase.AIAction.ActionType.SPECIAL:
 			await _process_special_action(enemy_unit, action)
@@ -404,7 +438,8 @@ func _process_single_enemy_action(enemy_unit: Unit):
 					
 					# Útok po RUSH (pokud je cíl platný)
 					if is_instance_valid(action.target_unit) and can_attack_target(enemy_unit, action.target_unit, battle_grid_instance):
-						await enemy_unit.attack(action.target_unit, action.damage_multiplier)
+						var extra = _damage_multiplier_to_extra(enemy_unit, action.damage_multiplier)
+						await enemy_unit.attack(action.target_unit, extra, CardEffectData.DamageType.NORMAL, false)
 		
 		EnemyAIBase.AIAction.ActionType.MOVE:
 			if enemy_unit.can_move():
@@ -551,8 +586,12 @@ func start_extra_turn():
 # Přidejte debug do signálu stats_changed
 # OPRAVA: Změna z Node2D na Node3D
 func _on_unit_stats_changed(unit_node: Node3D):
-	if is_instance_valid(unit_node) and unit_node == _player_unit_node:
+	if not is_instance_valid(unit_node):
+		return
+	if unit_node == _player_unit_node:
 		player_info_panel.update_stats(unit_node)
+	elif unit_node in _enemy_units and unit_node.has_method("update_intent"):
+		unit_node.update_intent(_player_unit_node, battle_grid_instance)
 
 func _draw_next_card_in_queue():
 	if _is_drawing_cards: return # Zabráníme spuštění, pokud už běží
@@ -606,17 +645,38 @@ func _finish_drawing_hand():
 	end_turn_button.disabled = false
 
 
+func _on_artifact_extra_turn_requested():
+	"""Handler pro Časový krystal - spustí extra tah hráče"""
+	start_extra_turn()
+
 func _on_hand_discard_animation_finished():
 	PlayerData.discard_hand()
 	_update_pile_counts()
 	
-	# ===== UPRAVENO: Přejdi na další tah =====
+	# Časový krystal: zkontroluj conditional artefakty na konci tahu (každý 3. tah = extra tah)
+	if has_node("/root/ArtifactManager"):
+		var ctx = {
+			"current_turn": _current_turn_number,
+			"turn_number": _current_turn_number,
+			"current_hp": PlayerData.current_hp,
+			"max_hp": PlayerData.max_hp,
+			"current_energy": PlayerData.current_energy,
+			"hand_size": PlayerData.current_hand.size(),
+			"target": get_player_unit()
+		}
+		ArtifactManager.check_conditional_artifacts_with_context(ctx)
+		# Pokud Časový krystal triggered, emitoval extra_turn_requested a handler zavolal start_extra_turn()
+		# Jinak pokračujeme s přechodem na další tah
+		if _current_battle_state == BattleState.PLAYER_TURN:
+			# start_extra_turn byl zavolán (nastavil stav na PLAYER_TURN) - už nic nedělej
+			return
+	
+	# Přejdi na další tah
 	var timer = get_tree().create_timer(0.3)
 	timer.timeout.connect(func():
 		if has_node("/root/TurnManager"):
 			TurnManager.next_turn()
 	)
-	# =========================================
 
 func _on_win_button_pressed():
 	end_battle_as_victory()
@@ -735,6 +795,10 @@ func spawn_enemy_units():
 
 func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: CardData):
 	if _current_battle_state != BattleState.PLAYER_TURN: return
+	# Guard: blokovat výběr karty pokud se právě zpracovává akce nebo se hraje karta
+	if _is_action_processing or _card_play_in_progress: return
+	# Guard: karta musí být stále v ruce (ochrana před opakovaným výběrem právě odehrané karty)
+	if not PlayerData.current_hand.has(card_data_resource): return
 	if _selected_card_ui == card_ui_node:
 		_reset_player_selection()
 		return
@@ -753,6 +817,10 @@ func _on_player_hand_card_drag_started(card_ui_node: Control, card_data_resource
 	if _current_battle_state != BattleState.PLAYER_TURN:
 		player_hand_ui_instance.cancel_drag_ui()
 		return
+	# Guard: blokovat nový drag pokud se právě zpracovává akce nebo se hraje karta
+	if _is_action_processing or _card_play_in_progress:
+		player_hand_ui_instance.cancel_drag_ui()
+		return
 	if PlayerData.current_energy < card_data_resource.cost:
 		player_hand_ui_instance.cancel_drag_ui()
 		return
@@ -765,11 +833,13 @@ func _on_player_hand_card_drag_started(card_ui_node: Control, card_data_resource
 func _on_player_hand_card_drag_released(card_ui_node: Control, _card_data_resource: CardData):
 	if _current_battle_state != BattleState.PLAYER_TURN:
 		return
+	if _is_action_processing:
+		return
 	if _player_action_state != PlayerActionState.CARD_SELECTED:
 		return
 	if _selected_card_ui != card_ui_node:
 		return
-	
+
 	var target_cell = get_grid_cell_under_mouse()
 	var did_play = _try_play_selected_card_at_cell(target_cell)
 	if not did_play:
@@ -781,17 +851,30 @@ func _on_player_hand_card_drag_cancelled(_card_ui_node: Control, _card_data_reso
 # OPRAVA: Argument je Node3D (nebo Unit, ale Node3D je obecnější pro 3D svět)
 func try_play_card(card: CardData, initial_target: Node3D) -> void:
 	DebugLogger.log_card_played(card.card_name, str(initial_target.name) if initial_target else "none")
-	if _is_action_processing: return
-	if not card: return
-	
+	if _is_action_processing:
+		_card_play_in_progress = false
+		_clear_card_selection_state_before_play()
+		return
+	if not card:
+		_card_play_in_progress = false
+		_clear_card_selection_state_before_play()
+		return
+
+	# Hned na začátku skrýt targetable/movable highlight, aby nezůstal po odehrání ani při dvojím signálu
+	_clear_card_selection_state_before_play()
+
 	# Frozen - nemůže hrát karty
 	if is_instance_valid(_player_unit_node) and (_player_unit_node.is_frozen or _player_unit_node.active_statuses.has("frozen")):
 		DebugLogger.log_warning(tr("ui.battle.frozen_warning"))
 		_show_floating_notification(tr("ui.battle.frozen_notice"), Color.CYAN)
+		_card_play_in_progress = false
+		_reset_player_selection()
 		return
-	
+
 	if not PlayerData.spend_energy(card.cost):
 		DebugLogger.log_warning(TranslationHelper.tr_format("ui.battle.not_enough_energy", {"name": card.get_localized_name()}))
+		_card_play_in_progress = false
+		_reset_player_selection()
 		return
 
 	# Kontrola limitu použití karty za tah
@@ -801,6 +884,8 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 			# Překročen limit - aplikuj debuff
 			_apply_overuse_debuff(card)
 			PlayerData.gain_energy(card.cost)  # Vrať energii
+			_card_play_in_progress = false
+			_reset_player_selection()
 			return
 		
 		# Zvýš počítadlo
@@ -815,14 +900,25 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 	
 	var card_ui_to_remove = _selected_card_ui
 	
-	# Projdi všechny efekty a zkontroluj, zda mají platné cíle
+	# Debug: ensure we see all effects (fixes "effects: []" when card has APPLY_STATUS e.g. regeneration)
+	var effect_count = card.effects.size() if card else 0
+	DebugLogger.log_debug("Card '%s' effects count: %d" % [card.card_id if card else "null", effect_count])
+	for idx in range(effect_count):
+		var eff = card.effects[idx]
+		if not eff:
+			DebugLogger.log_debug("  effect[%d] (null)" % idx)
+			continue
+		var type_name = CardEffectData.EffectType.keys()[eff.effect_type]
+		DebugLogger.log_debug("  effect[%d] type=%s string_value='%s' value=%d" % [idx, type_name, eff.string_value, eff.value])
+	
+	# Iterate ALL effects; each effect needs valid targets to apply
 	for effect_data in card.effects:
-		var targets = _get_targets_for_effect(effect_data, initial_target)
+		var targets = _get_targets_for_effect(effect_data, initial_target, card)
 		if not targets.is_empty():
 			card_played_successfully = true
 			for target_unit in targets:
 				if is_instance_valid(target_unit):
-					await _apply_single_effect(effect_data, target_unit)
+					await _apply_single_effect(effect_data, target_unit, card)
 	
 	# Označ akci pouze pokud byla karta úspěšně použita
 	if card_played_successfully:
@@ -837,12 +933,32 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 				DebugLogger.log_debug("Card play artefakt aktivován: %s" % result.description)
 		
 		var has_exhaust_effect = card.effects.any(func(e): return e.effect_type == CardEffectData.EffectType.EXHAUST)
-		if has_exhaust_effect:
-			PlayerData.add_card_to_exhaust_pile(card)
-		else:
-			PlayerData.add_card_to_discard_pile(card)
+		var max_uses = card.max_uses_before_removal if card.max_uses_before_removal > 0 else -1
+		var usage_reached_limit := false
+		if max_uses > 0:
+			var n = PlayerData.increment_card_usage(card.card_id)
+			if n >= max_uses:
+				usage_reached_limit = true
+				# Usage vyčerpán – odstranit jednu kopii z celého balíčku natrvalo
+				PlayerData.master_deck.erase(card)
+				PlayerData.draw_pile.erase(card)
+				PlayerData.discard_pile.erase(card)
+				PlayerData.emit_signal("deck_changed")
+		if not usage_reached_limit:
+			# Zastaralý tag ONE_TIME_USE (chová se jako 1× použití)
+			var is_one_time_use = card.has_tag(CardData.CardTag.ONE_TIME_USE)
+			if is_one_time_use:
+				PlayerData.master_deck.erase(card)
+				PlayerData.draw_pile.erase(card)
+				PlayerData.discard_pile.erase(card)
+				PlayerData.emit_signal("deck_changed")
+			elif has_exhaust_effect:
+				PlayerData.add_card_to_exhaust_pile(card)
+			else:
+				PlayerData.add_card_to_discard_pile(card)
 		PlayerData.current_hand.erase(card)
 		
+		player_hand_ui_instance.force_finish_drag()
 		if is_instance_valid(card_ui_to_remove):
 			card_ui_to_remove.queue_free()
 		player_hand_ui_instance._request_arrange()
@@ -851,9 +967,30 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 	else:
 		DebugLogger.log_warning(TranslationHelper.tr_format("ui.battle.no_valid_target", {"name": card.get_localized_name()}))
 		PlayerData.gain_energy(card.cost)
+		_card_play_in_progress = false
 
 	_is_action_processing = false
+	_card_play_in_progress = false
 	_reset_player_selection()
+
+## Debug/cheat: add a card by id to the player's current hand (e.g. from DevConsole)
+func add_card_to_hand(card_id: String) -> bool:
+	if not is_instance_valid(_player_unit_node) or not is_instance_valid(player_hand_ui_instance):
+		return false
+	var pool = load("res://data/cards/reward_card_pool.tres") as CardPool
+	if not is_instance_valid(pool) or pool.cards.is_empty():
+		DebugLogger.log_warning("add_card_to_hand: pool invalid or empty")
+		return false
+	for c in pool.cards:
+		if is_instance_valid(c) and c.card_id == card_id:
+			PlayerData.current_hand.append(c)
+			player_hand_ui_instance.add_card_to_hand(c)
+			player_hand_ui_instance._request_arrange()
+			_update_pile_counts()
+			DebugLogger.log_debug("add_card_to_hand: added '%s'" % card_id)
+			return true
+	DebugLogger.log_warning("add_card_to_hand: card_id '%s' not found" % card_id)
+	return false
 
 func _apply_overuse_debuff(card: CardData):
 	"""Aplikuje debuff při překročení limitu použití karty"""
@@ -949,6 +1086,11 @@ func _execute_move(unit_to_move: Unit, target_cell: Vector2i):
 	if unit_to_move == _player_unit_node:
 		set_enemy_intents()
 
+# Converts legacy damage_multiplier to additive bonus for DamageCalculator
+func _damage_multiplier_to_extra(unit: Unit, multiplier: float) -> int:
+	var base = unit.unit_data.attack_damage
+	return int(base * (multiplier - 1.0))
+
 # Kontrola podmínek pro efekt
 func _check_condition(effect: CardEffectData, target: Node3D) -> bool:
 	if not effect.has_condition or effect.condition_type.is_empty():
@@ -984,9 +1126,10 @@ func _check_condition(effect: CardEffectData, target: Node3D) -> bool:
 		_:
 			return true
 
-# OPRAVA: Argument 'target' musí být Node3D (pro 3D jednotky)
-func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
+# OPRAVA: Argument 'target' musí být Node3D (pro 3D jednotky). card_being_played = karta (po grid kliku může být _selected_card_data null)
+func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_played: CardData = null) -> void:
 	if not is_instance_valid(target): return
+	var card_ref: CardData = card_being_played if is_instance_valid(card_being_played) else _selected_card_data
 	
 	# Kontrola podmínek
 	var condition_met = _check_condition(effect, target)
@@ -995,79 +1138,50 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 	match effect.effect_type:
 		CardEffectData.EffectType.DEAL_DAMAGE:
 			if target.has_method("take_damage"):
-				var damage_to_deal = effect.value
-				
-				# Podmíněné bonusy z karty
-				damage_to_deal += bonus_value
-				
-				# Speciální podmínka: damage_per_block (holy_vengeance)
+				var base_value = effect.value
+				base_value += bonus_value
 				if effect.condition_type == "damage_per_block" and is_instance_valid(_player_unit_node):
-					damage_to_deal += _player_unit_node.current_block * effect.conditional_bonus_value
-				
-				# Status efekt: consecrated_weapon (+5 poškození na příští útok)
+					base_value += _player_unit_node.current_block * effect.conditional_bonus_value
 				if is_instance_valid(_player_unit_node) and _player_unit_node.active_statuses.has("consecrated_weapon"):
 					var status_data = _player_unit_node.active_statuses["consecrated_weapon"]
-					damage_to_deal += status_data.value
-					# Odstraň status po použití
+					base_value += status_data.value
 					_player_unit_node.active_statuses.erase("consecrated_weapon")
 					_player_unit_node._update_stats_and_emit_signal()
 				
-				# Existující bonus z skillů
-				damage_to_deal += PlayerData.global_card_damage_bonus
-				
-				# Přidej conditional bonusy z artefaktů
-				if has_node("/root/ArtifactManager"):
-					var context = {
-						"current_hp": PlayerData.current_hp,
-						"max_hp": PlayerData.max_hp,
-						"current_energy": PlayerData.current_energy
-					}
-					damage_to_deal += ArtifactManager.get_card_damage_bonus(context)
-				
-				# Systém efektivity poškození (holy damage vs undead/demon)
-				var damage_type = effect.damage_type
-				
-				# Aplikuj efektivitu poškození, pokud je cíl Unit
-				if target is Unit:
-					var target_unit_data = target.get_unit_data()
-					if target_unit_data:
-						var effectiveness = UnitData.get_damage_effectiveness(damage_type, target_unit_data.unit_type)
-						if effectiveness != 1.0:
-							var original_damage = damage_to_deal
-							damage_to_deal = int(damage_to_deal * effectiveness)
-							if effectiveness > 1.0:
-								DebugLogger.log_info("✨ EFEKTIVNÍ POŠKOZENÍ! %d -> %d (x%.2f)" % [original_damage, damage_to_deal, effectiveness])
-								# Vizuální feedback - zobrazíme efektivní poškození jinou barvou na cíli
-								if target is Unit and target.has_method("_show_floating_text"):
-									target._show_floating_text(damage_to_deal, "holy_effective")
-				
-				# Critical hit logic s artefakt bonusy
 				var total_crit_chance = PlayerData.get_critical_chance()
 				if has_node("/root/ArtifactManager"):
 					total_crit_chance += ArtifactManager.get_critical_chance()
+				var is_critical = total_crit_chance > 0 and randi_range(1, 100) <= total_crit_chance
 				
-				var is_critical = false
-				if total_crit_chance > 0:
-					var crit_roll = randi_range(1, 100)
-					if crit_roll <= total_crit_chance:
-						damage_to_deal *= 2
-						is_critical = true
-						DebugLogger.log_info("💥 KRITICKÝ ZÁSAH! Poškození: %d" % damage_to_deal)
-						if is_instance_valid(_player_unit_node):
-							_player_unit_node._show_floating_text(damage_to_deal, "critical")
+				var damage_to_deal = DamageCalculator.get_final_damage(
+					base_value,
+					_player_unit_node,
+					target,
+					effect.damage_type,
+					is_critical,
+					true,
+					0
+				)
+				if is_critical and is_instance_valid(_player_unit_node):
+					DebugLogger.log_info("💥 KRITICKÝ ZÁSAH! Poškození: %d" % damage_to_deal)
+					_player_unit_node._show_floating_text(damage_to_deal, "critical")
+				elif target is Unit and target.has_method("get_unit_data") and target.get_unit_data():
+					var holy_bonus = UnitData.get_holy_damage_bonus(effect.damage_type, target.get_unit_data().unit_type)
+					if holy_bonus > 0:
+						DebugLogger.log_info("✨ HOLY BONUS +%d poškození!" % holy_bonus)
+						if target.has_method("_show_floating_text"):
+							target._show_floating_text(damage_to_deal, "holy_effective")
 				
-				# Tracking pro gods_lightning (energie při zabití nepřítele)
 				var enemy_health_before = 0
 				if target is Unit and target.get_unit_data().faction == UnitData.Faction.ENEMY:
 					enemy_health_before = target.current_health
 				
-				await target.take_damage(damage_to_deal)
+				await target.take_damage(damage_to_deal, true)
 				
 				# Pokud byl nepřítel zabit touto kartou, zkontroluj, zda karta má gods_lightning efekt
 				if target is Unit and target.get_unit_data().faction == UnitData.Faction.ENEMY:
-					if enemy_health_before > 0 and target.current_health <= 0:
-						# Zkontroluj, zda aktuální karta má GAIN_ENERGY efekt (gods_lightning)
-						for card_effect in _selected_card_data.effects:
+					if enemy_health_before > 0 and target.current_health <= 0 and is_instance_valid(card_ref):
+						for card_effect in card_ref.effects:
 							if card_effect.effect_type == CardEffectData.EffectType.GAIN_ENERGY:
 								PlayerData.gain_energy(card_effect.value)
 								DebugLogger.log_info("⚡ Gods Lightning: Získal %d energie za zabití nepřítele!" % card_effect.value)
@@ -1084,9 +1198,11 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 		CardEffectData.EffectType.GAIN_BLOCK:
 			if target.has_method("add_block"):
 				var block_amount = effect.value
-				# Podpora pro blok z max_hp (používá se v unbreakable_faith)
+				# Podpora pro blok z max_hp / current_hp (používá se v unbreakable_faith)
 				if effect.string_value == "max_hp" and is_instance_valid(_player_unit_node):
 					block_amount = PlayerData.max_hp
+				elif effect.string_value == "current_hp" and is_instance_valid(_player_unit_node):
+					block_amount = PlayerData.current_hp
 				
 				# Pro podmíněné efekty: kontrolujeme blok PŘED přidáním základního bloku
 				# Pokud je podmínka splněna, přidáme bonusový blok
@@ -1124,7 +1240,19 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 			
 		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK:
 			if is_instance_valid(_player_unit_node) and target.has_method("take_damage"):
-				target.take_damage(_player_unit_node.current_block)
+				var block_damage = DamageCalculator.get_final_damage(
+					_player_unit_node.current_block,
+					_player_unit_node,
+					target,
+					CardEffectData.DamageType.NORMAL,
+					false,
+					true,
+					0
+				)
+				# Shield Bash: cap 15 (balance audit)
+				if is_instance_valid(card_ref) and card_ref.card_id == "shield_bash":
+					block_damage = mini(block_damage, 15)
+				target.take_damage(block_damage, true)
 				
 		CardEffectData.EffectType.DRAW_CARDS:
 			_cards_to_draw_queue += effect.value
@@ -1132,8 +1260,7 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 			
 		CardEffectData.EffectType.GAIN_ENERGY: 
 			# Speciální případ: gods_lightning - energie se získává pouze při zabití nepřítele
-			# Takže tady nic neděláme, energie se přidá v damage efektu
-			if _selected_card_data and _selected_card_data.card_id == "gods_lightning":
+			if is_instance_valid(card_ref) and card_ref.card_id == "gods_lightning":
 				pass  # Energie se přidá v damage efektu, pokud byl nepřítel zabit
 			else:
 				PlayerData.gain_energy(effect.value)
@@ -1157,15 +1284,28 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D) -> void:
 							target._update_stats_and_emit_signal()
 							DebugLogger.log_info("Odstraněno %d debuffů" % statuses_to_remove.size())
 				else:
-					target.apply_status(effect.string_value, effect.value)
+					# e.g. regeneration: value = heal per turn, duration = value (3 turns)
+					var duration = effect.value if effect.string_value == "regeneration" else 1
+					target.apply_status(effect.string_value, effect.value, duration)
 			
 		CardEffectData.EffectType.GAIN_EXTRA_MOVE:
 			if target.has_method("gain_extra_move"): target.gain_extra_move()
 			
 		CardEffectData.EffectType.DEAL_DOUBLE_DAMAGE_FROM_BLOCK:
 			if is_instance_valid(_player_unit_node) and target.has_method("take_damage"):
-				var damage = _player_unit_node.current_block * 2
-				target.take_damage(damage)
+				var damage = DamageCalculator.get_final_damage(
+					_player_unit_node.current_block,
+					_player_unit_node,
+					target,
+					CardEffectData.DamageType.NORMAL,
+					false,
+					true,
+					_player_unit_node.current_block
+				)
+				# Shield Bash+: cap 20 (balance audit)
+				if is_instance_valid(card_ref) and card_ref.card_id == "shield_bash+":
+					damage = mini(damage, 20)
+				target.take_damage(damage, true)
 		
 		CardEffectData.EffectType.MODIFY_INITIATIVE_NEXT_ROUND:
 			# POZNÁMKA: Ujisti se, že TurnManager bere jako argument 'Node' nebo 'Unit'
@@ -1184,13 +1324,14 @@ func can_attack_target(attacker: Unit, target: Unit, battle_grid: BattleGrid) ->
 	return distance <= attacker.unit_data.attack_range
 
 # OPRAVA: Návratový typ Node2D změněn na Node3D (nebo Array[Unit])
-func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D) -> Array:
+# card_being_played: karta, která se právě hraje (potřeba pro range; _selected_card_data je už vynulovaná)
+func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D, card_being_played: CardData) -> Array:
 	var targets: Array = []
 	var clicked_grid_cell = get_grid_cell_under_mouse() # OPRAVA: Použití 3D Raycast funkce místo get_global_mouse_position
 	var grid_ref = battle_grid_instance
 	if not grid_ref and has_node("BattleGrid"):
 		grid_ref = get_node("BattleGrid")
-	
+
 	if effect.target_type == CardEffectData.TargetType.ANY_GRID_CELL:
 		if not grid_ref:
 			return targets
@@ -1206,8 +1347,9 @@ func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D
 				targets.append(_player_unit_node)
 		CardEffectData.TargetType.SELECTED_ENEMY_UNIT:
 			if is_instance_valid(initial_target_node) and initial_target_node.get_unit_data().faction == UnitData.Faction.ENEMY:
-				if grid_ref and is_instance_valid(_player_unit_node) and _selected_card_data and grid_ref.get_distance(_player_unit_node.grid_position, initial_target_node.grid_position) <= _selected_card_data.range_value:
-					targets.append(initial_target_node)
+				if grid_ref and is_instance_valid(_player_unit_node) and is_instance_valid(card_being_played):
+					if grid_ref.get_distance(_player_unit_node.grid_position, initial_target_node.grid_position) <= card_being_played.range_value:
+						targets.append(initial_target_node)
 		CardEffectData.TargetType.ALL_ENEMY_UNITS:
 			targets.assign(_enemy_units)
 		CardEffectData.TargetType.ALL_ALLY_UNITS:
@@ -1216,6 +1358,19 @@ func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D
 				targets.append(_player_unit_node)
 	return targets
 	
+func _clear_card_selection_state_before_play():
+	"""Zruší stav 'karta vybraná' pro vstup, aby další klik na grid nespustil kartu znovu.
+	_selected_card_ui ponecháme — try_play_card ho používá pro odstranění karty z ruky.
+	Skryjeme i enemy range (červený pod nepřítelem), aby po odehrání karty nezůstal a nevyzýval k druhému kliku."""
+	_player_action_state = PlayerActionState.IDLE
+	_selected_card_data = null
+	battle_grid_instance.hide_movable_range()
+	battle_grid_instance.hide_targetable_cells()
+	battle_grid_instance.hide_aoe_highlight()
+	battle_grid_instance.hide_enemy_range()
+	if _current_battle_state == BattleState.PLAYER_TURN:
+		battle_grid_instance.hide_danger_zone()
+
 func _reset_player_selection():
 	if is_instance_valid(_selected_unit):
 		_selected_unit.set_selected_visual(false)
@@ -1227,7 +1382,7 @@ func _reset_player_selection():
 	battle_grid_instance.hide_movable_range()
 	battle_grid_instance.hide_targetable_cells()
 	battle_grid_instance.hide_aoe_highlight()
-	# Na konci kola hráče skryjeme i danger zone pro přehlednost
+	battle_grid_instance.hide_enemy_range()
 	if _current_battle_state == BattleState.PLAYER_TURN:
 		battle_grid_instance.hide_danger_zone()
 	_player_action_state = PlayerActionState.IDLE
@@ -1262,6 +1417,7 @@ func _on_end_turn_button_pressed():
 
 func _on_energy_changed(new_amount: int):
 	energy_label.text = TranslationHelper.tr_format("ui.battle.energy", {"value": new_amount})
+	player_info_panel.update_energy_display()
 
 func _physics_process(_delta):
 	# Použijeme novou funkci pro Raycast místo 2D mouse position
@@ -1275,11 +1431,15 @@ func _physics_process(_delta):
 		_clear_enemy_hover_highlights()
 		
 	if _player_action_state == PlayerActionState.CARD_SELECTED:
-		_update_card_target_preview()
+		if _selected_card_data and not PlayerData.current_hand.has(_selected_card_data):
+			_reset_player_selection()
+		else:
+			_update_card_target_preview()
 
 func _show_valid_targets_for_card(card: CardData):
 	var valid_target_cells: Array[Vector2i] = []
 	var is_attack = true
+	var needs_los = card.range_type == CardData.EffectRangeType.RANGED_FIXED or card.range_type == CardData.EffectRangeType.RANGED_LINE
 	for effect in card.effects:
 		match effect.target_type:
 			CardEffectData.TargetType.SELECTED_ENEMY_UNIT:
@@ -1287,7 +1447,10 @@ func _show_valid_targets_for_card(card: CardData):
 				for enemy in _enemy_units:
 					if is_instance_valid(enemy):
 						var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, enemy.grid_position)
-						if distance <= card.range_value: valid_target_cells.append(enemy.grid_position)
+						if distance <= card.range_value:
+							if needs_los and not battle_grid_instance.has_line_of_sight(_player_unit_node.grid_position, enemy.grid_position, enemy):
+								continue
+							valid_target_cells.append(enemy.grid_position)
 			CardEffectData.TargetType.SELF_UNIT:
 				is_attack = false
 				if not valid_target_cells.has(_player_unit_node.grid_position): valid_target_cells.append(_player_unit_node.grid_position)
@@ -1382,6 +1545,9 @@ func _show_card_tooltip():
 
 func _update_card_target_preview():
 	if not _selected_card_data: return
+	if not PlayerData.current_hand.has(_selected_card_data):
+		_reset_player_selection()
+		return
 	
 	# OPRAVA: Použití 3D Raycast funkce místo get_global_mouse_position
 	var mouse_grid_pos = get_grid_cell_under_mouse()
@@ -1404,35 +1570,78 @@ func _try_play_selected_card_at_cell(clicked_grid_cell: Vector2i) -> bool:
 		return false
 	if not is_instance_valid(_selected_card_data):
 		return false
-	
-	var has_self_effect = false
-	var has_enemy_effect = false
-	if is_instance_valid(_selected_card_data):
-		has_self_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
-		has_enemy_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
-	
+	if _is_action_processing:
+		return false
+	if _card_play_in_progress:
+		return false
+	# Karta musí být stále v ruce (ochrana před dvojím odehráním)
+	if not PlayerData.current_hand.has(_selected_card_data):
+		_reset_player_selection()
+		return false
+
+	var card_to_play: CardData = _selected_card_data
+	var has_self_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
+	var has_enemy_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
+
 	# Pokud karta má pouze SELF efekty (bez ENEMY efektů), použij hráče jako cíl
 	if has_self_effect and not has_enemy_effect:
 		if is_instance_valid(_player_unit_node):
-			try_play_card(_selected_card_data, _player_unit_node)
+			_card_play_in_progress = true
+			_clear_card_selection_state_before_play()
+			try_play_card(card_to_play, _player_unit_node)
 			return true
 		return false
-	
+
 	var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
-	
+
 	# Kontrola: Pokud karta vyžaduje nepřítele jako cíl, musí být target_node validní nepřítel
 	if has_enemy_effect:
 		if not is_instance_valid(target_node) or not target_node is Unit or not target_node.get_unit_data().faction == UnitData.Faction.ENEMY:
-			# Karta vyžaduje nepřítele, ale klikli jsme na prázdnou buňku nebo ne-nepřítele
 			DebugLogger.log_warning("Karta vyžaduje vybraného nepřítele!")
 			return false
 		if is_instance_valid(_player_unit_node) and battle_grid_instance:
 			var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, target_node.grid_position)
-			if distance > _selected_card_data.range_value:
+			if distance > card_to_play.range_value:
 				DebugLogger.log_warning("Cíl je mimo dosah karty!")
 				return false
-	
-	try_play_card(_selected_card_data, target_node)
+			var needs_los = card_to_play.range_type == CardData.EffectRangeType.RANGED_FIXED or card_to_play.range_type == CardData.EffectRangeType.RANGED_LINE
+			if needs_los and not battle_grid_instance.has_line_of_sight(_player_unit_node.grid_position, target_node.grid_position, target_node):
+				DebugLogger.log_warning("Cíl není v přímé viditelnosti (LoS)!")
+				return false
+
+	_card_play_in_progress = true
+	_clear_card_selection_state_before_play()
+	try_play_card(card_to_play, target_node)
+	return true
+
+func _execute_card_play_at_cell(card: CardData, clicked_grid_cell: Vector2i) -> bool:
+	"""Odehraje kartu na danou buňku. Volá se až po _clear_card_selection_state_before_play(), takže stav je už IDLE.
+	_card_play_in_progress už mohl nastavit volající (grid klik), aby zabránil dvojímu odehrání."""
+	if _is_action_processing:
+		return false
+	if not is_instance_valid(card) or not PlayerData.current_hand.has(card):
+		return false
+	var has_self_effect = card.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
+	var has_enemy_effect = card.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
+	if has_self_effect and not has_enemy_effect:
+		if is_instance_valid(_player_unit_node):
+			_card_play_in_progress = true
+			try_play_card(card, _player_unit_node)
+			return true
+		return false
+	var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
+	if has_enemy_effect:
+		if not is_instance_valid(target_node) or not target_node is Unit or not target_node.get_unit_data().faction == UnitData.Faction.ENEMY:
+			return false
+		if is_instance_valid(_player_unit_node) and battle_grid_instance:
+			var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, target_node.grid_position)
+			if distance > card.range_value:
+				return false
+			var needs_los = card.range_type == CardData.EffectRangeType.RANGED_FIXED or card.range_type == CardData.EffectRangeType.RANGED_LINE
+			if needs_los and not battle_grid_instance.has_line_of_sight(_player_unit_node.grid_position, target_node.grid_position, target_node):
+				return false
+	_card_play_in_progress = true
+	try_play_card(card, target_node)
 	return true
 
 func _place_terrain_features():
@@ -1512,24 +1721,27 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 	
 	match special_type:
 		"meteor":
-			# Mage meteorit - poškození všem jednotkám na gridu
 			enemy_unit.show_status_text("☄️ METEORIT!", "critical")
 			await get_tree().create_timer(1.0).timeout
 			
-			var damage = int(enemy_unit.unit_data.attack_damage * action.special_data.get("damage_multiplier", 2.0))
+			var base_dmg = enemy_unit.unit_data.attack_damage
+			var extra = base_dmg
 			var all_units = battle_grid_instance.get_all_objects_on_grid()
 			
 			for unit in all_units:
 				if unit is Unit:
-					await unit.take_damage(damage)
-					# Aplikuje burning všem
+					var damage = DamageCalculator.get_final_damage(
+						base_dmg, enemy_unit, unit,
+						CardEffectData.DamageType.NORMAL, false, false, extra
+					)
+					await unit.take_damage(damage, true)
 					unit.apply_status("burning", 2, 3)
 			
 			# Zapálí celý grid (můžeme přidat vizuální efekt)
 			print("🔥 Grid je zapálen!")
 		
 		"spawn_spirit":
-			# Druid spawn spiritu
+			# Druid spawn spiritu (team comes from unit_data .tres – faction ENEMY)
 			var spawn_pos = _find_spawn_position(enemy_unit)
 			if spawn_pos != Vector2i(-1, -1):
 				var is_guardian = action.special_data.get("is_guardian", false)
@@ -1541,12 +1753,16 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 				
 				var spirit_node = _spawn_unit(spirit_unit_data, spawn_pos)
 				if is_instance_valid(spirit_node):
+					# Ensure spawned unit is enemy (spirit .tres already have faction = ENEMY)
+					if spirit_node.unit_data:
+						spirit_node.unit_data.faction = UnitData.Faction.ENEMY
 					_enemy_units.append(spirit_node)
 					spirit_node.died.connect(_on_unit_died)
 					spirit_node.stats_changed.connect(_on_unit_stats_changed)
-					# Přidáme spirit do TurnManager
 					if has_node("/root/TurnManager"):
 						TurnManager.add_unit(spirit_node)
+						# add_unit(..., act_this_round=true) so spirit can act this round when it's enemies' turn
+					set_enemy_intents()
 					if is_guardian:
 						print("🛡️ Druid spawnul guardian spiritu na pozici: %s" % spawn_pos)
 					else:

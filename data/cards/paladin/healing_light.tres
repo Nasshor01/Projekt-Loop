@@ -6,7 +6,7 @@
 
 [sub_resource type="Resource" id="Resource_hlight"]
 script = ExtResource("1_hlight")
-effect_type = 15
+effect_type = 7
 value = 8
 string_value = ""
 target_type = 0
@@ -25,6 +25,7 @@ script = ExtResource("2_hlight")
 card_id = "healing_light"
 card_name = "card.healing_light"
 card_description = "card.healing_light.desc"
+editor_description = "Heal 8 HP."
 cost = 1
 range_type = 1
 range_value = 1
@@ -35,4 +36,5 @@ effects = Array[ExtResource("1_hlight")]([SubResource("Resource_hlight")])
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

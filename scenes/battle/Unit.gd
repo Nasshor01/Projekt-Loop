@@ -3,11 +3,14 @@ extends Node3D
 
 const FloatingTextScene = preload("res://scenes/ui/FloatingText.tscn")
 const IntentIconScene = preload("res://scenes/ui/IntentIcon.tscn")
-const INTENT_ICON_AIMING = preload("res://art/icons/skills/6.png")
-const INTENT_ICON_RUSH = preload("res://art/icons/Artifacts/berserkova zuřivost-1.png.png")
-const INTENT_ICON_METEOR = preload("res://art/icons/skills/52.png")
-const INTENT_ICON_ATTACK = preload("res://art/icons/skills/151.png")
-const INTENT_ICON_MOVE = preload("res://art/icons/skills/167.png")
+const INTENT_ICON_AIMING = preload("res://art/icons/status/Aim.png")
+const INTENT_ICON_RUSH = preload("res://art/icons/status/Rage_rush.png")
+const INTENT_ICON_METEOR1 = preload("res://art/icons/status/Meteor1.png")
+const INTENT_ICON_METEOR2 = preload("res://art/icons/status/Meteor2.png")
+const INTENT_ICON_METEOR3 = preload("res://art/icons/status/Meteor3.png")
+const INTENT_ICON_METEOR4 = preload("res://art/icons/status/Meteor4.png")
+const INTENT_ICON_ATTACK = preload("res://art/icons/status/attack.png")
+const INTENT_ICON_MOVE = preload("res://art/icons/status/move.png")
 
 const ARCHER_AIM_DAMAGE_MULTIPLIER = 2.5
 const BERSERKER_RAGE_TURNS_REQUIRED = 5
@@ -97,59 +100,53 @@ func set_last_attacker(attacker: Unit):
 	last_attacker = attacker
 
 func get_last_attacker() -> Unit:
-	return last_attacker
+	if is_instance_valid(last_attacker):
+		return last_attacker
+	last_attacker = null  # clear stale reference (attacker may have been freed)
+	return null
 
-func attack(target: Node, damage_multiplier: float = 1.0) -> void:
+func attack(target: Node, extra_additive: int = 0, damage_type: int = 0, is_holy: bool = false) -> void:
 	if not is_instance_valid(target) or not target.has_method("take_damage"): return
 	
 	if target.has_method("set_last_attacker"):
 		target.set_last_attacker(self)
 	
-	var damage = int(unit_data.attack_damage * damage_multiplier)
-	
-	if unit_data.faction == UnitData.Faction.PLAYER:
-		damage += PlayerData.global_card_damage_bonus
-		if has_node("/root/ArtifactManager"):
-			var context = {
-				"current_hp": PlayerData.current_hp,
-				"max_hp": PlayerData.max_hp,
-				"current_energy": PlayerData.current_energy
-			}
-			damage += ArtifactManager.get_card_damage_bonus(context)
-	
+	var base_value = unit_data.attack_damage
+	var include_card_bonuses = (unit_data.faction == UnitData.Faction.PLAYER)
+	var is_critical = false
 	if unit_data.faction == UnitData.Faction.PLAYER:
 		var total_crit_chance = PlayerData.get_critical_chance()
 		if has_node("/root/ArtifactManager"):
 			total_crit_chance += ArtifactManager.get_critical_chance()
-		
-		if total_crit_chance > 0:
-			var crit_roll = randi_range(1, 100)
-			if crit_roll <= total_crit_chance:
-				damage *= 2
-				_show_floating_text(damage, "critical")
-				print("💥 KRITICKÝ ZÁSAH! %d poškození" % damage)
+		is_critical = total_crit_chance > 0 and randi_range(1, 100) <= total_crit_chance
 	
-	await target.take_damage(damage)
+	var damage = DamageCalculator.get_final_damage(
+		base_value, self, target, damage_type, is_critical, include_card_bonuses, extra_additive
+	)
+	if is_critical:
+		_show_floating_text(damage, "critical")
+		print("💥 KRITICKÝ ZÁSAH! %d poškození" % damage)
+	
+	await target.take_damage(damage, true)
 
-func take_damage(amount: int) -> void:
-	# Assassin dodge - 35% šance, že útok mine (kontroluje se PŘED poškozením)
+func take_damage(amount: int, already_calculated: bool = false) -> void:
 	if unit_data.ai_script and unit_data.ai_script.resource_path.contains("AssassinAI"):
 		var dodge_roll = randi_range(1, 100)
-		if dodge_roll <= 35:  # 35% dodge chance
+		if dodge_roll <= 35:
 			show_status_text("DODGE!", "heal")
 			print("💨 Assassin se vyhnul útoku!")
-			return  # Útok mine, žádné poškození
+			return
 	
 	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/ArtifactManager"):
 		var attacker = get_last_attacker()
 		ArtifactManager.on_damage_taken(amount, attacker)
 
 	var damage_to_deal = amount
-	
-	# Status efekt: defensive_stance (50% snížení poškození)
-	if active_statuses.has("defensive_stance"):
-		damage_to_deal = int(damage_to_deal * 0.5)
-		# Odstraň status po použití
+	if not already_calculated and active_statuses.has("defensive_stance"):
+		damage_to_deal = max(1, int(damage_to_deal * 0.5))
+		active_statuses.erase("defensive_stance")
+		_update_stats_and_emit_signal()
+	elif already_calculated and active_statuses.has("defensive_stance") and damage_to_deal > 0:
 		active_statuses.erase("defensive_stance")
 		_update_stats_and_emit_signal()
 	
@@ -265,6 +262,12 @@ func process_turn_start_statuses() -> int:
 			aura_value = aura_value * (100 + PlayerData.aura_enhancement) / 100
 		add_block(aura_value)
 		
+	# Regeneration: heal by value at start of turn
+	if active_statuses.has("regeneration"):
+		var status_data = active_statuses["regeneration"]
+		var heal_amount = status_data.value
+		heal(heal_amount)
+	
 	var statuses_to_remove = []
 	for status_id in active_statuses.keys():
 		var status_data = active_statuses[status_id]
@@ -289,12 +292,7 @@ func process_turn_end_statuses():
 	for status_id in active_statuses.keys():
 		if status_id == "aura_devotion" or status_id == "aura_devotion_plus":
 			continue
-		
-		# Regenerace - léčí na konci tahu
-		if status_id == "regeneration":
-			var status_data = active_statuses[status_id]
-			var heal_amount = status_data.value
-			heal(heal_amount)
+		# Regeneration heals at start of turn (see process_turn_start_statuses), only tick duration here
 		
 		# Burning - poškození na konci tahu
 		if status_id == "burning":
@@ -325,6 +323,9 @@ func process_turn_end_statuses():
 
 func get_current_movement_range() -> int:
 	var current_range = unit_data.movement_range
+	# Hráč: base_movement_range + PlayerData.movement_bonus (pasivní strom, např. Svatý krok)
+	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/PlayerData"):
+		current_range += PlayerData.movement_bonus
 	if unit_data.ai_script and unit_data.ai_script.resource_path.contains("BerserkerAI"):
 		current_range = 2
 	if active_statuses.has("Slow"):
@@ -340,7 +341,9 @@ func get_current_movement_range() -> int:
 	if is_frozen or active_statuses.has("frozen"):
 		current_range = 0
 	
-	if unit_data.movement_range > 0:
+	var base_positive = unit_data.movement_range > 0
+	var player_bonus_positive = unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/PlayerData") and PlayerData.movement_bonus > 0
+	if base_positive or player_bonus_positive:
 		return max(0, current_range)
 	else:
 		return 0
@@ -555,7 +558,16 @@ func _calculate_intent(player_unit: Unit, battle_grid: BattleGrid) -> Dictionary
 	var intent_short = tr("MOVE")
 	var intent_text = tr("Next Move: Move")
 	var icon = INTENT_ICON_MOVE
+	# Rage status or Berserker permanent rage overrides all other intents – must not revert to move/attack while active
 	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data.ai_script) else ""
+	var berserker_rage = ai_path.contains("BerserkerAI") and is_permanently_enraged
+	if active_statuses.has("rage") or berserker_rage:
+		return {
+			"id": "rush",
+			"short_text": tr("RUSH"),
+			"text": tr("Next Move: Rush (300% DMG)"),
+			"icon": INTENT_ICON_RUSH
+		}
 	
 	if ai_path.contains("ArcherAI") and is_aiming:
 		intent_id = "aiming"
@@ -573,7 +585,17 @@ func _calculate_intent(player_unit: Unit, battle_grid: BattleGrid) -> Dictionary
 			intent_id = "meteor"
 			intent_short = tr("METEOR")
 			intent_text = tr("Next Move: Meteor (200% DMG)")
-			icon = INTENT_ICON_METEOR
+			icon = INTENT_ICON_METEOR4
+		else:
+			var turns_left = MAGE_METEOR_TURNS_REQUIRED - turn_count
+			if turns_left >= 8:
+				icon = INTENT_ICON_METEOR1
+			elif turns_left >= 5:
+				icon = INTENT_ICON_METEOR2
+			elif turns_left >= 2:
+				icon = INTENT_ICON_METEOR3
+			elif turns_left >= 1:
+				icon = INTENT_ICON_METEOR4
 	
 	if intent_id == "move":
 		if _can_attack_player(player_unit, battle_grid):
@@ -643,7 +665,7 @@ func _get_intent_icon_for_id(intent_id: String) -> Texture2D:
 	match intent_id:
 		"aiming": return INTENT_ICON_AIMING
 		"rush": return INTENT_ICON_RUSH
-		"meteor": return INTENT_ICON_METEOR
+		"meteor": return INTENT_ICON_METEOR4
 		"attack": return INTENT_ICON_ATTACK
 		"move": return INTENT_ICON_MOVE
 	return INTENT_ICON_MOVE

@@ -1,0 +1,16 @@
+📊  SOUHRN BALANCE ZMĚN,,,
+Status,Počet karet,% z celku,Příklady
+BUFF,2,"2,9%","Quick Strike, Purging Burst"
+NERF,35,"50,0%","Divine Judgment, God's Lightning, Heavy Strike+, Fortify+, Holy Strike"
+OK,26,"37,1%","Defend, Holy Knight, Smite, Lay on Hands"
+REWORK,7,"10,0%","Divine Wrath, Unbreakable Faith, Shield Bash+, Consecration"
+,,,
+,,,
+📋  Klíčové systémové změny,,,
+Holy Damage,Zrušen multiplikátor 1.5×. Nový systém: Base DMG + flat +5 vs Undead/Demon.,,
+Hard Caps,1E: max 6 DMG / 5 Block. 2E: max 10 DMG / 10 Block. 3E: max 15 DMG + EXHAUST vždy.,,
+Turret Fix,"Shield Bash+ CAP 20, Unbreakable Faith → current_hp, Heavy Strike+ → 10 DMG.",,
+Aura Rework,Base hodnoty sníženy na 1 (block/turn). Scaling přesunut na Skill Tree.,,
+OP Karty,"7 karet dostalo detailní rework: Divine Judgment, Divine Wrath, God's Lightning,
+Heavy Strike+, Divine Justice, Unbreakable Faith, Shield Bash+.",,
+Damage Formula,Final_DMG = Base + Flat_Bonuses + (Base × % mods). Zákaz stacked multiplierů.,,

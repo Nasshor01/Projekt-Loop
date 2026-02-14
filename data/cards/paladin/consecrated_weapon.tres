@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_cweapon1"]
 script = ExtResource("1_cweapon")
 effect_type = 0
-value = 9
+value = 4
 string_value = ""
 target_type = 1
 area_of_effect_type = 0
@@ -22,7 +22,7 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [sub_resource type="Resource" id="Resource_cweapon2"]
 script = ExtResource("1_cweapon")
-effect_type = 13
+effect_type = 5
 value = 5
 string_value = "consecrated_weapon"
 target_type = 0
@@ -41,6 +41,7 @@ script = ExtResource("2_cweapon")
 card_id = "consecrated_weapon"
 card_name = "card.consecrated_weapon"
 card_description = "card.consecrated_weapon.desc"
+editor_description = "Deal 4 damage. Your next attack deals +5 damage."
 cost = 2
 range_type = 2
 range_value = 1
@@ -51,4 +52,5 @@ effects = Array[ExtResource("1_cweapon")]([SubResource("Resource_cweapon1"), Sub
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

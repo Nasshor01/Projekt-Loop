@@ -1,5 +1,8 @@
 # Damage Calculation & Application Audit
 
+**v0.2.0:** Damage system refactored to use `DamageCalculator.gd` autoload with strictly additive logic.
+See `DamageCalculator.get_final_damage()` and `DamageCalculator.get_display_damage()`.
+
 This document summarizes how damage is calculated, modified, and applied across the project. It identifies the split between **display numbers** (what the player sees on cards) and **actual damage** (what is subtracted from HP).
 
 ---
@@ -95,9 +98,16 @@ This document summarizes how damage is calculated, modified, and applied across 
 
 ### Vulnerable status
 
-- **Defined:** `data/cards/CardData.gd` (line 344), applied by cards (e.g. Excommunication)
-- **Implemented:** Not used in damage calculation. `Unit.gd` and `BattleScene.gd` do not multiply damage when target has `vulnerable`.
-- **Note:** `KONTROLA_KARET_PALADIN.md` says vulnerable “musí být implementován v battle systému” – currently missing.
+- **Defined:** Applied by cards (e.g. Excommunication) as APPLY_STATUS with string_value "vulnerable"
+- **Implemented:** `DamageCalculator.gd` lines 61–63 – `total = int(total * 1.5)` when target has `vulnerable` status
+- Applied to card damage via `get_final_damage()` before `take_damage()`
+
+### Defensive Stance status
+
+- **Defined:** Defensive Stance card applies APPLY_STATUS "defensive_stance"
+- **Implemented:** 50% damage reduction (card description: "The next attack against you deals 50% less damage")
+  - `DamageCalculator.gd` lines 69–71: `total = int(total * 0.5)` for card damage
+  - `Unit.gd` take_damage(): `damage_to_deal = max(1, int(damage_to_deal * 0.5))` for non-calculated damage (enemy attacks)
 
 ### Other multipliers
 
@@ -108,7 +118,7 @@ This document summarizes how damage is calculated, modified, and applied across 
 | BerserkerAI | `scripts/ai/BerserkerAI.gd` | 3.0 | Rush attack |
 | AssassinAI | `scripts/ai/AssassinAI.gd` | 0.75 | Double attack |
 | MageAI | `scripts/ai/MageAI.gd` | 2.0 | Meteor |
-| Unit.gd | Lines 150–151 | 0.5 | `defensive_stance` (damage reduction) |
+| DamageCalculator / Unit.gd | Defensive Stance | 0.5 | `defensive_stance` (50% reduction) |
 | BattleScene.gd | Line 1052 | 2× | Critical hit |
 | Unit.gd | Line 128 | 2× | Critical hit (enemy attacks on player) |
 
@@ -171,7 +181,7 @@ HP reduction = min(Actual, current_block)  →  block first
 | consecrated_weapon status | No | Yes |
 | Holy damage effectiveness (1.25×, 1.5×) | No | Yes |
 | Critical hit (2×) | No | Yes |
-| Vulnerable status | Shown on target | **Not implemented** |
+| Vulnerable status | Shown on target | Yes (DamageCalculator ×1.5) |
 | defensive_stance (50% reduction) | No | Yes (in take_damage) |
 | Block absorption | No | Yes (in take_damage) |
 
@@ -204,3 +214,40 @@ HP reduction = min(Actual, current_block)  →  block first
 3. **Burning** – Does not use `PlayerData.poison_damage_bonus`.
 4. **Holy Vengeance `damage_per_block`** – Conditional path uses `bonus_value`; possible double-count of +1 when `condition_met` is true (default for `damage_per_block`).
 5. **Display vs actual** – Player sees base + flat bonuses; actual damage can differ due to target type (Holy effectiveness), critical hit, block, defensive_stance, and consecrated_weapon.
+
+---
+
+## 9. EffectType Enum Integrity (CRITICAL)
+
+**EffectType** in `CardEffectData.gd` has indices 0–12. Any `effect_type >= 13` in .tres files causes an immediate crash (e.g. `EffectType.keys()[effect_type]` out of bounds).
+
+**Fix applied (2025-02-10):** All .tres files with invalid effect_type were corrected:
+- 13 → 5 (APPLY_STATUS): regeneration, excommunication, consecrated_weapon, purification, defensive_stance, impregnable_shield, sacred_healing
+- 15 → 7 (HEAL_UNIT): divine_protection, protective_hand, healing_aura, sacred_healing, holy_blessing, massive_healing, healing_light
+- 16 → 8 (HEAL_TO_FULL): divine_grace
+- 17 → 9 (EXHAUST): divine_grace, unbreakable_faith
+
+**ENUM INTEGRITY RULE:** Never insert new enum elements into the middle of `EffectType` or `UnitData.UnitType`. Always add at the end and manually update affected .tres files if reorganizing.
+
+---
+
+## 10. Source of Truth & Localization Audit (2025-02-10)
+
+**STRICT RULE: .tres files are the SOURCE OF TRUTH for numeric values.**  
+Localization (CSV) must be updated to match .tres, never the other way around.
+
+**Audit applied:**
+- Reverted any prior edits that changed .tres values to match descriptions
+- Updated `translations.csv` (EN + CS) so descriptions reflect the actual .tres numbers:
+
+| Card | .tres values | Localization updated |
+|------|--------------|----------------------|
+| excommunication | 6 holy dmg, Vulnerable 2 | "Deal 6 holy damage. The enemy gains Vulnerable for 2 turns." |
+| unbreakable_faith | 25 block, Exhaust | "Gain 25 block. Exhaust." |
+| gods_lightning | 14 holy dmg, +2 energy on kill | "Deal 14 holy damage. If you kill an enemy, gain 2 energy." |
+| divine_judgment | 20 holy dmg, Exhaust | "Deal 20 holy damage to all enemies. Exhaust." |
+| divine_wrath | 8 holy dmg, Exhaust | "Deal 8 holy damage to all enemies. Exhaust." |
+| holy_wrath | 8 base, +8 if block>15 | "Deal 8 holy damage. If you have more than 15 block, deal +8 holy damage." |
+| lay_on_hands+ | HEAL_TO_FULL, Exhaust | "Heal to full health. Exhaust." |
+
+**Mechanic logic (unchanged):** Defensive Stance remains 50% reduction (`× 0.5`) in DamageCalculator and Unit.gd.

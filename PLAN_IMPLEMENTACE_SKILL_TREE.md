@@ -105,11 +105,11 @@
    - STARTING_TEMP_HP
 
 10. **Support (Ochránce):**
-    - ALLIED_DEFENSE_BONUS
-    - FORCE_ENEMY_MOVEMENT
+	- ALLIED_DEFENSE_BONUS
+	- FORCE_ENEMY_MOVEMENT
 
 11. **Elemental (Elementalista):**
-    - FIRST_SPELL_ELEMENT_FREE
+	- FIRST_SPELL_ELEMENT_FREE
 
 ---
 
@@ -149,19 +149,19 @@ extends Resource
 **Struktura node dictionary:**
 ```gdscript
 {
-    "id": "berserker_victory_scars",
-    "name": "Jizvy Vítězství",
-    "description": "Zvyš maximální zdraví Berserkra o 15.",
-    "tier": 1,
-    "node_type": "BASIC",  # BASIC, NOTABLE, KEYSTONE, MASTERY, STARTER
-    "branch": "defense",  # defense, offense, utility, main
-    "cost": 1,
-    "effects": [
-        {"type": "ADD_MAX_HP", "value": 15}
-    ],
-    "prerequisites": [],  # ID uzlů, které musí být odemčeny
-    "cluster_id": "",  # Pokud patří do clusteru
-    "cluster_position": 0  # Pozice v clusteru (0 = střed)
+	"id": "berserker_victory_scars",
+	"name": "Jizvy Vítězství",
+	"description": "Zvyš maximální zdraví Berserkra o 15.",
+	"tier": 1,
+	"node_type": "BASIC",  # BASIC, NOTABLE, KEYSTONE, MASTERY, STARTER
+	"branch": "defense",  # defense, offense, utility, main
+	"cost": 1,
+	"effects": [
+		{"type": "ADD_MAX_HP", "value": 15}
+	],
+	"prerequisites": [],  # ID uzlů, které musí být odemčeny
+	"cluster_id": "",  # Pokud patří do clusteru
+	"cluster_position": 0  # Pozice v clusteru (0 = střed)
 }
 ```
 
@@ -299,4 +299,3 @@ TIER 5 (2-4 uzly):
 - **Flexibilita:** Každá postava může mít jiný počet uzlů a strukturu
 - **Vizuální rozlišení:** Barvy a efekty podle třídy/postavy
 - **Balancování:** Snadné úpravy hodnot v konfiguraci
-

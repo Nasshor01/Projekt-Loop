@@ -1,0 +1,65 @@
+🔥  SPECIÁLNÍ AUDIT — OP Karty & Turret Syndrom Fix,
+Každá karta má: Problém → Diagnóza → Konkrétní oprava → Výsledný stav,
+"⚠️  Divine Judgment (3E, EPIC)",
+🔴 Problém,25 Holy AOE full-board s Exhaust = stále 8.3 DMG/E ratio. Na plné mapě enemy wipe za 3E.
+🔬 Diagnóza,Turret syndrom: jedna karta řeší celý encounter. Exhaust neřeší problém pokud DMG je příliš vysoký.
+🔧 Oprava,DMG 25 → 15. Range zachovat FULL_BOARD. Exhaust zachovat. Výsledek: 15 AOE+Exhaust = hard-cap 3E.
+✅ Výsledek,"Stále nejsilnější AOE karta, ale nyní v rámci systému."
+📌 Stará def.,"DEAL_DAMAGE: 25 (Holy), EXHAUST, FULL_BOARD"
+📌 Nová def.,"DEAL_DAMAGE: 15 (Holy), EXHAUST, FULL_BOARD. vs Undead: 15+5=20"
+,
+"⚠️  Divine Wrath / Divine Wrath+ (3-4E, RARE)",
+🔴 Problém,FULL_BOARD bez exhaust (base verze). DMG 10/20 AOE bez podmínek.
+🔬 Diagnóza,Full-board jako základní karta je turret. Měla by být výjimečná.
+🔧 Oprava,"Base: Dosah FULL_BOARD → kruh 3×3 kolem hráče. DMG 10→8. Přidat EXHAUST.
+Upgrade: DMG 20→12. EXHAUST. Kruh 4×4 nebo zachovat FULL_BOARD jako privilege upgradu."
+✅ Výsledek,Divine Wrath = silná taktická karta (3×3 burst). Upgrade = full-board ale dražší + exhaust.
+📌 Stará def.,"DEAL_DAMAGE: 10/20 (Holy), FULL_BOARD"
+📌 Nová def.,"Base: DEAL_DAMAGE: 8 (Holy), EXHAUST, AOE 3×3
+Upgrade: DEAL_DAMAGE: 12 (Holy), EXHAUST, FULL_BOARD"
+,
+"⚠️  God's Lightning (2E, RARE)",
+🔴 Problém,18 Holy za 2E = 9.0 DMG/E ratio. Plus 2 energie při zabití. Single-target ale příliš efektivní.
+🔬 Diagnóza,Single-target turret. Karta řeší nepřítele + refunduje energii + posouvá initiative.
+🔧 Oprava,"DMG 18 → 10. On-kill bonus: +2E → +1E (nebo zachovat +2E ale snížit DMG na 8).
+Initiative effect ponechat jako flavor."
+✅ Výsledek,10 DMG za 2E = přesně na capu. On-kill +1E jako odměna za dobrou hru = OK.
+📌 Stará def.,"DEAL_DAMAGE: 18 (Holy), on kill: +2E + MODIFY_INITIATIVE"
+📌 Nová def.,"DEAL_DAMAGE: 10 (Holy), on kill: +1E + MODIFY_INITIATIVE"
+,
+"⚠️  Heavy Strike+ (1E, UNCOMMON)",
+🔴 Problém,15 Normal za 1E = 15.0 DMG/E ratio. Absolutně nejvyšší ratio v celém decku.
+🔬 Diagnóza,Extrémní turret. Za cenu 1 energie více škodí než 3E karty. Absolutní priorita nerfu.
+🔧 Oprava,"DMG 15 → 10. 1E upgrade max = base×1.5 rounded = ale strop hard-cap je 6 pro 1E.
+Jelikož je to upgrade, dáme 10 jako 'exceptional' pro UNCOMMON upgrade."
+✅ Výsledek,"10 za 1E je stále silné pro upgrade, ale v rámci systému. Hard-cap říká max 6 pro 1E → eventuálně zvážit 2E karta."
+📌 Stará def.,"DEAL_DAMAGE: 15 (Normal), 1E"
+📌 Nová def.,"DEAL_DAMAGE: 10 (Normal), 1E — zvážit přeřazení na 2E"
+,
+"⚠️  Divine Justice (3E, EPIC)",
+🔴 Problém,20 DMG + podmínka +15 nad 50% HP = 35 single-target. Bez exhaust.
+🔬 Diagnóza,35 DMG single bez exhaust za 3E = turret na jeden cíl. Podmínka trivially met (HP > 50%).
+🔧 Oprava,"Base DMG 20 → 14. Podmínka bonus +15 → +8. Přidat EXHAUST.
+Max damage: 14+8=22 (vs 35 původní)."
+✅ Výsledek,"22 DMG s podmínkou + Exhaust = silná finishing karta, ne AOE cleaner."
+📌 Stará def.,"DEAL_DAMAGE: 20 (Holy) + cond +15 nad 50% HP, no exhaust"
+📌 Nová def.,"DEAL_DAMAGE: 14 (Holy), EXHAUST. Cond: +8 nad 50% HP. Max = 22 vs Undead 27."
+,
+"⚠️  Unbreakable Faith (3E, EPIC)",
+🔴 Problém,GAIN_BLOCK = max_hp. Na Paladinovi s 80 HP = 80 block za 3E. I s Exhaust je to OP.
+🔬 Diagnóza,Pseudo-nesmrtelnost za 1 tah. Neguje celý damage systém.
+🔧 Oprava,"Varianta A: GAIN_BLOCK = current_hp (ne max). Stále silné ale škáluje s aktuálním HP.
+Varianta B: GAIN_BLOCK = pevný CAP 30 + Exhaust (konzistentní, předvídatelné).
+Doporučení: Varianta A — zachovává unikátní mechaniku, ale trestá nízké HP."
+✅ Výsledek,Na 80/80 HP = 80 block (silné ale OK s exhaust). Na 20/80 HP = 20 block (trest za špatné hrání).
+📌 Stará def.,"GAIN_BLOCK: max_hp, EXHAUST"
+📌 Nová def.,"GAIN_BLOCK: current_hp, EXHAUST — nebo CAP 30"
+,
+"⚠️  Shield Bash+ (2E, UNCOMMON)",
+🔴 Problém,DEAL_DAMAGE = 2× current_block. Bez capu. Na 20 block = 40 DMG za 2E.
+🔬 Diagnóza,Uncapped scale = turret v block-heavy decku. S Fortify+Fortification+Pious Defense lze snadno dosáhnout 30+ block.
+🔧 Oprava,"Zachovat mechaniku (scale s blockem je identita), přidat CAP: max 20 DMG.
+Base Shield Bash: CAP 15. Upgrade: CAP 20."
+✅ Výsledek,"Scale zachován pro skill expression, ale turret syndrom eliminován."
+📌 Stará def.,"DEAL_DAMAGE = 2×block, no cap"
+📌 Nová def.,"DEAL_DAMAGE = 2×block, CAP 20 DMG"

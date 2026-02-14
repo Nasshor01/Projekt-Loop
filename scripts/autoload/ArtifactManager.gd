@@ -2,6 +2,7 @@
 extends Node
 
 signal artifact_triggered(artifact_name: String, effect_description: String)
+signal extra_turn_requested
 
 var _passive_artifacts: Array[ArtifactsData] = []
 var _triggered_artifacts: Dictionary = {}
@@ -410,15 +411,18 @@ func handle_custom_effect(artifact: ArtifactsData, context: Dictionary = {}) -> 
 			return true
 			
 		"scaling_damage":
-			# Meč nekonečna: +1 damage za zabitého nepřítele (jen tento souboj)
-			PlayerData.global_card_damage_bonus += artifact.get_effective_value()
-			DebugLogger.log_info("Meč nekonečna: +%d poškození za zabití!" % artifact.get_effective_value())
+			# Meč nekonečna: +1 damage za zabitého nepřítele (stackuje do konce souboje, po bossovi se resetuje)
+			var bonus = artifact.get_effective_value()
+			PlayerData.global_card_damage_bonus += bonus
+			var accumulated = artifact.get_meta("scaling_damage_accumulated", 0)
+			artifact.set_meta("scaling_damage_accumulated", accumulated + bonus)
+			DebugLogger.log_info("Meč nekonečna: +%d poškození za zabití!" % bonus)
 			return true
 		
 		"extra_turn":
-			# Časový krystal efekt - označí že bude extra tah
-			DebugLogger.log_info("Časový krystal: Extra tah bude aktivován!")
-			# Efekt se realizuje v BattleScene, zde jen vracíme true
+			# Časový krystal - signalizuje BattleScene že má spustit extra tah
+			DebugLogger.log_info("Časový krystal: Extra tah aktivován!")
+			emit_signal("extra_turn_requested")
 			return true
 		
 		"random_energy":
@@ -507,3 +511,14 @@ func check_conditional_artifacts_with_context(context: Dictionary = {}) -> Array
 			DebugLogger.log_debug("   - %s: %s" % [result["artifact"].artifact_name, result["description"]])
 	
 	return results
+
+
+func reset_scaling_damage_after_boss():
+	"""Resetuje bonus z Meče nekonečna po zabití bosse - bonus stackoval během runu, po bossovi se vynuluje."""
+	for artifact in PlayerData.artifacts:
+		if artifact.custom_effect_id == "scaling_damage":
+			var accumulated = artifact.get_meta("scaling_damage_accumulated", 0)
+			if accumulated > 0:
+				PlayerData.global_card_damage_bonus = max(0, PlayerData.global_card_damage_bonus - accumulated)
+				artifact.set_meta("scaling_damage_accumulated", 0)
+				DebugLogger.log_info("Meč nekonečna: Resetován bonus %d po zabití bosse" % accumulated)

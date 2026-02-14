@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_hstrike"]
 script = ExtResource("1_hstrike")
 effect_type = 0
-value = 8
+value = 6
 string_value = ""
 target_type = 1
 area_of_effect_type = 0
@@ -25,6 +25,7 @@ script = ExtResource("2_hstrike")
 card_id = "holy_strike"
 card_name = "card.holy_strike"
 card_description = "card.holy_strike.desc"
+editor_description = "Deal 6 damage."
 cost = 1
 range_type = 2
 range_value = 1
@@ -35,4 +36,5 @@ effects = Array[ExtResource("1_hstrike")]([SubResource("Resource_hstrike")])
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

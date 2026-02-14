@@ -41,6 +41,7 @@ script = ExtResource("2_b3hor")
 card_id = "adrenaline"
 card_name = "card.adrenaline"
 card_description = "card.adrenaline.desc"
+editor_description = "Gain 1 Energy. At the end of your turn, draw 1 extra card."
 cost = 0
 range_type = 0
 range_value = 1
@@ -56,4 +57,5 @@ debuff_on_overuse = {
 "status": "vulnerable",
 "status_duration": 2
 }
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

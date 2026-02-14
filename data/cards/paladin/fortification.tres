@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_fort"]
 script = ExtResource("1_fort")
 effect_type = 2
-value = 15
+value = 10
 string_value = "retain"
 target_type = 0
 area_of_effect_type = 0
@@ -25,6 +25,7 @@ script = ExtResource("2_fort")
 card_id = "fortification"
 card_name = "card.fortification"
 card_description = "card.fortification.desc"
+editor_description = "Gain 10 block. This block doesn't disappear at end of turn."
 cost = 2
 range_type = 1
 range_value = 1
@@ -35,4 +36,5 @@ effects = Array[ExtResource("1_fort")]([SubResource("Resource_fort")])
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

@@ -6,9 +6,10 @@ extends PanelContainer
 class_name CardTooltip
 
 @onready var name_label: Label = $MarginContainer/VBoxContainer/NameLabel
-@onready var description_label: Label = $MarginContainer/VBoxContainer/DescriptionLabel
-@onready var effects_label: Label = $MarginContainer/VBoxContainer/EffectsLabel
+@onready var description_label: RichTextLabel = $MarginContainer/VBoxContainer/DescriptionLabel
+@onready var effects_label: RichTextLabel = $MarginContainer/VBoxContainer/EffectsLabel
 @onready var cost_label: Label = $MarginContainer/VBoxContainer/CostLabel
+@onready var keyword_container: KeywordTooltipContainer = $MarginContainer/VBoxContainer/KeywordTooltipContainer
 
 func _ready():
 	visible = false
@@ -26,7 +27,7 @@ func show_tooltip(card_data: CardData, tooltip_pos: Vector2):
 	if cost_label:
 		cost_label.text = TranslationHelper.tr_format("card.tooltip.cost", {"value": card_data.cost})
 	
-	# Použijeme původní dlouhý popis karty (ne zjednodušený)
+	# Plný popis z translations (card.xxx.desc) – hráč vidí celý text, ne zkrácený z karty
 	if description_label:
 		description_label.text = card_data.get_localized_description()
 	
@@ -71,6 +72,10 @@ func show_tooltip(card_data: CardData, tooltip_pos: Vector2):
 			effects_label.text = "\n".join(additional_info)
 		else:
 			effects_label.text = ""
+	
+	# Keyword tooltips: z efektů karty (Holy, Block, Heal, Exhaust…) + z textu; Holy zobrazí aktuální bonus (+5 nebo +8 s pasivkou)
+	if keyword_container and KeywordManager:
+		keyword_container.populate_from_card(card_data)
 	
 	# Nastavíme pozici
 	global_position = tooltip_pos

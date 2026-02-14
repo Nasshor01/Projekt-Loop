@@ -1,0 +1,14 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://cs3vg2in2q1r5"
+
+[deps]
+
+source_file="res://docs/paladin_balance_audit.xlsx - 🃏 Card Audit.csv"
+
+[params]
+
+compress=true
+delimiter=0

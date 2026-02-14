@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="Resource_4de7t"]
 script = ExtResource("1_2of20")
 effect_type = 0
-value = 12
+value = 10
 string_value = ""
 target_type = 1
 area_of_effect_type = 0
@@ -24,6 +24,7 @@ script = ExtResource("2_csey5")
 card_id = "heavy_strike+"
 card_name = "card.heavy_strike+"
 card_description = "card.heavy_strike+.desc"
+editor_description = "Deal 10 damage."
 cost = 2
 range_type = 2
 range_value = 1
@@ -33,4 +34,5 @@ effects = Array[ExtResource("1_2of20")]([SubResource("Resource_4de7t")])
 is_upgraded = true
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

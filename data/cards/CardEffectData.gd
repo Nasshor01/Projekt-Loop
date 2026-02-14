@@ -4,6 +4,9 @@
 class_name CardEffectData
 extends Resource
 
+# ENUM INTEGRITY RULE: NEVER insert new elements into the middle of this enum.
+# New effects MUST ALWAYS be added at the end to preserve integer indexes in existing .tres resources.
+# If reorganizing, manually update all affected .tres files.
 enum EffectType {
 	DEAL_DAMAGE,            # Způsobí poškození
 	DEAL_DAMAGE_FROM_BLOCK, # Způsobí poškození dle bloku

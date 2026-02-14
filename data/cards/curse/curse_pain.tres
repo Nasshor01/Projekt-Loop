@@ -8,6 +8,7 @@ script = ExtResource("2_bglw1")
 card_id = "curse_pain"
 card_name = "card.curse_pain"
 card_description = "card.curse_pain.desc"
+editor_description = "Unplayable. At the end of your turn, you take 2 damage."
 cost = 99
 range_type = 0
 range_value = 1

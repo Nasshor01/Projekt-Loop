@@ -172,12 +172,12 @@ func check_condition(context: Dictionary = {}) -> bool:
 		
 	match condition_type:
 		"health_below":
-			var current_hp = context.get("current_hp", 0)
-			var max_hp = context.get("max_hp", 1)
+			var current_hp = context.get("current_hp", PlayerData.current_hp if PlayerData else 0)
+			var max_hp = context.get("max_hp", PlayerData.max_hp if PlayerData else 1)
 			return (current_hp * 100 / max_hp) <= condition_value
 		"health_above":
-			var current_hp = context.get("current_hp", 0)
-			var max_hp = context.get("max_hp", 1)
+			var current_hp = context.get("current_hp", PlayerData.current_hp if PlayerData else 0)
+			var max_hp = context.get("max_hp", PlayerData.max_hp if PlayerData else 1)
 			return (current_hp * 100 / max_hp) >= condition_value
 		"energy_below":
 			var current_energy = context.get("current_energy", 0)

@@ -96,6 +96,12 @@ func _on_text_submitted(command_text: String):
 		"reset_skill_points":
 			_cmd_reset_skill_points()
 		
+		"add_card":
+			_cmd_add_card(args)
+		
+		"list_cards":
+			_cmd_list_cards()
+		
 		"help":
 			_cmd_help()
 		
@@ -250,6 +256,37 @@ func _cmd_reset_skill_points():
 	log_message("  Nové skill points: %d" % meta.skill_points)
 	log_message("  Alokované skilly byly resetovány")
 
+func _cmd_add_card(args: Array):
+	if args.is_empty():
+		log_error("Použití: add_card <card_id>")
+		return
+	
+	var battle_scene = _find_battle_scene()
+	if battle_scene and battle_scene.has_method("add_card_to_hand"):
+		if battle_scene.add_card_to_hand(args[0]):
+			log_success("✅ Karta '%s' přidána do ruky." % args[0])
+		else:
+			log_error("❌ Karta '%s' nebyla nalezena nebo se nepodařilo přidat." % args[0])
+	else:
+		log_error("Tento příkaz lze použít pouze v bitvě!")
+
+func _find_battle_scene():
+	return get_tree().get_first_node_in_group("battle_scene")
+
+func _cmd_list_cards():
+	var pool = load("res://data/cards/reward_card_pool.tres") as CardPool
+	if not is_instance_valid(pool) or pool.cards.is_empty():
+		log_message("📋 Seznam karet (IDs): (pool neexistuje nebo je prázdný)")
+		return
+	log_message("📋 Seznam karet (IDs) z reward pool (%d):" % pool.cards.size())
+	var ids: Array[String] = []
+	for c in pool.cards:
+		if is_instance_valid(c) and c is CardData:
+			ids.append(c.card_id)
+	ids.sort()
+	for card_id in ids:
+		log_message("  - %s" % card_id)
+
 func _cmd_help():
 	log_message("📖 Dostupné příkazy:")
 	log_message("  add_artifact <název> - Přidá artefakt")
@@ -264,6 +301,8 @@ func _cmd_help():
 	log_message("  add_energy <číslo> - Přidá energii")
 	log_message("  reload_artifacts - Znovu načte artefakty")
 	log_message("  reset_skill_points - Resetuje skill points podle levelu")
+	log_message("  add_card <card_id> - Přidá kartu do ruky (pouze v bitvě)")
+	log_message("  list_cards - Zobrazí dostupné card_id z reward poolu")
 	log_message("  help - Zobrazí tento seznam")
 
 func _show_artifact_examples():

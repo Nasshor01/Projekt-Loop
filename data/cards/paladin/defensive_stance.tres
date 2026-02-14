@@ -22,7 +22,7 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [sub_resource type="Resource" id="Resource_dstance2"]
 script = ExtResource("1_dstance")
-effect_type = 13
+effect_type = 5
 value = 0
 string_value = "defensive_stance"
 target_type = 0
@@ -41,6 +41,7 @@ script = ExtResource("2_dstance")
 card_id = "defensive_stance"
 card_name = "card.defensive_stance"
 card_description = "card.defensive_stance.desc"
+editor_description = "Gain 4 block. The next attack against you deals 50% less damage."
 cost = 1
 range_type = 1
 range_value = 1
@@ -51,4 +52,5 @@ effects = Array[ExtResource("1_dstance")]([SubResource("Resource_dstance1"), Sub
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

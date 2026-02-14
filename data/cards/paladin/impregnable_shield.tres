@@ -22,7 +22,7 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [sub_resource type="Resource" id="Resource_ishield2"]
 script = ExtResource("1_ishield")
-effect_type = 13
+effect_type = 5
 value = 0
 string_value = "remove_all_debuffs"
 target_type = 0
@@ -41,6 +41,7 @@ script = ExtResource("2_ishield")
 card_id = "impregnable_shield"
 card_name = "card.impregnable_shield"
 card_description = "card.impregnable_shield.desc"
+editor_description = "Gain 10 block. Remove all debuffs."
 cost = 2
 range_type = 1
 range_value = 1
@@ -51,4 +52,5 @@ effects = Array[ExtResource("1_ishield")]([SubResource("Resource_ishield1"), Sub
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

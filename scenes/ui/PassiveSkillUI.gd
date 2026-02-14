@@ -161,8 +161,24 @@ func _format_effect_simple(effect) -> String:
 		return tr("skill.effect.grant_revive") if value > 0 else ""
 	elif effect.effect_type == PassiveEffectData.EffectType.ADD_CARD_DAMAGE:
 		return TranslationHelper.tr_format("skill.effect.add_card_damage", {"value": value})
+	elif effect.effect_type == PassiveEffectData.EffectType.ADD_HOLY_DAMAGE:
+		return TranslationHelper.tr_format("skill.effect.add_holy_damage", {"value": value})
 	elif effect.effect_type == PassiveEffectData.EffectType.ADD_RETAINED_BLOCK:
 		return TranslationHelper.tr_format("skill.effect.add_retained_block", {"value": value})
+	elif effect.effect_type == PassiveEffectData.EffectType.HEAL_END_OF_TURN:
+		return TranslationHelper.tr_format("skill.effect.heal_end_of_turn", {"value": value})
+	elif effect.effect_type == PassiveEffectData.EffectType.AURA_ENHANCEMENT:
+		return TranslationHelper.tr_format("skill.effect.aura_enhancement", {"value": value})
+	elif effect.effect_type == PassiveEffectData.EffectType.THORNS_DAMAGE:
+		return TranslationHelper.tr_format("skill.effect.thorns_damage", {"value": value})
+	elif effect.effect_type == PassiveEffectData.EffectType.AVATAR_STARTING_BLOCK:
+		return TranslationHelper.tr_format("skill.effect.avatar_starting_block", {"value": value})
+	elif effect.effect_type == PassiveEffectData.EffectType.ENERGY_ON_KILL:
+		return TranslationHelper.tr_format("skill.effect.energy_on_kill", {"value": value})
+	elif effect.effect_type == PassiveEffectData.EffectType.DRAW_CARD_FIRST_TURN:
+		return TranslationHelper.tr_format("skill.effect.draw_card_first_turn", {"value": value})
+	elif effect.effect_type == PassiveEffectData.EffectType.MOVEMENT_BONUS:
+		return TranslationHelper.tr_format("skill.effect.movement_bonus", {"value": value})
 	else:
 		return tr("skill.effect.special")
 

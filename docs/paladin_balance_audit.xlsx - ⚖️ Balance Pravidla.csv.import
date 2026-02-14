@@ -1,0 +1,14 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://bdprgkdwv6p1n"
+
+[deps]
+
+source_file="res://docs/paladin_balance_audit.xlsx - ⚖️ Balance Pravidla.csv"
+
+[params]
+
+compress=true
+delimiter=0

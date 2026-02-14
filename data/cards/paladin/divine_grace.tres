@@ -6,7 +6,7 @@
 
 [sub_resource type="Resource" id="Resource_dgrace1"]
 script = ExtResource("1_dgrace")
-effect_type = 16
+effect_type = 8
 value = 0
 string_value = ""
 target_type = 0
@@ -22,7 +22,7 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [sub_resource type="Resource" id="Resource_dgrace2"]
 script = ExtResource("1_dgrace")
-effect_type = 17
+effect_type = 9
 value = 0
 string_value = ""
 target_type = 0
@@ -41,6 +41,7 @@ script = ExtResource("2_dgrace")
 card_id = "divine_grace"
 card_name = "card.divine_grace"
 card_description = "card.divine_grace.desc"
+editor_description = "Heal to full health. Exhaust."
 cost = 3
 range_type = 1
 range_value = 1
@@ -51,4 +52,5 @@ effects = Array[ExtResource("1_dgrace")]([SubResource("Resource_dgrace1"), SubRe
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

@@ -118,13 +118,26 @@ func next_turn():
 	
 	_start_next_unit_turn()
 
-func register_unit(unit: Unit):
-	"""Přidá jednotku během souboje (např. vyvolání)"""
+func add_unit(unit: Unit) -> void:
+	"""Register unit (e.g. Druid spirit). If current turn is enemy, new enemy can act this round."""
+	register_unit(unit, true)
+
+func register_unit(unit: Unit, act_this_round: bool = false):
+	"""Přidá jednotku během souboje (např. vyvolání). If act_this_round and current turn is same faction, insert after current so unit acts this round."""
+	if not is_instance_valid(unit) or not unit.unit_data:
+		return
 	if not _combatants.has(unit):
 		_combatants.append(unit)
 		print("TurnManager: Zaregistrována nová jednotka: %s" % unit.unit_data.unit_name)
-		
-		# Přidej do aktuálního kola na konec
+	
+	if _turn_order.has(unit):
+		return
+	var current = get_current_unit()
+	var is_enemy_turn = current and is_instance_valid(current) and current.unit_data and current.unit_data.faction == UnitData.Faction.ENEMY
+	var unit_is_enemy = unit.unit_data.faction == UnitData.Faction.ENEMY
+	if act_this_round and is_enemy_turn and unit_is_enemy and _current_turn_index >= 0:
+		_turn_order.insert(_current_turn_index + 1, unit)
+	else:
 		_turn_order.append(unit)
 
 func unregister_unit(unit: Unit):

@@ -61,8 +61,19 @@ func _apply_effect() -> bool:
 				
 		ArtifactsData.EffectType.HEAL_HP:
 			if target_unit and target_unit.has_method("heal"):
-				target_unit.heal(artifact_data.get_effective_value())
-				return true
+				var heal_amount: int
+				# Fénixovo pero: "heal to X% HP" - když je condition health_below + percentage_based, léčíme NA primary_value % max HP
+				if artifact_data.percentage_based and artifact_data.condition_type == "health_below":
+					var max_hp = context.get("max_hp", PlayerData.max_hp if PlayerData else 1)
+					var current_hp = context.get("current_hp", PlayerData.current_hp if PlayerData else 0)
+					var target_hp = (max_hp * artifact_data.primary_value) / 100
+					heal_amount = max(0, target_hp - current_hp)
+				else:
+					heal_amount = artifact_data.get_effective_value()
+				if heal_amount > 0:
+					target_unit.heal(heal_amount)
+					return true
+				return false
 			else:
 				return false
 				

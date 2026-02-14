@@ -30,6 +30,8 @@ SystemDebug="*res://scripts/debug/SystemDebug.gd"
 EventManager="*res://scripts/autoload/EventManager.gd"
 ArtifactManager="*res://scripts/autoload/ArtifactManager.gd"
 TurnManager="*res://scripts/autoload/TurnManager.gd"
+DamageCalculator="*res://scripts/autoload/DamageCalculator.gd"
+KeywordManager="*res://scripts/autoload/KeywordManager.gd"
 
 [display]
 

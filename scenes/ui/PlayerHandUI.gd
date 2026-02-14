@@ -18,7 +18,7 @@ const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 @export var hand_arc: float = 40.0
 
 @export_group("Interakce")
-@export var hover_y_offset: float = -5.0
+@export var hover_y_offset: float = -2.0
 @export var hover_scale: float = 1.05
 
 @onready var _arrange_timer: Timer = $ArrangeTimer
@@ -29,6 +29,7 @@ var _dragging_card: Control = null
 var _hidden_cards: Array[Control] = []
 var _suppress_hover_until_lmb_release: bool = false
 var _suppress_click_until_lmb_release: bool = false
+var _rmb_just_cancelled_drag: bool = false
 
 
 func _ready():
@@ -164,6 +165,14 @@ func cancel_drag_ui():
 	_restore_hidden_cards()
 	_request_arrange()
 
+func force_finish_drag():
+	"""Obnoví skryté karty po úspěšném zahraní (klik na mřížku bez release na kartě)."""
+	if _dragging_card and _dragging_card is CardUI:
+		_dragging_card.cancel_drag()
+	_dragging_card = null
+	_restore_hidden_cards()
+	_request_arrange()
+
 func _arrange_cards():
 	var cards = get_children().filter(func(c): return c is CardUI)
 	var num_cards = cards.size()
@@ -233,9 +242,26 @@ func _on_card_mouse_exited(card: Control):
 		_request_arrange()
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
-		if _suppress_hover_until_lmb_release or _suppress_click_until_lmb_release:
-			call_deferred("_clear_suppress_after_lmb_release")
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+			if _dragging_card:
+				_rmb_just_cancelled_drag = true
+				cancel_drag_ui()
+				call_deferred("_clear_rmb_cancel_flag")
+		elif event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+			if _dragging_card:
+				var card = _dragging_card
+				_dragging_card = null
+				if card is CardUI:
+					card.cancel_drag()
+				_restore_hidden_cards()
+				# Potlačíme click signál z _on_card_gui_input pro tento LMB release,
+				# protože cancel_drag() nastavil mouse_filter zpět na STOP a GUI input
+				# by mohl znovu emitovat hand_card_was_clicked pro stejný event.
+				_suppress_click_until_lmb_release = true
+				emit_signal("hand_card_drag_released", card, card.card_data)
+			if _suppress_hover_until_lmb_release or _suppress_click_until_lmb_release:
+				call_deferred("_clear_suppress_after_lmb_release")
 
 func _on_card_gui_input(event: InputEvent, card_node: Control):
 	if event is InputEventMouseButton:
@@ -247,6 +273,9 @@ func _on_card_gui_input(event: InputEvent, card_node: Control):
 				return
 			emit_signal("hand_card_was_clicked", card_node, card_node.card_data)
 		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+			if _rmb_just_cancelled_drag:
+				accept_event()
+				return
 			if _dragging_card == card_node:
 				cancel_drag_ui()
 			elif _selected_card == card_node:
@@ -259,6 +288,9 @@ func _on_card_gui_input(event: InputEvent, card_node: Control):
 				# Pravý klik - toggle tooltip
 				emit_signal("card_right_clicked", card_node.card_data)
 			accept_event()
+
+func _clear_rmb_cancel_flag():
+	_rmb_just_cancelled_drag = false
 
 func _clear_suppress_after_lmb_release():
 	if _suppress_hover_until_lmb_release:
@@ -274,7 +306,11 @@ func _on_card_drag_started(card_node: Control, _original_pos: Vector2 = Vector2.
 	emit_signal("hand_card_drag_started", card_node, card_node.card_data)
 
 func _on_card_drag_released(card_node: Control, _release_pos = null):
+	# Emitovat jen když jsme první (karta dostala release dřív než _input).
+	# Jinak _input už emitol hand_card_drag_released — zabráníme dvojímu odehrání karty.
 	if _dragging_card == card_node:
 		_dragging_card = null
-	_restore_hidden_cards()
-	emit_signal("hand_card_drag_released", card_node, card_node.card_data)
+		_restore_hidden_cards()
+		emit_signal("hand_card_drag_released", card_node, card_node.card_data)
+	else:
+		_restore_hidden_cards()

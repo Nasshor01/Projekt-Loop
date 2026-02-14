@@ -1,9 +1,16 @@
 # Soubor: res://scenes/ui/UnitInfoPanel.gd
+# Unit Info Panel s dedikovanými sloty: HP (jen nepřítel), Block, Energy (jen hráč).
+# HP hráče je v Global UI, takže v tomto panelu se u hráče nezobrazuje.
 extends PanelContainer
 
 @onready var name_label: Label = %NameLabel
+@onready var hp_slot: HBoxContainer = %HPSlot
 @onready var hp_label: Label = %HPLabel
+@onready var block_slot: HBoxContainer = %BlockSlot
 @onready var block_label: Label = %BlockLabel
+@onready var energy_slot: HBoxContainer = %EnergySlot
+@onready var energy_label: Label = %EnergyLabel
+@onready var enemy_section: VBoxContainer = %EnemySection
 @onready var attack_label: Label = %AttackLabel
 @onready var class_label: Label = %ClassLabel
 @onready var passives_label: Label = %PassivesLabel
@@ -12,89 +19,71 @@ extends PanelContainer
 @onready var status_effects_list: VBoxContainer = %StatusEffectsList
 
 func update_stats(unit_node: Node):
-	if not name_label or not hp_label or not block_label or not attack_label or not status_effects_list or not class_label or not passives_label or not counters_label or not intent_label:
-		printerr(tr("UnitInfoPanel: Missing required label/container nodes!"))
+	if not name_label or not hp_slot or not block_slot or not energy_slot or not enemy_section or not status_effects_list:
+		printerr(tr("UnitInfoPanel: Missing required nodes!"))
 		visible = false
 		return
-		
 	if not is_instance_valid(unit_node) or not unit_node.has_method("get_unit_data"):
 		visible = false
 		return
-	
+
 	visible = true
 	var data = unit_node.get_unit_data()
-	
 	name_label.text = data.get_localized_name()
-	
-	# Zobrazení HP (zůstává stejné)
+
+	# --- Dedikované sloty: HP / Block / Energy ---
 	if data.faction == UnitData.Faction.PLAYER:
-		hp_label.text = TranslationHelper.tr_format("ui.unit_info.hp", {"current": unit_node.current_health, "max": PlayerData.max_hp})
+		hp_slot.visible = false
+		energy_slot.visible = true
+		energy_label.text = TranslationHelper.tr_format("ui.unit_info.energy", {"current": PlayerData.current_energy, "max": PlayerData.max_energy})
 	else:
+		hp_slot.visible = true
+		energy_slot.visible = false
 		hp_label.text = TranslationHelper.tr_format("ui.unit_info.hp", {"current": unit_node.current_health, "max": data.max_health})
-	
-	# --- NOVÁ VYLEPŠENÁ LOGIKA PRO BLOK ---
+
+	# Block slot: vždy viditelný
+	block_slot.visible = true
 	if unit_node.current_block > 0:
-		block_label.visible = true
-		
-		# Zkontrolujeme, jestli má jednotka i nějaký udržitelný blok ("retained_block")
 		if unit_node.retained_block > 0:
-			# Pokud ano, zobrazíme ho v závorce pro lepší přehlednost
-			# Příklad: Blok: 50 (20)
 			block_label.text = TranslationHelper.tr_format("ui.unit_info.block_retained", {"current": unit_node.current_block, "retained": unit_node.retained_block})
 			block_label.tooltip_text = tr("ui.unit_info.block_tooltip_retained")
 		else:
-			# Pokud je všechen blok jen dočasný, ukážeme jen celkovou hodnotu
-			# Příklad: Blok: 10
 			block_label.text = TranslationHelper.tr_format("ui.unit_info.block", {"value": unit_node.current_block})
 			block_label.tooltip_text = tr("ui.unit_info.block_tooltip")
 	else:
-		# Pokud není žádný blok, label skryjeme
-		block_label.visible = false
-	# --- KONEC NOVÉ LOGIKY PRO BLOK ---
-	
-	# Zobrazení útoku (zůstává stejné)
-	if data.faction != UnitData.Faction.PLAYER:
+		block_label.text = TranslationHelper.tr_format("ui.unit_info.block", {"value": 0})
+		block_label.tooltip_text = ""
+
+	if data.faction == UnitData.Faction.ENEMY:
 		attack_label.text = TranslationHelper.tr_format("ui.unit_info.attack", {"value": data.attack_damage})
 		attack_label.visible = true
 	else:
 		attack_label.visible = false
-	
+
 	_update_enemy_details(unit_node, data)
-		
 	_update_status_display(unit_node)
 
 func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
 	if data.faction != UnitData.Faction.ENEMY:
-		class_label.visible = false
-		passives_label.visible = false
-		counters_label.visible = false
-		intent_label.visible = false
+		enemy_section.visible = false
 		return
-	
-	class_label.visible = true
-	passives_label.visible = true
-	counters_label.visible = true
-	intent_label.visible = true
-	
+	enemy_section.visible = true
 	if unit_node.has_method("get_enemy_class_display"):
 		class_label.text = unit_node.get_enemy_class_display()
 	else:
-		class_label.text = tr("Class: Unknown")
-	
+		class_label.text = tr("ui.unit_info.class_unknown")
 	if unit_node.has_method("get_enemy_passives_display"):
 		passives_label.text = unit_node.get_enemy_passives_display()
 	else:
-		passives_label.text = tr("Passives: None")
-	
+		passives_label.text = tr("ui.unit_info.passives_none")
 	if unit_node.has_method("get_status_counters_display"):
 		counters_label.text = unit_node.get_status_counters_display()
 	else:
-		counters_label.text = tr("Status/Counters: None")
-	
+		counters_label.text = tr("ui.unit_info.counters_none")
 	if unit_node.has_method("get_intent_display_text"):
 		intent_label.text = unit_node.get_intent_display_text()
 	else:
-		intent_label.text = tr("Next Move: Unknown")
+		intent_label.text = tr("ui.unit_info.intent_unknown")
 
 func _update_status_display(unit_node: Node):
 	# Vymaž staré statusy
@@ -134,22 +123,25 @@ func hide_panel():
 	visible = false
 
 func update_from_player_data():
-	# Vezmeme si data o classu hráče
 	var unit_data = PlayerData.selected_subclass.specific_unit_data
 	if not is_instance_valid(unit_data):
 		hide_panel()
 		return
-		
 	name_label.text = unit_data.get_localized_name()
-	# Aktuální HP vezmeme přímo z PlayerData
-	hp_label.text = TranslationHelper.tr_format("ui.unit_info.hp", {"current": PlayerData.current_hp, "max": PlayerData.max_hp})
-	
-	# Ostatní věci, které hráč na začátku nemá, skryjeme
-	block_label.visible = false
-	attack_label.visible = false
+	# HP hráče není v panelu — je v Global UI
+	hp_slot.visible = false
+	block_slot.visible = true
+	block_label.text = TranslationHelper.tr_format("ui.unit_info.block", {"value": 0})
+	block_label.tooltip_text = ""
+	energy_slot.visible = true
+	energy_label.text = TranslationHelper.tr_format("ui.unit_info.energy", {"current": PlayerData.current_energy, "max": PlayerData.max_energy})
+	enemy_section.visible = false
 	status_effects_list.visible = false
-	class_label.visible = false
-	passives_label.visible = false
-	counters_label.visible = false
-	intent_label.visible = false
+	for child in status_effects_list.get_children():
+		child.queue_free()
 	show()
+
+func update_energy_display():
+	"""Aktualizuje jen zobrazení energie (volá se při změně energie u hráče)."""
+	if visible and energy_slot.visible and energy_label:
+		energy_label.text = TranslationHelper.tr_format("ui.unit_info.energy", {"current": PlayerData.current_energy, "max": PlayerData.max_energy})

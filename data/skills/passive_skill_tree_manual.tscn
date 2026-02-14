@@ -1,0 +1,170 @@
+[gd_scene load_steps=4 format=3 uid="uid://bni51d7iwmdku"]
+
+[ext_resource type="Script" uid="uid://mdipbfyn0dpt" path="res://scripts/SkillTreeBuilder.gd" id="3_builder"]
+[ext_resource type="PackedScene" uid="uid://n246vay81cfg" path="res://scenes/ui/PassiveSkillNodeUI.tscn" id="4_scdnf"]
+[ext_resource type="Script" uid="uid://ddesta8q3lv4p" path="res://scenes/ui/PassiveSkillTreeManual.gd" id="5_manual"]
+
+[node name="PassiveSkillTree_Manual" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LineLayer" type="Control" parent="TextureRect"]
+show_behind_parent = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_manual")
+
+[node name="Camera2D" type="Camera2D" parent="TextureRect"]
+position = Vector2(576, 48)
+
+[node name="SkillTreeBuilder" type="Node" parent="TextureRect"]
+script = ExtResource("3_builder")
+
+[node name="PassiveSkillNodeUI" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 536.0
+offset_right = 616.0
+offset_bottom = 96.0
+skill_id = &"paladin_start"
+
+[node name="@Control@28546" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 408.0
+offset_top = 144.0
+offset_right = 488.0
+offset_bottom = 240.0
+skill_id = &"blessed_gold"
+
+[node name="@Control@28547" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 536.0
+offset_top = 144.0
+offset_right = 616.0
+offset_bottom = 240.0
+skill_id = &"divine_insight"
+
+[node name="@Control@28548" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 656.0
+offset_top = 144.0
+offset_right = 736.0
+offset_bottom = 240.0
+skill_id = &"sacred_step"
+
+[node name="@Control@28549" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 152.0
+offset_top = 272.0
+offset_right = 232.0
+offset_bottom = 368.0
+skill_id = &"paladin_hp_1"
+
+[node name="@Control@28550" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 280.0
+offset_top = 272.0
+offset_right = 360.0
+offset_bottom = 368.0
+skill_id = &"paladin_block_1"
+
+[node name="@Control@28551" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 408.0
+offset_top = 272.0
+offset_right = 488.0
+offset_bottom = 368.0
+skill_id = &"iron_skin"
+
+[node name="@Control@28552" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 792.0
+offset_top = 272.0
+offset_right = 872.0
+offset_bottom = 368.0
+skill_id = &"defensive_stance"
+
+[node name="@Control@28553" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 536.0
+offset_top = 272.0
+offset_right = 616.0
+offset_bottom = 368.0
+skill_id = &"holy_light_heal"
+
+[node name="@Control@28554" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 664.0
+offset_top = 272.0
+offset_right = 744.0
+offset_bottom = 368.0
+skill_id = &"fortress"
+
+[node name="@Control@28555" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 920.0
+offset_top = 272.0
+offset_right = 1000.0
+offset_bottom = 368.0
+skill_id = &"iron_will"
+
+[node name="@Control@28556" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 664.0
+offset_top = 464.0
+offset_right = 744.0
+offset_bottom = 560.0
+skill_id = &"holy_strike"
+
+[node name="@Control@28557" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 152.0
+offset_top = 464.0
+offset_right = 232.0
+offset_bottom = 560.0
+skill_id = &"righteous_fury"
+
+[node name="@Control@28558" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 408.0
+offset_top = 464.0
+offset_right = 488.0
+offset_bottom = 560.0
+skill_id = &"consecrated_blade"
+
+[node name="@Control@28559" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 920.0
+offset_top = 464.0
+offset_right = 1000.0
+offset_bottom = 560.0
+skill_id = &"aura_synergy"
+
+[node name="@Control@28560" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 656.0
+offset_top = 656.0
+offset_right = 736.0
+offset_bottom = 752.0
+skill_id = &"divine_protection"
+
+[node name="@Control@28561" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 408.0
+offset_top = 656.0
+offset_right = 488.0
+offset_bottom = 752.0
+skill_id = &"sacred_thorns"
+
+[node name="@Control@28562" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 536.0
+offset_top = 656.0
+offset_right = 616.0
+offset_bottom = 752.0
+skill_id = &"immovable_fortress"
+
+[node name="@Control@28563" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
+offset_left = 536.0
+offset_top = 848.0
+offset_right = 616.0
+offset_bottom = 944.0
+skill_id = &"avatar_of_light"

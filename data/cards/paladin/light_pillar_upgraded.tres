@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="Resource_k6dw4"]
 script = ExtResource("1_jjv5j")
 effect_type = 0
-value = 9
+value = 8
 string_value = ""
 target_type = 6
 area_of_effect_type = 2
@@ -24,6 +24,7 @@ script = ExtResource("2_60qc4")
 card_id = "light_pillar+"
 card_name = "card.light_pillar+"
 card_description = "card.light_pillar+.desc"
+editor_description = "Deal 8 damage to all enemies in the column."
 cost = 2
 range_type = 5
 range_value = 5
@@ -33,4 +34,5 @@ effects = Array[ExtResource("1_jjv5j")]([SubResource("Resource_k6dw4")])
 is_upgraded = true
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

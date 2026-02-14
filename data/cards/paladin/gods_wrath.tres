@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_gwrath"]
 script = ExtResource("1_gwrath")
 effect_type = 0
-value = 15
+value = 10
 string_value = ""
 target_type = 1
 area_of_effect_type = 0
@@ -17,7 +17,7 @@ damage_type = 1
 has_condition = true
 condition_type = "target_has_debuff"
 condition_value = 0
-conditional_bonus_value = 10
+conditional_bonus_value = 4
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
@@ -25,6 +25,7 @@ script = ExtResource("2_gwrath")
 card_id = "gods_wrath"
 card_name = "card.gods_wrath"
 card_description = "card.gods_wrath.desc"
+editor_description = "Deal 10 damage. If the enemy has a debuff, deal +4 damage."
 cost = 2
 range_type = 2
 range_value = 1
@@ -35,4 +36,5 @@ effects = Array[ExtResource("1_gwrath")]([SubResource("Resource_gwrath")])
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

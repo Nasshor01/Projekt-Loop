@@ -19,8 +19,9 @@ var _ui_nodes_ready = false
 @onready var artwork_texture_rect: TextureRect = $ArtworkTextureRect
 @onready var name_label: Label = $NameLabel
 @onready var cost_label: Label = $CostLabel
-@onready var description_label: Label = $DescriptionLabel
+@onready var description_label: RichTextLabel = $DescriptionLabel
 @onready var card_template: TextureRect = $CardTemplateImage
+var _usage_label: Label = null
 
 var original_scale: Vector2 = Vector2(0.7, 0.7)
 var base_scale: Vector2 = Vector2.ONE
@@ -39,6 +40,7 @@ signal card_right_clicked(data: CardData)
 
 func _ready():
 	_ui_nodes_ready = true
+	_usage_label = get_node_or_null("UsageLabel") as Label
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_set_child_mouse_filters()
 	
@@ -55,7 +57,13 @@ func _ready():
 		update_display()
 	
 	if description_label:
-		description_label.autowrap_mode = TextServer.AUTOWRAP_WORD
+		description_label.fit_content = true
+		description_label.scroll_active = false
+		description_label.add_theme_constant_override("line_separation", 6)
+		# Ensure font size at least 18px and default color for readability
+		if description_label.get_theme_font_size("normal_font_size") < 18:
+			description_label.add_theme_font_size_override("normal_font_size", 18)
+		description_label.add_theme_color_override("default_color", Color(1, 1, 1, 1))
 
 	if static_layout:
 		target_position = position
@@ -73,11 +81,23 @@ func update_display():
 	name_label.text = card_data.get_localized_name()
 	cost_label.text = str(card_data.cost)
 	
-	# Použijeme dynamický popis s aktuálními hodnotami poškození
-	description_label.text = card_data.get_display_description()
+	# Použijeme dynamický popis s BBCode shorthand (center-aligned)
+	var desc := card_data.get_display_description()
+	description_label.text = "[center]%s[/center]" % desc if not desc.is_empty() else ""
 	
 	if artwork_texture_rect and card_data.artwork:
 		artwork_texture_rect.texture = card_data.artwork
+	
+	# Usage x/x – zobrazit jen když má karta max_uses_before_removal > 0
+	if _usage_label:
+		if card_data.max_uses_before_removal > 0:
+			var used: int = 0
+			if not Engine.is_editor_hint() and PlayerData:
+				used = PlayerData.get_card_usage_count(card_data.card_id)
+			_usage_label.text = "%d/%d" % [used, card_data.max_uses_before_removal]
+			_usage_label.visible = true
+		else:
+			_usage_label.visible = false
 	
 	# Nastavíme barvu karty podle rarity
 	_update_rarity_colors()
@@ -109,9 +129,14 @@ func load_card(new_card_data: CardData):
 func _process(delta):
 	if static_layout:
 		return
+	# Aktualizovat usage x/x (aby ostatní kopie v ruce ukázaly aktuální počet)
+	if _usage_label and _usage_label.visible and card_data and card_data.max_uses_before_removal > 0 and not Engine.is_editor_hint() and PlayerData:
+		_usage_label.text = "%d/%d" % [PlayerData.get_card_usage_count(card_data.card_id), card_data.max_uses_before_removal]
 	if is_dragging:
 		var mouse_pos = get_viewport().get_mouse_position()
-		var target_global_pos = mouse_pos + _drag_offset
+		scale = scale.lerp(target_scale, delta * 12.0)
+		var visual_size = custom_minimum_size * scale
+		var target_global_pos = mouse_pos - visual_size / 2
 		global_position = global_position.lerp(target_global_pos, delta * 15.0)
 		return
 	
@@ -152,7 +177,6 @@ func _gui_input(event: InputEvent):
 	# 2. PRAVÝ KLIK (Vždy zkusí ukázat tooltip)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
 		if event.pressed:
-			print("RMB clicked on: ", card_data.card_name if card_data else "null")
 			# SIGNÁL PRO TOOLTIP (Tohle je nejčistší cesta)
 			# Pokud máš CardTooltip jako globální/nadřazený uzel, napoj se na tento signál
 			card_right_clicked.emit(card_data) 
@@ -166,9 +190,13 @@ func _gui_input(event: InputEvent):
 func _start_drag():
 	is_dragging = true
 	_drag_start_pos = global_position
-	_drag_offset = global_position - get_viewport().get_mouse_position()
-	target_scale = base_scale * 0.6
-	modulate.a = 0.7
+	target_scale = Vector2(0.5, 0.5)
+	scale = target_scale
+	var mouse_pos = get_viewport().get_mouse_position()
+	var visual_size = custom_minimum_size * scale
+	global_position = mouse_pos - visual_size / 2
+	modulate.a = 0.8
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	drag_started.emit(self, _drag_start_pos)
 
 func _end_drag():
@@ -176,6 +204,7 @@ func _end_drag():
 		is_dragging = false
 		target_scale = base_scale
 		modulate.a = 1.0
+		mouse_filter = Control.MOUSE_FILTER_STOP
 		_drag_released = true
 		drag_released.emit(self, global_position)
 
@@ -184,6 +213,7 @@ func cancel_drag():
 		is_dragging = false
 		target_scale = base_scale
 		modulate.a = 1.0
+		mouse_filter = Control.MOUSE_FILTER_STOP
 		_drag_released = false
 
 func consume_drag_release() -> bool:
@@ -196,4 +226,4 @@ func _modulate_click_feedback():
 	modulate = Color.RED
 	await get_tree().process_frame
 	if is_inside_tree():
-		modulate = Color.WHITE
+		modulate = Color(1, 1, 1, 0.8) if is_dragging else Color.WHITE

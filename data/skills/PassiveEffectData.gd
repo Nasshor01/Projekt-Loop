@@ -78,6 +78,8 @@ enum EffectType {
 	
 	# Elemental (Elementalista)
 	FIRST_SPELL_ELEMENT_FREE,   # První kouzlo každého živlu zdarma (value = počet živlů)
+	# Paladin: bonus jen k Holy poškození (na konci, aby se neposunula čísla v uložených .tres)
+	ADD_HOLY_DAMAGE,            # +X pouze k Svatému (Holy) poškození z karet
 }
 
 ## Typ efektu, který si vybereš z menu v editoru.
@@ -111,6 +113,8 @@ func get_formatted_description() -> String:
 			return "Možnost oživení" if value > 0 else ""
 		EffectType.ADD_CARD_DAMAGE:
 			return "+%d poškození všech karet" % value
+		EffectType.ADD_HOLY_DAMAGE:
+			return "+%d Svatého poškození (Holy)" % value
 		EffectType.ADD_RETAINED_BLOCK:
 			return "+%d startovního bloku" % value
 		EffectType.CRITICAL_CHANCE_BONUS:

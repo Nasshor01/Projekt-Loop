@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="Resource_2hlmt"]
 script = ExtResource("1_b25g3")
 effect_type = 2
-value = 10
+value = 6
 string_value = ""
 target_type = 0
 area_of_effect_type = 0
@@ -24,6 +24,7 @@ script = ExtResource("2_pii7y")
 card_id = "pious_defense+"
 card_name = "card.pious_defense+"
 card_description = "card.pious_defense+.desc"
+editor_description = "Gain 6 block."
 cost = 1
 range_type = 1
 range_value = 1
@@ -33,4 +34,5 @@ effects = Array[ExtResource("1_b25g3")]([SubResource("Resource_2hlmt")])
 is_upgraded = true
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

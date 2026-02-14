@@ -7,10 +7,10 @@
 [sub_resource type="Resource" id="Resource_djudge1"]
 script = ExtResource("1_djudge")
 effect_type = 0
-value = 20
+value = 15
 string_value = ""
-target_type = 6
-area_of_effect_type = 3
+target_type = 3
+area_of_effect_type = 4
 aoe_param_x = 1
 aoe_param_y = 1
 damage_type = 1
@@ -41,6 +41,7 @@ script = ExtResource("2_djudge")
 card_id = "divine_judgment"
 card_name = "card.divine_judgment"
 card_description = "card.divine_judgment.desc"
+editor_description = "Deal 15 damage to all enemies. Exhaust."
 cost = 3
 range_type = 6
 range_value = 3
@@ -51,4 +52,5 @@ effects = Array[ExtResource("1_djudge")]([SubResource("Resource_djudge1"), SubRe
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

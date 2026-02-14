@@ -1,3 +1,4 @@
+res://data/skills
 D:/Games/hra projekt loop
 res://art/sprites/units
 res://data/encounters
@@ -6,7 +7,6 @@ res://
 res://data/cards/everyone
 res://scripts/autoload
 res://data/artifacts/legendary
-res://data/skills
 res://data/events
 res://data/cards
 res://scenes/CharSelect

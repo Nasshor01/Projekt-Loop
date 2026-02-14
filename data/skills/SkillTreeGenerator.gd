@@ -11,6 +11,14 @@ const CENTER_X = 1000.0  # Střed stromu (X pozice) - ZVÝŠENO
 const STARTER_Y_OFFSET = -250.0  # Starter je výše nad tier 1 - ZVÝŠENO
 const NODE_OFFSET_IN_TIER = 80.0  # Horizontální offset pro více uzlů ve stejném tieru - ZVÝŠENO
 
+# --- RADIAL LAYOUT ---
+const RADIAL_TIER_RADIUS: Array = [0, 300, 600, 900, 1200]  # index = tier (0=starter, 1-4=tiery)
+const RADIAL_CLUSTER_RADIUS: float = 80.0  # poloměr malého kruhu kolem Center uzlu v clusteru
+const RADIAL_DEFENSE_ANGLE: float = -90.0   # výseč -120° až -60° (střed)
+const RADIAL_UTILITY_ANGLE: float = 0.0     # výseč -30° až 30° (nahoře)
+const RADIAL_OFFENSE_ANGLE: float = 90.0    # výseč 60° až 120° (vpravo)
+const RADIAL_MAIN_ANGLE: float = 0.0        # main = jako utility
+
 # Definice branchí pro různé archetypy
 enum Branch {
 	DEFENSE,    # Obranná větev (vlevo)
@@ -19,10 +27,15 @@ enum Branch {
 	MAIN        # Hlavní cesta (střed)
 }
 
-# --- NOVÝ ČISTÝ DESIGN ---
+# --- TIERED DESIGN (GDD v0.2.0) ---
+# Tier 1: Utility (Gold, Card Draw, Movement) — bez ADD_CARD_DAMAGE a ADD_MAX_ENERGY
+# Tier 2: Defense (HP, Block, Heal)
+# Tier 3: Synergy (Energy, fixní Holy Damage, Energy on kill, Aura)
+# Tier 4: Keystones (Avatar of Light + unikátní mechaniky)
+# Hodnoty dle hard-caps (konzervativní pro raný akt).
 
 static func generate_paladin_tree() -> PassiveSkillTreeData:
-	"""Nový čistý Paladin skill tree s lineární strukturou"""
+	"""Paladin skill tree – striktní tiered hierarchie (GDD v0.2.0)."""
 	var tree = PassiveSkillTreeData.new()
 	var nodes: Array[PassiveSkillNode] = []
 	
@@ -31,7 +44,7 @@ static func generate_paladin_tree() -> PassiveSkillTreeData:
 	starter.id = StringName("paladin_start")
 	starter.skill_name = "Svatý Závazek"
 	starter.description = "Startovní bod Paladina. Zvýší maximální zdraví o 5."
-	starter.tier = PassiveSkillNode.SkillTier.values()[0]  # TIER_0
+	starter.tier = PassiveSkillNode.SkillTier.values()[0]
 	starter.branch = "main"
 	starter.branch_position = 0
 	starter.node_type = PassiveSkillNode.NodeType.STARTER
@@ -40,426 +53,247 @@ static func generate_paladin_tree() -> PassiveSkillTreeData:
 	add_effect(starter, PassiveEffectData.EffectType.ADD_MAX_HP, 5)
 	nodes.append(starter)
 	
-	# ===== TIER 1 - Základní vylepšení (3 větve, více uzlů) =====
-	# Defense Branch (4 uzly)
-	var shield_training = create_node("paladin_block_1", "Výcvik se štítem",
-		"Začni každý souboj s 3 body bloku.",
-		PassiveSkillNode.SkillTier.TIER_1, Branch.DEFENSE, 0)
-	add_effect(shield_training, PassiveEffectData.EffectType.ADD_RETAINED_BLOCK, 3)
-	nodes.append(shield_training)
+	# ===== TIER 1 - Utility (Gold, Card Draw, Movement) — ŽÁDNÝ ADD_CARD_DAMAGE / ADD_MAX_ENERGY =====
+	var blessed_gold = create_node("blessed_gold", "Požehnané zlato",
+		"Začni každý souboj s 8 zlatem navíc.",
+		PassiveSkillNode.SkillTier.TIER_1, Branch.UTILITY, 0)
+	add_effect(blessed_gold, PassiveEffectData.EffectType.ADD_STARTING_GOLD, 8)
+	nodes.append(blessed_gold)
 	
+	var divine_insight = create_node("divine_insight", "Božský vhled",
+		"Líznutí 1 karty navíc v prvním kole.",
+		PassiveSkillNode.SkillTier.TIER_1, Branch.UTILITY, 1)
+	add_effect(divine_insight, PassiveEffectData.EffectType.DRAW_CARD_FIRST_TURN, 1)
+	nodes.append(divine_insight)
+	
+	var sacred_step = create_node("sacred_step", "Svatý krok",
+		"+1 pohyb na mapě.",
+		PassiveSkillNode.SkillTier.TIER_1, Branch.UTILITY, 2)
+	add_effect(sacred_step, PassiveEffectData.EffectType.MOVEMENT_BONUS, 1)
+	nodes.append(sacred_step)
+	
+	# ===== TIER 2 - Defense (HP, Block, Heal) =====
 	var vitality = create_node("paladin_hp_1", "Vitalita",
 		"Zvýší maximální zdraví o 8.",
-		PassiveSkillNode.SkillTier.TIER_1, Branch.DEFENSE, 1)
+		PassiveSkillNode.SkillTier.TIER_2, Branch.DEFENSE, 0)
 	add_effect(vitality, PassiveEffectData.EffectType.ADD_MAX_HP, 8)
 	nodes.append(vitality)
 	
+	var shield_training = create_node("paladin_block_1", "Výcvik se štítem",
+		"Začni každý souboj s 3 body bloku.",
+		PassiveSkillNode.SkillTier.TIER_2, Branch.DEFENSE, 1)
+	add_effect(shield_training, PassiveEffectData.EffectType.ADD_RETAINED_BLOCK, 3)
+	nodes.append(shield_training)
+	
 	var iron_skin = create_node("iron_skin", "Železná kůže",
 		"Zvýší maximální zdraví o 6.",
-		PassiveSkillNode.SkillTier.TIER_1, Branch.DEFENSE, 2)
+		PassiveSkillNode.SkillTier.TIER_2, Branch.DEFENSE, 2)
 	add_effect(iron_skin, PassiveEffectData.EffectType.ADD_MAX_HP, 6)
 	nodes.append(iron_skin)
 	
 	var defensive_stance = create_node("defensive_stance", "Obranný postoj",
 		"Začni každý souboj s 2 body bloku navíc.",
-		PassiveSkillNode.SkillTier.TIER_1, Branch.DEFENSE, 3)
+		PassiveSkillNode.SkillTier.TIER_2, Branch.DEFENSE, 3)
 	add_effect(defensive_stance, PassiveEffectData.EffectType.ADD_RETAINED_BLOCK, 2)
 	nodes.append(defensive_stance)
 	
-	# Offense Branch (4 uzly)
-	var righteous_anger = create_node("righteous_anger", "Spravedlivý hněv",
-		"Všechny karty způsobí o 1 poškození navíc.",
-		PassiveSkillNode.SkillTier.TIER_1, Branch.OFFENSE, 0)
-	add_effect(righteous_anger, PassiveEffectData.EffectType.ADD_CARD_DAMAGE, 1)
-	nodes.append(righteous_anger)
+	var holy_light_heal = create_node("holy_light_heal", "Světlo uzdravení",
+		"Na konci každého tahu se vyléč o 1 HP.",
+		PassiveSkillNode.SkillTier.TIER_2, Branch.DEFENSE, 4)
+	add_effect(holy_light_heal, PassiveEffectData.EffectType.HEAL_END_OF_TURN, 1)
+	nodes.append(holy_light_heal)
 	
-	var swift_justice = create_node("swift_justice", "Rychlá spravedlnost",
-		"Začni každý souboj s 1 extra energií.",
-		PassiveSkillNode.SkillTier.TIER_1, Branch.OFFENSE, 1)
-	add_effect(swift_justice, PassiveEffectData.EffectType.ADD_MAX_ENERGY, 1)
-	nodes.append(swift_justice)
-	
-	var holy_power = create_node("holy_power", "Svatá síla",
-		"Všechny karty způsobí o 1 poškození navíc.",
-		PassiveSkillNode.SkillTier.TIER_1, Branch.OFFENSE, 2)
-	add_effect(holy_power, PassiveEffectData.EffectType.ADD_CARD_DAMAGE, 1)
-	nodes.append(holy_power)
-	
-	var battle_fervor = create_node("battle_fervor", "Bojové nadšení",
-		"Začni každý souboj s 1 extra energií.",
-		PassiveSkillNode.SkillTier.TIER_1, Branch.OFFENSE, 3)
-	add_effect(battle_fervor, PassiveEffectData.EffectType.ADD_MAX_ENERGY, 1)
-	nodes.append(battle_fervor)
-	
-	# Utility Branch (3 uzly)
-	var blessed_gold = create_node("blessed_gold", "Požehnané zlato",
-		"Začni každý souboj s 10 zlatem navíc.",
-		PassiveSkillNode.SkillTier.TIER_1, Branch.UTILITY, 0)
-	add_effect(blessed_gold, PassiveEffectData.EffectType.ADD_STARTING_GOLD, 10)
-	nodes.append(blessed_gold)
-	
-	var divine_insight = create_node("divine_insight", "Božský vhled",
-		"Líznutí karty navíc v prvním kole.",
-		PassiveSkillNode.SkillTier.TIER_1, Branch.UTILITY, 1)
-	add_effect(divine_insight, PassiveEffectData.EffectType.DRAW_CARD_FIRST_TURN, 1)
-	nodes.append(divine_insight)
-	
-	var sacred_wisdom = create_node("sacred_wisdom", "Svatá moudrost",
-		"Začni každý souboj s 5 zlatem navíc.",
-		PassiveSkillNode.SkillTier.TIER_1, Branch.UTILITY, 2)
-	add_effect(sacred_wisdom, PassiveEffectData.EffectType.ADD_STARTING_GOLD, 5)
-	nodes.append(sacred_wisdom)
-	
-	# ===== TIER 2 - Specializace (více uzlů, větvení) =====
-	# Defense Branch (5 uzlů)
 	var fortress = create_node("fortress", "Pevnost",
 		"Začni každý souboj s 8 body bloku.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.DEFENSE, 0, PassiveSkillNode.NodeType.NOTABLE)
+		PassiveSkillNode.SkillTier.TIER_2, Branch.DEFENSE, 5, PassiveSkillNode.NodeType.NOTABLE)
 	add_effect(fortress, PassiveEffectData.EffectType.ADD_RETAINED_BLOCK, 8)
 	nodes.append(fortress)
 	
 	var iron_will = create_node("iron_will", "Železná vůle",
 		"Zvýší maximální zdraví o 10.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.DEFENSE, 1)
+		PassiveSkillNode.SkillTier.TIER_2, Branch.DEFENSE, 6)
 	add_effect(iron_will, PassiveEffectData.EffectType.ADD_MAX_HP, 10)
 	nodes.append(iron_will)
 	
-	var unbreakable = create_node("unbreakable", "Nezlomný",
-		"Zvýší maximální zdraví o 12.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.DEFENSE, 2)
-	add_effect(unbreakable, PassiveEffectData.EffectType.ADD_MAX_HP, 12)
-	nodes.append(unbreakable)
-	
-	var shield_mastery = create_node("shield_mastery", "Mistrovství se štítem",
-		"Začni každý souboj s 5 body bloku navíc.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.DEFENSE, 3)
-	add_effect(shield_mastery, PassiveEffectData.EffectType.ADD_RETAINED_BLOCK, 5)
-	nodes.append(shield_mastery)
-	
-	var guardian_spirit = create_node("guardian_spirit", "Ochranný duch",
-		"Začni každý souboj s 4 body bloku navíc.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.DEFENSE, 4)
-	add_effect(guardian_spirit, PassiveEffectData.EffectType.ADD_RETAINED_BLOCK, 4)
-	nodes.append(guardian_spirit)
-	
-	# Offense Branch (5 uzlů)
-	var divine_wrath = create_node("divine_wrath", "Božský hněv",
-		"Všechny karty způsobí o 2 poškození navíc.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.OFFENSE, 0, PassiveSkillNode.NodeType.NOTABLE)
-	add_effect(divine_wrath, PassiveEffectData.EffectType.ADD_CARD_DAMAGE, 2)
-	nodes.append(divine_wrath)
-	
+	# ===== TIER 3 - Synergy (Energy, fixní Holy Damage, Energy on kill, Aura) =====
 	var holy_strike = create_node("holy_strike", "Svatý úder",
-		"Začni každý souboj s 2 extra energií.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.OFFENSE, 1)
-	add_effect(holy_strike, PassiveEffectData.EffectType.ADD_MAX_ENERGY, 2)
+		"Začni každý souboj s 1 extra energií.",
+		PassiveSkillNode.SkillTier.TIER_3, Branch.OFFENSE, 0)
+	add_effect(holy_strike, PassiveEffectData.EffectType.ADD_MAX_ENERGY, 1)
 	nodes.append(holy_strike)
 	
-	var smiting_power = create_node("smiting_power", "Síla trestu",
-		"Všechny karty způsobí o 2 poškození navíc.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.OFFENSE, 2)
-	add_effect(smiting_power, PassiveEffectData.EffectType.ADD_CARD_DAMAGE, 2)
-	nodes.append(smiting_power)
+	var righteous_fury = create_node("righteous_fury", "Spravedlivá zuřivost",
+		"Svaté (Holy) poškození z karet způsobí o 3 poškození navíc. Nepůsobí na běžné útoky.",
+		PassiveSkillNode.SkillTier.TIER_3, Branch.OFFENSE, 1, PassiveSkillNode.NodeType.NOTABLE)
+	add_effect(righteous_fury, PassiveEffectData.EffectType.ADD_HOLY_DAMAGE, 3)
+	nodes.append(righteous_fury)
 	
 	var consecrated_blade = create_node("consecrated_blade", "Požehnaná čepel",
-		"Začni každý souboj s 1 extra energií.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.OFFENSE, 3)
-	add_effect(consecrated_blade, PassiveEffectData.EffectType.ADD_MAX_ENERGY, 1)
+		"Získej 1 energii za každého zabitého nepřítele.",
+		PassiveSkillNode.SkillTier.TIER_3, Branch.OFFENSE, 2)
+	add_effect(consecrated_blade, PassiveEffectData.EffectType.ENERGY_ON_KILL, 1)
 	nodes.append(consecrated_blade)
 	
-	var wrathful_strike = create_node("wrathful_strike", "Hněvivý úder",
-		"Všechny karty způsobí o 1 poškození navíc.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.OFFENSE, 4)
-	add_effect(wrathful_strike, PassiveEffectData.EffectType.ADD_CARD_DAMAGE, 1)
-	nodes.append(wrathful_strike)
+	var aura_synergy = create_node("aura_synergy", "Synergie aur",
+		"Aury jsou o 25% silnější (síla, nikoliv dosah).",
+		PassiveSkillNode.SkillTier.TIER_3, Branch.UTILITY, 0)
+	add_effect(aura_synergy, PassiveEffectData.EffectType.AURA_ENHANCEMENT, 25)
+	nodes.append(aura_synergy)
 	
-	# Utility Branch (4 uzly)
-	var divine_favor = create_node("divine_favor", "Božská přízeň",
-		"Líznutí karty navíc v prvním kole.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.UTILITY, 0, PassiveSkillNode.NodeType.NOTABLE)
-	add_effect(divine_favor, PassiveEffectData.EffectType.DRAW_CARD_FIRST_TURN, 1)
-	nodes.append(divine_favor)
-	
-	var golden_touch = create_node("golden_touch", "Zlatý dotek",
-		"Začni každý souboj s 15 zlatem navíc.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.UTILITY, 1)
-	add_effect(golden_touch, PassiveEffectData.EffectType.ADD_STARTING_GOLD, 15)
-	nodes.append(golden_touch)
-	
-	var blessed_hand = create_node("blessed_hand", "Požehnaná ruka",
-		"Líznutí karty navíc v prvním kole.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.UTILITY, 2)
-	add_effect(blessed_hand, PassiveEffectData.EffectType.DRAW_CARD_FIRST_TURN, 1)
-	nodes.append(blessed_hand)
-	
-	var divine_prosperity = create_node("divine_prosperity", "Božský blahobyt",
-		"Začni každý souboj s 12 zlatem navíc.",
-		PassiveSkillNode.SkillTier.TIER_2, Branch.UTILITY, 3)
-	add_effect(divine_prosperity, PassiveEffectData.EffectType.ADD_STARTING_GOLD, 12)
-	nodes.append(divine_prosperity)
-	
-	# ===== TIER 3 - Pokročilé schopnosti (více keystones) =====
-	# Defense Branch (3 uzly)
+	# ===== TIER 4 - Keystones (Avatar of Light + unikátní mechaniky) =====
 	var divine_protection = create_node("divine_protection", "Božská ochrana",
-		"Začni každý souboj s 15 body bloku.",
-		PassiveSkillNode.SkillTier.TIER_3, Branch.DEFENSE, 0, PassiveSkillNode.NodeType.KEYSTONE)
-	add_effect(divine_protection, PassiveEffectData.EffectType.ADD_RETAINED_BLOCK, 15)
+		"Začni každý souboj s 12 body bloku.",
+		PassiveSkillNode.SkillTier.TIER_4, Branch.DEFENSE, 0, PassiveSkillNode.NodeType.KEYSTONE)
+	add_effect(divine_protection, PassiveEffectData.EffectType.ADD_RETAINED_BLOCK, 12)
 	nodes.append(divine_protection)
 	
 	var sacred_thorns = create_node("sacred_thorns", "Svaté trny",
-		"Začni každý souboj s 10 body bloku. Nepřátelé, kteří tě zasáhnou, utrpí 2 poškození.",
-		PassiveSkillNode.SkillTier.TIER_3, Branch.DEFENSE, 1, PassiveSkillNode.NodeType.KEYSTONE)
-	add_effect(sacred_thorns, PassiveEffectData.EffectType.ADD_RETAINED_BLOCK, 10)
+		"Nepřátelé, kteří tě zasáhnou, utrpí 2 poškození.",
+		PassiveSkillNode.SkillTier.TIER_4, Branch.DEFENSE, 1, PassiveSkillNode.NodeType.KEYSTONE)
+	add_effect(sacred_thorns, PassiveEffectData.EffectType.THORNS_DAMAGE, 2)
 	nodes.append(sacred_thorns)
 	
 	var immovable_fortress = create_node("immovable_fortress", "Nepohnutelná pevnost",
-		"Zvýší maximální zdraví o 20. Začni každý souboj s 5 body bloku.",
-		PassiveSkillNode.SkillTier.TIER_3, Branch.DEFENSE, 2, PassiveSkillNode.NodeType.KEYSTONE)
-	add_effect(immovable_fortress, PassiveEffectData.EffectType.ADD_MAX_HP, 20)
+		"Zvýší maximální zdraví o 15. Začni každý souboj s 5 body bloku.",
+		PassiveSkillNode.SkillTier.TIER_4, Branch.DEFENSE, 2, PassiveSkillNode.NodeType.KEYSTONE)
+	add_effect(immovable_fortress, PassiveEffectData.EffectType.ADD_MAX_HP, 15)
 	add_effect(immovable_fortress, PassiveEffectData.EffectType.ADD_RETAINED_BLOCK, 5)
 	nodes.append(immovable_fortress)
 	
-	# Offense Branch (3 uzly)
-	var righteous_fury = create_node("righteous_fury", "Spravedlivá zuřivost",
-		"Všechny karty způsobí o 3 poškození navíc.",
-		PassiveSkillNode.SkillTier.TIER_3, Branch.OFFENSE, 0, PassiveSkillNode.NodeType.KEYSTONE)
-	add_effect(righteous_fury, PassiveEffectData.EffectType.ADD_CARD_DAMAGE, 3)
-	nodes.append(righteous_fury)
-	
-	var divine_retribution = create_node("divine_retribution", "Božská odplata",
-		"Všechny karty způsobí o 4 poškození navíc. Začni každý souboj s 1 extra energií.",
-		PassiveSkillNode.SkillTier.TIER_3, Branch.OFFENSE, 1, PassiveSkillNode.NodeType.KEYSTONE)
-	add_effect(divine_retribution, PassiveEffectData.EffectType.ADD_CARD_DAMAGE, 4)
-	add_effect(divine_retribution, PassiveEffectData.EffectType.ADD_MAX_ENERGY, 1)
-	nodes.append(divine_retribution)
-	
-	var holy_avenger = create_node("holy_avenger", "Svatý mstitel",
-		"Všechny karty způsobí o 3 poškození navíc. Začni každý souboj s 2 extra energií.",
-		PassiveSkillNode.SkillTier.TIER_3, Branch.OFFENSE, 2, PassiveSkillNode.NodeType.KEYSTONE)
-	add_effect(holy_avenger, PassiveEffectData.EffectType.ADD_CARD_DAMAGE, 3)
-	add_effect(holy_avenger, PassiveEffectData.EffectType.ADD_MAX_ENERGY, 2)
-	nodes.append(holy_avenger)
-	
-	# Utility Branch (2 uzly)
-	var blessed_recovery = create_node("blessed_recovery", "Požehnané uzdravení",
-		"Začni každý souboj s 20 zlatem navíc.",
-		PassiveSkillNode.SkillTier.TIER_3, Branch.UTILITY, 0, PassiveSkillNode.NodeType.KEYSTONE)
-	add_effect(blessed_recovery, PassiveEffectData.EffectType.ADD_STARTING_GOLD, 20)
-	nodes.append(blessed_recovery)
-	
-	var divine_wealth = create_node("divine_wealth", "Božské bohatství",
-		"Začni každý souboj s 25 zlatem navíc. Líznutí karty navíc v prvním kole.",
-		PassiveSkillNode.SkillTier.TIER_3, Branch.UTILITY, 1, PassiveSkillNode.NodeType.KEYSTONE)
-	add_effect(divine_wealth, PassiveEffectData.EffectType.ADD_STARTING_GOLD, 25)
-	add_effect(divine_wealth, PassiveEffectData.EffectType.DRAW_CARD_FIRST_TURN, 1)
-	nodes.append(divine_wealth)
-	
-	# ===== TIER 4 - Mistrovství =====
-	var aura_mastery = create_node("aura_mastery", "Mistrovství aur",
-		"Všechny aury jsou o 50% silnější.",
-		PassiveSkillNode.SkillTier.TIER_4, Branch.MAIN, 0, PassiveSkillNode.NodeType.MASTERY)
-	add_effect(aura_mastery, PassiveEffectData.EffectType.AURA_ENHANCEMENT, 50)
-	nodes.append(aura_mastery)
-	
-	# ===== TIER 5 - Ultimátní schopnost =====
 	var avatar_of_light = create_node("avatar_of_light", "Avatár světla",
-		"Na začátku souboje získej blok rovný 2x tvému maximálnímu zdraví. Vyžaduje všechny ostatní uzly odemčené.",
-		PassiveSkillNode.SkillTier.TIER_5, Branch.MAIN, 0, PassiveSkillNode.NodeType.KEYSTONE)
+		"Na začátku souboje získej blok rovný 2× tvému maximálnímu zdraví. Vyžaduje všechny ostatní uzly odemčené.",
+		PassiveSkillNode.SkillTier.TIER_4, Branch.MAIN, 0, PassiveSkillNode.NodeType.KEYSTONE)
 	add_effect(avatar_of_light, PassiveEffectData.EffectType.AVATAR_STARTING_BLOCK, 2)
-	# Speciální podmínka - musí mít všechny ostatní uzly odemčené
 	avatar_of_light.unlock_conditions.clear()
 	avatar_of_light.unlock_conditions.append("all_nodes_unlocked")
 	nodes.append(avatar_of_light)
 	
-	# ===== PROPOJENÍ - ČISTÁ LINEÁRNÍ STRUKTURA =====
-	setup_connections_clean(nodes)
-	
-	# ===== POZICOVÁNÍ - NOVÝ ČISTÝ LAYOUT =====
+	setup_connections_paladin_tiered(nodes)
 	auto_position_nodes_clean(nodes)
 	
 	tree.skill_nodes = nodes
-	tree.rebuild()  # ✅ OPRAVENO: Rebuild lookup dictionary po generování
-	print("✅ Čistý Paladin skill tree vytvořen: %d uzlů" % nodes.size())
+	tree.rebuild()
 	return tree
 
-static func setup_connections_clean(nodes: Array[PassiveSkillNode]):
-	"""Nastaví propojení pro rozšířený strom s více větvením"""
+static func setup_connections_paladin_tiered(nodes: Array[PassiveSkillNode]):
+	"""Propojení dle definice: Tier 0 → T1 → T2 → T3 → T4 → avatar_of_light. Jedna čára = jedno A→B."""
 	var node_map = {}
 	for node in nodes:
 		node_map[node.id] = node
 	
-	var starter = node_map.get("paladin_start")
-	if not starter:
-		return
+	# Tier 0 (Start)
+	if node_map.has("paladin_start"):
+		node_map["paladin_start"].connected_nodes = ["blessed_gold", "divine_insight", "sacred_step"]
 	
-	# Starter → 3 hlavní větve (Tier 1)
-	starter.connected_nodes = ["paladin_block_1", "righteous_anger", "blessed_gold"]
-	
-	# ===== DEFENSE BRANCH =====
-	# Tier 1 → Tier 2
-	if node_map.has("paladin_block_1"):
-		node_map["paladin_block_1"].connected_nodes = ["paladin_hp_1", "iron_skin", "fortress"]
-	if node_map.has("paladin_hp_1"):
-		node_map["paladin_hp_1"].connected_nodes = ["iron_skin", "defensive_stance", "fortress"]
-	if node_map.has("iron_skin"):
-		node_map["iron_skin"].connected_nodes = ["defensive_stance", "fortress"]
-	if node_map.has("defensive_stance"):
-		node_map["defensive_stance"].connected_nodes = ["fortress"]
-	
-	# Tier 2 → Tier 3
-	if node_map.has("fortress"):
-		node_map["fortress"].connected_nodes = ["iron_will", "unbreakable", "divine_protection"]
-	if node_map.has("iron_will"):
-		node_map["iron_will"].connected_nodes = ["unbreakable", "shield_mastery", "divine_protection"]
-	if node_map.has("unbreakable"):
-		node_map["unbreakable"].connected_nodes = ["shield_mastery", "guardian_spirit", "divine_protection"]
-	if node_map.has("shield_mastery"):
-		node_map["shield_mastery"].connected_nodes = ["guardian_spirit", "divine_protection"]
-	if node_map.has("guardian_spirit"):
-		node_map["guardian_spirit"].connected_nodes = ["divine_protection"]
-	
-	# Tier 3 → Tier 4
-	if node_map.has("divine_protection"):
-		node_map["divine_protection"].connected_nodes = ["sacred_thorns", "immovable_fortress", "aura_mastery"]
-	if node_map.has("sacred_thorns"):
-		node_map["sacred_thorns"].connected_nodes = ["immovable_fortress", "aura_mastery"]
-	if node_map.has("immovable_fortress"):
-		node_map["immovable_fortress"].connected_nodes = ["aura_mastery"]
-	
-	# ===== OFFENSE BRANCH =====
-	# Tier 1 → Tier 2
-	if node_map.has("righteous_anger"):
-		node_map["righteous_anger"].connected_nodes = ["swift_justice", "holy_power", "divine_wrath"]
-	if node_map.has("swift_justice"):
-		node_map["swift_justice"].connected_nodes = ["holy_power", "battle_fervor", "divine_wrath"]
-	if node_map.has("holy_power"):
-		node_map["holy_power"].connected_nodes = ["battle_fervor", "divine_wrath"]
-	if node_map.has("battle_fervor"):
-		node_map["battle_fervor"].connected_nodes = ["divine_wrath"]
-	
-	# Tier 2 → Tier 3
-	if node_map.has("divine_wrath"):
-		node_map["divine_wrath"].connected_nodes = ["holy_strike", "smiting_power", "righteous_fury"]
-	if node_map.has("holy_strike"):
-		node_map["holy_strike"].connected_nodes = ["smiting_power", "consecrated_blade", "righteous_fury"]
-	if node_map.has("smiting_power"):
-		node_map["smiting_power"].connected_nodes = ["consecrated_blade", "wrathful_strike", "righteous_fury"]
-	if node_map.has("consecrated_blade"):
-		node_map["consecrated_blade"].connected_nodes = ["wrathful_strike", "righteous_fury"]
-	if node_map.has("wrathful_strike"):
-		node_map["wrathful_strike"].connected_nodes = ["righteous_fury"]
-	
-	# Tier 3 → Tier 4
-	if node_map.has("righteous_fury"):
-		node_map["righteous_fury"].connected_nodes = ["divine_retribution", "holy_avenger", "aura_mastery"]
-	if node_map.has("divine_retribution"):
-		node_map["divine_retribution"].connected_nodes = ["holy_avenger", "aura_mastery"]
-	if node_map.has("holy_avenger"):
-		node_map["holy_avenger"].connected_nodes = ["aura_mastery"]
-	
-	# ===== UTILITY BRANCH =====
-	# Tier 1 → Tier 2
+	# Tier 1 (Utility) → Tier 2 (Defense)
 	if node_map.has("blessed_gold"):
-		node_map["blessed_gold"].connected_nodes = ["divine_insight", "sacred_wisdom", "divine_favor"]
+		node_map["blessed_gold"].connected_nodes = ["paladin_hp_1", "paladin_block_1"]
 	if node_map.has("divine_insight"):
-		node_map["divine_insight"].connected_nodes = ["sacred_wisdom", "divine_favor"]
-	if node_map.has("sacred_wisdom"):
-		node_map["sacred_wisdom"].connected_nodes = ["divine_favor"]
+		node_map["divine_insight"].connected_nodes = ["iron_skin", "defensive_stance", "holy_light_heal"]
+	if node_map.has("sacred_step"):
+		node_map["sacred_step"].connected_nodes = ["fortress", "iron_will"]
 	
-	# Tier 2 → Tier 3
-	if node_map.has("divine_favor"):
-		node_map["divine_favor"].connected_nodes = ["golden_touch", "blessed_hand", "blessed_recovery"]
-	if node_map.has("golden_touch"):
-		node_map["golden_touch"].connected_nodes = ["blessed_hand", "divine_prosperity", "blessed_recovery"]
-	if node_map.has("blessed_hand"):
-		node_map["blessed_hand"].connected_nodes = ["divine_prosperity", "blessed_recovery"]
-	if node_map.has("divine_prosperity"):
-		node_map["divine_prosperity"].connected_nodes = ["blessed_recovery"]
+	# Tier 2 (Defense) → Tier 3 (Synergy)
+	if node_map.has("paladin_hp_1"):
+		node_map["paladin_hp_1"].connected_nodes = ["holy_strike", "righteous_fury"]
+	if node_map.has("paladin_block_1"):
+		node_map["paladin_block_1"].connected_nodes = ["holy_strike", "consecrated_blade"]
+	if node_map.has("iron_skin"):
+		node_map["iron_skin"].connected_nodes = ["righteous_fury", "consecrated_blade"]
+	if node_map.has("defensive_stance"):
+		node_map["defensive_stance"].connected_nodes = ["consecrated_blade", "aura_synergy"]
+	if node_map.has("holy_light_heal"):
+		node_map["holy_light_heal"].connected_nodes = ["holy_strike", "aura_synergy"]
+	if node_map.has("fortress"):
+		node_map["fortress"].connected_nodes = ["consecrated_blade", "aura_synergy", "righteous_fury"]
+	if node_map.has("iron_will"):
+		node_map["iron_will"].connected_nodes = ["holy_strike", "aura_synergy"]
 	
-	# Tier 3 → Tier 4
-	if node_map.has("blessed_recovery"):
-		node_map["blessed_recovery"].connected_nodes = ["divine_wealth", "aura_mastery"]
-	if node_map.has("divine_wealth"):
-		node_map["divine_wealth"].connected_nodes = ["aura_mastery"]
+	# Tier 3 (Synergy) → Tier 4 (Keystones)
+	if node_map.has("holy_strike"):
+		node_map["holy_strike"].connected_nodes = ["divine_protection", "sacred_thorns"]
+	if node_map.has("righteous_fury"):
+		node_map["righteous_fury"].connected_nodes = ["sacred_thorns", "immovable_fortress"]
+	if node_map.has("consecrated_blade"):
+		node_map["consecrated_blade"].connected_nodes = ["immovable_fortress", "sacred_thorns"]
+	if node_map.has("aura_synergy"):
+		node_map["aura_synergy"].connected_nodes = ["divine_protection", "immovable_fortress"]
 	
-	# ===== TIER 4 → TIER 5 =====
-	# Všechny větve → Aura Mastery → Avatar
-	if node_map.has("aura_mastery"):
-		node_map["aura_mastery"].connected_nodes = ["avatar_of_light"]
+	# Tier 4 (Keystones) → Finální uzel
+	if node_map.has("divine_protection"):
+		node_map["divine_protection"].connected_nodes = ["avatar_of_light"]
+	if node_map.has("sacred_thorns"):
+		node_map["sacred_thorns"].connected_nodes = ["avatar_of_light"]
+	if node_map.has("immovable_fortress"):
+		node_map["immovable_fortress"].connected_nodes = ["avatar_of_light"]
+	# avatar_of_light → (konec cesty, prázdné connected_nodes)
+	if node_map.has("avatar_of_light"):
+		node_map["avatar_of_light"].connected_nodes = []
+
+static func setup_connections_clean(nodes: Array[PassiveSkillNode]):
+	"""Zastaralé: pro Paladin strom se používá setup_connections_paladin_tiered(). Pro generování z config slouží setup_connections_from_config()."""
+	pass
 
 static func auto_position_nodes_clean(nodes: Array[PassiveSkillNode]):
-	"""Nový čistý layout algoritmus - lineární větve s jasnou hierarchií"""
+	"""Radial (kruhový) layout: Starter v [0,0], tiery na kružnicích, větve ve výsečích, clustery na malém kruhu."""
 	# Seskupíme uzly podle branche a tieru
 	var branch_groups = {}
-	
 	for node in nodes:
 		var branch_key = node.branch
 		if not branch_groups.has(branch_key):
 			branch_groups[branch_key] = {}
-		
 		var tier_key = node.tier
 		if not branch_groups[branch_key].has(tier_key):
 			branch_groups[branch_key][tier_key] = []
-		
 		branch_groups[branch_key][tier_key].append(node)
 	
-	# Pozicujeme starter (Tier 0)
-	var starter = null
+	# Starter (Tier 0) v bodě [0, 0]
 	for node in nodes:
 		if node.is_starter:
-			starter = node
+			node.position = Vector2(0, 0)
 			break
 	
-	if starter:
-		starter.position = Vector2(CENTER_X, STARTER_Y_OFFSET)
+	# Poloměr kružnice pro daný tier (Tier 1–4)
+	var tier_radius = func(tier: PassiveSkillNode.SkillTier) -> float:
+		var idx = int(tier)
+		if idx >= 0 and idx < RADIAL_TIER_RADIUS.size():
+			return float(RADIAL_TIER_RADIUS[idx])
+		return 300.0
 	
-	# Pozicujeme každou větev lineárně
+	# Střední úhel pro větev (ve stupních; 0° = nahoru)
+	var branch_angle = func(branch_name: String) -> float:
+		match branch_name.to_lower():
+			"defense": return RADIAL_DEFENSE_ANGLE
+			"offense": return RADIAL_OFFENSE_ANGLE
+			"utility": return RADIAL_UTILITY_ANGLE
+			"main": return RADIAL_MAIN_ANGLE
+			_: return RADIAL_UTILITY_ANGLE
+	
+	# Bod na kružnici: úhel ve stupních, 0° = nahoru (záporné Y)
+	var point_on_circle = func(radius: float, angle_deg: float) -> Vector2:
+		var rad = deg_to_rad(angle_deg)
+		return Vector2(radius * sin(rad), -radius * cos(rad))
+	
 	for branch_name in branch_groups.keys():
-		if branch_name == "main" and branch_groups[branch_name].size() > 0:
-			# Main branch (Aura Mastery, Avatar) - uprostřed
-			var branch_data = branch_groups[branch_name]
-			var branch_x = CENTER_X
-			
-			# Seřadíme tiery
-			var sorted_tiers = branch_data.keys()
-			sorted_tiers.sort()
-			
-			for tier in sorted_tiers:
-				if tier == PassiveSkillNode.SkillTier.values()[0]:  # Skip TIER_0
-					continue
-				var tier_nodes = branch_data[tier]
-				var tier_y = get_tier_y_offset_clean(tier)
-				
-				# OPRAVA BUG 3: Main branch uzly potřebují offset pro více uzlů ve stejném tieru
-				# Používáme stejnou logiku jako ostatní větve
+		var branch_data = branch_groups[branch_name]
+		var sorted_tiers = branch_data.keys()
+		sorted_tiers.sort()
+		var center_angle = branch_angle.call(branch_name)
+		for tier in sorted_tiers:
+			if tier == PassiveSkillNode.SkillTier.values()[0]:
+				continue
+			var tier_nodes = branch_data[tier]
+			var r = tier_radius.call(tier)
+			var center_pos = point_on_circle.call(r, center_angle)
+			if tier_nodes.size() == 1:
+				tier_nodes[0].position = center_pos
+			else:
+				# Cluster: uzly na malém kruhu (poloměr RADIAL_CLUSTER_RADIUS) kolem center_pos
 				for i in range(tier_nodes.size()):
-					var node = tier_nodes[i]
-					# Horizontální offset pro více uzlů ve stejném tieru
-					var x_offset = (i - (tier_nodes.size() - 1) * 0.5) * NODE_OFFSET_IN_TIER
-					node.position = Vector2(branch_x + x_offset, tier_y)
-		else:
-			# Ostatní větve - lineární layout
-			var branch_data = branch_groups[branch_name]
-			var branch_x = get_branch_x_offset_clean(branch_name)
-			
-			# Seřadíme tiery
-			var sorted_tiers = branch_data.keys()
-			sorted_tiers.sort()
-			
-			for tier in sorted_tiers:
-				if tier == PassiveSkillNode.SkillTier.values()[0]:  # Skip TIER_0
-					continue
-				var tier_nodes = branch_data[tier]
-				var tier_y = get_tier_y_offset_clean(tier)
-				
-				# Pro každý tier v branchi - lineární vertikální layout
-				# Uzly jsou pod sebou, ne vedle sebe
-				for i in range(tier_nodes.size()):
-					var node = tier_nodes[i]
-					# Horizontální offset pro více uzlů ve stejném tieru
-					# Používá NODE_OFFSET_IN_TIER konstantu - můžeš změnit výše
-					var x_offset = (i - (tier_nodes.size() - 1) * 0.5) * NODE_OFFSET_IN_TIER
-					node.position = Vector2(branch_x + x_offset, tier_y)
+					var angle_step = TAU / tier_nodes.size()
+					var node_angle_rad = i * angle_step
+					var offset = Vector2(RADIAL_CLUSTER_RADIUS * cos(node_angle_rad), -RADIAL_CLUSTER_RADIUS * sin(node_angle_rad))
+					tier_nodes[i].position = center_pos + offset
 
 static func get_branch_x_offset_clean(branch_name: String) -> float:
 	"""Vrátí X pozici pro branch v novém čistém layoutu"""

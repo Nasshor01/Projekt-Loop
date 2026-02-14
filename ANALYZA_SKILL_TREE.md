@@ -142,8 +142,8 @@ TIER 5 (Ultimátní):
 
 // SkillTreeGenerator.gd - nová funkce:
 static func create_cluster(center_node: PassiveSkillNode, 
-                           basic_nodes: Array[PassiveSkillNode],
-                           radius: float = 100.0)
+						   basic_nodes: Array[PassiveSkillNode],
+						   radius: float = 100.0)
 ```
 
 **Vizuálně:**
@@ -222,34 +222,34 @@ static func create_cluster(center_node: PassiveSkillNode,
 
 ### Příklad: Cluster node
 ```
-      [B]     [B]
-        \   /
-         [N]  <- Notable (střed)
-        /   \
-      [B]     [B]
+	  [B]     [B]
+		\   /
+		 [N]  <- Notable (střed)
+		/   \
+	  [B]     [B]
 ```
 
 ### Příklad: Větvení
 ```
 TIER 1: [S] (Starter)
-         |
-    +----+----+
-    |    |    |
+		 |
+	+----+----+
+	|    |    |
 TIER 2: [D] [O] [U]  (Defense, Offense, Utility)
-    |    |    |
-    +----+----+
-         |
+	|    |    |
+	+----+----+
+		 |
 TIER 3: [K] (Keystone - vyžaduje uzly ze všech větví)
 ```
 
 ### Příklad: Cross-branch propojení
 ```
 Defense branch:  [D1] -- [D2] -- [D3]
-                      \       /
-                       \     /
-                        [CB]  <- Cross-branch node
-                       /     \
-                      /       \
+					  \       /
+					   \     /
+						[CB]  <- Cross-branch node
+					   /     \
+					  /       \
 Offense branch:  [O1] -- [O2] -- [O3]
 ```
 
@@ -285,4 +285,3 @@ Offense branch:  [O1] -- [O2] -- [O3]
 - Nakonec vylepšit vizuál (Fáze 4)
 
 **Priorita:** Vysoká - systém je funkční, ale není škálovatelný a vizuálně není dostatečně působivý.
-

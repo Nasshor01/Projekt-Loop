@@ -37,8 +37,13 @@ var floors_cleared: int = 0:
 var current_run_xp: int = 0
 var path_taken: Array[MapNodeResource] = []
 var active_skill_tree = null
+## Počet použití karet s max_uses_before_removal za tento run (card_id -> počet použití)
+var card_usage_count: Dictionary = {}
+## Počet karet odstraněných v obchodě za tento run (pro progresivní cenu)
+var shop_card_removals_count: int = 0
 var has_revive: bool = false
 var global_card_damage_bonus: int = 0
+var holy_damage_bonus: int = 0  ## Bonus pouze k Svatému (Holy) poškození ze skill tree
 var starting_retained_block: int = 0
 
 # --- NOVÉ PROMĚNNÉ PRO PASIVNÍ EFEKTY ---
@@ -100,6 +105,9 @@ var starting_temp_hp: int = 0
 var allied_defense_bonus_percent: int = 0
 var force_enemy_movement_uses: int = 0
 
+# Movement (pasivní strom – např. Svatý krok)
+var movement_bonus: int = 0
+
 # Elemental (Elementalista)
 var first_spell_element_free: bool = false
 var used_free_elements: Array[String] = []  # ["fire", "ice", "lightning"]
@@ -120,8 +128,10 @@ func start_new_run_state():
 	EventManager.start_new_run()
 	loop_level = 0
 	
-	# 1. Resetujeme balíček na startovní
+	# 1. Resetujeme balíček na startovní a počítadla použití karet
 	master_deck.clear()
+	card_usage_count.clear()
+	shop_card_removals_count = 0
 	if is_instance_valid(selected_subclass):
 		var subclass_name = "Unknown"
 		if "subclass_name" in selected_subclass and selected_subclass.subclass_name != "":
@@ -165,7 +175,7 @@ func start_loop_state():
 	path_taken.clear()
 	floors_cleared = 0
 	current_run_xp = 0
-	
+	shop_card_removals_count = 0
 	
 	reset_battle_stats()
 	
@@ -184,6 +194,7 @@ func apply_passive_skills():
 	max_energy = 3
 	has_revive = false
 	global_card_damage_bonus = 0
+	holy_damage_bonus = 0
 	starting_retained_block = 0
 	
 	# Resetujeme nové efekty
@@ -243,6 +254,7 @@ func apply_passive_skills():
 	# Reset Support
 	allied_defense_bonus_percent = 0
 	force_enemy_movement_uses = 0
+	movement_bonus = 0
 	
 	# Reset Elemental
 	first_spell_element_free = false
@@ -323,6 +335,9 @@ func apply_passive_skills():
 					PassiveEffectData.EffectType.ADD_CARD_DAMAGE:
 						global_card_damage_bonus += effect_data.value
 						print("  + %d poškození karet (nyní %d)" % [effect_data.value, global_card_damage_bonus])
+					PassiveEffectData.EffectType.ADD_HOLY_DAMAGE:
+						holy_damage_bonus += effect_data.value
+						print("  + %d Svatého poškození (nyní %d)" % [effect_data.value, holy_damage_bonus])
 					PassiveEffectData.EffectType.ADD_RETAINED_BLOCK:
 						starting_retained_block += effect_data.value
 						print("  + %d startovní blok (nyní %d)" % [effect_data.value, starting_retained_block])
@@ -489,9 +504,10 @@ func apply_passive_skills():
 						used_free_elements.clear()
 						print("  ✅ První kouzlo každého živlu zdarma")
 					
-					# Legacy efekty (pokud ještě nejsou implementované)
+					# Movement (grid – dosah pohybu hrdiny)
 					PassiveEffectData.EffectType.MOVEMENT_BONUS:
-						print("  ⚠️ MOVEMENT_BONUS ještě není implementován")
+						movement_bonus += effect_data.value
+						print("  + %d dosah pohybu (nyní %d)" % [effect_data.value, movement_bonus])
 					PassiveEffectData.EffectType.CARD_COST_REDUCTION:
 						print("  ⚠️ CARD_COST_REDUCTION ještě není implementován")
 					PassiveEffectData.EffectType.DRAW_EXTRA_CARDS:
@@ -547,6 +563,9 @@ func initialize_player(p_class, p_subclass):
 	# Načteme skill tree - nejjednodušší způsob
 	if "passive_skill_tree" in p_subclass:
 		active_skill_tree = p_subclass.passive_skill_tree
+	# Fallback: když je passive_skill_tree prázdný, použij generátor (aktuální propojení z kódu)
+	if not is_instance_valid(active_skill_tree) and "subclass_id" in p_subclass and p_subclass.subclass_id == "paladin":
+		active_skill_tree = SkillTreeGenerator.generate_paladin_tree()
 	
 	if is_instance_valid(active_skill_tree):
 		# Zajistíme, že skill tree má správně sestavený lookup dictionary
@@ -658,6 +677,16 @@ func add_card_to_exhaust_pile(card: CardData):
 	if card is CardData:
 		exhaust_pile.append(card)
 
+## Vrátí počet použití karty (card_id) v tomto runu. Pro karty s max_uses_before_removal.
+func get_card_usage_count(card_id: String) -> int:
+	return card_usage_count.get(card_id, 0)
+
+## Zvýší počet použití karty o 1; vrátí novou hodnotu.
+func increment_card_usage(card_id: String) -> int:
+	var n: int = card_usage_count.get(card_id, 0) + 1
+	card_usage_count[card_id] = n
+	return n
+
 func discard_hand():
 	if current_hand.is_empty():
 		return
@@ -718,7 +747,9 @@ func add_artifact(new_artifact_resource: ArtifactsData) -> bool:
 
 	if existing_artifact:
 		# Artefakt již existuje, zkusíme přidat stack
-		if existing_artifact.is_stackable and existing_artifact.current_stacks < existing_artifact.max_stacks:
+		# max_stacks > 1 znamená stackovatelný i bez explicitního is_stackable (např. Bojovníkův náramek)
+		var can_stack = (existing_artifact.is_stackable or existing_artifact.max_stacks > 1) and existing_artifact.current_stacks < existing_artifact.max_stacks
+		if can_stack:
 			existing_artifact.current_stacks += 1
 			print("✅ Přidán stack pro %s (%d/%d)" % [
 				existing_artifact.artifact_name, 
@@ -742,6 +773,13 @@ func add_artifact(new_artifact_resource: ArtifactsData) -> bool:
 	# Pokud je artefakt pasivní, musíme přepočítat staty
 	if new_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:
 		apply_passive_skills()
+	
+	# Srdce draka: secondary_value = -10 Max HP (aplikuje se jednorázově při získání)
+	var added_artifact = existing_artifact if existing_artifact else new_artifact
+	if added_artifact.custom_effect_id == "dragon_heart_combo" and added_artifact.secondary_value != 0:
+		if not added_artifact.has_meta("max_hp_penalty_applied"):
+			change_max_hp(added_artifact.secondary_value)
+			added_artifact.set_meta("max_hp_penalty_applied", true)
 
 	emit_signal("health_changed", current_hp, max_hp) # Pro jistotu, kdyby pasivka měnila HP
 	return true
@@ -770,10 +808,10 @@ func can_gain_artifact(artifact) -> bool:
 	return false  # Už mám a nedá se stackovat nebo je na max stackech
 
 func get_artifact_stack_info(artifact_name: String) -> String:
-	"""Vrátí info o stackech pro UI"""
+	"""Vrátí info o stackech pro UI. Pro nové artefakty vrací prázdný řetězec (zbytečně neukazujeme 'nový')."""
 	var existing = find_artifact_by_name(artifact_name)
 	if not existing:
-		return tr("ui.shop.artifact.new")
+		return ""  # Nový artefakt - nepřidávat redundantní (nový)
 	
 	if existing.max_stacks > 1:
 		return TranslationHelper.tr_format("ui.shop.artifact.stack", {"current": existing.current_stacks + 1, "max": existing.max_stacks})

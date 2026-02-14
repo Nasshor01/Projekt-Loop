@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="Resource_2e356"]
 script = ExtResource("1_oexgg")
 effect_type = 0
-value = 6
+value = 1
 string_value = ""
 target_type = 6
 area_of_effect_type = 3
@@ -24,6 +24,7 @@ script = ExtResource("2_6fj57")
 card_id = "purging_burst+"
 card_name = "card.purging_burst+"
 card_description = "card.purging_burst+.desc"
+editor_description = "Deal 1 damage to enemies in a 4x4 area."
 cost = 1
 range_type = 5
 range_value = 5
@@ -33,4 +34,5 @@ effects = Array[ExtResource("1_oexgg")]([SubResource("Resource_2e356")])
 is_upgraded = true
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

@@ -305,7 +305,7 @@ func _start_enemy_initiative_turn(enemy_unit: Unit):
 		elif _tutorial_stage == TutorialStage.BLOCK_END_TURN and distance <= 1:
 			_tutorial_stage = TutorialStage.ENEMY_ATTACK
 			await get_tree().create_timer(0.4).timeout
-			await enemy_unit.attack(_player_unit_node, 1.0)
+			await enemy_unit.attack(_player_unit_node, 0, 0, false)
 	
 	enemy_unit.end_turn()
 	if has_node("/root/TurnManager"):

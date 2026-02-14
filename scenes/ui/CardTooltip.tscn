@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3 uid="uid://dah2k3m4n5p6q"]
+[gd_scene load_steps=5 format=3 uid="uid://dah2k3m4n5p6q"]
 
 [ext_resource type="Script" uid="uid://bb003wuvxrepf" path="res://scenes/ui/CardTooltip.gd" id="1_tooltip"]
 [ext_resource type="FontFile" uid="uid://c4topxnn115am" path="res://art/fonts/monogram-extended.ttf" id="2_font"]
+[ext_resource type="Script" uid="uid://bm4uu6w8tc7lf" path="res://scenes/ui/KeywordTooltipContainer.gd" id="3_kw_container"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tooltip"]
 bg_color = Color(0.1, 0.1, 0.15, 0.95)
@@ -52,19 +53,24 @@ vertical_alignment = 1
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="DescriptionLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="DescriptionLabel" type="RichTextLabel" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 16
+theme_override_fonts/normal_font = ExtResource("2_font")
+theme_override_font_sizes/normal_font_size = 16
+bbcode_enabled = true
 text = "Popis karty"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 3
+fit_content = true
+scroll_active = false
 
-[node name="EffectsLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="EffectsLabel" type="RichTextLabel" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 14
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 3
+theme_override_fonts/normal_font = ExtResource("2_font")
+theme_override_font_sizes/normal_font_size = 14
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="KeywordTooltipContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+script = ExtResource("3_kw_container")

@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_dprot1"]
 script = ExtResource("1_dprot")
 effect_type = 2
-value = 15
+value = 12
 string_value = ""
 target_type = 0
 area_of_effect_type = 0
@@ -22,8 +22,8 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [sub_resource type="Resource" id="Resource_dprot2"]
 script = ExtResource("1_dprot")
-effect_type = 15
-value = 10
+effect_type = 7
+value = 8
 string_value = ""
 target_type = 0
 area_of_effect_type = 0
@@ -39,10 +39,10 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 [sub_resource type="Resource" id="Resource_dprot3"]
 script = ExtResource("1_dprot")
 effect_type = 0
-value = 12
+value = 8
 string_value = ""
-target_type = 6
-area_of_effect_type = 3
+target_type = 3
+area_of_effect_type = 4
 aoe_param_x = 1
 aoe_param_y = 1
 damage_type = 1
@@ -73,6 +73,7 @@ script = ExtResource("2_dprot")
 card_id = "divine_protection"
 card_name = "card.divine_protection"
 card_description = "card.divine_protection.desc"
+editor_description = "Gain 12 block. Heal 8 HP. Deal 8 damage to all enemies. Exhaust."
 cost = 3
 range_type = 6
 range_value = 3
@@ -83,4 +84,5 @@ effects = Array[ExtResource("1_dprot")]([SubResource("Resource_dprot1"), SubReso
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

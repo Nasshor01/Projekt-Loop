@@ -2,7 +2,7 @@
 class_name CardData
 extends Resource
 
-# Enum pro typy karet, jak je máte v plánu
+# Enum pro typy karet, jak je máte v plánu. Nové tagy PŘIDÁVEJ NA KONEC (zachová indexy v .tres).
 enum CardTag {
 	ATTACK,
 	SPELL,
@@ -12,8 +12,8 @@ enum CardTag {
 	MOVE,
 	HEAL,
 	POWER,
-	UTILITY # Obecná užitková karta
-	# Můžete přidat další dle potřeby
+	UTILITY, # Obecná užitková karta
+	ONE_TIME_USE # Jednorázová karta – po použití se natrvalo odstraní z balíčku
 }
 
 # Enum pro vzácnost karet
@@ -28,7 +28,9 @@ enum CardRarity {
 
 @export var card_id: String = "unique_card_id" # Unikátní identifikátor karty
 @export var card_name: String = "Název karty"
-@export_multiline var card_description: String = "Popis efektu karty." # Víceřádkový text pro editor
+@export_multiline var card_description: String = "Popis efektu karty." # Klíč pro tr() nebo text; ve hře se překládá
+## Popis jen pro vývojáře – vidět v editoru v .tres, ve hře se nikde nezobrazuje. Můžeš sem psát, co karta přesně dělá.
+@export_multiline var editor_description: String = ""
 
 @export var cost: int = 1 # Cena zahrání karty (energie/mana)
 @export var range_type: EffectRangeType = EffectRangeType.MELEE # Budeme muset vytvořit enum EffectRangeType
@@ -52,6 +54,10 @@ enum CardRarity {
 # Limit použití karty za tah (pro secret debuffy)
 @export var max_uses_per_turn: int = -1  # -1 = neomezeně
 @export var debuff_on_overuse: Dictionary = {}  # {"damage": 5, "energy_loss": 2, "status": "vulnerable", "status_duration": 2}
+
+## Maximální počet použití karty za celý run; po vyčerpání se karta natrvalo odstraní z balíčku.
+## -1 = bez limitu (normální/exhaust), 1 = jednorázová, 2 = 2× použití pak zmizí. Zobrazuje se jako "usage x/x".
+@export var max_uses_before_removal: int = -1
 
 
 # Enum pro typy dosahu - PŘESUNUTO SEM z CardEffectData, protože dosah je spíše vlastnost karty jako celku
@@ -88,6 +94,40 @@ func get_localized_name() -> String:
 func get_localized_description() -> String:
 	"""Vrátí lokalizovaný dlouhý popis karty"""
 	return tr(card_description)
+
+## Vrátí klíče keywordů odvozené z efektů karty (pro tooltip – Holy, Block, Heal, Exhaust, atd.).
+## Slouží k zobrazení tagů/ikon v tooltipu i když v textu popisu slovo není.
+func get_keywords_from_effects() -> Array[String]:
+	var keys: Array[String] = []
+	for effect in effects:
+		if effect.effect_type == CardEffectData.EffectType.DEAL_DAMAGE and effect.damage_type == CardEffectData.DamageType.HOLY:
+			if not keys.has("holy"):
+				keys.append("holy")
+		if effect.effect_type == CardEffectData.EffectType.GAIN_BLOCK:
+			if not keys.has("block"):
+				keys.append("block")
+		if effect.effect_type == CardEffectData.EffectType.HEAL_UNIT or effect.effect_type == CardEffectData.EffectType.HEAL_TO_FULL:
+			if not keys.has("heal"):
+				keys.append("heal")
+		if effect.effect_type == CardEffectData.EffectType.EXHAUST:
+			if not keys.has("exhaust"):
+				keys.append("exhaust")
+		if effect.effect_type == CardEffectData.EffectType.APPLY_STATUS:
+			if effect.string_value == "vulnerable":
+				if not keys.has("vulnerable"):
+					keys.append("vulnerable")
+			elif effect.string_value == "regeneration":
+				if not keys.has("regeneration"):
+					keys.append("regeneration")
+			elif effect.string_value == "aura_devotion" or effect.string_value == "aura_devotion_plus":
+				if not keys.has("aura_devotion"):
+					keys.append("aura_devotion")
+			elif effect.string_value == "consecrated_weapon":
+				if not keys.has("consecrated_weapon"):
+					keys.append("consecrated_weapon")
+	if max_uses_before_removal > 0 and not keys.has("usage"):
+		keys.append("usage")
+	return keys
 
 # Pomocná funkce pro zjištění, zda karta má určitý tag
 func has_tag(tag_to_check: CardTag) -> bool:
@@ -134,181 +174,170 @@ func get_damage_bonus() -> int:
 	
 	return bonus
 
+## Shorthand icon paths. Keep in sync with KeywordManager.ICON_MAP. Fallback when KeywordManager not available (e.g. editor).
+const SHORTHAND_ICONS: Dictionary = {
+	"damage": "res://art/icons/status/attack.png",
+	"attack": "res://art/icons/status/attack.png",
+	"holy": "res://art/icons/status/holy_damage.png",
+	"holy_damage": "res://art/icons/status/holy_damage.png",
+	"block": "res://art/icons/status/block.png",
+	"heal": "res://art/icons/status/Heal.png",
+	"heart": "res://art/icons/status/Heal.png",
+	"vulnerable": "res://art/icons/status/Vulnerable.png",
+	"regeneration": "res://art/icons/status/Regeneration.png"
+}
+
+const ICON_SIZE: int = 20
+
 func generate_compact_description() -> String:
-	"""Automaticky vygeneruje stručný popis z efektů karty"""
+	"""Shorthand format: [Value] [Icon]. NO full sentences. BBCode for RichTextLabel. HOLY: value + icon only."""
 	var parts: Array[String] = []
-	var damage_bonus = get_damage_bonus()
-	
-	# Seskupíme efekty podle typu
-	var damage_effects: Array[Dictionary] = []  # {value, target, is_holy}
-	var block_effects: Array[Dictionary] = []  # {value, target}
-	var heal_effects: Array[Dictionary] = []  # {value, target}
-	var other_effects: Array[String] = []
-	
 	for effect in effects:
-		var effect_value = effect.value
-		var target_desc = _get_target_description(effect)
-		
-		match effect.effect_type:
-			CardEffectData.EffectType.DEAL_DAMAGE:
-				# Zjistíme, jestli je to svaté poškození
-				var is_holy = effect.damage_type == CardEffectData.DamageType.HOLY
-				var final_damage = effect_value + damage_bonus
-				var conditional_info = null
-				
-				# Pokud má podmíněný bonus, připravíme informace o něm
-				if effect.has_condition and effect.conditional_bonus_value > 0:
-					conditional_info = {
-						"type": effect.condition_type,
-						"value": effect.condition_value,
-						"bonus": effect.conditional_bonus_value
-					}
-				
-				damage_effects.append({
-					"value": final_damage,
-					"base_value": effect_value,
-					"target": target_desc,
-					"is_holy": is_holy,
-					"aoe": effect.area_of_effect_type,
-					"conditional": conditional_info
-				})
-			
-			CardEffectData.EffectType.GAIN_BLOCK:
-				var block_conditional = null
-				if effect.has_condition and effect.conditional_bonus_value > 0:
-					block_conditional = {
-						"type": effect.condition_type,
-						"value": effect.condition_value,
-						"bonus": effect.conditional_bonus_value
-					}
-				# Podpora pro blok z max_hp (používá se v unbreakable_faith)
-				var block_value = effect_value
-				if effect.string_value == "max_hp":
-					block_value = PlayerData.max_hp
-				block_effects.append({
-					"value": block_value,
-					"target": target_desc,
-					"conditional": block_conditional
-				})
-			
-			CardEffectData.EffectType.HEAL_UNIT:
-				var heal_conditional = null
-				# Pro massive_healing: pokud máš <30% HP, léčíš za 30 HP místo 20 HP
-				# V kódu se použije conditional_bonus_value místo value, pokud je podmínka splněna
-				if effect.has_condition and effect.conditional_bonus_value > 0:
-					# Pokud je conditional_bonus_value větší než value, nahrazuje to celou hodnotu
-					var replaces = effect.conditional_bonus_value >= effect_value
-					heal_conditional = {
-						"type": effect.condition_type,
-						"value": effect.condition_value,
-						"bonus": effect.conditional_bonus_value,
-						"replaces": replaces
-					}
-				heal_effects.append({
-					"value": effect_value,
-					"target": target_desc,
-					"conditional": heal_conditional
-				})
-			
-			CardEffectData.EffectType.HEAL_TO_FULL:
-				heal_effects.append({
-					"value": -1,  # Speciální hodnota pro "plné zdraví"
-					"target": target_desc
-				})
-			
-			CardEffectData.EffectType.DRAW_CARDS:
-				var card_text = TranslationHelper.tr_single("card.effect.draw_cards", effect_value)
-				if effect_value > 1:
-					card_text = card_text.replace("card", "cards")
-				other_effects.append(card_text)
-			
-			CardEffectData.EffectType.GAIN_ENERGY:
-				other_effects.append(TranslationHelper.tr_single("card.effect.gain_energy", effect_value))
-			
-			CardEffectData.EffectType.APPLY_STATUS:
-				# Speciální popis pro status efekty
-				var status_desc = _get_status_display_description(effect)
-				if status_desc != "":
-					other_effects.append(status_desc)
-				else:
-					other_effects.append(_get_status_description(effect))
-			
-			CardEffectData.EffectType.EXHAUST:
-				other_effects.append(tr("card.effect.exhaust"))
-	
-	# Sestavíme popis - POŠKOZENÍ (prioritně)
-	for dmg in damage_effects:
-		var dmg_text = str(dmg.value)
-		if dmg.is_holy:
-			dmg_text += " " + tr("card.effect.holy")
-		dmg_text += " " + tr("damage.normal")
-		
-		# Přidáme podmíněný bonus, pokud existuje
-		if dmg.has("conditional") and dmg.conditional != null:
-			# Speciální případ: damage_per_block (holy_vengeance)
-			if dmg.conditional.get("type", "") == "damage_per_block":
-				dmg_text += "\n" + tr("card.condition.per_block")
-			else:
-				var cond_text = _format_conditional_effect(dmg.conditional, "dmg", dmg.is_holy)
-				if cond_text != "":
-					dmg_text += "\n" + cond_text
-		
-		if dmg.aoe == CardEffectData.AreaOfEffectType.ALL_ON_GRID:
-			dmg_text = tr("card.effect.to_all") + " " + dmg_text
-		elif dmg.target != "":
-			dmg_text += " " + dmg.target
-		
-		parts.append(dmg_text)
-	
-	# BLOK (prioritně)
-	for blk in block_effects:
-		var blk_text = TranslationHelper.tr_single("card.effect.gain_block", blk.value)
-		
-		# Přidáme podmíněný bonus, pokud existuje
-		if blk.has("conditional") and blk.conditional != null:
-			var cond_text = _format_conditional_effect(blk.conditional, "blok", false)
-			if cond_text != "":
-				blk_text += "\n" + cond_text
-		
-		if blk.target != "":
-			blk_text += " " + blk.target
-		parts.append(blk_text)
-	
-	# LÉČENÍ (prioritně)
-	for heal in heal_effects:
-		var heal_text = ""
-		if heal.value == -1:
-			heal_text = tr("card.effect.full_heal")
-		else:
-			heal_text = TranslationHelper.tr_single("card.effect.heal", heal.value)
-		
-		# Pro léčení může podmíněný efekt nahradit celou hodnotu
-		if heal.has("conditional") and heal.conditional != null:
-			var cond = heal.conditional
-			if cond.get("replaces", false):
-				# Nahrazuje celou hodnotu (massive_healing) - zobrazíme obě
-				var bonus_val = cond.get("bonus", 0)
-				var cond_desc = _get_condition_description(cond.get("type", ""), cond.get("value", 0))
-				heal_text += "\n%s: %s" % [cond_desc, TranslationHelper.tr_single("card.effect.heal", bonus_val)]
-			else:
-				# Přidává bonus
-				var cond_text = _format_conditional_effect(cond, "HP", false)
-				if cond_text != "":
-					heal_text += "\n" + cond_text
-		
-		if heal.target != "":
-			heal_text += " " + heal.target
-		parts.append(heal_text)
-	
-	# OSTATNÍ EFEKTY
-	for other in other_effects:
-		parts.append(other)
-	
-	# Spojíme části s novými řádky (max 2-3 řádky)
+		var line := _format_effect_shorthand(effect)
+		if not line.is_empty():
+			parts.append(line)
 	if parts.is_empty():
-		return tr(card_description)  # Fallback na původní popis
-	
-	return "\n".join(parts)
+		return tr(card_description)
+	return " | ".join(parts).strip_edges()
+
+func _img(icon_key: String, size: int = ICON_SIZE) -> String:
+	"""Returns BBCode [img] tag for icon from KeywordManager.ICON_MAP (or SHORTHAND_ICONS in editor). NO icon if path missing."""
+	var path: String = ""
+	if not Engine.is_editor_hint():
+		path = KeywordManager.get_icon_path(icon_key)
+	if path.is_empty():
+		path = SHORTHAND_ICONS.get(icon_key, "")
+	if path.is_empty():
+		return ""
+	return "[img=%dx%d]%s[/img]" % [size, size, path]
+
+func _num(x: int) -> String:
+	"""Numbers: white bold with 4px black outline for high contrast on any background."""
+	return "[b][outline_size=4][outline_color=black][color=white]%d[/color][/outline_color][/outline_size][/b]" % x
+
+func _energy(x: int) -> String:
+	"""Energy: [b][color=cyan]X Energy[/color][/b] - NO icon."""
+	return "[b][color=cyan]%d %s[/color][/b]" % [x, tr("card.effect.energy")]
+
+func _turns(x: int) -> String:
+	"""Turns: [b]X turns[/b] - NO icon."""
+	return "[b]%d %s[/b]" % [x, tr("card.effect.turns")]
+
+func _format_effect_shorthand(effect: CardEffectData) -> String:
+	"""Formats a single effect as shorthand: [Value] [Icon]. NO full sentences."""
+	match effect.effect_type:
+		CardEffectData.EffectType.HEAL_UNIT:
+			var val := effect.value
+			var cond := _get_condition_shorthand(effect, "heal")
+			if cond != "":
+				return _num(val) + " " + _img("heal") + " " + cond
+			return _num(val) + " " + _img("heal")
+		
+		CardEffectData.EffectType.HEAL_TO_FULL:
+			return "[b][color=green]" + tr("card.effect.full_heal") + "[/color][/b]"
+		
+		CardEffectData.EffectType.GAIN_BLOCK:
+			var block_val := effect.value
+			if effect.string_value == "max_hp" and not Engine.is_editor_hint():
+				block_val = PlayerData.max_hp
+			elif effect.string_value == "current_hp" and not Engine.is_editor_hint():
+				block_val = PlayerData.current_hp
+			var cond := _get_condition_shorthand(effect, "block")
+			if cond != "":
+				return _num(block_val) + " " + _img("block") + " " + cond
+			return _num(block_val) + " " + _img("block")
+		
+		CardEffectData.EffectType.DEAL_DAMAGE:
+			# HOLY: show base value only (effect.value), so display matches .tres; +5/+3 vs Undead/Demon/Spirit in tooltip
+			var dmg_val: int
+			if effect.damage_type == CardEffectData.DamageType.HOLY:
+				dmg_val = effect.value
+			else:
+				dmg_val = DamageCalculator.get_display_damage(effect.value) if not Engine.is_editor_hint() else effect.value
+			var prefix := ""
+			if effect.area_of_effect_type == CardEffectData.AreaOfEffectType.ALL_ON_GRID:
+				prefix = tr("card.effect.to_all") + " "
+			if effect.damage_type == CardEffectData.DamageType.HOLY:
+				return prefix + _num(dmg_val) + " " + _img("attack") + _img("holy_damage")
+			var icon_key := "damage"
+			var cond := _get_condition_shorthand(effect, "dmg")
+			if cond != "":
+				return prefix + _num(dmg_val) + " " + _img(icon_key) + " " + cond
+			return prefix + _num(dmg_val) + " " + _img(icon_key)
+		
+		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK:
+			return "[b]" + tr("card.effect.deal_damage_from_block") + "[/b]"
+		
+		CardEffectData.EffectType.DEAL_DOUBLE_DAMAGE_FROM_BLOCK:
+			return "[b]" + tr("card.effect.deal_double_damage_from_block") + "[/b]"
+		
+		CardEffectData.EffectType.DRAW_CARDS:
+			var t := TranslationHelper.tr_single("card.effect.draw_cards", effect.value)
+			t = t.replace("card", "cards") if effect.value > 1 else t
+			return "[b]" + t + "[/b]"
+		
+		CardEffectData.EffectType.GAIN_ENERGY:
+			return _energy(effect.value)
+		
+		CardEffectData.EffectType.APPLY_STATUS:
+			return _format_status_shorthand(effect)
+		
+		CardEffectData.EffectType.EXHAUST:
+			return "[b][color=orange]" + tr("card.effect.exhaust_keyword") + "[/color][/b]"
+		
+		CardEffectData.EffectType.GAIN_EXTRA_MOVE:
+			return "[b]" + tr("card.effect.gain_extra_move") + "[/b]"
+		
+		CardEffectData.EffectType.MODIFY_INITIATIVE_NEXT_ROUND:
+			var sign_str := "+" if effect.value >= 0 else ""
+			return "[b][color=yellow]%s%d %s[/color][/b]" % [sign_str, effect.value, tr("card.effect.initiative")]
+		
+		CardEffectData.EffectType.SUMMON_UNIT:
+			return "[b]" + tr("card.effect.summon") + "[/b]"
+		
+		_:
+			return ""
+
+func _format_status_shorthand(effect: CardEffectData) -> String:
+	"""APPLY_STATUS: vulnerable/regeneration use icons. Others as keyword or plain."""
+	match effect.string_value:
+		"vulnerable":
+			return _img("vulnerable") + " " + _turns(effect.value)
+		"regeneration":
+			return _num(effect.value) + " " + _img("regeneration")
+		"aura_devotion", "aura_devotion_plus":
+			return _num(effect.value) + " " + _img("block")
+		"consecrated_weapon":
+			return _num(effect.value) + " " + _img("holy")
+		"burning", "chilled", "aiming":
+			return _num(effect.value) + " " + _img("damage")
+		"frozen":
+			return "[b]" + tr("status.frozen") + "[/b]"
+		_:
+			var s := _get_status_display_description(effect)
+			return "[b]" + (s if s != "" else _get_status_description(effect)) + "[/b]"
+
+func _get_condition_shorthand(effect: CardEffectData, effect_type: String) -> String:
+	"""Compact condition suffix. Returns empty if no condition."""
+	if not effect.has_condition or effect.conditional_bonus_value <= 0:
+		return ""
+	var cond_type := effect.condition_type
+	var cond_val := effect.condition_value
+	var bonus := effect.conditional_bonus_value
+	if cond_type == "damage_per_block":
+		return tr("card.condition.per_block")
+	var cond_desc := _get_condition_description(cond_type, cond_val)
+	var bonus_str := ""
+	match effect_type:
+		"dmg":
+			bonus_str = "+" + _num(bonus)
+		"block":
+			bonus_str = "+" + _num(bonus) + " " + _img("block")
+		"heal":
+			bonus_str = "+" + _num(bonus) + " " + _img("heal")
+		_:
+			bonus_str = "+" + _num(bonus)
+	return cond_desc + ": " + bonus_str
 
 func _get_target_description(effect: CardEffectData) -> String:
 	"""Vrátí stručný popis cíle efektu"""
@@ -351,6 +380,8 @@ func _get_status_display_description(effect: CardEffectData) -> String:
 			return tr("status.frozen")
 		"aiming":
 			return TranslationHelper.tr_format("status.aiming", {"value": effect.value - 100})
+		"remove_all_debuffs":
+			return tr("status.remove_all_debuffs")
 		_:
 			return ""
 

@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_paura1"]
 script = ExtResource("1_paura")
 effect_type = 2
-value = 5
+value = 3
 string_value = ""
 target_type = 0
 area_of_effect_type = 0
@@ -23,9 +23,9 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 [sub_resource type="Resource" id="Resource_paura2"]
 script = ExtResource("1_paura")
 effect_type = 2
-value = 2
+value = 1
 string_value = ""
-target_type = 28
+target_type = 4
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
@@ -41,6 +41,7 @@ script = ExtResource("2_paura")
 card_id = "protective_aura"
 card_name = "card.protective_aura"
 card_description = "card.protective_aura.desc"
+editor_description = "Gain 3 block. All allies gain 1 block."
 cost = 1
 range_type = 1
 range_value = 1
@@ -51,4 +52,5 @@ effects = Array[ExtResource("1_paura")]([SubResource("Resource_paura1"), SubReso
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

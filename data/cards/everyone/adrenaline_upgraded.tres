@@ -6,7 +6,7 @@
 [sub_resource type="Resource" id="Resource_mvbm2"]
 script = ExtResource("1_7wdfw")
 effect_type = 4
-value = 2
+value = 1
 string_value = ""
 target_type = 0
 area_of_effect_type = 0
@@ -22,7 +22,7 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 [sub_resource type="Resource" id="Resource_67ins"]
 script = ExtResource("1_7wdfw")
 effect_type = 3
-value = 2
+value = 1
 string_value = "draw_plus_one"
 target_type = 0
 area_of_effect_type = 0
@@ -40,7 +40,8 @@ script = ExtResource("2_moxy1")
 card_id = "adrenaline+"
 card_name = "card.adrenaline+"
 card_description = "card.adrenaline+.desc"
-cost = 2
+editor_description = "Gain 1 Energy. At the end of your turn, draw 1 extra card."
+cost = 1
 range_type = 0
 range_value = 1
 tags = Array[int]([7])
@@ -54,4 +55,5 @@ debuff_on_overuse = {
 "status": "vulnerable",
 "status_duration": 2
 }
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

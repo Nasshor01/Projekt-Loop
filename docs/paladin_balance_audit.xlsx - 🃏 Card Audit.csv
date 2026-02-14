@@ -1,0 +1,72 @@
+🃏  KOMPLETNÍ CARD AUDIT — Stará vs. Nová hodnota,,,,,,,,,,,,,
+Karta,Cena,Rarita,Typ,Starý DMG,Nový DMG,Starý Block,Nový Block,Holy vs Normal,Holy vs Undead/Demon,Status efekt,Exhaust?,Stav,Důvod změny / Poznámka
+Adrenaline,0,UNCOMMON,U,—,—,—,—,—,—,"GAIN_ENERGY+1, DRAW+1",Ne,OK,V normě; 0-cost utility
+Adrenaline+,1,UNCOMMON,U,—,—,—,—,—,—,"GAIN_ENERGY+2, DRAW+2",Ne,NERF,"Za 1 energii příliš velký engine — DRAW snížit na 1, ENERGY na 1 → nebo přidat Exhaust"
+Defend,1,BASIC,B,—,—,5,5,—,—,—,Ne,OK,V normě
+Defend+,0,BASIC,B,—,—,6,5,—,—,—,Ne,NERF,0-cost 6 block přes cap → snížit na 5
+Fortify,2,UNCOMMON,B,—,—,12,10,—,—,—,Ne,NERF,12 > hard-cap 10 pro 2E → snížit na 10
+Fortify+,4,UNCOMMON,B,—,—,34,20,—,—,—,Ne,NERF,34 je absurdní; 4E upgrade → max 20 + Exhaust doporučen
+Heavy Strike,2,UNCOMMON,D,10,10,—,—,—,—,—,Ne,OK,Přesně na hard-capu
+Heavy Strike+,1,UNCOMMON,D,15,10,—,—,—,—,—,Ne,NERF,"15 DMG za 1E je turret; snížit na 10 (1E max = 6, upgrade max = 10)"
+Nimble Move,0,COMMON,U,—,—,—,—,—,—,EXTRA_MOVE+DRAW,Ne,OK,0-cost pohyb utility OK
+Nimble Move+,1,COMMON,U,—,—,—,—,—,—,EXTRA_MOVE+DRAW,Ne,REWORK,Za 1E stejný efekt jako 0-cost base — přidat bonus (např. +1 DRAW nebo +1 ENERGY)
+Quick Step,1,UNCOMMON,U,—,—,—,—,—,—,MODIFY_INITIATIVE+5,Ne,OK,Initiative manipulation OK
+Quick Strike,1,BASIC,D,4,5,—,—,—,—,—,Ne,BUFF,4 pod hard-cap 4-6; mírný buff na 5
+Quick Strike+,1,COMMON,D,7,6,—,—,—,—,—,Ne,NERF,7 přes cap; snížit na 6
+Regroup,0,COMMON,U,—,—,—,—,—,—,DRAW+1,Ne,OK,0-cost draw OK
+Regroup+,0,COMMON,U,—,—,—,—,—,—,DRAW+3,Ne,NERF,0-cost DRAW+3 je příliš silné; snížit na 2
+Aura of Devotion,1,UNCOMMON,U,—,—,—,—,—,—,2 block/turn → 1 block/turn,Ne,NERF,Rework: base → 1/turn (síla aury přes Skill Tree)
+Aura of Devotion+,2,UNCOMMON,U,—,—,—,—,—,—,4 block/turn → 2 block/turn,Ne,NERF,Upgrade = stará base; stále škálovatelné Skill Tree
+Consecration,2,COMMON,D,3,8,—,—,8 AOE,8+5=13 AOE,—,Ne,REWORK,"S Holy systémem: base 8 vs All, Holy tag = +5 vs Undead pouze; 3 bylo příliš slabé, ale AOE musí mít exhaust nebo snížit DMG"
+Consecration+,2,COMMON,D,6,8,—,—,8 AOE,8+5=13 AOE,—,Ne,OK,OK jako upgrade; zachovat
+Consecrated Barrier,1,UNCOMMON,B,6,5,—,—,—,—,Bonus +3 při poškoz.,Ne,NERF,6 přes 1E cap; na 5. Podmínka: bonus +3 (ne +4)
+Consecrated Weapon,2,UNCOMMON,D,9,9,—,—,9,9+5=14,consecrated_weapon(5),Ne,OK,9 DMG + Holy tag OK; status efekt ponechat
+Defensive Stance,1,COMMON,B,4,4,—,—,—,—,defensive_stance,Ne,OK,4 block + buff stance OK
+Divine Grace,3,EPIC,H,—,—,—,—,—,—,HEAL_TO_FULL,Ano,OK,"EXHAUST ✓, léčení — OK"
+Divine Judgment,3,EPIC,D,25,15,—,—,15 AOE,15+5=20 AOE,—,Ano,NERF,25 AOE bez podmínek je turret; max 15 DMG AOE s Exhaust (hard-cap)
+Divine Justice,3,EPIC,D,20,14,—,—,14,14+5=19,Cond: +15 nad 50% HP → +8,Ne,NERF,20+15=35 single je op; base 14 + cond bonus 8 = 22 max. Přidat Exhaust.
+Divine Protection,3,EPIC,C,12,8,15,12,8 AOE,8+5=13 AOE,HEAL+8,Ne,NERF,Balíček 15blk+10heal+12dmg za 3E bez exhaust = op. Snížit: 12blk+8heal+8dmg AOE; přidat Exhaust
+Divine Wrath,3,RARE,D,10,8,—,—,8 AOE,8+5=13 AOE,—,Ano,REWORK,Dosah: celá mapa → kruh 3×3. DMG 10→8. Přidat EXHAUST (hard rule 3E AOE)
+Divine Wrath+,4,RARE,D,20,12,—,—,12 AOE,12+5=17 AOE,—,Ano,NERF,20 AOE bez exhaust za 4E = turret; na 12 + Exhaust
+Excommunication,2,UNCOMMON,D,10,6,—,—,6,6+5=11,vulnerable(2),Ne,NERF,DMG 10→6; Vulnerable je hlavní efekt (per spec)
+Fortification,2,RARE,B,—,—,15,10,—,—,retain,Ne,NERF,15 přes cap; na 10 retain — retain je dostatečný bonus
+God's Lightning,2,RARE,D,18,10,—,—,10,10+5=15,MODIFY_INIT/+2E on kill,Ne,NERF,18 za 2E je absurdní (9.0 ratio); na 10. On-kill bonus ponechat.
+God's Wrath,2,RARE,D,15,10,—,—,10,10+5=15,Cond: +10 s debuffem→+4,Ne,NERF,15+10=25 přes cap; base 10 + cond bonus 4 = 14 s debuffem
+Healing Aura,2,UNCOMMON,H,—,—,—,—,—,—,HEAL 8self + 3 allies,Ne,NERF,10self+5allies za 2E je příliš; snížit na 8+3
+Healing Light,1,COMMON,H,—,—,—,—,—,—,HEAL 8,Ne,OK,8 heal za 1E OK pro Paladinovu identitu tanku
+Holy Armor,1,UNCOMMON,B,8,5,—,—,—,—,Cond: +3 nad 20 block→+2,Ne,NERF,8 přes 1E cap 4-5; na 5. Podmínka: +2 (ne +3)
+Holy Blessing,2,UNCOMMON,C,—,—,3,3,—,—,HEAL 10 → HEAL 8,Ne,NERF,12heal+3blk za 2E příliš; heal na 8
+Holy Defense,2,RARE,C,10,10,10,10,10,10+5=15,—,Ne,OK,Přesně na capu 2E; OK combo
+Holy Knight,2,RARE,C,8,8,6,6,8,8+5=13,HEAL 4,Ne,OK,8dmg+6blk+4heal za 2E je balanced balíček
+Holy Shield,2,RARE,B,—,—,12,10,—,—,Cond: +8 pod 50%HP→+5,Ne,NERF,12 přes cap; na 10. Podmínka: +5 (ne +8)
+Holy Strike,1,COMMON,D,8,6,—,—,6,6+5=11,—,Ne,NERF,8 přes 1E cap 4-6; na 6. S Holy systémem vs Undead 11.
+Holy Vengeance,1,COMMON,D,6,5,—,—,5,5+5=10,damage_per_block +1,Ne,NERF,Mírný nerf base 6→5; scale s blockem zachovat. Cap = 1E normál
+Holy Wave,2,UNCOMMON,D,4,8,—,—,8 row,8+5=13 row,—,Ne,REWORK,"4 bylo příliš slabé na AOE za 2E; zvýšit na 8 (2E cap) — AOE row je single-line, ne full-board"
+Holy Wave+,2,UNCOMMON,D,8,8,—,—,8 row,8+5=13 row,—,Ne,OK,Upgrade = nyní stejný jako nová base; ponechat (vizuální upgrade dosahu)
+Holy Wrath,2,RARE,D,12,8,—,—,8,8+5=13,Cond: +8 nad 15blk→+4,Ne,NERF,12 přes cap; na 8. Podmínka +4 (ne +8). 8+4=12 max = OK
+Impregnable Shield,2,EPIC,B,—,—,10,10,—,—,remove_all_debuffs,Ne,OK,10 blk + debuff clear za 2E epic = OK
+Lay on Hands,3,RARE,H,—,—,—,—,—,—,HEAL_TO_FULL,Ano,OK,EXHAUST ✓
+Lay on Hands+,5,RARE,H,—,—,—,—,—,—,HEAL_TO_FULL,Ne,OK,5E bez exhaust — ok cena
+Lesser Heal,1,COMMON,H,—,—,—,—,—,—,HEAL 4,Ne,OK,OK
+Lesser Heal+,0,COMMON,H,—,—,—,—,—,—,HEAL 6,Ne,OK,0-cost heal 6 je silné ale OK pro tank identity
+Light Pillar,2,UNCOMMON,D,6,8,—,—,8 col,8+5=13 col,—,Ne,REWORK,6 slabé na 2E AOE; na 8. Column AOE je limitovaný = vyvážené
+Light Pillar+,2,UNCOMMON,D,9,8,—,—,8 col,8+5=13 col,—,Ne,NERF,"9 přes cap; na 8 (= lepší targeting než base, ne lepší číslo)"
+Massive Healing,2,RARE,H,—,—,—,—,—,—,HEAL 15 (Cond <30%HP: 30→20),Ne,NERF,"20+cond je příliš; base 15 OK, podmínka bonus snížit na 15 → max 30 total OK"
+Pious Defense,1,COMMON,B,—,—,7,5,—,—,—,Ne,NERF,7 přes 1E cap; na 5
+Pious Defense+,1,COMMON,B,—,—,10,6,—,—,—,Ne,NERF,10 příliš na 1E upgrade; na 6
+Protective Aura,1,COMMON,B,5,3,—,—,—,—,+1 block/turn allies (byl +2),Ne,NERF,"Aura systém rework: 5→3 self, +2→+1 allies"
+Protective Hand,2,UNCOMMON,C,—,—,8,8,—,—,HEAL 5,Ne,OK,8 blk + 5 heal za 2E OK
+Purging Burst,1,RARE,D,3,5,—,—,5 2×2,5+5=10 2×2,—,Ne,BUFF,3 bylo příliš slabé na 2×2 AOE; na 5
+Purging Burst+,1,RARE,D,6,6,—,—,6 4×4,6+5=11 4×4,—,Ne,OK,6 DMG na 4×4 za 1E OK — wide AOE kompenzuje nižší DMG
+Purification,1,UNCOMMON,U,—,—,5,4,—,—,remove_all_debuffs,Ne,NERF,5 blk přes 1E cap; na 4
+Regeneration,1,COMMON,U,—,—,—,—,—,—,regeneration(2/turn) byl(3),Ne,NERF,3/turn heal příliš silné v tankovém decku; snížit na 2/turn
+Sacred Healing,2,RARE,H,—,—,—,—,—,—,HEAL 12 + remove_debuffs,Ne,NERF,15 heal příliš; na 12
+Shield Bash,2,UNCOMMON,D,—,—,—,—,#NAME?,#NAME?,—,Ne,OK,Scale s blockem OK; turret prevence: CAP výsledku na 15
+Shield Bash+,2,UNCOMMON,D,—,—,—,—,#ERROR!,#ERROR!,—,Ne,REWORK,2× block bez capu je turret risk; přidat CAP výsledku na 20
+Shield Strike,1,COMMON,C,6,5,5,4,5,5+5=10,—,Ne,NERF,6dmg+5blk za 1E přes capy; na 5dmg+4blk
+Smite,1,COMMON,D,6,6,—,—,6,6+5=11,—,Ne,OK,Přesně na 1E cap
+Smite+,2,COMMON,D,12,10,—,—,10,10+5=15,—,Ne,NERF,12 přes cap; na 10
+Unbreakable Faith,3,EPIC,B,—,—,—,—,—,—,GAIN_BLOCK=max_hp,Ano,REWORK,EXHAUST ✓ ale max_hp block je op; změnit na GAIN_BLOCK=current_hp nebo CAP na 30
+Curse,1,BASIC,U,—,—,—,—,—,—,—,Ne,OK,Status quo
+Curse: Pain,99,BASIC,U,—,—,—,—,—,—,nezahratelná,Ne,OK,Status quo
+Curse: Weakness,0,BASIC,U,—,—,—,—,—,—,"EXHAUST, -1E on draw",Ne,OK,Status quo

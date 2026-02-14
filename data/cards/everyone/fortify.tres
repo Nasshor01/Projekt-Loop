@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_t7emj"]
 script = ExtResource("1_6u6vv")
 effect_type = 2
-value = 12
+value = 10
 string_value = ""
 target_type = 0
 area_of_effect_type = 0
@@ -25,6 +25,7 @@ script = ExtResource("2_ohuyk")
 card_id = "fortify"
 card_name = "card.fortify"
 card_description = "card.fortify.desc"
+editor_description = "Gain 10 block."
 cost = 2
 range_type = 1
 range_value = 1
@@ -35,4 +36,5 @@ is_upgraded = false
 upgraded_version = ExtResource("3_ohuyk")
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

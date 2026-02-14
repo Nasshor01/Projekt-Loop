@@ -8,6 +8,8 @@ enum Faction {
 	NEUTRAL
 }
 
+# ENUM INTEGRITY RULE: NEVER insert new elements into the middle of enums in this file.
+# New values MUST ALWAYS be added at the end to preserve integer indexes in existing .tres resources.
 # Typy jednotek pro systém efektivity poškození
 enum UnitType {
 	HUMAN,      # Lidské bytosti
@@ -57,21 +59,13 @@ func get_localized_description() -> String:
 	"""Vrátí lokalizovaný popis jednotky"""
 	return tr(description)
 
-static func get_damage_effectiveness(damage_type: int, target_type: UnitType) -> float:
-	"""Vrátí multiplikátor efektivity poškození (1.0 = normální, >1.0 = efektivní, <1.0 = neefektivní)"""
-	# Mapování typů poškození (z CardEffectData.DamageType)
-	# HOLY = 1
-	var is_holy = damage_type == 1  # CardEffectData.DamageType.HOLY
-	
-	if is_holy:
-		match target_type:
-			UnitType.UNDEAD:
-				return 1.5  # +50% poškození proti nemrtvým
-			UnitType.DEMON:
-				return 1.5  # +50% poškození proti démonům
-			UnitType.SPIRIT:
-				return 1.25  # +25% poškození proti duchům
-			_:
-				return 1.0  # Normální poškození
-	
-	return 1.0  # Normální poškození
+static func get_holy_damage_bonus(damage_type: int, target_type: UnitType) -> int:
+	"""Returns additive bonus for Holy damage vs certain unit types (v0.2.0).
+	Bonus is ONLY for UNDEAD and DEMON. SPIRIT, ORC, HUMAN, BEAST, etc. get 0."""
+	# CardEffectData.DamageType.HOLY = 1
+	if damage_type != 1:
+		return 0
+	# Explicit allowlist: only UNDEAD and DEMON receive holy bonus
+	if target_type == UnitType.UNDEAD or target_type == UnitType.DEMON:
+		return 5
+	return 0

@@ -1,0 +1,29 @@
+⚖️  PALADIN BALANCE — Tvrdá pravidla a vzorce,,,,,
+,,,,,
+📐  HARD-CAPS: Damage & Block dle ceny,,,,,
+Cena (Energie),MIN DMG,MAX DMG,MIN Block,MAX Block,Poznámka
+0,0,3,0,3,0-cost: jen utility / draw / setup — žádný damage přes 3
+1,4,6,4,5,Páteř decku — běžné karty; Holy = +5 vs Undead/Demon ON TOP
+2,8,10,8,10,"Silné karty — musí mít trade-off (range, cíl, podmínka)"
+3,12,15,12,15,3-cost VŽDY EXHAUST; max 15 DMG AOE nebo max 15 Block
+4+,—,—,—,—,Upgrade varianty / speciality — nutný EXHAUST nebo velký downside
+,,,,,
+✨  HOLY DAMAGE — Nový systém (bez 1.5× multiplieru),,,,,
+Situace,Vzorec,Příklad (Base 6),Příklad (Base 0),MAX výsledek@2E,Pozn.
+vs Normální nepřítel,Base DMG,6,0,10,Holy tag = jen flavour vs normal
+vs Undead / Demon,Base DMG + 5 (flat bonus),6+5=11,0+5=5,15,"Flat +5, NIKDY násobitel"
+"Karta s Holy, Base=0",0 + 5 vs Undead = 5,—,5,5,Holy-only karta poškodí jen Undead/Demon
+Multiplicator ZAKÁZÁN,NESMÍ: Base × 1.5,—,—,—,🚫 Žádné multipliery na Holy
+,,,,,
+💫  AURA SYSTÉM — Rework,,,,,
+Aura,Stará hodnota,Nová hodnota (Base),Upgrade hodnota,Scaling,Pozn.
+Aura of Devotion,2 block/turn,1 block/turn,2 block/turn (+),Skill Tree,"Base slabý, Skill Tree sílu škáluje"
+Aura of Devotion+,4 block/turn,2 block/turn,—,Skill Tree,Upgrade = stará base hodnota
+Protective Aura,5+2/allies,3+1/allies,—,Skill Tree,Ally bonus škálovatelný
+,,,,,
+,,,,,
+🔢  DAMAGE CALCULATOR 2.0 — Additive Math,,,,,
+Vzorec,Final_DMG = Base + Flat_Bonuses + (Base × Percentage_Modifiers),,,,
+Příklad OK,"Base=8, +2 flat, +25% mod → 8+2+(8×0.25) = 12",,,,✅
+Zakázáno,1.5 × 1.5 (násobení výsledku výsledkem),,,,🚫
+Holy bonus,Flat +5 vs Undead/Demon — přičíst JAKO flat bonus,,,,✅

@@ -112,7 +112,8 @@ func _display_item_content():
 		var artifact_ui = preload("res://scenes/ui/ArtifactChoiceUI.tscn").instantiate()
 		item_content_container.add_child(artifact_ui)
 		artifact_ui.display_artifact(item_data)
-		if not artifact_stack_info.is_empty():
+		# Zobrazíme stack info jen pokud je neprázdné (např. Stack +1 (2/3) - ne pro nové artefakty)
+		if artifact_stack_info and not artifact_stack_info.is_empty():
 			artifact_ui.set_stack_info(artifact_stack_info)
 		artifact_ui.scale = Vector2(0.8, 0.8)
 

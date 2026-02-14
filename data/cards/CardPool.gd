@@ -47,3 +47,35 @@ func get_cards_by_rarity(rarity: CardData.CardRarity, player_class: ClassData = 
 		if card.rarity == rarity:
 			result.append(card)
 	return result
+
+# Weighted random selection for rewards/shop. rare_card_chance = chance for Rare (default 0.1), rest split Common/Uncommon
+func pick_weighted_cards(count: int, rare_card_chance: float, player_class: ClassData = null, player_subclass: SubclassData = null, unlocked_cards: Array[String] = []) -> Array[CardData]:
+	var available = get_available_cards(player_class, player_subclass, unlocked_cards)
+	if available.is_empty():
+		return []
+	var by_rarity: Dictionary = {}
+	for card in available:
+		var r = card.rarity
+		if not by_rarity.has(r):
+			by_rarity[r] = []
+		by_rarity[r].append(card)
+	var common: Array = (by_rarity.get(CardData.CardRarity.COMMON, [])).duplicate()
+	var uncommon: Array = (by_rarity.get(CardData.CardRarity.UNCOMMON, [])).duplicate()
+	var rare: Array = (by_rarity.get(CardData.CardRarity.RARE, [])).duplicate()
+	var result: Array[CardData] = []
+	var uncommon_chance = 0.35
+	for i in range(count):
+		var roll = randf()
+		var pool: Array = common
+		if roll < rare_card_chance and not rare.is_empty():
+			pool = rare
+		elif roll < rare_card_chance + uncommon_chance and not uncommon.is_empty():
+			pool = uncommon
+		if pool.is_empty():
+			pool = common if not common.is_empty() else available
+		if pool.is_empty():
+			continue
+		var card: CardData = pool.pick_random()
+		result.append(card)
+		pool.erase(card)
+	return result

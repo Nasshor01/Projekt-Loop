@@ -10,6 +10,7 @@ unit_id = "berserker"
 unit_name = "unit.orc_berserker"
 description = "unit.orc_berserker.desc"
 faction = 1
+unit_type = 8
 max_health = 25
 attack_damage = 10
 movement_range = 1

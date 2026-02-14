@@ -19,6 +19,7 @@ script = ExtResource("2_bglw1")
 card_id = "curse_weakness"
 card_name = "card.curse_weakness"
 card_description = "card.curse_weakness.desc"
+editor_description = "Exhausts. When drawn, lose 1 energy."
 cost = 0
 range_type = 0
 range_value = 1

@@ -1,0 +1,14 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://ck8ejhl56j7li"
+
+[deps]
+
+source_file="res://docs/paladin_balance_audit.xlsx - 📊 Souhrn změn.csv"
+
+[params]
+
+compress=true
+delimiter=0

@@ -5,6 +5,10 @@ extends PanelContainer
 var gold_reward: int = 0
 var card_choices: Array = []
 var artifact_rewards: Array = []
+var encounter_type: int = EncounterData.EncounterType.NORMAL
+
+# Kolik zlata dostane hráč za skip karty po běžném monsteru (cashback)
+const SKIP_CARD_GOLD_NORMAL: int = 10
 
 # --- Přednačtené scény ---
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
@@ -13,14 +17,14 @@ const REWARD_CARD_SIZE = Vector2(170, 255)
 const REWARD_CARD_SCALE = Vector2(0.6, 0.6)
 
 # --- Cesty k UI prvkům ---
-@onready var title_label: Label = $VBoxContainer/CenterContainer/TitleLabel
-@onready var gold_label: Label = $VBoxContainer/GoldRewardDisplay/GoldLabel
-@onready var card_container: HBoxContainer = $VBoxContainer/CardContainer
-@onready var artifact_container: HBoxContainer = $VBoxContainer/ArtifactContainer
+@onready var title_label: Label = $VBoxContainer/ScrollContainer/ScrollContent/CenterContainer/TitleLabel
+@onready var gold_label: Label = $VBoxContainer/ScrollContainer/ScrollContent/GoldRewardDisplay/GoldLabel
+@onready var card_container: HBoxContainer = $VBoxContainer/ScrollContainer/ScrollContent/CardContainer
+@onready var artifact_container: HBoxContainer = $VBoxContainer/ScrollContainer/ScrollContent/ArtifactContainer
 @onready var skip_button: Button = $VBoxContainer/SkipButton
 @onready var card_tooltip: CardTooltip = $CanvasLayer/CardTooltip
-@onready var tutorial_hint_label: Label = $VBoxContainer/TutorialHintLabel
-@onready var tutorial_card_added_label: Label = $VBoxContainer/TutorialCardAddedLabel
+@onready var tutorial_hint_label: Label = $VBoxContainer/ScrollContainer/ScrollContent/TutorialHintLabel
+@onready var tutorial_card_added_label: Label = $VBoxContainer/ScrollContainer/ScrollContent/TutorialCardAddedLabel
 
 # Tooltip management
 var _current_tooltip_card_data: CardData = null
@@ -101,8 +105,11 @@ func setup_ui():
 		skip_button.visible = false # Po bossovi si musíš vybrat
 	# Standardní situace s výběrem karty
 	else:
-		skip_button.text = tr("ui.reward.skip_card")
-		skip_button.pressed.connect(_finish_reward)
+		if encounter_type == EncounterData.EncounterType.NORMAL:
+			skip_button.text = TranslationHelper.tr_format("ui.reward.skip_card_gold", {"value": SKIP_CARD_GOLD_NORMAL})
+		else:
+			skip_button.text = tr("ui.reward.skip_card")
+		skip_button.pressed.connect(_on_skip_pressed)
 	
 	if has_node("/root/GameManager") and GameManager.tutorial_active and GameManager.tutorial_step == GameManager.TUTORIAL_STEP_REWARD_1:
 		skip_button.visible = false
@@ -128,7 +135,21 @@ func _on_card_clicked(card_to_add: CardData):
 	else:
 		skip_button.text = tr("ui.common.continue")
 		skip_button.disabled = false
+		if skip_button.pressed.is_connected(_on_skip_pressed):
+			skip_button.pressed.disconnect(_on_skip_pressed)
 		skip_button.pressed.connect(_finish_reward)
+
+func _on_skip_pressed():
+	# Při skipu po běžném monsteru: cashback v podobě zlata
+	if encounter_type == EncounterData.EncounterType.NORMAL and not card_choices.is_empty():
+		PlayerData.add_gold(SKIP_CARD_GOLD_NORMAL)
+		# Aktualizujeme zobrazení zlata (pokud už bylo zobrazené, přičteme cashback)
+		if gold_reward > 0:
+			gold_label.text = TranslationHelper.tr_format("ui.reward.gold", {"value": gold_reward + SKIP_CARD_GOLD_NORMAL})
+		else:
+			gold_label.visible = true
+			gold_label.text = TranslationHelper.tr_format("ui.reward.gold", {"value": SKIP_CARD_GOLD_NORMAL})
+	_finish_reward()
 
 func _on_artifact_selected(artifact_to_add: ArtifactsData):
 	PlayerData.add_artifact(artifact_to_add)

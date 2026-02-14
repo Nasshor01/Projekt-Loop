@@ -123,4 +123,3 @@ TIER 1:
 3. **Animace** - pulzování, rotace, efekty
 4. **Pozadí** - gradient, dekorace, ornamenty
 5. **Více efektů** - kombinace efektů, synergické bonusy
-

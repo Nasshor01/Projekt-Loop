@@ -48,6 +48,7 @@ var selected_subclass_data: SubclassData = null
 # Use load() instead of preload() to avoid script resolution issues at parse time
 var CARD_REWARD_POOL = null
 var ELITE_ARTIFACT_POOL = null
+var rare_card_chance: float = 0.1
 var BOSS_ARTIFACT_POOL = null
 
 var last_battle_rewards := {}
@@ -203,6 +204,9 @@ func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -
 		if is_instance_valid(current_encounter) and current_encounter.encounter_type == EncounterData.EncounterType.BOSS:
 			_is_post_boss_reward = true
 			last_run_was_victory = true
+			# Meč nekonečna: bonus z zabíjení se resetuje po bossovi
+			if has_node("/root/ArtifactManager"):
+				ArtifactManager.reset_scaling_damage_after_boss()
 
 		_prepare_battle_rewards()
 		_change_scene(reward_scene)
@@ -349,6 +353,9 @@ func _change_scene(scene_path: String):
 				else:
 					print("VAROVÁNÍ: current_scene nemá vlastnost 'artifact_rewards'")
 				
+				if "encounter_type" in current_scene:
+					current_scene.encounter_type = last_battle_rewards.get("encounter_type", EncounterData.EncounterType.NORMAL)
+				
 				current_scene.setup_ui()
 			
 			if scene_path == end_of_run_scene:
@@ -367,17 +374,17 @@ func _change_scene(scene_path: String):
 func _prepare_battle_rewards():
 	last_battle_rewards.clear()
 	if tutorial_active and tutorial_step == TUTORIAL_STEP_FINAL_BATTLE:
-		var available_cards = []
+		var available_cards: Array = []
 		if is_instance_valid(CARD_REWARD_POOL):
-			available_cards = CARD_REWARD_POOL.get_available_cards(
+			available_cards = CARD_REWARD_POOL.pick_weighted_cards(
+				3,
+				rare_card_chance,
 				PlayerData.selected_class,
 				PlayerData.selected_subclass,
 				PlayerData.unlocked_cards
 			)
-		if not available_cards.is_empty():
-			available_cards.shuffle()
 		last_battle_rewards["gold"] = 0
-		last_battle_rewards["cards"] = available_cards.slice(0, 3)
+		last_battle_rewards["cards"] = available_cards
 		last_battle_rewards["artifacts"] = []
 		last_battle_rewards["tutorial_hint_text"] = tr("ui.tutorial.complete_hint")
 		tutorial_step = TUTORIAL_STEP_FINAL_REWARD
@@ -397,22 +404,21 @@ func _prepare_battle_rewards():
 		EncounterData.EncounterType.BOSS:
 			gold = randi_range(90, 110)
 	last_battle_rewards["gold"] = gold
+	last_battle_rewards["encounter_type"] = encounter_type
 
-	# 2. Odměna karet (pro všechny typy kromě bosse)
+	# 2. Odměna karet (pro všechny typy kromě bosse) – weighted by rarity
 	if encounter_type != EncounterData.EncounterType.BOSS:
 		if is_instance_valid(CARD_REWARD_POOL):
-			# Použijeme filtrovaný pool podle třídy a odemčených karet
-			var available_cards = CARD_REWARD_POOL.get_available_cards(
+			var reward_cards = CARD_REWARD_POOL.pick_weighted_cards(
+				3,
+				rare_card_chance,
 				PlayerData.selected_class,
 				PlayerData.selected_subclass,
 				PlayerData.unlocked_cards
 			)
-			if not available_cards.is_empty():
-				available_cards.shuffle()
-				last_battle_rewards["cards"] = available_cards.slice(0, 3)
-			else:
+			last_battle_rewards["cards"] = reward_cards
+			if reward_cards.is_empty():
 				print("VAROVÁNÍ: Žádné dostupné karty pro hráče")
-				last_battle_rewards["cards"] = []
 		else:
 			print("VAROVÁNÍ: CARD_REWARD_POOL je prázdný nebo neexistuje")
 			last_battle_rewards["cards"] = []

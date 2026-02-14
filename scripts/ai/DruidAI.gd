@@ -52,4 +52,3 @@ func count_allies_of_type(unit: Unit, battle_grid: BattleGrid, unit_type: String
 				count += 1
 	
 	return count
-

@@ -6,8 +6,8 @@
 
 [sub_resource type="Resource" id="Resource_haura1"]
 script = ExtResource("1_haura")
-effect_type = 15
-value = 10
+effect_type = 7
+value = 8
 string_value = ""
 target_type = 0
 area_of_effect_type = 0
@@ -22,10 +22,10 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [sub_resource type="Resource" id="Resource_haura2"]
 script = ExtResource("1_haura")
-effect_type = 15
-value = 5
+effect_type = 7
+value = 3
 string_value = ""
-target_type = 28
+target_type = 4
 area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
@@ -41,6 +41,7 @@ script = ExtResource("2_haura")
 card_id = "healing_aura"
 card_name = "card.healing_aura"
 card_description = "card.healing_aura.desc"
+editor_description = "Heal 8 HP. All allies heal 3 HP."
 cost = 2
 range_type = 1
 range_value = 1
@@ -51,4 +52,5 @@ effects = Array[ExtResource("1_haura")]([SubResource("Resource_haura1"), SubReso
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

@@ -6,8 +6,8 @@
 
 [sub_resource type="Resource" id="Resource_hbless1"]
 script = ExtResource("1_hbless")
-effect_type = 15
-value = 12
+effect_type = 7
+value = 8
 string_value = ""
 target_type = 0
 area_of_effect_type = 0
@@ -41,6 +41,7 @@ script = ExtResource("2_hbless")
 card_id = "holy_blessing"
 card_name = "card.holy_blessing"
 card_description = "card.holy_blessing.desc"
+editor_description = "Heal 8 HP. Gain 3 block."
 cost = 2
 range_type = 1
 range_value = 1
@@ -51,4 +52,5 @@ effects = Array[ExtResource("1_hbless")]([SubResource("Resource_hbless1"), SubRe
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

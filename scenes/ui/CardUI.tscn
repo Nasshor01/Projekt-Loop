@@ -27,6 +27,7 @@ script = ExtResource("3_yi8ee")
 card_id = "basic_attack"
 card_name = "Základní Útok"
 card_description = "Způsobí 5 poškození vybranému nepříteli."
+editor_description = ""
 cost = 1
 range_type = 2
 range_value = 1
@@ -36,6 +37,7 @@ effects = Array[ExtResource("2_pmyly")]([SubResource("Resource_fsx4a")])
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"
 
 [node name="CardUi" type="Control"]
@@ -87,13 +89,28 @@ text = "XX"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="DescriptionLabel" type="Label" parent="."]
+[node name="DescriptionLabel" type="RichTextLabel" parent="."]
 layout_mode = 0
 offset_left = 39.0
 offset_top = 144.0
 offset_right = 153.0
 offset_bottom = 201.0
+theme_override_colors/default_color = Color(1, 1, 1, 1)
+theme_override_fonts/normal_font = ExtResource("4_w6ddo")
+theme_override_font_sizes/normal_font_size = 18
+bbcode_enabled = true
+text = "[center]Popis karty[/center]"
+fit_content = true
+scroll_active = false
+
+[node name="UsageLabel" type="Label" parent="."]
+layout_mode = 0
+offset_left = 130.0
+offset_top = 208.0
+offset_right = 188.0
+offset_bottom = 232.0
 theme_override_fonts/font = ExtResource("4_w6ddo")
-text = "Popis karty"
-horizontal_alignment = 1
-vertical_alignment = 1
+theme_override_font_sizes/font_size = 14
+text = "1/2"
+horizontal_alignment = 2
+vertical_alignment = 2

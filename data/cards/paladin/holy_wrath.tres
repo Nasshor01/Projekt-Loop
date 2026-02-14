@@ -17,7 +17,7 @@ damage_type = 1
 has_condition = true
 condition_type = "block_above"
 condition_value = 15
-conditional_bonus_value = 8
+conditional_bonus_value = 4
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
@@ -25,6 +25,7 @@ script = ExtResource("2_hwrath")
 card_id = "holy_wrath"
 card_name = "card.holy_wrath"
 card_description = "card.holy_wrath.desc"
+editor_description = "Deal 8 damage. If you have more than 15 block, deal +4 damage."
 cost = 2
 range_type = 2
 range_value = 1
@@ -35,4 +36,5 @@ effects = Array[ExtResource("1_hwrath")]([SubResource("Resource_hwrath")])
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

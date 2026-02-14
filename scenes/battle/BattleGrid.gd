@@ -17,15 +17,16 @@ extends Node3D
 @export var grid_rows: int = 10
 
 @export var grid_line_color: Color = Color(0.5, 0.5, 0.5, 0.5)
-@export var highlight_color: Color = Color(1, 1, 0, 0.3)
-@export var movement_highlight_color: Color = Color(0.2, 0.8, 0.2, 0.3)
-@export var attack_highlight_color: Color = Color(1.0, 0.2, 0.2, 0.4)
-@export var support_highlight_color: Color = Color(0.2, 0.5, 1.0, 0.4)
-@export var aoe_highlight_color: Color = Color(0.8, 0.2, 1.0, 0.35)
-@export var player_spawn_highlight_color: Color = Color(0.2, 0.9, 0.9, 0.4)
-@export var movement_warning_color: Color = Color(0.9, 0.8, 0.1, 0.4)
-@export var danger_zone_color: Color = Color(0.8, 0.2, 0.2, 0.35)
-@export var enemy_range_highlight_color: Color = Color(0.9, 0.4, 0.4, 0.25)
+@export var highlight_color: Color = Color(1, 1, 0, 0.35)
+# Přehled barev overlay: zelená = pohyb hráče, modrá = pohyb nepřítele, červená = útok
+@export var movement_highlight_color: Color = Color(0.15, 0.88, 0.25, 0.5)   # zelená – move player
+@export var attack_highlight_color: Color = Color(0.95, 0.15, 0.15, 0.55)    # červená – attack
+@export var support_highlight_color: Color = Color(0.2, 0.5, 1.0, 0.45)
+@export var aoe_highlight_color: Color = Color(0.8, 0.2, 1.0, 0.4)
+@export var player_spawn_highlight_color: Color = Color(0.2, 0.9, 0.9, 0.45)
+@export var movement_warning_color: Color = Color(0.9, 0.75, 0.1, 0.45)
+@export var danger_zone_color: Color = Color(0.85, 0.2, 0.2, 0.4)
+@export var enemy_range_highlight_color: Color = Color(0.2, 0.45, 0.95, 0.5) # modrá – move enemy
 
 @onready var units_container: Node3D = $UnitsContainer
 var _terrain_container: Node3D
@@ -44,10 +45,12 @@ var _aoe_cells: Array[Vector2i] = []
 var _player_spawn_cells: Array[Vector2i] = []
 var _warning_cells: Array[Vector2i] = []
 var _danger_cells: Array[Vector2i] = []
-var _enemy_range_cells: Array[Vector2i] = []
+var _enemy_range_cells: Array[Vector2i] = []       # modrá = kam může nepřítel dojít (move)
+var _enemy_attack_range_cells: Array[Vector2i] = [] # červená = kam může nepřítel udeřit (attack)
 var _targetable_cells_color: Color = attack_highlight_color
 var _spawn_highlight_nodes: Array[MeshInstance3D] = []
 var _spawn_pulse_active: bool = false
+var _enemy_overlap_pulse_nodes: Array[MeshInstance3D] = []  # buňky kde move == attack (modrá ↔ červená)
 
 func _ready():
 	_terrain_container = Node3D.new()
@@ -164,33 +167,31 @@ func update_visual_highlights():
 	for child in _highlights_container.get_children():
 		child.queue_free()
 	_spawn_highlight_nodes.clear()
+	_enemy_overlap_pulse_nodes.clear()
 	
 	if not cursor_mesh: return
 
-	var create_cursor = func(cell: Vector2i, color: Color, is_spawn: bool = false):
+	var create_cursor = func(cell: Vector2i, color: Color, is_spawn: bool = false, emission_strength: float = 1.0):
 		if not is_cell_active(cell): return
 		var mesh_inst = MeshInstance3D.new()
 		mesh_inst.mesh = cursor_mesh
 		
 		var mat = StandardMaterial3D.new()
-		# Vnitřek necháme lehce průhledný
-		mat.albedo_color = Color(color.r, color.g, color.b, 0.25)
+		var alpha = clampf(color.a, 0.25, 0.65)
+		mat.albedo_color = Color(color.r, color.g, color.b, alpha)
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		
-		# --- TADY JE TEN NEON ---
 		mat.emission_enabled = true
-		# Násobíme barvu 4.0x, aby "přebila" prostředí a zářila přes Glow
-		mat.emission = Color(color.r * 4.0, color.g * 4.0, color.b * 4.0)
-		mat.emission_energy_multiplier = 1.0 
+		var emit_mult = 3.5 * emission_strength
+		mat.emission = Color(color.r * emit_mult, color.g * emit_mult, color.b * emit_mult)
+		mat.emission_energy_multiplier = 1.0
 		
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		# Render priority zajistí, že se highlighty vykreslí nad podlahou
 		mat.render_priority = 10
 		
 		mesh_inst.material_override = mat
 		
 		_highlights_container.add_child(mesh_inst)
-		# Pozice 0.02 je těsně nad podlahou, aby to neproblikávalo (Z-fighting)
 		mesh_inst.position = Vector3(cell.x * cell_size_3d, 0.02, cell.y * cell_size_3d)
 		
 		if is_spawn:
@@ -198,17 +199,58 @@ func update_visual_highlights():
 			if _spawn_pulse_active:
 				_start_spawn_pulse_on_mesh(mesh_inst)
 
-	# Vykreslení všech tvých původních vrstev
-	for cell in _danger_cells: create_cursor.call(cell, danger_zone_color)
-	for cell in _enemy_range_cells: create_cursor.call(cell, enemy_range_highlight_color)
-	for cell in _movable_cells: create_cursor.call(cell, movement_highlight_color)
-	for cell in _warning_cells: create_cursor.call(cell, movement_warning_color)
-	for cell in _player_spawn_cells: create_cursor.call(cell, player_spawn_highlight_color, true)
-	for cell in _targetable_cells: create_cursor.call(cell, _targetable_cells_color)
-	for cell in _aoe_cells: create_cursor.call(cell, aoe_highlight_color)
+	# Pořadí vrstev (poslední = nahoře): danger → enemy modrá (jen move) → enemy červená (attack + překryv s pulzem) → zelená move player → …
+	# Zelená = move player, modrá = move enemy, červená = attack (včetně překryvu move+attack s jemným pulzem)
+	for cell in _danger_cells: create_cursor.call(cell, danger_zone_color, false, 1.0)
+	for cell in _enemy_range_cells:
+		if not _enemy_attack_range_cells.has(cell):
+			create_cursor.call(cell, enemy_range_highlight_color, false, 1.15)
+	for cell in _enemy_attack_range_cells:
+		if _enemy_range_cells.has(cell):
+			_create_enemy_overlap_highlight(cell)
+		else:
+			create_cursor.call(cell, attack_highlight_color, false, 1.25)
+	for cell in _movable_cells: create_cursor.call(cell, movement_highlight_color, false, 1.15)        # zelená = move player
+	for cell in _warning_cells: create_cursor.call(cell, movement_warning_color, false, 1.0)
+	for cell in _player_spawn_cells: create_cursor.call(cell, player_spawn_highlight_color, true, 1.0)
+	for cell in _targetable_cells: create_cursor.call(cell, _targetable_cells_color, false, 1.25)      # červená = attack (nebo modrá support)
+	for cell in _aoe_cells: create_cursor.call(cell, aoe_highlight_color, false, 1.1)
 	
 	if is_valid_grid_position(_mouse_over_cell) and is_cell_active(_mouse_over_cell):
-		create_cursor.call(_mouse_over_cell, highlight_color)
+		create_cursor.call(_mouse_over_cell, highlight_color, false, 1.2)
+
+func _create_enemy_overlap_highlight(cell: Vector2i) -> void:
+	# Překryv move+attack: vždy ČERVENÁ (dmg range), jen jemně pulzuje = vidět že jde i o move
+	if not is_cell_active(cell): return
+	var mesh_inst = MeshInstance3D.new()
+	mesh_inst.mesh = cursor_mesh
+	var mat = StandardMaterial3D.new()
+	var red := attack_highlight_color
+	var alpha = clampf(red.a, 0.35, 0.7)
+	mat.albedo_color = Color(red.r, red.g, red.b, alpha)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.emission_enabled = true
+	var emit_mult := 3.5 * 1.3
+	mat.emission = Color(red.r * emit_mult, red.g * emit_mult, red.b * emit_mult)
+	mat.emission_energy_multiplier = 1.0
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.render_priority = 11
+	mesh_inst.material_override = mat
+	_highlights_container.add_child(mesh_inst)
+	mesh_inst.position = Vector3(cell.x * cell_size_3d, 0.02, cell.y * cell_size_3d)
+	_enemy_overlap_pulse_nodes.append(mesh_inst)
+	_start_enemy_overlap_pulse_on_mesh(mesh_inst)
+
+func _start_enemy_overlap_pulse_on_mesh(mesh_inst: MeshInstance3D) -> void:
+	# Jemné pulzování sítě (červená zůstane, jen „dýchá“) = naznačí move+attack
+	if not is_instance_valid(mesh_inst):
+		return
+	var mat := mesh_inst.material_override as StandardMaterial3D
+	if not is_instance_valid(mat):
+		return
+	var tween := create_tween().set_loops()
+	tween.tween_property(mat, "emission_energy_multiplier", 1.4, 0.5)
+	tween.tween_property(mat, "emission_energy_multiplier", 1.0, 0.5)
 
 func start_spawn_pulse():
 	_spawn_pulse_active = true
@@ -242,54 +284,62 @@ func hide_targetable_cells():
 
 func show_enemy_range(enemy_node: Node):
 	_enemy_range_cells.clear()
+	_enemy_attack_range_cells.clear()
 	if not is_instance_valid(enemy_node) or not is_instance_valid(enemy_node.unit_data):
 		update_visual_highlights()
 		return
 	
-	var move_range = enemy_node.get_current_movement_range()
 	var start_cell = enemy_node.grid_position
+	var move_range = enemy_node.get_current_movement_range()
+	var attack_range = clampi(enemy_node.unit_data.attack_range, 0, 15)
+
+	# 1) Move range (modrá) – kam může nepřítel dojít; ne políčko pod nepřítelem (costs.erase(start_cell))
 	var costs = {start_cell: 0}
 	var to_visit = [start_cell]
-	
 	while not to_visit.is_empty():
 		var current_cell = to_visit[0]
 		for cell in to_visit:
 			if costs[cell] < costs[current_cell]:
 				current_cell = cell
-		
 		to_visit.erase(current_cell)
 		var cost_to_current = costs[current_cell]
-		
 		for neighbor_offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
 			var neighbor_cell = current_cell + neighbor_offset
-			
 			if not is_cell_active(neighbor_cell) or get_object_on_cell(neighbor_cell):
 				continue
 			var terrain = get_terrain_on_cell(neighbor_cell)
 			if terrain and not terrain.is_walkable:
 				continue
-			
 			var cost_to_enter = 1
 			if terrain:
 				cost_to_enter = terrain.movement_cost
-			
 			var new_cost = cost_to_current + cost_to_enter
-			
 			if new_cost <= move_range and (not costs.has(neighbor_cell) or new_cost < costs[neighbor_cell]):
 				costs[neighbor_cell] = new_cost
 				if not to_visit.has(neighbor_cell):
 					to_visit.append(neighbor_cell)
-	
 	costs.erase(start_cell)
 	for cell in costs.keys():
 		if not _enemy_range_cells.has(cell):
 			_enemy_range_cells.append(cell)
-	
+
+	# 2) Attack range (červená) – kam může z aktuální pozice udeřit (Manhattan); ne políčko pod nepřítelem
+	if attack_range > 0:
+		for dx in range(-attack_range, attack_range + 1):
+			for dy in range(-attack_range, attack_range + 1):
+				if abs(dx) + abs(dy) <= attack_range:
+					var cell = start_cell + Vector2i(dx, dy)
+					if cell == start_cell:
+						continue
+					if is_cell_active(cell) and not _enemy_attack_range_cells.has(cell):
+						_enemy_attack_range_cells.append(cell)
+
 	update_visual_highlights()
 
 func hide_enemy_range():
-	if not _enemy_range_cells.is_empty():
+	if not _enemy_range_cells.is_empty() or not _enemy_attack_range_cells.is_empty():
 		_enemy_range_cells.clear()
+		_enemy_attack_range_cells.clear()
 		update_visual_highlights()
 
 func show_movable_range(unit: Node):
@@ -487,3 +537,19 @@ func get_line(from_cell: Vector2i, to_cell: Vector2i) -> Array[Vector2i]:
 			y0 += sy
 			
 	return line_points
+
+func has_line_of_sight(from_cell: Vector2i, to_cell: Vector2i, exclude_target_unit: Node = null) -> bool:
+	"""Zkontroluje, zda je přímá viditelnost mezi buňkami. Pro ranged karty.
+	Blokuje: terén s blocks_line_of_sight, jednotky mezi from a to (kromě cílové)."""
+	if from_cell == to_cell:
+		return true
+	var line_cells = get_line(from_cell, to_cell)
+	for i in range(1, line_cells.size() - 1):
+		var cell = line_cells[i]
+		var terrain = get_terrain_on_cell(cell)
+		if terrain and terrain.blocks_line_of_sight:
+			return false
+		var unit_on_cell = get_object_on_cell(cell)
+		if is_instance_valid(unit_on_cell) and unit_on_cell != exclude_target_unit:
+			return false
+	return true

@@ -6,7 +6,7 @@
 
 [sub_resource type="Resource" id="Resource_purif1"]
 script = ExtResource("1_purif")
-effect_type = 13
+effect_type = 5
 value = 0
 string_value = "remove_all_debuffs"
 target_type = 0
@@ -23,7 +23,7 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 [sub_resource type="Resource" id="Resource_purif2"]
 script = ExtResource("1_purif")
 effect_type = 2
-value = 5
+value = 4
 string_value = ""
 target_type = 0
 area_of_effect_type = 0
@@ -41,6 +41,7 @@ script = ExtResource("2_purif")
 card_id = "purification"
 card_name = "card.purification"
 card_description = "card.purification.desc"
+editor_description = "Remove all debuffs and gain 4 block."
 cost = 1
 range_type = 1
 range_value = 1
@@ -51,4 +52,5 @@ effects = Array[ExtResource("1_purif")]([SubResource("Resource_purif1"), SubReso
 is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
+max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"
