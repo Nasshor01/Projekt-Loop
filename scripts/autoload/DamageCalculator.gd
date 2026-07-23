@@ -52,6 +52,10 @@ func get_final_damage(
 			}
 			total += ArtifactManager.get_card_damage_bonus(context)
 
+	# Monk blessing: +damage bonus pro enemy jednotky s buffem
+	if attacker is Unit and attacker.active_statuses.has("monk_blessing"):
+		total += attacker.active_statuses["monk_blessing"].value
+
 	# Holy damage: base +5 vs Undead/Demon (UnitData) + skill tree bonus (vždy při Holy útoku)
 	if damage_type == 1:  # CardEffectData.DamageType.HOLY
 		total += PlayerData.holy_damage_bonus

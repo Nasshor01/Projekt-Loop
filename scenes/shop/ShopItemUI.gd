@@ -19,9 +19,8 @@ var is_on_sale: bool = false
 var original_price: int = 0
 var artifact_stack_info: String = ""
 var ui_nodes_ready: bool = false
-const SHOP_CARD_BASE_SIZE = Vector2(200, 300)
-const SHOP_CARD_SCALE = Vector2(0.7, 0.7)
-const SHOP_CARD_MIN_SIZE = SHOP_CARD_BASE_SIZE * SHOP_CARD_SCALE
+const SHOP_CARD_SCALE = Vector2(1.0, 1.0)
+const SHOP_CARD_MIN_SIZE = CardUI.DESIGN_SIZE
 
 func _ready():
 	ui_nodes_ready = true
@@ -96,17 +95,13 @@ func _display_item_content():
 		else:
 			card_ui.card_data = item_data
 		if card_ui is CardUI:
-			card_ui.is_draggable = false
-			card_ui.static_layout = true
+			card_ui.apply_display_mode(CardUI.DisplayMode.SHOP)
 			card_ui.custom_minimum_size = SHOP_CARD_MIN_SIZE
 			card_ui.pivot_offset = card_ui.custom_minimum_size * 0.5
-			card_ui.scale = SHOP_CARD_SCALE
-			card_ui.position = Vector2.ZERO
-		else:
-			card_ui.scale = SHOP_CARD_SCALE 
 			card_ui.position = Vector2.ZERO
 		# Po vytvoření CardUI připojíme tooltip signály
 		call_deferred("_connect_card_tooltip_signals_deferred")
+		call_deferred("_center_card_in_slot", card_ui if card_ui is CardUI else null)
 		
 	elif item_data is ArtifactsData:
 		var artifact_ui = preload("res://scenes/ui/ArtifactChoiceUI.tscn").instantiate()
@@ -127,6 +122,18 @@ func _on_card_mouse_entered():
 
 func _on_card_mouse_exited():
 	emit_signal("card_hover_exited")
+
+func _center_card_in_slot(card_ui: CardUI) -> void:
+	if not is_instance_valid(card_ui) or not is_instance_valid(item_content_container):
+		return
+	var slot_size = item_content_container.size
+	if slot_size.x < 1.0 or slot_size.y < 1.0:
+		slot_size = item_content_container.custom_minimum_size
+	var card_size = card_ui.get_scaled_size()
+	card_ui.position = Vector2(
+		maxf(0.0, (slot_size.x - card_size.x) * 0.5),
+		maxf(0.0, (slot_size.y - card_size.y) * 0.5)
+	)
 
 func _update_price_display():
 	"""Aktualizuje zobrazení ceny"""
@@ -156,3 +163,6 @@ func _update_price_display():
 func _on_buy_button_pressed():
 	"""Zpracuje stisknutí tlačítka koupit"""
 	emit_signal("item_purchased", item_data, buy_button)
+
+func get_item_data() -> Resource:
+	return item_data

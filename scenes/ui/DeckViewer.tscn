@@ -1,12 +1,33 @@
-[gd_scene load_steps=2 format=3 uid="uid://pjdtf3hky6c6"]
+[gd_scene load_steps=3 format=3 uid="uid://pjdtf3hky6c6"]
 
-[ext_resource type="Script" path="res://scenes/ui/DeckViewer.gd" id="1_1uh4v"]
+[ext_resource type="Script" uid="uid://btldvrxqxpr1u" path="res://scenes/ui/DeckViewer.gd" id="1_1uh4v"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_opaque"]
+bg_color = Color(0.12, 0.12, 0.18, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.4, 0.5, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="DeckViewer" type="PanelContainer"]
-offset_right = 1088.0
-offset_bottom = 576.0
+z_index = 200
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = 88.0
+offset_right = -48.0
+offset_bottom = -48.0
+grow_horizontal = 2
+grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_opaque")
 script = ExtResource("1_1uh4v")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
@@ -49,4 +70,6 @@ size_flags_vertical = 3
 [node name="GridContainer" type="GridContainer" parent="MarginContainer/VBoxContainer/ScrollContainer"]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 16
 columns = 4

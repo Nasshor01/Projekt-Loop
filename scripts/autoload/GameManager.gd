@@ -16,6 +16,7 @@ var global_ui_scene = preload("res://scenes/ui/GlobalUI.tscn")
 var event_scene = "res://scenes/events/EventScene.tscn"
 var tutorial_scene = "res://scenes/ui/Tutorial.tscn"
 var settings_scene = "res://scenes/ui/Settings.tscn"
+var lobby_scene = "res://scenes/ui/CoopLobby.tscn"
 var consent_popup_scene = preload("res://scenes/ui/ConsentPopup.tscn")
 
 const TUTORIAL_STEP_BATTLE_1 = "battle_1"
@@ -29,6 +30,11 @@ const TUTORIAL_STEP_COMPLETE = "complete"
 
 var current_scene: Node = null
 var current_seed: int
+var is_coop_run: bool = false
+# Coop: třída/subtřída druhého hráče (cesty k resource), nastaví host při výběru postavy
+var coop_client_class_path: String = ""
+var coop_client_subclass_path: String = ""
+var coop_my_nickname: String = ""
 var current_encounter: EncounterData
 var current_map_data: MapData = null
 var has_saved_camera_state: bool = false
@@ -68,6 +74,8 @@ func _ready():
 	
 	# Načteme preferenci jazyka při startu
 	_load_language_preference()
+	# Aplikujeme uloženou preferenci fullscreen
+	_apply_saved_fullscreen()
 	
 	# Load resource pools at runtime to avoid script resolution issues
 	CARD_REWARD_POOL = load("res://data/cards/reward_card_pool.tres")
@@ -114,8 +122,8 @@ func _show_crash_recovery_dialog():
 	crash_recovery_dialog = ConfirmationDialog.new()
 	crash_recovery_dialog.dialog_text = "Vypadá to, že hra minule spadla. Chceš odeslat diagnostická data vývojáři?"
 	crash_recovery_dialog.confirmed.connect(_on_crash_recovery_confirmed)
-	get_tree().root.add_child.call_deferred(crash_recovery_dialog)
-	crash_recovery_dialog.popup_centered()
+	get_tree().root.call_deferred("add_child", crash_recovery_dialog)
+	crash_recovery_dialog.call_deferred("popup_centered")
 
 func _on_crash_recovery_confirmed():
 	if has_node("/root/DebugLogger"):
@@ -123,14 +131,16 @@ func _on_crash_recovery_confirmed():
 
 func start_new_run(rng_seed = null):
 	SaveManager.delete_saved_run()
-	if rng_seed == null:
+	if is_coop_run:
+		# Coop: seed už byl nastaven v start_coop_run(), nepřepisujeme
+		pass
+	elif rng_seed == null:
 		randomize()
 		current_seed = randi()
 	else:
 		current_seed = rng_seed
 	
 	_is_post_boss_reward = false
-	# NOVÉ DEBUG LOGOVÁNÍ
 	DebugLogger.log_info("=== STARTING NEW RUN ===", "GAME_FLOW")
 	DebugLogger.log_info("Seed: %d" % current_seed, "GAME_FLOW")
 	
@@ -139,10 +149,16 @@ func start_new_run(rng_seed = null):
 	
 	PlayerData.start_new_run_state()
 	
-	# LOGUJ POČÁTEČNÍ STAV
 	DebugLogger.log_full_game_state()
 	
 	_change_scene(map_scene)
+	
+	if has_node("/root/MusicManager"):
+		MusicManager.play_run()
+	
+	# Coop: klient musí taky přejít na mapu (se stejným seedem už má)
+	if is_coop_run and has_node("/root/MultiplayerManager"):
+		MultiplayerManager.rpc("receive_go_to_map")
 
 func _notification(what):
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
@@ -165,6 +181,9 @@ func start_new_game_plus(rng_seed = null):
 	
 	_change_scene(map_scene)
 	
+	if has_node("/root/MusicManager"):
+		MusicManager.play_run()
+	
 func start_battle(encounter: EncounterData):
 	DebugLogger.log_info("=== STARTING BATTLE ===", "BATTLE")
 	DebugLogger.log_info("Encounter: %s" % encounter.resource_path, "BATTLE")
@@ -176,6 +195,8 @@ func start_battle(encounter: EncounterData):
 	
 	current_encounter = encounter
 	_change_scene(battle_scene)
+	# V coope klient už přešel do bitvy přes receive_coop_node_action (z mapy). Neposílat receive_start_battle,
+	# aby klient nenačítal bitvu podruhé – druhé načtení by spotřebovalo RNG znovu a grid by byl jiný.
 
 func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -1):
 	DebugLogger.log_info("=== BATTLE FINISHED ===", "BATTLE")
@@ -197,7 +218,7 @@ func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -
 
 		var gained_xp = current_encounter.xp_reward
 		if PlayerData.loop_level > 0:
-			gained_xp = int(gained_xp * (1.0 + (PlayerData.loop_level * 0.2)))
+			gained_xp = int(gained_xp * (1.0 + (PlayerData.loop_level * 0.3)))
 		PlayerData.current_run_xp += gained_xp
 		DebugLogger.log_info("XP gained from encounter: %d (Total this run: %d)" % [gained_xp, PlayerData.current_run_xp], "PROGRESSION")
 
@@ -210,6 +231,14 @@ func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -
 
 		_prepare_battle_rewards()
 		_change_scene(reward_scene)
+		if is_coop_run and has_node("/root/MultiplayerManager"):
+			var enc_type = int(current_encounter.encounter_type) if is_instance_valid(current_encounter) else 0
+			var gold = last_battle_rewards.get("gold", 0)
+			var card_paths: Array = []
+			for c in last_battle_rewards.get("cards", []):
+				if is_instance_valid(c):
+					card_paths.append(c.resource_path)
+			MultiplayerManager.rpc("receive_go_to_reward", gold, enc_type, card_paths)
 	else:
 		SaveManager.delete_saved_run()
 		last_run_was_victory = false
@@ -222,6 +251,14 @@ func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -
 		_change_scene(end_of_run_scene)
 
 func go_to_main_menu():
+	is_coop_run = false
+	coop_client_class_path = ""
+	coop_client_subclass_path = ""
+	if has_node("/root/MusicManager"):
+		MusicManager.stop_run()
+	# Zavři případné staré spojení
+	if has_node("/root/MultiplayerManager") and MultiplayerManager.has_active_connection():
+		MultiplayerManager.close_connection()
 	_change_scene(main_menu_scene)
 
 func go_to_character_select():
@@ -237,6 +274,126 @@ func go_to_tutorial():
 func go_to_settings():
 	_change_scene(settings_scene)
 
+func go_to_lobby():
+	_change_scene(lobby_scene)
+
+func start_coop_run():
+	"""Volá jen host z lobby. Nastaví coop režim, vygeneruje seed a pošle ho klientovi."""
+	is_coop_run = true
+	randomize()
+	current_seed = randi()
+	seed(current_seed)
+	DebugLogger.log_info("Coop run started, seed: %d" % current_seed, "GAME_FLOW")
+	if has_node("/root/MultiplayerManager"):
+		MultiplayerManager.rpc("receive_run_seed", current_seed)
+
+func coop_client_go_to_map():
+	"""Volá se na klientovi přes RPC – stejný stav jako start_new_run, ale seed už je nastaven."""
+	SaveManager.delete_saved_run()
+	_is_post_boss_reward = false
+	has_saved_camera_state = false
+	current_map_data = null
+	PlayerData.start_new_run_state()
+	DebugLogger.log_info("Coop client going to map, seed: %d" % current_seed, "GAME_FLOW")
+	_change_scene(map_scene)
+	if has_node("/root/MusicManager"):
+		MusicManager.play_run()
+
+func coop_client_follow_node(node_index: int, action_type: String, encounter_path: String):
+	"""Klient: stejný krok na mapě jako host (path_taken + přechod)."""
+	if not is_instance_valid(current_scene) or not "map_data" in current_scene:
+		return
+	var md = current_scene.map_data
+	if node_index < 0 or node_index >= md.all_nodes.size():
+		return
+	var node_data = md.all_nodes[node_index]
+	PlayerData.path_taken.append(node_data)
+	PlayerData.floors_cleared = PlayerData.path_taken.size()
+	match action_type:
+		"battle":
+			if encounter_path != "":
+				var enc = load(encounter_path) as EncounterData
+				if enc:
+					current_encounter = enc
+					_change_scene(battle_scene)
+		"shop":
+			_change_scene(shop_scene)
+		"rest":
+			_change_scene(rest_scene)
+		"event":
+			_change_scene(event_scene)
+		"treasure":
+			_change_scene(treasure_scene)
+		_:
+			push_error("Coop unknown action_type: %s" % action_type)
+
+func coop_client_go_to_battle(encounter_path: String):
+	"""Klient: načti bitvu se stejným encounterem jako host."""
+	if encounter_path.is_empty():
+		return
+	var enc = load(encounter_path) as EncounterData
+	if enc:
+		current_encounter = enc
+		_change_scene(battle_scene)
+
+func coop_client_return_to_map():
+	"""Klient: návrat na mapu (po obchodě/eventu/pokladu)."""
+	_change_scene(map_scene)
+
+func coop_host_on_battle_ended_by_client(gold: int, final_hp: int, final_shield: int, encounter_type: int, card_paths: Array = []):
+	"""Host: klient vyhrál bitvu – aplikovat stav, přejít na reward a poslat klientovi receive_go_to_reward."""
+	PlayerData.current_hp = final_hp
+	if final_shield != -1:
+		PlayerData.global_shield = final_shield
+	if is_instance_valid(current_encounter):
+		var gained_xp = current_encounter.xp_reward
+		if PlayerData.loop_level > 0:
+			gained_xp = int(gained_xp * (1.0 + (PlayerData.loop_level * 0.3)))
+		PlayerData.current_run_xp += gained_xp
+	# Použij karty od klienta (aby byly stejné)
+	if not card_paths.is_empty():
+		var cards: Array = []
+		for cp in card_paths:
+			var c = load(cp) as CardData
+			if is_instance_valid(c):
+				cards.append(c)
+		last_battle_rewards["cards"] = cards
+	else:
+		_prepare_battle_rewards()
+	last_battle_rewards["gold"] = gold
+	last_battle_rewards["encounter_type"] = encounter_type
+	_change_scene(reward_scene)
+	var host_card_paths: Array = []
+	for c in last_battle_rewards.get("cards", []):
+		if is_instance_valid(c):
+			host_card_paths.append(c.resource_path)
+	MultiplayerManager.rpc("receive_go_to_reward", gold, encounter_type, host_card_paths)
+
+func coop_client_go_to_reward(gold: int, encounter_type: int, card_paths: Array = []):
+	"""Klient: po bitvě přechod na reward – sdílené karty s hostem."""
+	last_battle_rewards["gold"] = gold
+	last_battle_rewards["encounter_type"] = encounter_type
+	if not card_paths.is_empty():
+		var cards: Array = []
+		for cp in card_paths:
+			var c = load(cp) as CardData
+			if is_instance_valid(c):
+				cards.append(c)
+		last_battle_rewards["cards"] = cards
+	else:
+		last_battle_rewards["cards"] = []
+	last_battle_rewards["artifacts"] = []
+	_change_scene(reward_scene)
+
+func coop_add_card_to_deck(card_path: String):
+	"""Coop: druhý hráč vybral kartu – přidáme ji do master_deck (sync)."""
+	if card_path.is_empty():
+		return
+	var card = load(card_path) as CardData
+	if is_instance_valid(card):
+		PlayerData.master_deck.append(card)
+		PlayerData.emit_signal("deck_changed")
+
 func _load_language_preference():
 	"""Načte preferenci jazyka z ConfigFile při startu"""
 	var config = ConfigFile.new()
@@ -246,6 +403,17 @@ func _load_language_preference():
 		if locale != "":
 			TranslationServer.set_locale(locale)
 			DebugLogger.log_info("Language preference loaded: %s" % locale)
+
+func _apply_saved_fullscreen():
+	"""Aplikuje uloženou preferenci fullscreen při startu hry"""
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+	if err == OK and config.has_section_key("settings", "fullscreen"):
+		var fullscreen = bool(config.get_value("settings", "fullscreen", false))
+		if fullscreen:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		else:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
 
 func go_to_run_prep_screen(p_class: ClassData, p_subclass: SubclassData):
 	selected_class_data = p_class
@@ -274,6 +442,8 @@ func reward_chosen():
 	else:
 		print("Odměna vybrána, vracím se na mapu.")
 		_change_scene(map_scene)
+		# Coop: reward/rest scény mají vlastní ready systém – oba peery volají reward_chosen lokálně.
+		# Nepotřebujeme posílat receive_return_to_map.
 
 func show_treasure_node():
 	print("Hráč vstoupil na pole s pokladem.")
@@ -282,6 +452,7 @@ func show_treasure_node():
 func treasure_collected():
 	print("Poklad sebrán, vracím se na mapu.")
 	_change_scene(map_scene)
+	# Coop: treasure má vlastní ready systém – oba peery volají treasure_collected lokálně.
 
 func go_to_shop():
 	print("Vstup do obchodu.")
@@ -290,6 +461,8 @@ func go_to_shop():
 func leave_shop():
 	print("Odchod z obchodu, návrat na mapu.")
 	_change_scene(map_scene)
+	# Coop: shop má vlastní ready systém – oba peery volají leave_shop lokálně.
+	# Nepotřebujeme posílat receive_return_to_map.
 	
 func go_to_rest_scene():
 	print("Vstup do scény odpočinku.")
@@ -303,17 +476,26 @@ func go_to_event_scene():
 func event_completed():
 	print("Event dokončen, návrat na mapu")
 	DebugLogger.log_info("Event completed, returning to map", "GAME_FLOW")
+	var event_xp = 10
+	if PlayerData.loop_level > 0:
+		event_xp = int(event_xp * (1.0 + (PlayerData.loop_level * 0.3)))
+	PlayerData.current_run_xp += event_xp
+	DebugLogger.log_info("XP gained from event: %d (Total this run: %d)" % [event_xp, PlayerData.current_run_xp], "PROGRESSION")
 	_change_scene(map_scene)
+	if is_coop_run and has_node("/root/MultiplayerManager"):
+		MultiplayerManager.rpc("receive_return_to_map")
 
 func _change_scene(scene_path: String):
 	DebugLogger.log_scene_change(str(current_scene.scene_file_path) if current_scene else "none", scene_path)
 	print("DEBUG: Pokouším se změnit scénu na: ", scene_path)
 
 	if is_instance_valid(global_ui_instance):
-		if scene_path == map_scene or scene_path == battle_scene:
-			global_ui_instance.show()
-		else:
+		# GlobalUI se skrývá jen v menu/nastavení/tutoriálu/výběru postavy/přípravě runu
+		var hide_scenes = [main_menu_scene, character_select_scene, run_prep_scene, tutorial_scene, settings_scene, lobby_scene]
+		if scene_path in hide_scenes:
 			global_ui_instance.hide()
+		else:
+			global_ui_instance.show()
 
 	if is_instance_valid(current_scene):
 		current_scene.queue_free()
@@ -619,3 +801,64 @@ func load_and_start_saved_run():
 	DebugLogger.log_full_game_state()
 
 	_change_scene(map_scene)
+	if has_node("/root/MusicManager"):
+		MusicManager.play_run()
+
+# ===================== COOP SCENE SYNC =====================
+
+var _coop_ready_peers: Dictionary = {}  # scene_name -> Array[peer_id]
+
+func coop_client_game_over():
+	"""Klient: run skončil prohrou."""
+	SaveManager.delete_saved_run()
+	last_run_was_victory = false
+	last_run_xp_earned = PlayerData.current_run_xp
+	SaveManager.add_xp(last_run_xp_earned)
+	_change_scene(end_of_run_scene)
+
+func coop_client_go_to_shop(shop_items: Array):
+	"""Klient: host vygeneroval shop – uloží data. Scéna se načte přes coop_client_follow_node."""
+	_coop_pending_shop_items = shop_items
+	# Pokud scéna ještě není shop, přejdi (fallback)
+	if not is_instance_valid(current_scene) or not current_scene is Node2D or not current_scene.has_method("_is_coop_run"):
+		_change_scene(shop_scene)
+
+func coop_client_go_to_event(event_path: String):
+	"""Klient: host vybral event – uloží data. Scéna se načte přes coop_client_follow_node."""
+	_coop_pending_event_path = event_path
+	# Pokud scéna ještě není event, přejdi (fallback)
+	if not is_instance_valid(current_scene) or not current_scene.has_method("display_event"):
+		_change_scene(event_scene)
+
+func coop_client_go_to_rest():
+	"""Klient: přechod do rest scény."""
+	_change_scene(rest_scene)
+
+func coop_client_go_to_treasure(artifact_paths: Array):
+	"""Klient: host vygeneroval treasure – uloží data. Scéna se načte přes coop_client_follow_node."""
+	_coop_pending_treasure_paths = artifact_paths
+	# Pokud scéna ještě není treasure, přejdi (fallback)
+	if not is_instance_valid(current_scene) or not current_scene.has_method("_generate_from_host_data"):
+		_change_scene(treasure_scene)
+
+func coop_peer_scene_ready(peer_id: int, scene_name: String):
+	"""Peer je připravený v dané scéně. Čekáme na oba."""
+	if not _coop_ready_peers.has(scene_name):
+		_coop_ready_peers[scene_name] = []
+	if peer_id not in _coop_ready_peers[scene_name]:
+		_coop_ready_peers[scene_name].append(peer_id)
+
+func coop_are_both_ready(scene_name: String) -> bool:
+	"""Vrátí true pokud oba peery jsou ready v dané scéně."""
+	if not _coop_ready_peers.has(scene_name):
+		return false
+	return _coop_ready_peers[scene_name].size() >= 2
+
+func coop_clear_ready(scene_name: String):
+	"""Vyčistí ready stav pro danou scénu."""
+	_coop_ready_peers.erase(scene_name)
+
+# Pending data pro klientovy scény
+var _coop_pending_shop_items: Array = []
+var _coop_pending_event_path: String = ""
+var _coop_pending_treasure_paths: Array = []

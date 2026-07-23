@@ -39,7 +39,7 @@ const SHAPE_DIAMOND = [
 @onready var enemy_info_panel = $CanvasLayer/EnemyInfoPanel
 @onready var draw_pile_button: TextureButton = $CanvasLayer/DrawPileButton
 @onready var discard_pile_button: TextureButton = $CanvasLayer/DiscardPileButton
-@onready var card_pile_viewer: PanelContainer = $CanvasLayer/CardPileViewer
+@onready var card_pile_viewer: PanelContainer = $OverlayLayer/CardPileViewer
 @onready var player_hand_ui_instance: Control = $CanvasLayer/PlayerHandUI
 @onready var end_turn_button: Button = $CanvasLayer/EndTurnButton
 @onready var victory_label: Label = $CanvasLayer/VictoryLabel
@@ -63,8 +63,12 @@ var _current_battle_state: BattleState = BattleState.SETUP
 var _selected_card_ui: Control = null
 var _selected_card_data: CardData = null
 var _player_unit_node: Unit = null
+var _coop_other_player_unit: Unit = null
 var _selected_unit: Unit = null
 var _enemy_units: Array[Unit] = []
+# Coop: stabilní seznam VŠECH nepřátel ve spawnovém pořadí – NIKDY se z něj neodebírá.
+# Mrtvé jednotky zůstanou ve svém slotu (is_instance_valid vrátí false po queue_free).
+var _all_enemy_units_ordered: Array[Unit] = []
 
 var _is_action_processing: bool = false
 var _card_play_in_progress: bool = false  # blokuje druhý vstup do _try_play_selected_card_at_cell (např. dvojí signál)
@@ -76,9 +80,23 @@ var _is_extra_turn: bool = false
 var _cards_played_this_turn: Dictionary = {}  # Tracking karet za tah pro limit použití
 var _took_damage_last_turn: bool = false  # Tracking poškození pro consecrated_barrier
 var _current_tooltip_card_data: CardData = null
+# Coop: true = můj tah, false = tah spoluhráče (pouze když _is_coop_run())
+var _coop_my_turn: bool = true
+var _coop_spectator_mode: bool = false  # Coop: můj paladin zemřel, jsem divák
+# Coop výběr spawnu: 0 = host vybírá, 1 = klient vybírá
+var _coop_spawn_phase: int = 0
+var _coop_host_spawn_cell: Vector2i = Vector2i(-1, -1)
+var _coop_client_spawn_cell: Vector2i = Vector2i(-1, -1)
 
 func _ready():
 	add_to_group("battle_scene")
+	# Deterministic RNG: stejný seed = stejný grid, pozice nepřátel a terén u hosta i klienta.
+	# Používáme path_taken.size() (ne floors_cleared), aby měl klient stejný počet jako host při vstupu do bitvy.
+	if has_node("/root/GameManager"):
+		var steps = PlayerData.path_taken.size() if PlayerData.path_taken else 0
+		var battle_seed = GameManager.current_seed + steps
+		seed(battle_seed)
+		DebugLogger.log_debug("Battle seed: %d (current_seed %d + path_steps %d)" % [battle_seed, GameManager.current_seed, steps])
 	DebugLogger.log_info("Battle scene loaded", "BATTLE")
 	player_info_panel.update_from_player_data()
 	_current_battle_state = BattleState.SETUP
@@ -107,6 +125,8 @@ func _ready():
 	# Tooltip se nyní zobrazuje/schovává pomocí pravého kliknutí - žádné timery nejsou potřeba
 	draw_pile_button.pile_clicked.connect(_on_draw_pile_clicked)
 	discard_pile_button.pile_clicked.connect(_on_discard_pile_clicked)
+	if card_pile_viewer.has_signal("card_right_clicked"):
+		card_pile_viewer.card_right_clicked.connect(_on_card_right_clicked)
 	if not win_button.pressed.is_connected(_on_win_button_pressed):
 		win_button.pressed.connect(_on_win_button_pressed)
 	if is_instance_valid(win_button):
@@ -173,15 +193,15 @@ func _process(delta):
 	
 	_cam_target_rot_y += rot_input * camera_rotation_speed * delta
 
-	# 3. APLIKACE LERPU (PLYNULOST)
-	camera_3d.position = camera_3d.position.lerp(_cam_target_pos, camera_smoothness * delta)
-	
+	# 3. APLIKACE SMOOTH (frame-rate nezávislé – plynulé jako na 60 FPS)
+	# 1 - exp(-k*dt) = stejná „dobrá“ plynulost při jakémkoliv FPS
+	var t: float = 1.0 - exp(-camera_smoothness * delta)
+	camera_3d.position = camera_3d.position.lerp(_cam_target_pos, t)
 	var current_rot = camera_3d.rotation
-	current_rot.y = lerp_angle(current_rot.y, _cam_target_rot_y, camera_smoothness * delta)
-	current_rot.x = lerp_angle(current_rot.x, _cam_target_rot_x, camera_smoothness * delta)
+	current_rot.y = lerp_angle(current_rot.y, _cam_target_rot_y, t)
+	current_rot.x = lerp_angle(current_rot.x, _cam_target_rot_x, t)
 	camera_3d.rotation = current_rot
-	
-	camera_3d.size = lerp(camera_3d.size, _cam_target_zoom, camera_smoothness * delta)
+	camera_3d.size = lerp(camera_3d.size, _cam_target_zoom, t)
 	
 	# 4. RAYCAST UPDATE PRO HOVER
 	var grid_cell = get_grid_cell_under_mouse()
@@ -244,7 +264,22 @@ func _unhandled_input(event: InputEvent):
 		
 		# Logika SPAWN
 		if _current_battle_state == BattleState.AWAITING_PLAYER_SPAWN:
-			if battle_grid_instance.is_cell_a_valid_spawn_point(clicked_grid_cell):
+			if _is_coop_run():
+				if battle_grid_instance.is_cell_a_valid_spawn_point(clicked_grid_cell):
+					var host_color := Color(1.3, 1.1, 0.75, 0.7)   # zlatá
+					var client_color := Color(0.5, 0.7, 1.3, 0.7)  # modrá
+					if MultiplayerManager.is_server() and _coop_spawn_phase == 0:
+						_coop_host_spawn_cell = clicked_grid_cell
+						_coop_spawn_phase = 1
+						battle_grid_instance.set_coop_selected_spawn(clicked_grid_cell, host_color)
+						rpc("_rpc_coop_host_spawn", clicked_grid_cell.x, clicked_grid_cell.y)
+						get_viewport().set_input_as_handled()
+					elif not MultiplayerManager.is_server() and _coop_spawn_phase == 1 and clicked_grid_cell != _coop_host_spawn_cell:
+						_coop_client_spawn_cell = clicked_grid_cell
+						battle_grid_instance.set_coop_selected_spawn(clicked_grid_cell, client_color)
+						rpc("_rpc_coop_client_spawn", clicked_grid_cell.x, clicked_grid_cell.y)
+						get_viewport().set_input_as_handled()
+			elif battle_grid_instance.is_cell_a_valid_spawn_point(clicked_grid_cell):
 				confirm_player_spawn(clicked_grid_cell)
 				get_viewport().set_input_as_handled()
 			return
@@ -280,11 +315,19 @@ func _unhandled_input(event: InputEvent):
 		
 		# Logika VÝBĚR JEDNOTKY (klik na vlastní postavu pro pohyb); klik na nepřítele/prázdno jen zkonzumujeme
 		elif _player_action_state == PlayerActionState.IDLE:
+			# Coop: pohyb jen když je můj tah
+			if _is_coop_run() and not _coop_my_turn:
+				get_viewport().set_input_as_handled()
+				return
 			var unit_clicked = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
 			if unit_clicked and unit_clicked is Unit:
 				if unit_clicked.unit_data.faction == UnitData.Faction.PLAYER and unit_clicked.can_move():
-					_on_unit_selected_on_grid(unit_clicked)
-					get_viewport().set_input_as_handled()
+					# Coop: pohybovat smíme jen svojí jednotkou
+					if _is_coop_run() and unit_clicked != _player_unit_node:
+						get_viewport().set_input_as_handled()
+					else:
+						_on_unit_selected_on_grid(unit_clicked)
+						get_viewport().set_input_as_handled()
 				else:
 					# Klik na nepřítele nebo jinou jednotku — jen zkonzumovat, aby se nikde jinde nezpracoval jako „zahrát kartu“
 					get_viewport().set_input_as_handled()
@@ -318,6 +361,15 @@ func _on_turn_started(unit: Unit):
 	if unit.unit_data.faction == UnitData.Faction.PLAYER:
 		_start_player_initiative_turn(unit, extra_draw)
 	else:
+		# Coop: tah nepřítele běží jen na hostovi, klient čeká na RPC se stavem
+		if _is_coop_run() and has_node("/root/MultiplayerManager") and not MultiplayerManager.is_server():
+			_current_battle_state = BattleState.ENEMY_TURN
+			end_turn_button.disabled = true
+			battle_grid_instance.hide_danger_zone()
+			_set_enemy_intents_visible(false)
+			if is_instance_valid(unit):
+				unit.hide_intent()
+			return
 		_start_enemy_initiative_turn(unit)
 
 func _on_initiative_modifiers_changed(_unit: Unit, _total_initiative: int):
@@ -326,6 +378,19 @@ func _on_initiative_modifiers_changed(_unit: Unit, _total_initiative: int):
 
 func _start_player_initiative_turn(_player_unit: Unit, extra_draw: int = 0):
 	"""Zahájí tah hráče v iniciativním systému"""
+	# Coop: pokud je tah druhého hráče, jen čekáme – vyčistíme hand, aby nemohl hrát staré karty
+	if _is_coop_run() and _player_unit.has_meta("owner_peer_id") and _player_unit.get_meta("owner_peer_id") != multiplayer.get_unique_id():
+		_coop_my_turn = false
+		_update_turn_display()
+		_current_battle_state = BattleState.PLAYER_TURN
+		end_turn_button.disabled = true
+		PlayerData.discard_hand()
+		if is_instance_valid(player_hand_ui_instance):
+			player_hand_ui_instance.clear_hand()
+		_update_pile_counts()
+		return
+	_coop_my_turn = true
+	_update_turn_display()
 	_current_battle_state = BattleState.PROCESSING
 	end_turn_button.disabled = true
 	
@@ -341,6 +406,12 @@ func _start_player_initiative_turn(_player_unit: Unit, extra_draw: int = 0):
 	# START_OF_TURN artefakty
 	if has_node("/root/ArtifactManager"):
 		ArtifactManager.on_turn_start()
+	
+	# Coop: po artefaktech pošli stav své jednotky druhému peerovi,
+	# aby host měl správný block (např. Srdce draka) před útoky nepřátel.
+	if _is_coop_run() and is_instance_valid(_player_unit_node):
+		var my_idx = _coop_get_player_unit_index(_player_unit_node)
+		rpc("_rpc_coop_sync_my_unit_state", my_idx, _player_unit_node.current_health, _player_unit_node.current_block)
 	
 	# Dober karty
 	_cards_to_draw_queue = starting_hand_size + extra_draw
@@ -360,21 +431,34 @@ func _start_enemy_initiative_turn(enemy_unit: Unit):
 	enemy_unit.hide_intent()
 	
 	await get_tree().create_timer(0.4).timeout
-	await _process_single_enemy_action(enemy_unit)
+	await _process_enemy_actions(enemy_unit)
 	await get_tree().create_timer(0.4).timeout
 	
 	# Zavolej end_turn na jednotce
 	enemy_unit.end_turn()
 	
+	# Coop: host přepočte intenty a pošle klientovi kompletní stav
+	if _is_coop_run() and has_node("/root/MultiplayerManager") and MultiplayerManager.is_server():
+		# Přepočítej intenty na hostovi PŘED build snapshotem
+		for e in _enemy_units:
+			if is_instance_valid(e) and e.has_method("update_intent"):
+				e.update_intent(_player_unit_node, battle_grid_instance)
+		var payload = _coop_build_battle_state_snapshot()
+		var enemy_idx = _all_enemy_units_ordered.find(enemy_unit)
+		payload["enemy_turn_index"] = enemy_idx if enemy_idx >= 0 else 0
+		rpc("_rpc_apply_enemy_turn_result", payload)
+	
 	# Přejdi na další tah
 	TurnManager.next_turn()
 
-func _process_single_enemy_action(enemy_unit: Unit):
-	"""Zpracuje akci jednoho nepřítele"""
+func _process_enemy_actions(enemy_unit: Unit):
+	"""Zpracuje VŠECHNY akce jednoho nepřítele (multi-action systém)"""
 	if not is_instance_valid(enemy_unit):
 		return
 	
 	var player_units_array: Array = [_player_unit_node]
+	if is_instance_valid(_coop_other_player_unit):
+		player_units_array.append(_coop_other_player_unit)
 	
 	var ai_instance = null
 	if is_instance_valid(enemy_unit.unit_data) and is_instance_valid(enemy_unit.unit_data.ai_script):
@@ -382,13 +466,51 @@ func _process_single_enemy_action(enemy_unit: Unit):
 	else:
 		return
 	
-	# Získáme akci POUZE JEDNOU
-	var action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
+	# Získáme POLE akcí z nového multi-action systému
+	var actions: Array = ai_instance.get_actions(enemy_unit, player_units_array, battle_grid_instance)
+	
+	# Tracking pro berserker frustraci
+	var did_attack_or_rush = false
+	
+	# Zpracuj každou akci postupně
+	for action in actions:
+		if not is_instance_valid(enemy_unit):
+			break
+		
+		await _execute_single_action(enemy_unit, action)
+		
+		# Track zda útočil
+		if action.type == EnemyAIBase.AIAction.ActionType.ATTACK or action.type == EnemyAIBase.AIAction.ActionType.RUSH:
+			did_attack_or_rush = true
+		
+		# Krátká pauza mezi akcemi (pokud jich je víc)
+		if actions.size() > 1 and action != actions.back():
+			await get_tree().create_timer(0.3).timeout
+	
+	# ===== LOGIKA POČÍTÁNÍ FRUSTRACE (Berserker) =====
+	if is_instance_valid(enemy_unit) and is_instance_valid(enemy_unit.unit_data.ai_script) and "BerserkerAI" in enemy_unit.unit_data.ai_script.resource_path:
+		if did_attack_or_rush:
+			enemy_unit.berserker_frustration = 0
+			DebugLogger.log_debug("[BattleScene] Frustrace resetována (útok proveden).")
+		else:
+			enemy_unit.berserker_frustration += 1
+			DebugLogger.log_debug("[BattleScene] Frustrace zvýšena na: %d (bez útoku)." % enemy_unit.berserker_frustration)
+
+func _execute_single_action(enemy_unit: Unit, action: EnemyAIBase.AIAction):
+	"""Provede jednu akci enemy jednotky"""
+	if not is_instance_valid(enemy_unit):
+		return
 	
 	match action.type:
 		EnemyAIBase.AIAction.ActionType.ATTACK:
+			# Ověř, že cíl je stále platný a v dosahu
+			if not is_instance_valid(action.target_unit):
+				return
+			if not can_attack_target(enemy_unit, action.target_unit, battle_grid_instance):
+				return
+			
 			# Tracking poškození pro consecrated_barrier
-			if is_instance_valid(action.target_unit) and action.target_unit == _player_unit_node:
+			if action.target_unit == _player_unit_node:
 				_took_damage_last_turn = true
 			
 			# Elementální poškození (Mage)
@@ -396,7 +518,6 @@ func _process_single_enemy_action(enemy_unit: Unit):
 				var element_type = action.special_data.get("element_type", "fire")
 				var extra = _damage_multiplier_to_extra(enemy_unit, action.damage_multiplier)
 				await enemy_unit.attack(action.target_unit, extra, CardEffectData.DamageType.NORMAL, false)
-				# Aplikuj elementální efekt
 				if is_instance_valid(action.target_unit) and action.target_unit is Unit:
 					match element_type:
 						"fire":
@@ -410,11 +531,20 @@ func _process_single_enemy_action(enemy_unit: Unit):
 				var extra = _damage_multiplier_to_extra(enemy_unit, action.damage_multiplier)
 				await enemy_unit.attack(action.target_unit, extra, CardEffectData.DamageType.NORMAL, false)
 				await get_tree().create_timer(0.3).timeout
-				await enemy_unit.attack(action.target_unit, extra, CardEffectData.DamageType.NORMAL, false)
+				if is_instance_valid(action.target_unit):
+					await enemy_unit.attack(action.target_unit, extra, CardEffectData.DamageType.NORMAL, false)
 			else:
 				var extra = _damage_multiplier_to_extra(enemy_unit, action.damage_multiplier)
 				var dmg_type = CardEffectData.DamageType.HOLY if action.special_data.get("holy_damage", false) else CardEffectData.DamageType.NORMAL
 				await enemy_unit.attack(action.target_unit, extra, dmg_type, false)
+				
+				# DarkBeast bleeding efekt po útoku
+				if action.special_data.get("apply_bleeding", false):
+					if is_instance_valid(action.target_unit) and action.target_unit is Unit:
+						var bleed_dmg = action.special_data.get("bleeding_damage", 2)
+						var bleed_dur = action.special_data.get("bleeding_duration", 3)
+						action.target_unit.apply_status("burning", bleed_dmg, bleed_dur)  # Reuse burning jako bleeding
+						action.target_unit.show_status_text("BLEEDING!", "critical")
 		
 		EnemyAIBase.AIAction.ActionType.SPECIAL:
 			await _process_special_action(enemy_unit, action)
@@ -436,8 +566,9 @@ func _process_single_enemy_action(enemy_unit: Unit):
 					
 					await get_tree().create_timer(0.4).timeout
 					
-					# Útok po RUSH (pokud je cíl platný)
 					if is_instance_valid(action.target_unit) and can_attack_target(enemy_unit, action.target_unit, battle_grid_instance):
+						if action.target_unit == _player_unit_node:
+							_took_damage_last_turn = true
 						var extra = _damage_multiplier_to_extra(enemy_unit, action.damage_multiplier)
 						await enemy_unit.attack(action.target_unit, extra, CardEffectData.DamageType.NORMAL, false)
 		
@@ -465,47 +596,159 @@ func _process_single_enemy_action(enemy_unit: Unit):
 						enemy_unit.process_terrain_effects(target_terrain)
 					
 					await get_tree().create_timer(0.4).timeout
-					
-					# !!! ODSTRANĚNO VNOŘENÉ VOLÁNÍ AI !!!
-					# var post_move_action = ai_instance.get_next_action(enemy_unit, player_units_array, battle_grid_instance)
-					# if post_move_action.type == EnemyAIBase.AIAction.ActionType.ATTACK:
-					# 	await enemy_unit.attack(post_move_action.target_unit, post_move_action.damage_multiplier)
 		
 		EnemyAIBase.AIAction.ActionType.PASS:
 			pass
-	
-	
-	# ===== ZDE JE NOVÁ LOGIKA POČÍTÁNÍ FRUSTRACE =====
-	# Zkontrolujeme, zda AI má skript Berserkera, než začneme počítat
-	if is_instance_valid(enemy_unit.unit_data.ai_script) and "BerserkerAI" in enemy_unit.unit_data.ai_script.resource_path:
-		
-		# Pokud akce byla útok NEBO rush, resetuj frustraci
-		if action.type == EnemyAIBase.AIAction.ActionType.ATTACK or action.type == EnemyAIBase.AIAction.ActionType.RUSH:
-			enemy_unit.berserker_frustration = 0
-			DebugLogger.log_debug("[BattleScene] Frustrace resetována (útok proveden).")
-		
-		# Pokud to byl pohyb nebo pass (a AI ještě není v rage), zvyšíme frustraci
-		# POZNÁMKA: Pokud chcete, aby se frustrace zvyšovala i v RAGE módu (pokud se netrefí),
-		# odstraňte podmínku 'and not enemy_unit.is_permanently_enraged'
-		elif (action.type == EnemyAIBase.AIAction.ActionType.MOVE or action.type == EnemyAIBase.AIAction.ActionType.PASS):
-			enemy_unit.berserker_frustration += 1
-			DebugLogger.log_debug("[BattleScene] Frustrace zvýšena na: %d (bez útoku)." % enemy_unit.berserker_frustration)
 
 func _on_combat_ended(player_won: bool):
 	"""Volá se když TurnManager ukončí souboj"""
 	_current_battle_state = BattleState.BATTLE_OVER
-	
+	# Coop: jen HOST volá battle_finished (připraví rewards, pošle RPC klientovi).
+	# Klient čeká na RPC receive_go_to_reward / receive_game_over.
+	if _is_coop_run() and has_node("/root/MultiplayerManager") and not MultiplayerManager.is_server():
+		# Klient: uložíme HP/shield do PlayerData, ale nevoláme battle_finished – čekáme na RPC.
+		if player_won and is_instance_valid(_player_unit_node):
+			PlayerData.current_hp = _player_unit_node.current_health
+			PlayerData.global_shield = _player_unit_node.current_block
+		return
 	if player_won and is_instance_valid(_player_unit_node):
 		GameManager.battle_finished(true, _player_unit_node.current_health, _player_unit_node.current_block)
 	else:
+		# Prohra – informuj klienta
+		if _is_coop_run() and has_node("/root/MultiplayerManager"):
+			MultiplayerManager.rpc("receive_game_over")
 		GameManager.battle_finished(player_won)
 
 # NOVÉ A UPRAVENÉ FUNKCE PRO START HRY
 func start_player_spawn_selection():
+	if _is_coop_run():
+		_current_battle_state = BattleState.AWAITING_PLAYER_SPAWN
+		_coop_spawn_phase = 0
+		_coop_host_spawn_cell = Vector2i(-1, -1)
+		_coop_client_spawn_cell = Vector2i(-1, -1)
+		var spawn_points = battle_grid_instance.get_player_spawn_points(3)
+		battle_grid_instance.show_player_spawn_points(spawn_points)
+		end_turn_button.disabled = true
+		return
 	_current_battle_state = BattleState.AWAITING_PLAYER_SPAWN
-	var spawn_points = battle_grid_instance.get_player_spawn_points(3) # Zobrazí pozice v prvních 3 sloupcích
+	var spawn_points = battle_grid_instance.get_player_spawn_points(3)
 	battle_grid_instance.show_player_spawn_points(spawn_points)
 	end_turn_button.disabled = true
+
+func _is_coop_run() -> bool:
+	return has_node("/root/GameManager") and GameManager.is_coop_run and has_node("/root/MultiplayerManager") and MultiplayerManager.has_active_connection()
+
+@rpc("any_peer", "call_remote")
+func _rpc_coop_host_spawn(cx: int, cy: int):
+	_coop_host_spawn_cell = Vector2i(cx, cy)
+	_coop_spawn_phase = 1
+	var host_color := Color(1.3, 1.1, 0.75, 0.7)
+	battle_grid_instance.set_coop_selected_spawn(Vector2i(cx, cy), host_color)
+
+@rpc("any_peer", "call_remote")
+func _rpc_coop_client_spawn(cx: int, cy: int):
+	_coop_client_spawn_cell = Vector2i(cx, cy)
+	var client_color := Color(0.5, 0.7, 1.3, 0.7)
+	battle_grid_instance.set_coop_selected_spawn(Vector2i(cx, cy), client_color)
+	battle_grid_instance.hide_player_spawn_points()
+	_coop_do_spawn_and_start()
+	rpc("_rpc_coop_spawn_done", _coop_host_spawn_cell.x, _coop_host_spawn_cell.y, _coop_client_spawn_cell.x, _coop_client_spawn_cell.y)
+
+@rpc("any_peer", "call_remote")
+func _rpc_coop_spawn_done(hx: int, hy: int, cx: int, cy: int):
+	_coop_host_spawn_cell = Vector2i(hx, hy)
+	_coop_client_spawn_cell = Vector2i(cx, cy)
+	battle_grid_instance.hide_player_spawn_points()
+	_coop_do_spawn_and_start()
+
+func _coop_do_spawn_and_start():
+	_coop_spawn_two_players_at_positions(_coop_host_spawn_cell, _coop_client_spawn_cell)
+
+func _coop_spawn_two_players_and_start():
+	var spawn_points = battle_grid_instance.get_player_spawn_points(3)
+	if spawn_points.size() < 2:
+		printerr("Coop: potřeba alespoň 2 spawn pozice")
+		return
+	_coop_spawn_two_players_at_positions(spawn_points[0], spawn_points[1])
+
+func _coop_spawn_two_players_at_positions(host_cell: Vector2i, client_cell: Vector2i):
+	"""Coop: spawn na zadaných buňkách + barevné odlišení host/klient."""
+	battle_grid_instance.hide_player_spawn_points()
+	var host_id = 1
+	var client_id = MultiplayerManager.get_other_peer_id() if MultiplayerManager.is_server() else multiplayer.get_unique_id()
+	var my_id = multiplayer.get_unique_id()
+	var host_unit_data = PlayerData.selected_subclass.specific_unit_data if PlayerData.selected_subclass else null
+	var client_unit_data = null
+	if GameManager.coop_client_subclass_path != "":
+		var sub = load(GameManager.coop_client_subclass_path) as SubclassData
+		if sub and sub.specific_unit_data:
+			client_unit_data = sub.specific_unit_data
+	if not host_unit_data:
+		host_unit_data = PlayerData.selected_subclass.specific_unit_data
+	if not client_unit_data:
+		client_unit_data = host_unit_data
+	var u1 = _spawn_unit(host_unit_data, host_cell)
+	var u2 = _spawn_unit(client_unit_data, client_cell)
+	if not is_instance_valid(u1) or not is_instance_valid(u2):
+		printerr("Coop: nepodařilo se spawnout hráčské jednotky")
+		return
+	u1.set_meta("owner_peer_id", host_id)
+	u2.set_meta("owner_peer_id", client_id)
+	# OPRAVA: _ready() proběhla PŘED set_meta, takže obě jednotky mají HP z lokálního PlayerData.
+	# Spoluhráčova jednotka potřebuje reset – její skutečné HP přijde ze snapshotu.
+	if my_id == host_id:
+		# Jsme host → u2 je klient, nemáme jeho data → nastavíme max HP
+		u2.current_health = PlayerData.max_hp
+		u2.current_block = 0
+		u2.retained_block = 0
+	else:
+		# Jsme klient → u1 je host, nemáme jeho data → nastavíme max HP
+		u1.current_health = PlayerData.max_hp
+		u1.current_block = 0
+		u1.retained_block = 0
+	# Výraznější barevné odlišení: host = zlatý/teplý, klient = modrý/chladný
+	var host_tint = Color(1.3, 1.1, 0.75)    # výrazně zlatá
+	var client_tint = Color(0.75, 0.9, 1.3)  # výrazně modrá
+	if u1.has_node("Sprite3D"):
+		u1.get_node("Sprite3D").modulate = host_tint
+	if u2.has_node("Sprite3D"):
+		u2.get_node("Sprite3D").modulate = client_tint
+	u1.stats_changed.connect(_on_unit_stats_changed)
+	u1.died.connect(_on_unit_died)
+	u2.stats_changed.connect(_on_unit_stats_changed)
+	u2.died.connect(_on_unit_died)
+	if my_id == host_id:
+		_player_unit_node = u1
+		_coop_other_player_unit = u2
+		_add_coop_unit_label(u1, true)
+		_add_coop_unit_label(u2, false)
+	else:
+		_player_unit_node = u2
+		_coop_other_player_unit = u1
+		_add_coop_unit_label(u2, true)
+		_add_coop_unit_label(u1, false)
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager.on_combat_start()
+	spawn_enemy_units()
+	_place_terrain_features()
+	var all_units: Array[Unit] = [u1, u2]
+	all_units.append_array(_enemy_units)
+	var valid_units = all_units.filter(func(u): return is_instance_valid(u))
+	call_deferred("_start_combat_with_turn_manager", valid_units)
+
+func _add_coop_unit_label(unit: Unit, is_mine: bool):
+	if not is_instance_valid(unit):
+		return
+	var label = Label3D.new()
+	label.text = "Ty" if is_mine else "Spoluhráč"
+	label.position = Vector3(0, 1.6, 0)
+	label.font_size = 48
+	label.outline_size = 12
+	if is_mine:
+		label.modulate = Color(1.0, 0.85, 0.3)  # zlatá
+	else:
+		label.modulate = Color(0.4, 0.7, 1.0)  # modrá
+	unit.add_child(label)
 
 func _start_combat_with_turn_manager(units_to_start: Array[Unit]):
 	"""Zahájí souboj s TurnManagerem."""
@@ -552,9 +795,18 @@ func spawn_player_unit_at(grid_pos: Vector2i):
 
 
 func _update_turn_display():
-	"""Aktualizuje zobrazení čísla tahu"""
-	if is_instance_valid(turn_counter_label):
-		turn_counter_label.text = TranslationHelper.tr_format("ui.battle.turn", {"value": _current_turn_number})
+	"""Aktualizuje zobrazení čísla tahu a v coope „Tvůj tah“ / „Tah spoluhráče“."""
+	if not is_instance_valid(turn_counter_label):
+		return
+	var base = TranslationHelper.tr_format("ui.battle.turn", {"value": _current_turn_number})
+	if _is_coop_run():
+		if _coop_spectator_mode:
+			base += " — " + tr("SPECTATOR")
+		elif _coop_my_turn:
+			base += " — " + TranslationHelper.tr_format("ui.battle.coop_your_turn", {})
+		else:
+			base += " — " + TranslationHelper.tr_format("ui.battle.coop_teammate_turn", {})
+	turn_counter_label.text = base
 
 func start_extra_turn():
 	"""Spustí PLNOHODNOTNÝ extra tah hráče"""
@@ -676,13 +928,26 @@ func _on_hand_discard_animation_finished():
 	timer.timeout.connect(func():
 		if has_node("/root/TurnManager"):
 			TurnManager.next_turn()
+		if _is_coop_run() and has_node("/root/MultiplayerManager"):
+			rpc("_rpc_advance_turn")
 	)
+
+@rpc("any_peer")
+func _rpc_advance_turn():
+	"""Coop: druhý peer taky posune kolo, aby byl turn order v syncu."""
+	if has_node("/root/TurnManager"):
+		TurnManager.next_turn()
 
 func _on_win_button_pressed():
 	end_battle_as_victory()
 
 func end_battle_as_victory():
 	_current_battle_state = BattleState.BATTLE_OVER
+	if _is_coop_run() and has_node("/root/MultiplayerManager") and not MultiplayerManager.is_server():
+		if is_instance_valid(_player_unit_node):
+			PlayerData.current_hp = _player_unit_node.current_health
+			PlayerData.global_shield = _player_unit_node.current_block
+		return
 	if is_instance_valid(_player_unit_node):
 		GameManager.battle_finished(true, _player_unit_node.current_health, _player_unit_node.current_block)
 	else:
@@ -693,7 +958,7 @@ func _on_unit_died(unit_node: Unit):
 	"""Zpracuje smrt jednotky"""
 	DebugLogger.log_info("=== Jednotka zemřela: %s ===" % unit_node.unit_data.unit_name)
 	
-	# Zpracuj oživení hráče
+	# Zpracuj oživení hráče (jen pro lokálního hráče)
 	if unit_node == _player_unit_node:
 		if PlayerData.has_revive:
 			DebugLogger.log_info("!!! BOŽSKÁ OCHRANA AKTIVOVÁNA !!!")
@@ -703,8 +968,11 @@ func _on_unit_died(unit_node: Unit):
 				unit_node.heal(heal_amount)
 			return
 	
+	# Coop: když zemře JEDEN z hráčů, druhý pokračuje
+	if _is_coop_run() and unit_node.unit_data.faction == UnitData.Faction.PLAYER:
+		_handle_coop_player_death(unit_node)
+	
 	# Trigger enemy death artefakty
-	# POZNÁMKA: Ujisti se, že ArtifactManager.on_enemy_death bere jako argument 'Node' nebo 'Unit', ne 'Node2D'
 	if unit_node.unit_data.faction == UnitData.Faction.ENEMY:
 		if has_node("/root/ArtifactManager"):
 			ArtifactManager.on_enemy_death(unit_node)
@@ -717,17 +985,51 @@ func _on_unit_died(unit_node: Unit):
 	
 	# Animace zmizení pro 3D (Scale místo Modulate)
 	var tween = create_tween()
-	# Zmenšíme jednotku do nuly (zmizí)
 	tween.tween_property(unit_node, "scale", Vector3.ZERO, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	
 	# Odregistruj až PO animaci
 	await tween.finished
 	
-	# POZNÁMKA: Ujisti se, že TurnManager.unregister_unit bere jako argument 'Node' nebo 'Unit'
 	if has_node("/root/TurnManager"):
 		TurnManager.unregister_unit(unit_node)
 	
 	unit_node.queue_free()
+
+func _handle_coop_player_death(dead_unit: Unit):
+	"""Coop: jeden hráč zemřel – stane se divákem, druhý pokračuje."""
+	var dead_peer_id = dead_unit.get_meta("owner_peer_id", -1)
+	var is_my_unit = (dead_peer_id == multiplayer.get_unique_id())
+	
+	if is_my_unit:
+		# Můj paladin zemřel – přepnu se do spectator módu
+		_coop_my_turn = false
+		_coop_spectator_mode = true
+		end_turn_button.disabled = true
+		# Skryj ruku karet
+		PlayerData.discard_hand()
+		if is_instance_valid(player_hand_ui_instance):
+			player_hand_ui_instance.clear_hand()
+		_update_pile_counts()
+		_update_turn_display()
+	
+	# Informuj druheho hráče
+	if has_node("/root/MultiplayerManager"):
+		rpc("_rpc_coop_player_died", dead_peer_id)
+
+@rpc("any_peer", "call_remote")
+func _rpc_coop_player_died(dead_peer_id: int):
+	"""Druhý hráč nás informoval o smrti svého paladina."""
+	# Zjistíme jestli mrtvý je můj nebo jeho paladin
+	if dead_peer_id == multiplayer.get_unique_id():
+		# Můj paladin zemřel (info od hosta) – spectator mode
+		_coop_spectator_mode = true
+		_coop_my_turn = false
+		end_turn_button.disabled = true
+		PlayerData.discard_hand()
+		if is_instance_valid(player_hand_ui_instance):
+			player_hand_ui_instance.clear_hand()
+		_update_pile_counts()
+	_update_turn_display()
 
 
 func spawn_enemy_units():
@@ -741,15 +1043,17 @@ func spawn_enemy_units():
 	DebugLogger.log_debug("Počet nepřátel: %d" % encounter_data.enemies.size())
 
 	var all_active_cells = battle_grid_instance._active_cells.keys()
-	var player_cell = Vector2i.ZERO
+	var player_cells: Array[Vector2i] = []
 	if is_instance_valid(_player_unit_node):
-		player_cell = _player_unit_node.grid_position
+		player_cells.append(_player_unit_node.grid_position)
+	if is_instance_valid(_coop_other_player_unit):
+		player_cells.append(_coop_other_player_unit.grid_position)
 
 	var available_spawn_cells: Array[Vector2i] = []
 	
 	for cell in all_active_cells:
 		if cell.x < battle_grid_instance.grid_columns / 2.0: continue
-		if cell == player_cell: continue
+		if cell in player_cells: continue
 			
 		var terrain = battle_grid_instance.get_terrain_on_cell(cell)
 		var is_walkable = not terrain or terrain.is_walkable
@@ -790,6 +1094,8 @@ func spawn_enemy_units():
 		else:
 			DebugLogger.log_error("  ❌ Spawn selhal!")
 	
+	# Coop: uložíme stabilní pořadí všech nepřátel – používá se pro RPC payload indexy
+	_all_enemy_units_ordered = _enemy_units.duplicate()
 	DebugLogger.log_debug("=== SPAWN DOKONČEN ===")
 	DebugLogger.log_debug("Celkem nepřátel: %d" % _enemy_units.size())
 
@@ -964,6 +1270,11 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 		player_hand_ui_instance._request_arrange()
 		_update_pile_counts()
 		set_enemy_intents()
+		# Real-time coop: druhý peer musí vidět stejný stav (HP, blok, energii, odhozenou kartu)
+		if _is_coop_run() and has_node("/root/MultiplayerManager"):
+			var payload = _coop_build_card_result_payload(card)
+			if payload != null:
+				rpc("_rpc_apply_card_result", payload)
 	else:
 		DebugLogger.log_warning(TranslationHelper.tr_format("ui.battle.no_valid_target", {"name": card.get_localized_name()}))
 		PlayerData.gain_energy(card.cost)
@@ -1064,6 +1375,9 @@ func _show_floating_notification(text: String, color: Color):
 
 func _on_unit_selected_on_grid(unit_node: Unit):
 	if _current_battle_state != BattleState.PLAYER_TURN: return
+	# Coop: výběr jen vlastní jednotky a jen když je můj tah
+	if _is_coop_run() and (unit_node != _player_unit_node or not _coop_my_turn):
+		return
 	if unit_node.unit_data.faction == UnitData.Faction.PLAYER and unit_node.can_move():
 		_reset_player_selection()
 		_player_action_state = PlayerActionState.UNIT_SELECTED
@@ -1075,6 +1389,10 @@ func _on_unit_selected_on_grid(unit_node: Unit):
 		_reset_player_selection()
 
 func _execute_move(unit_to_move: Unit, target_cell: Vector2i):
+	# Coop: pohyb jen vlastní jednotky (ochrana proti desync)
+	if _is_coop_run() and unit_to_move != _player_unit_node:
+		_reset_player_selection()
+		return
 	unit_to_move.use_move_action()
 	battle_grid_instance.remove_object_by_instance(unit_to_move)
 	battle_grid_instance.place_object_on_cell(unit_to_move, target_cell, true)
@@ -1085,6 +1403,11 @@ func _execute_move(unit_to_move: Unit, target_cell: Vector2i):
 	_reset_player_selection()
 	if unit_to_move == _player_unit_node:
 		set_enemy_intents()
+	# Real-time coop: druhý peer musí vidět stejný pohyb
+	if _is_coop_run() and has_node("/root/MultiplayerManager"):
+		var idx = _coop_get_player_unit_index(unit_to_move)
+		if idx >= 0:
+			rpc("_rpc_apply_move", idx, target_cell.x, target_cell.y)
 
 # Converts legacy damage_multiplier to additive bonus for DamageCalculator
 func _damage_multiplier_to_extra(unit: Unit, multiplier: float) -> int:
@@ -1111,11 +1434,11 @@ func _check_condition(effect: CardEffectData, target: Node3D) -> bool:
 			var percent = (float(PlayerData.current_hp) * 100.0) / float(PlayerData.max_hp)
 			return percent > effect.condition_value
 		"target_has_debuff":
-			if target is Unit and target.has("active_statuses"):
+			if target is Unit:
 				return target.active_statuses.size() > 0
 			return false
 		"target_health_above_percent":
-			if target is Unit and target.has("current_health") and target.has("get_unit_data"):
+			if target is Unit:
 				var unit_data = target.get_unit_data()
 				var max_hp = unit_data.max_health
 				var percent = (float(target.current_health) * 100.0) / float(max_hp)
@@ -1142,7 +1465,7 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 				base_value += bonus_value
 				if effect.condition_type == "damage_per_block" and is_instance_valid(_player_unit_node):
 					base_value += _player_unit_node.current_block * effect.conditional_bonus_value
-				if is_instance_valid(_player_unit_node) and _player_unit_node.active_statuses.has("consecrated_weapon"):
+				if effect.damage_type == CardEffectData.DamageType.HOLY and is_instance_valid(_player_unit_node) and _player_unit_node.active_statuses.has("consecrated_weapon"):
 					var status_data = _player_unit_node.active_statuses["consecrated_weapon"]
 					base_value += status_data.value
 					_player_unit_node.active_statuses.erase("consecrated_weapon")
@@ -1332,10 +1655,21 @@ func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D
 	if not grid_ref and has_node("BattleGrid"):
 		grid_ref = get_node("BattleGrid")
 
+	# PLAYER_CENTERED_AOE: pro ANY_GRID_CELL i ALL_ENEMY_UNITS použij pozici hráče jako střed
+	var is_player_centered = is_instance_valid(card_being_played) and card_being_played.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE
+	
 	if effect.target_type == CardEffectData.TargetType.ANY_GRID_CELL:
 		if not grid_ref:
 			return targets
-		var affected_cells = grid_ref.get_cells_for_aoe(clicked_grid_cell, effect.area_of_effect_type, effect.aoe_param_x, effect.aoe_param_y)
+		var affected_cells: Array[Vector2i]
+		if is_player_centered and is_instance_valid(_player_unit_node):
+			affected_cells = grid_ref.get_cells_for_centered_aoe(
+				_player_unit_node.grid_position, effect.area_of_effect_type,
+				effect.aoe_param_x, effect.aoe_param_y)
+		else:
+			affected_cells = grid_ref.get_cells_for_aoe(
+				clicked_grid_cell, effect.area_of_effect_type,
+				effect.aoe_param_x, effect.aoe_param_y)
 		for cell in affected_cells:
 			var unit_on_cell = grid_ref.get_object_on_cell(cell)
 			if is_instance_valid(unit_on_cell) and unit_on_cell.get_unit_data().faction == UnitData.Faction.ENEMY:
@@ -1351,7 +1685,17 @@ func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D
 					if grid_ref.get_distance(_player_unit_node.grid_position, initial_target_node.grid_position) <= card_being_played.range_value:
 						targets.append(initial_target_node)
 		CardEffectData.TargetType.ALL_ENEMY_UNITS:
-			targets.assign(_enemy_units)
+			# PLAYER_CENTERED_AOE: omezit na nepřátele v AOE oblasti kolem hráče
+			if is_player_centered and grid_ref and is_instance_valid(_player_unit_node):
+				var aoe_cells = grid_ref.get_cells_for_centered_aoe(
+					_player_unit_node.grid_position, effect.area_of_effect_type,
+					effect.aoe_param_x, effect.aoe_param_y)
+				for cell in aoe_cells:
+					var unit_on_cell = grid_ref.get_object_on_cell(cell)
+					if is_instance_valid(unit_on_cell) and unit_on_cell.get_unit_data().faction == UnitData.Faction.ENEMY:
+						targets.append(unit_on_cell)
+			else:
+				targets.assign(_enemy_units)
 		CardEffectData.TargetType.ALL_ALLY_UNITS:
 			# V této hře je hráč jediný spojenec, ale pro budoucí rozšíření můžeme přidat další spojence
 			if is_instance_valid(_player_unit_node):
@@ -1389,8 +1733,8 @@ func _reset_player_selection():
 
 
 
-func _on_draw_pile_clicked(): card_pile_viewer.show_cards(PlayerData.draw_pile, Vector2(0.7, 0.7))
-func _on_discard_pile_clicked(): card_pile_viewer.show_cards(PlayerData.discard_pile, Vector2(0.7, 0.7))
+func _on_draw_pile_clicked(): card_pile_viewer.show_cards(PlayerData.draw_pile)
+func _on_discard_pile_clicked(): card_pile_viewer.show_cards(PlayerData.discard_pile)
 func _on_end_turn_button_pressed():
 	if _current_battle_state != BattleState.PLAYER_TURN:
 		return
@@ -1411,6 +1755,11 @@ func _on_end_turn_button_pressed():
 	if has_node("/root/ArtifactManager"):
 		ArtifactManager.on_turn_end()
 	
+	# Coop: sync stavu jednotky po end-of-turn artefaktech
+	if _is_coop_run() and is_instance_valid(_player_unit_node):
+		var my_idx = _coop_get_player_unit_index(_player_unit_node)
+		rpc("_rpc_coop_sync_my_unit_state", my_idx, _player_unit_node.current_health, _player_unit_node.current_block)
+	
 	# Odhoď karty
 	player_hand_ui_instance.discard_hand_animated(discard_pile_button.global_position)
 	# ============================================
@@ -1420,7 +1769,7 @@ func _on_energy_changed(new_amount: int):
 	player_info_panel.update_energy_display()
 
 func _physics_process(_delta):
-	# Použijeme novou funkci pro Raycast místo 2D mouse position
+	# Raycast pro enemy hover (card target preview je už v _process, nevolat 2×)
 	var grid_cell = get_grid_cell_under_mouse() 
 	var unit_under_mouse = battle_grid_instance.get_object_on_cell(grid_cell)
 	
@@ -1429,17 +1778,32 @@ func _physics_process(_delta):
 	else:
 		enemy_info_panel.hide_panel()
 		_clear_enemy_hover_highlights()
-		
-	if _player_action_state == PlayerActionState.CARD_SELECTED:
-		if _selected_card_data and not PlayerData.current_hand.has(_selected_card_data):
-			_reset_player_selection()
-		else:
-			_update_card_target_preview()
 
 func _show_valid_targets_for_card(card: CardData):
 	var valid_target_cells: Array[Vector2i] = []
 	var is_attack = true
 	var needs_los = card.range_type == CardData.EffectRangeType.RANGED_FIXED or card.range_type == CardData.EffectRangeType.RANGED_LINE
+	
+	# PLAYER_CENTERED_AOE: zobrazit AOE preview kolem hráče, hráčova buňka jako cíl
+	if card.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE and is_instance_valid(_player_unit_node):
+		is_attack = true
+		valid_target_cells.append(_player_unit_node.grid_position)
+		# Okamžitě zobrazit AOE highlight kolem hráče
+		var aoe_cells: Array[Vector2i] = []
+		for effect in card.effects:
+			if effect.area_of_effect_type == CardEffectData.AreaOfEffectType.SINGLE_TARGET:
+				continue
+			var cells = battle_grid_instance.get_cells_for_centered_aoe(
+				_player_unit_node.grid_position, effect.area_of_effect_type,
+				effect.aoe_param_x, effect.aoe_param_y)
+			for cell in cells:
+				if battle_grid_instance.is_cell_active(cell) and not aoe_cells.has(cell):
+					aoe_cells.append(cell)
+		if not aoe_cells.is_empty():
+			battle_grid_instance.show_aoe_highlight(aoe_cells)
+		battle_grid_instance.show_targetable_cells(valid_target_cells, is_attack)
+		return
+	
 	for effect in card.effects:
 		match effect.target_type:
 			CardEffectData.TargetType.SELECTED_ENEMY_UNIT:
@@ -1473,11 +1837,18 @@ func _update_pile_counts():
 
 
 func set_enemy_intents():
-	"""Zobrazí záměry nepřátel (jejich budoucí akce)"""
+	"""Zobrazí záměry nepřátel (jejich budoucí akce).
+	Klient v coopu NEPOČÍTÁ intenty lokálně – čeká na data od hosta."""
+	if _is_coop_run() and has_node("/root/MultiplayerManager") and not MultiplayerManager.is_server():
+		# Klient: intenty přijdou ze snapshotů (_rpc_apply_enemy_turn_result).
+		# Jen ukážeme ikony s daty, které už máme nastavené.
+		for enemy_unit in _enemy_units:
+			if is_instance_valid(enemy_unit):
+				enemy_unit.show_intent()
+		return
 	for enemy_unit in _enemy_units:
 		if not is_instance_valid(enemy_unit):
 			continue
-		
 		if not enemy_unit.has_method("update_intent"):
 			continue
 		enemy_unit.update_intent(_player_unit_node, battle_grid_instance)
@@ -1518,7 +1889,7 @@ func _show_card_tooltip():
 		return
 	
 	var screen_size = get_viewport().get_visible_rect().size
-	var tooltip_size = Vector2(350, 250)  # Velikost tooltipu
+	var tooltip_size = Vector2(360, 420)
 	
 	# Zobrazíme tooltip v pravém horním rohu, aby nepřekážel kartám ani gridu
 	# PlayerHandUI je dole (cca 448-576), grid je nahoře a uprostřed
@@ -1547,6 +1918,10 @@ func _update_card_target_preview():
 	if not _selected_card_data: return
 	if not PlayerData.current_hand.has(_selected_card_data):
 		_reset_player_selection()
+		return
+	
+	# PLAYER_CENTERED_AOE: AOE je statické kolem hráče, už nastavené v _show_valid_targets_for_card
+	if _selected_card_data.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE:
 		return
 	
 	# OPRAVA: Použití 3D Raycast funkce místo get_global_mouse_position
@@ -1580,6 +1955,16 @@ func _try_play_selected_card_at_cell(clicked_grid_cell: Vector2i) -> bool:
 		return false
 
 	var card_to_play: CardData = _selected_card_data
+	
+	# PLAYER_CENTERED_AOE: auto-play z pozice hráče (nepotřebuje kliknutý cíl)
+	if card_to_play.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE:
+		if is_instance_valid(_player_unit_node):
+			_card_play_in_progress = true
+			_clear_card_selection_state_before_play()
+			try_play_card(card_to_play, _player_unit_node)
+			return true
+		return false
+	
 	var has_self_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
 	var has_enemy_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
 
@@ -1620,6 +2005,13 @@ func _execute_card_play_at_cell(card: CardData, clicked_grid_cell: Vector2i) -> 
 	if _is_action_processing:
 		return false
 	if not is_instance_valid(card) or not PlayerData.current_hand.has(card):
+		return false
+	# PLAYER_CENTERED_AOE: auto-play z pozice hráče
+	if card.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE:
+		if is_instance_valid(_player_unit_node):
+			_card_play_in_progress = true
+			try_play_card(card, _player_unit_node)
+			return true
 		return false
 	var has_self_effect = card.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
 	var has_enemy_effect = card.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
@@ -1683,6 +2075,267 @@ func _setup_camera_boundaries():
 func get_player_unit() -> Node3D:
 	return _player_unit_node
 
+# Coop real-time: index 0 = hostova jednotka, 1 = klientova (stejné pořadí na obou peerech)
+func _coop_get_player_unit_by_index(idx: int) -> Unit:
+	if idx == 0:
+		return _player_unit_node if _player_unit_node != null and _player_unit_node.get_meta("owner_peer_id", -1) == 1 else _coop_other_player_unit
+	if idx == 1:
+		return _coop_other_player_unit if _player_unit_node != null and _player_unit_node.get_meta("owner_peer_id", -1) == 1 else _player_unit_node
+	return null
+
+func _coop_get_player_unit_index(unit: Unit) -> int:
+	if not unit:
+		return -1
+	var owner_id = unit.get_meta("owner_peer_id", -1)
+	return 0 if owner_id == 1 else 1
+
+func _coop_sync_player_data_from_unit():
+	"""Po přijetí snapshotu aktualizuje PlayerData.current_hp podle stavu VLASTNÍ jednotky.
+	Bez toho by PlayerData.current_hp zůstalo zastaralé a artefakty/UI by viděly špatné HP."""
+	if not _is_coop_run() or not is_instance_valid(_player_unit_node):
+		return
+	if _player_unit_node.current_health != PlayerData.current_hp:
+		PlayerData.current_hp = _player_unit_node.current_health
+		PlayerData.emit_signal("health_changed", PlayerData.current_hp, PlayerData.max_hp)
+
+func _coop_build_battle_state_snapshot() -> Dictionary:
+	"""Kompletní stav bitvy pro sync s klientem – HP, block, pozice, statusy, intenty, AI meta."""
+	var u0 = _coop_get_player_unit_by_index(0)
+	var u1 = _coop_get_player_unit_by_index(1)
+	var enemy_hps: Array = []
+	var enemy_pos: Array = []
+	var enemy_statuses: Array = []
+	var enemy_intents: Array = []
+	var enemy_ai_meta: Array = []
+	var enemy_blocks: Array = []
+	for e in _all_enemy_units_ordered:
+		if is_instance_valid(e):
+			enemy_hps.append(e.current_health)
+			enemy_pos.append({"x": e.grid_position.x, "y": e.grid_position.y})
+			enemy_statuses.append(e.serialize_statuses())
+			enemy_intents.append(e.serialize_intent())
+			enemy_ai_meta.append(e.serialize_ai_meta())
+			enemy_blocks.append(e.current_block)
+		else:
+			enemy_hps.append(0)
+			enemy_pos.append({"x": 0, "y": 0})
+			enemy_statuses.append([])
+			enemy_intents.append({})
+			enemy_ai_meta.append({})
+			enemy_blocks.append(0)
+	return {
+		"enemy_hps": enemy_hps,
+		"enemy_pos": enemy_pos,
+		"enemy_statuses": enemy_statuses,
+		"enemy_intents": enemy_intents,
+		"enemy_ai_meta": enemy_ai_meta,
+		"enemy_blocks": enemy_blocks,
+		"player_0_hp": u0.current_health if is_instance_valid(u0) else 0,
+		"player_0_block": u0.current_block if is_instance_valid(u0) else 0,
+		"player_0_x": u0.grid_position.x if is_instance_valid(u0) else 0,
+		"player_0_y": u0.grid_position.y if is_instance_valid(u0) else 0,
+		"player_0_statuses": u0.serialize_statuses() if is_instance_valid(u0) else [],
+		"player_1_hp": u1.current_health if is_instance_valid(u1) else 0,
+		"player_1_block": u1.current_block if is_instance_valid(u1) else 0,
+		"player_1_x": u1.grid_position.x if is_instance_valid(u1) else 0,
+		"player_1_y": u1.grid_position.y if is_instance_valid(u1) else 0,
+		"player_1_statuses": u1.serialize_statuses() if is_instance_valid(u1) else [],
+	}
+
+func _coop_build_card_result_payload(card: CardData) -> Dictionary:
+	var u0 = _coop_get_player_unit_by_index(0)
+	var u1 = _coop_get_player_unit_by_index(1)
+	var enemy_hps: Array = []
+	var enemy_statuses: Array = []
+	var enemy_blocks: Array = []
+	for e in _all_enemy_units_ordered:
+		if is_instance_valid(e):
+			enemy_hps.append(e.current_health)
+			enemy_statuses.append(e.serialize_statuses())
+			enemy_blocks.append(e.current_block)
+		else:
+			enemy_hps.append(0)
+			enemy_statuses.append([])
+			enemy_blocks.append(0)
+	var payload = {
+		"card_path": card.resource_path,
+		"source_unit_index": _coop_get_player_unit_index(_player_unit_node),
+		"enemy_hps": enemy_hps,
+		"enemy_statuses": enemy_statuses,
+		"enemy_blocks": enemy_blocks,
+		"player_0_hp": u0.current_health if is_instance_valid(u0) else 0,
+		"player_0_block": u0.current_block if is_instance_valid(u0) else 0,
+		"player_0_statuses": u0.serialize_statuses() if is_instance_valid(u0) else [],
+		"player_1_hp": u1.current_health if is_instance_valid(u1) else 0,
+		"player_1_block": u1.current_block if is_instance_valid(u1) else 0,
+		"player_1_statuses": u1.serialize_statuses() if is_instance_valid(u1) else [],
+	}
+	return payload
+
+@rpc("any_peer", "call_remote")
+func _rpc_apply_card_result(payload: Dictionary):
+	if not _is_coop_run() or payload.is_empty():
+		return
+	# Aplikovat stav po odehrané kartě – HP, block, statusy pro všechny jednotky
+	var enemy_hps: Array = payload.get("enemy_hps", [])
+	var enemy_statuses: Array = payload.get("enemy_statuses", [])
+	var enemy_blocks: Array = payload.get("enemy_blocks", [])
+	for i in range(enemy_hps.size()):
+		if i >= _all_enemy_units_ordered.size():
+			break
+		var enemy = _all_enemy_units_ordered[i]
+		if not is_instance_valid(enemy):
+			continue
+		var target_hp: int = int(enemy_hps[i])
+		var d = enemy.current_health - target_hp
+		if d > 0:
+			await enemy.take_damage(d, true, true)  # is_rpc_sync=true: nepřerolovat dodge
+		# Block
+		if i < enemy_blocks.size():
+			enemy.current_block = int(enemy_blocks[i])
+		# Statusy
+		if i < enemy_statuses.size() and enemy_statuses[i] is Array:
+			enemy.deserialize_statuses(enemy_statuses[i])
+	var u0 = _coop_get_player_unit_by_index(0)
+	var u1 = _coop_get_player_unit_by_index(1)
+	if is_instance_valid(u0):
+		u0.current_health = int(payload.get("player_0_hp", u0.current_health))
+		u0.current_block = int(payload.get("player_0_block", u0.current_block))
+		var p0_statuses: Array = payload.get("player_0_statuses", [])
+		if not p0_statuses.is_empty():
+			u0.deserialize_statuses(p0_statuses)
+		else:
+			u0._update_stats_and_emit_signal()
+	if is_instance_valid(u1):
+		u1.current_health = int(payload.get("player_1_hp", u1.current_health))
+		u1.current_block = int(payload.get("player_1_block", u1.current_block))
+		var p1_statuses: Array = payload.get("player_1_statuses", [])
+		if not p1_statuses.is_empty():
+			u1.deserialize_statuses(p1_statuses)
+		else:
+			u1._update_stats_and_emit_signal()
+	# Coop: aktualizuj PlayerData.current_hp podle snapshotu pro MOU jednotku
+	_coop_sync_player_data_from_unit()
+	# NEMĚNÍME PlayerData.current_energy ani deck – každý peer má vlastní energii a balíček.
+	# Klient NEPŘEPOČÍTÁVÁ intenty – ty přijdou s enemy turn snapshotem.
+
+@rpc("any_peer", "call_remote")
+func _rpc_apply_enemy_turn_result(payload: Dictionary):
+	if not _is_coop_run() or payload.is_empty():
+		return
+	var enemy_hps: Array = payload.get("enemy_hps", [])
+	var enemy_pos: Array = payload.get("enemy_pos", [])
+	var enemy_statuses: Array = payload.get("enemy_statuses", [])
+	var enemy_intents: Array = payload.get("enemy_intents", [])
+	var enemy_ai_meta: Array = payload.get("enemy_ai_meta", [])
+	var enemy_blocks: Array = payload.get("enemy_blocks", [])
+	# Stabilní indexy _all_enemy_units_ordered – pozice, HP, statusy, intenty, AI meta
+	for i in range(enemy_pos.size()):
+		if i >= _all_enemy_units_ordered.size():
+			break
+		var enemy = _all_enemy_units_ordered[i]
+		if not is_instance_valid(enemy):
+			continue
+		var pos_dict = enemy_pos[i] if enemy_pos[i] is Dictionary else {}
+		var nx = int(pos_dict.get("x", enemy.grid_position.x))
+		var ny = int(pos_dict.get("y", enemy.grid_position.y))
+		var new_cell = Vector2i(nx, ny)
+		if new_cell != enemy.grid_position:
+			battle_grid_instance.remove_object_by_instance(enemy)
+			battle_grid_instance.place_object_on_cell(enemy, new_cell, true)
+	for i in range(enemy_hps.size()):
+		if i >= _all_enemy_units_ordered.size():
+			break
+		var enemy = _all_enemy_units_ordered[i]
+		if not is_instance_valid(enemy):
+			continue
+		var target_hp: int = int(enemy_hps[i])
+		var d = enemy.current_health - target_hp
+		if d > 0:
+			await enemy.take_damage(d, true, true)  # is_rpc_sync=true: nepřerolovat dodge
+		# Block
+		if i < enemy_blocks.size():
+			enemy.current_block = int(enemy_blocks[i])
+		# Statusy
+		if i < enemy_statuses.size() and enemy_statuses[i] is Array:
+			enemy.deserialize_statuses(enemy_statuses[i])
+		# AI meta
+		if i < enemy_ai_meta.size() and enemy_ai_meta[i] is Dictionary:
+			enemy.apply_ai_meta(enemy_ai_meta[i])
+		# Intent (klient nepočítá lokálně, přebírá od hosta)
+		if i < enemy_intents.size() and enemy_intents[i] is Dictionary:
+			enemy.apply_intent_from_data(enemy_intents[i])
+	# Player units
+	var u0 = _coop_get_player_unit_by_index(0)
+	var u1 = _coop_get_player_unit_by_index(1)
+	if is_instance_valid(u0):
+		u0.current_health = int(payload.get("player_0_hp", u0.current_health))
+		u0.current_block = int(payload.get("player_0_block", u0.current_block))
+		var px = int(payload.get("player_0_x", u0.grid_position.x))
+		var py = int(payload.get("player_0_y", u0.grid_position.y))
+		var pc = Vector2i(px, py)
+		if pc != u0.grid_position:
+			battle_grid_instance.remove_object_by_instance(u0)
+			battle_grid_instance.place_object_on_cell(u0, pc, true)
+		var p0_statuses: Array = payload.get("player_0_statuses", [])
+		if not p0_statuses.is_empty():
+			u0.deserialize_statuses(p0_statuses)
+		else:
+			u0._update_stats_and_emit_signal()
+	if is_instance_valid(u1):
+		u1.current_health = int(payload.get("player_1_hp", u1.current_health))
+		u1.current_block = int(payload.get("player_1_block", u1.current_block))
+		var px = int(payload.get("player_1_x", u1.grid_position.x))
+		var py = int(payload.get("player_1_y", u1.grid_position.y))
+		var pc = Vector2i(px, py)
+		if pc != u1.grid_position:
+			battle_grid_instance.remove_object_by_instance(u1)
+			battle_grid_instance.place_object_on_cell(u1, pc, true)
+		var p1_statuses: Array = payload.get("player_1_statuses", [])
+		if not p1_statuses.is_empty():
+			u1.deserialize_statuses(p1_statuses)
+		else:
+			u1._update_stats_and_emit_signal()
+	# Coop: aktualizuj PlayerData.current_hp podle snapshotu pro MOU jednotku
+	_coop_sync_player_data_from_unit()
+	var enemy_turn_idx: int = int(payload.get("enemy_turn_index", 0))
+	if enemy_turn_idx >= 0 and enemy_turn_idx < _all_enemy_units_ordered.size():
+		var e = _all_enemy_units_ordered[enemy_turn_idx]
+		if is_instance_valid(e) and e.has_method("end_turn"):
+			e.end_turn()
+	if has_node("/root/TurnManager"):
+		TurnManager.next_turn()
+
+@rpc("any_peer", "call_remote")
+func _rpc_apply_move(unit_index: int, cell_x: int, cell_y: int):
+	if not _is_coop_run():
+		return
+	var unit = _coop_get_player_unit_by_index(unit_index)
+	if not is_instance_valid(unit) or not battle_grid_instance:
+		return
+	var target_cell = Vector2i(cell_x, cell_y)
+	unit.use_move_action()
+	battle_grid_instance.remove_object_by_instance(unit)
+	battle_grid_instance.place_object_on_cell(unit, target_cell, true)
+	var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(target_cell)
+	if is_instance_valid(terrain_on_cell) and unit.has_method("process_terrain_effects"):
+		unit.process_terrain_effects(terrain_on_cell)
+	set_enemy_intents()
+
+@rpc("any_peer", "call_remote")
+func _rpc_coop_sync_my_unit_state(player_index: int, hp: int, block: int):
+	"""Přijme stav jednotky od druhého peera (po artefaktech).
+	Díky tomu host ví o klientově blocku a nepřátelé počítají damage správně."""
+	if not _is_coop_run():
+		return
+	var unit = _coop_get_player_unit_by_index(player_index)
+	if not is_instance_valid(unit):
+		return
+	unit.current_health = hp
+	unit.current_block = block
+	unit._update_stats_and_emit_signal()
+	DebugLogger.log_debug("Coop sync unit state: player_%d hp=%d block=%d" % [player_index, hp, block])
+
 func get_enemy_count() -> int:
 	return _enemy_units.size()
 
@@ -1716,12 +2369,13 @@ func get_grid_cell_under_mouse() -> Vector2i:
 	return Vector2i(-1, -1)
 
 func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> void:
-	"""Zpracuje speciální akce AI (meteorit, spawn, buff, heal)"""
+	"""Zpracuje speciální akce AI (všechny typy)"""
 	var special_type = action.special_data.get("type", "")
 	
 	match special_type:
+		# ===== MAGE SPELLS =====
 		"meteor":
-			enemy_unit.show_status_text("☄️ METEORIT!", "critical")
+			enemy_unit.show_status_text("METEORIT!", "critical")
 			await get_tree().create_timer(1.0).timeout
 			
 			var base_dmg = enemy_unit.unit_data.attack_damage
@@ -1736,12 +2390,23 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 					)
 					await unit.take_damage(damage, true)
 					unit.apply_status("burning", 2, 3)
-			
-			# Zapálí celý grid (můžeme přidat vizuální efekt)
-			print("🔥 Grid je zapálen!")
 		
+		"teleport":
+			# Mage teleport - přesune se na cílovou pozici
+			var target_pos = action.special_data.get("target_position", Vector2i(-1, -1))
+			if target_pos != Vector2i(-1, -1):
+				battle_grid_instance.remove_object_by_instance(enemy_unit)
+				battle_grid_instance.place_object_on_cell(enemy_unit, target_pos, true)
+				await get_tree().create_timer(0.3).timeout
+		
+		"arcane_shield":
+			# Mage dá sobě block
+			var block_amount = action.special_data.get("block_amount", 5)
+			enemy_unit.add_block(block_amount)
+			enemy_unit.show_status_text("SHIELD +%d!" % block_amount, "heal")
+		
+		# ===== DRUID SPELLS =====
 		"spawn_spirit":
-			# Druid spawn spiritu (team comes from unit_data .tres – faction ENEMY)
 			var spawn_pos = _find_spawn_position(enemy_unit)
 			if spawn_pos != Vector2i(-1, -1):
 				var is_guardian = action.special_data.get("is_guardian", false)
@@ -1753,44 +2418,200 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 				
 				var spirit_node = _spawn_unit(spirit_unit_data, spawn_pos)
 				if is_instance_valid(spirit_node):
-					# Ensure spawned unit is enemy (spirit .tres already have faction = ENEMY)
 					if spirit_node.unit_data:
 						spirit_node.unit_data.faction = UnitData.Faction.ENEMY
 					_enemy_units.append(spirit_node)
+					_all_enemy_units_ordered.append(spirit_node)
 					spirit_node.died.connect(_on_unit_died)
 					spirit_node.stats_changed.connect(_on_unit_stats_changed)
 					if has_node("/root/TurnManager"):
 						TurnManager.add_unit(spirit_node)
-						# add_unit(..., act_this_round=true) so spirit can act this round when it's enemies' turn
 					set_enemy_intents()
-					if is_guardian:
-						print("🛡️ Druid spawnul guardian spiritu na pozici: %s" % spawn_pos)
-					else:
-						print("🌿 Druid spawnul spiritu na pozici: %s" % spawn_pos)
-				else:
-					print("❌ Chyba při spawnu spiritu")
 		
-		"buff_ally":
-			# Monk buffuje spojence
+		"entangle":
+			# Druid kořeny - hráč nemůže se pohnout 1 kolo
 			var target = action.special_data.get("target")
 			if is_instance_valid(target) and target is Unit:
-				var bonus = action.special_data.get("damage_bonus", 2)
+				var duration = action.special_data.get("duration", 1)
+				target.apply_status("entangled", 1, duration)
+				target.show_status_text("ENTANGLED!", "critical")
+		
+		"natures_grasp":
+			# Druid - zpomalení na pozici hráče (simulace mud)
+			var target_pos = action.special_data.get("target_position", Vector2i(-1, -1))
+			if target_pos != Vector2i(-1, -1):
+				# Aplikuj zpomalení na hráče pokud je na té pozici
+				var unit_on_cell = battle_grid_instance.get_object_on_cell(target_pos)
+				if is_instance_valid(unit_on_cell) and unit_on_cell is Unit:
+					unit_on_cell.apply_status("chilled", 1, 2)
+					unit_on_cell.show_status_text("SLOWED!", "critical")
+		
+		# ===== MONK ABILITIES =====
+		"buff_ally":
+			var target = action.special_data.get("target")
+			if is_instance_valid(target) and target is Unit:
+				var bonus = action.special_data.get("damage_bonus", 3)
 				var duration = action.special_data.get("duration", 3)
 				target.apply_status("monk_blessing", bonus, duration)
-				target.show_status_text("BLESSED!", "heal")
-				print("✨ Monk požehnal spojence: +%d damage na %d kol" % [bonus, duration])
+				target.show_status_text("BLESSED +%d!" % bonus, "heal")
 		
+		"war_cry":
+			# Monk AoE buff pro všechny spojence v dosahu
+			var buff_range = action.special_data.get("range", 2)
+			var bonus = action.special_data.get("damage_bonus", 1)
+			var duration = action.special_data.get("duration", 2)
+			var all_units = battle_grid_instance.get_all_objects_on_grid()
+			for unit in all_units:
+				if unit is Unit and unit != enemy_unit and is_instance_valid(unit):
+					if unit.unit_data.faction == enemy_unit.unit_data.faction:
+						var dist = battle_grid_instance.get_distance(enemy_unit.grid_position, unit.grid_position)
+						if dist <= buff_range:
+							unit.apply_status("monk_blessing", bonus, duration)
+							unit.show_status_text("INSPIRED!", "heal")
+		
+		"meditate":
+			# Monk self-heal
+			var heal_amount = action.special_data.get("heal_amount", 5)
+			enemy_unit.heal(heal_amount)
+			enemy_unit.show_status_text("MEDITATE +%d!" % heal_amount, "heal")
+		
+		# ===== HEALER ABILITIES =====
 		"heal_ally":
-			# Healer léčí spojence
 			var target = action.special_data.get("target")
 			if is_instance_valid(target) and target is Unit:
 				var heal_amount = action.special_data.get("heal_amount", 8)
 				target.heal(heal_amount)
-				target.show_status_text("HEALED!", "heal")
-				print("💚 Healer vyléčil spojence za %d HP" % heal_amount)
+				target.show_status_text("HEALED +%d!" % heal_amount, "heal")
+		
+		"protection":
+			# Healer dá block spojenci
+			var target = action.special_data.get("target")
+			if is_instance_valid(target) and target is Unit:
+				var block_amount = action.special_data.get("block_amount", 4)
+				target.add_block(block_amount)
+				target.show_status_text("PROTECTED +%d!" % block_amount, "heal")
+		
+		"holy_nova":
+			# Healer AoE heal pro spojence v dosahu
+			var heal_range = action.special_data.get("range", 3)
+			var heal_amount = action.special_data.get("heal_amount", 4)
+			var all_units = battle_grid_instance.get_all_objects_on_grid()
+			for unit in all_units:
+				if unit is Unit and unit != enemy_unit and is_instance_valid(unit):
+					if unit.unit_data.faction == enemy_unit.unit_data.faction:
+						var dist = battle_grid_instance.get_distance(enemy_unit.grid_position, unit.grid_position)
+						if dist <= heal_range:
+							unit.heal(heal_amount)
+							unit.show_status_text("HEALED +%d!" % heal_amount, "heal")
+		
+		# ===== BERSERKER ABILITIES =====
+		"tremor":
+			# Berserker AoE kolem sebe - damage všem v dosahu
+			enemy_unit.show_status_text("TREMOR!", "critical")
+			await get_tree().create_timer(0.5).timeout
+			var tremor_range = action.special_data.get("range", 2)
+			var mult = action.special_data.get("damage_multiplier", 0.5)
+			var base_dmg = enemy_unit.unit_data.attack_damage
+			var extra = _damage_multiplier_to_extra(enemy_unit, mult)
+			var all_units = battle_grid_instance.get_all_objects_on_grid()
+			for unit in all_units:
+				if unit is Unit and unit != enemy_unit and is_instance_valid(unit):
+					if unit.unit_data.faction != enemy_unit.unit_data.faction:
+						var dist = battle_grid_instance.get_distance(enemy_unit.grid_position, unit.grid_position)
+						if dist <= tremor_range:
+							var damage = DamageCalculator.get_final_damage(
+								base_dmg, enemy_unit, unit,
+								CardEffectData.DamageType.NORMAL, false, false, extra
+							)
+							await unit.take_damage(damage, true)
+							if unit == _player_unit_node:
+								_took_damage_last_turn = true
+		
+		# ===== BOSS ABILITIES =====
+		"dark_slash":
+			# Boss line attack - damage v přímce
+			var target = action.special_data.get("target")
+			if is_instance_valid(target) and target is Unit:
+				var mult = action.special_data.get("damage_multiplier", 1.5)
+				var extra = _damage_multiplier_to_extra(enemy_unit, mult)
+				await enemy_unit.attack(target, extra, CardEffectData.DamageType.NORMAL, false)
+				if target == _player_unit_node:
+					_took_damage_last_turn = true
+		
+		"shadow_dash":
+			# Boss teleport na pozici vedle hráče
+			var target_pos = action.special_data.get("target_position", Vector2i(-1, -1))
+			if target_pos != Vector2i(-1, -1):
+				battle_grid_instance.remove_object_by_instance(enemy_unit)
+				battle_grid_instance.place_object_on_cell(enemy_unit, target_pos, true)
+				await get_tree().create_timer(0.3).timeout
+		
+		"hellfire":
+			# Boss AoE kolem sebe
+			enemy_unit.show_status_text("HELLFIRE!", "critical")
+			await get_tree().create_timer(0.5).timeout
+			var hellfire_range = action.special_data.get("range", 2)
+			var mult = action.special_data.get("damage_multiplier", 1.8)
+			var base_dmg = enemy_unit.unit_data.attack_damage
+			var extra = _damage_multiplier_to_extra(enemy_unit, mult)
+			var all_units = battle_grid_instance.get_all_objects_on_grid()
+			for unit in all_units:
+				if unit is Unit and unit != enemy_unit and is_instance_valid(unit):
+					if unit.unit_data.faction != enemy_unit.unit_data.faction:
+						var dist = battle_grid_instance.get_distance(enemy_unit.grid_position, unit.grid_position)
+						if dist <= hellfire_range:
+							var damage = DamageCalculator.get_final_damage(
+								base_dmg, enemy_unit, unit,
+								CardEffectData.DamageType.NORMAL, false, false, extra
+							)
+							await unit.take_damage(damage, true)
+							unit.apply_status("burning", 2, 2)
+							if unit == _player_unit_node:
+								_took_damage_last_turn = true
+		
+		"dark_barrier":
+			# Boss dá sobě block na začátku tahu
+			var block_amount = action.special_data.get("block_amount", 8)
+			enemy_unit.add_block(block_amount)
+			enemy_unit.show_status_text("DARK BARRIER +%d!" % block_amount, "heal")
+		
+		"demon_aura":
+			# Boss pasivní damage na blízké nepřátele
+			var target = action.special_data.get("target")
+			var aura_dmg = action.special_data.get("damage", 2)
+			if is_instance_valid(target) and target is Unit:
+				await target.take_damage(aura_dmg, true)
+				target.show_status_text("AURA -%d!" % aura_dmg, "critical")
+				if target == _player_unit_node:
+					_took_damage_last_turn = true
+		
+		# ===== ASSASSIN ABILITIES =====
+		"disengage":
+			# Assassin ústup po útoku (bonus pohyb, nepoužívá can_move)
+			var disengage_path = action.special_data.get("move_path", [])
+			if disengage_path is Array and disengage_path.size() > 1:
+				var move_dist = min(disengage_path.size() - 1, 2)  # Max 2 pole ústup
+				var final_pos = disengage_path[move_dist]
+				battle_grid_instance.remove_object_by_instance(enemy_unit)
+				battle_grid_instance.place_object_on_cell(enemy_unit, final_pos, true)
+				await get_tree().create_timer(0.3).timeout
+		
+		# ===== DARK BEAST ABILITIES =====
+		"howl":
+			# DarkBeast buff pro všechny beast spojence
+			enemy_unit.show_status_text("HOWL!", "critical")
+			await get_tree().create_timer(0.5).timeout
+			var buff_amount = action.special_data.get("buff_amount", 2)
+			var duration = action.special_data.get("duration", 3)
+			var all_units = battle_grid_instance.get_all_objects_on_grid()
+			for unit in all_units:
+				if unit is Unit and unit != enemy_unit and is_instance_valid(unit):
+					if unit.unit_data.faction == enemy_unit.unit_data.faction:
+						unit.apply_status("monk_blessing", buff_amount, duration)
+						unit.show_status_text("EMPOWERED!", "heal")
 		
 		_:
-			print("⚠️ Neznámý typ speciální akce: %s" % special_type)
+			print("Neznámý typ speciální akce: %s" % special_type)
 
 func _find_spawn_position(near_unit: Unit) -> Vector2i:
 	"""Najde volnou pozici pro spawn jednotky poblíž"""

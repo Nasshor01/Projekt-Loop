@@ -16,9 +16,9 @@ func _unhandled_input(event: InputEvent):
 
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			zoom = zoom / (1.0 + zoom_speed)
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			zoom = zoom * (1.0 + zoom_speed)
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			zoom = zoom / (1.0 + zoom_speed)
 		zoom = zoom.clamp(Vector2(min_zoom, min_zoom), Vector2(max_zoom, max_zoom))
 
 	if event is InputEventMouseMotion and event.button_mask & MOUSE_BUTTON_MASK_MIDDLE:

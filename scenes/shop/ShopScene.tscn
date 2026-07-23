@@ -1,10 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://cx0eokfi1stc4"]
 
 [ext_resource type="Script" uid="uid://f1bfi2viwtrk" path="res://scenes/shop/ShopScene.gd" id="1_y0td3"]
-[ext_resource type="PackedScene" uid="uid://pjdtf3hky6c6" path="res://scenes/ui/CardPileViewer.tscn" id="2_d8mpu"]
+[ext_resource type="PackedScene" uid="uid://pjdtf3hky6c6" path="res://scenes/ui/DeckViewer.tscn" id="2_d8mpu"]
 [ext_resource type="PackedScene" uid="uid://dah2k3m4n5p6q" path="res://scenes/ui/CardTooltip.tscn" id="3_tooltip"]
-
-[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_b06mc"]
 
 [node name="ShopScene" type="Node2D"]
 script = ExtResource("1_y0td3")
@@ -22,7 +20,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
+theme_override_constants/margin_top = 90
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
@@ -35,24 +33,10 @@ layout_mode = 2
 [node name="TitleLabel" type="Label" parent="CanvasLayer/MainContainer/VBoxContainer/Header"]
 layout_mode = 2
 size_flags_horizontal = 4
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 36
 text = "Obchodník"
-
-[node name="GoldDisplay" type="PanelContainer" parent="CanvasLayer/MainContainer/VBoxContainer/Header"]
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-
-[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/MainContainer/VBoxContainer/Header/GoldDisplay"]
-layout_mode = 2
-
-[node name="GoldLabel" type="Label" parent="CanvasLayer/MainContainer/VBoxContainer/Header/GoldDisplay/HBoxContainer"]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Zlato: 100"
-
-[node name="GoldIcon" type="TextureRect" parent="CanvasLayer/MainContainer/VBoxContainer/Header/GoldDisplay/HBoxContainer"]
-layout_mode = 2
-texture = SubResource("CompressedTexture2D_b06mc")
 
 [node name="ItemsPanel" type="PanelContainer" parent="CanvasLayer/MainContainer/VBoxContainer"]
 custom_minimum_size = Vector2(500, 400)
@@ -93,4 +77,3 @@ layout_mode = 2
 
 [node name="CardTooltip" parent="CanvasLayer" instance=ExtResource("3_tooltip")]
 unique_name_in_owner = true
-visible = false

@@ -34,8 +34,10 @@ func populate_from_card(card_data: CardData) -> void:
 
 
 func populate_from_card_keywords(keys: Array, card_data: CardData) -> void:
-	# Clear existing
-	for child in get_children():
+	# Odstranit staré děti hned ze stromu (ne jen queue_free), aby se layout zmenšil dřív než přidáme nové – při rychlém přepínání karet by jinak tooltip „rostl“
+	var children = get_children().duplicate()
+	for child in children:
+		remove_child(child)
 		child.queue_free()
 	
 	if keys.is_empty():

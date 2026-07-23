@@ -5,18 +5,85 @@ signal meta_progress_changed
 
 const META_SAVE_PATH = "user://meta_progress.res"
 const RUN_SAVE_PATH = "user://current_run.sav"
+const VERSION_FILE_PATH = "user://last_version.cfg"
 
 var meta_progress: MetaProgress
 
 func _ready():
+	_check_version_migration()
 	load_meta_progress()
+
+#==============================================================================
+# Version Migration - automatický clean při nové verzi
+#==============================================================================
+
+func _check_version_migration():
+	"""Zkontroluje verzi hry a pokud se změnila, provede clean reset save dat."""
+	var current_version = str(ProjectSettings.get_setting("application/config/version", "0.0.0"))
+	var saved_version = _get_saved_version()
+	
+	if saved_version == "" or saved_version != current_version:
+		# Nová verze nebo první spuštění
+		if saved_version != "":
+			print("=== VERSION MIGRATION ===")
+			print("Old version: %s -> New version: %s" % [saved_version, current_version])
+			print("Performing clean reset of save data...")
+			_perform_clean_reset()
+		else:
+			print("First launch detected (version %s). No migration needed." % current_version)
+		
+		_save_current_version(current_version)
+
+func _get_saved_version() -> String:
+	"""Přečte uloženou verzi z konfiguračního souboru."""
+	var config = ConfigFile.new()
+	var err = config.load(VERSION_FILE_PATH)
+	if err != OK:
+		return ""
+	return config.get_value("version", "game_version", "")
+
+func _save_current_version(version: String):
+	"""Uloží aktuální verzi do konfiguračního souboru."""
+	var config = ConfigFile.new()
+	config.set_value("version", "game_version", version)
+	config.set_value("version", "migration_date", Time.get_datetime_string_from_system())
+	config.save(VERSION_FILE_PATH)
+
+func _perform_clean_reset():
+	"""Vymaže všechna save data (meta progress, run save, session lock)."""
+	var dir = DirAccess.open("user://")
+	if dir == null:
+		printerr("SaveManager: Cannot open user:// directory for clean reset!")
+		return
+	
+	# Seznam souborů k vymazání
+	var files_to_delete = [
+		"meta_progress.res",
+		"current_run.sav",
+		"session.lock",
+	]
+	
+	for file_name in files_to_delete:
+		if FileAccess.file_exists("user://" + file_name):
+			var err = dir.remove(file_name)
+			if err == OK:
+				print("  Deleted: %s" % file_name)
+			else:
+				printerr("  Failed to delete: %s (error: %d)" % [file_name, err])
+	
+	# Zachováme settings.cfg (jazyk, report consent) - to nemažeme
+	# Zachováme last_version.cfg - to právě zapisujeme
+	# Zachováme debug logy - ty nejsou problém
+	
+	print("Clean reset complete. All save data has been cleared.")
 
 #==============================================================================
 # Meta Progress
 #==============================================================================
 
 func get_xp_for_next_level() -> int:
-	return meta_progress.player_level * 100
+	# Plynulejší progrese: L1->L2 = 80 XP, L5->L6 = 200 XP, L10->L11 = 350 XP
+	return 50 + meta_progress.player_level * 30
 
 func _check_for_level_up():
 	var xp_needed = get_xp_for_next_level()

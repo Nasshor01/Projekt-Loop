@@ -15,20 +15,31 @@ mouse_filter = 2
 color = Color(0, 0, 0, 0.588235)
 
 [node name="Label" type="Label" parent="."]
-offset_left = 432.0
-offset_top = 24.0
-offset_right = 648.0
-offset_bottom = 56.0
-size_flags_horizontal = 4
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 40.0
+offset_top = 100.0
+offset_right = -40.0
+offset_bottom = 148.0
+grow_horizontal = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 28
 text = "Našel jsi poklad! Vyber si artefakt."
 horizontal_alignment = 1
 vertical_alignment = 1
+autowrap_mode = 3
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 offset_left = 64.0
-offset_top = 128.0
-offset_right = 1088.0
-offset_bottom = 576.0
+offset_top = 168.0
+offset_right = -64.0
+offset_bottom = -64.0
+grow_horizontal = 2
+grow_vertical = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 mouse_filter = 2

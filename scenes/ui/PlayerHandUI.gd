@@ -12,14 +12,14 @@ signal hand_card_drag_cancelled(card_ui_instance: Control, card_data_resource: C
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 
 @export_group("Vzhled vějíře")
-@export var card_overlap_ratio: float = 0.55
-@export var max_overlap_ratio: float = 0.85
-@export var squish_threshold: int = 10
-@export var hand_arc: float = 40.0
+@export var card_overlap_ratio: float = 0.45
+@export var max_overlap_ratio: float = 0.75
+@export var squish_threshold: int = 8
+@export var hand_arc: float = 36.0
 
 @export_group("Interakce")
-@export var hover_y_offset: float = -2.0
-@export var hover_scale: float = 1.05
+@export var hover_y_offset: float = -8.0
+@export var hover_scale: float = 1.12
 
 @onready var _arrange_timer: Timer = $ArrangeTimer
 
@@ -51,6 +51,7 @@ func add_card_animated(card_data: CardData, from_pos: Vector2):
 	card_ui_instance.mouse_exited.connect(_on_card_mouse_exited.bind(card_ui_instance))
 	card_ui_instance.gui_input.connect(_on_card_gui_input.bind(card_ui_instance))
 	if card_ui_instance is CardUI:
+		card_ui_instance.apply_display_mode(CardUI.DisplayMode.FULL)
 		card_ui_instance.is_draggable = true
 		card_ui_instance.drag_started.connect(_on_card_drag_started)
 		card_ui_instance.drag_released.connect(_on_card_drag_released)
@@ -123,6 +124,7 @@ func add_card_to_hand(card_data_resource: CardData):
 	card_ui_instance.mouse_exited.connect(_on_card_mouse_exited.bind(card_ui_instance))
 	card_ui_instance.gui_input.connect(_on_card_gui_input.bind(card_ui_instance))
 	if card_ui_instance is CardUI:
+		card_ui_instance.apply_display_mode(CardUI.DisplayMode.FULL)
 		card_ui_instance.is_draggable = true
 		card_ui_instance.drag_started.connect(_on_card_drag_started)
 		card_ui_instance.drag_released.connect(_on_card_drag_released)

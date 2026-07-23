@@ -27,3 +27,6 @@ func display_artifact(data: ArtifactsData):
 func set_stack_info(stack_info: String):
 	if not stack_info.is_empty() and name_label:
 		name_label.text = "%s [%s]" % [name_label.text, stack_info]
+
+func get_artifact_data() -> ArtifactsData:
+	return artifact_data

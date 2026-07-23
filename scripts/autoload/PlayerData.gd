@@ -351,9 +351,9 @@ func apply_passive_skills():
 						aura_enhancement += effect_data.value
 						print("  + %d%% vylepšení aur (nyní %d%%)" % [effect_data.value, aura_enhancement])
 					PassiveEffectData.EffectType.AVATAR_STARTING_BLOCK:
-						var shield_amount = max_hp * effect_data.value
+						var shield_amount = int(max_hp * effect_data.value / 100.0)
 						global_shield += shield_amount
-						print(" ✨ Avatar Světla přidal %d do GLOBÁLNÍHO ŠTÍTU (nyní %d)" % [shield_amount, global_shield])
+						print(" ✨ Avatar Světla přidal %d do GLOBÁLNÍHO ŠTÍTU (%d%% z %d max HP)" % [shield_amount, effect_data.value, max_hp])
 					PassiveEffectData.EffectType.THORNS_DAMAGE:
 						thorns_damage += effect_data.value
 						print("  + %d poškození trny (nyní %d)" % [effect_data.value, thorns_damage])
@@ -586,9 +586,9 @@ func initialize_player(p_class, p_subclass):
 func apply_avatar_starting_block():
 	"""Aplikuje Avatar of Light efekt na začátku souboje"""
 	if avatar_starting_block_multiplier > 0:
-		var bonus_block = max_hp * avatar_starting_block_multiplier
+		var bonus_block = int(max_hp * avatar_starting_block_multiplier / 100.0)
 		starting_retained_block += bonus_block
-		print("🌟 Avatar of Light: +%d bloku na začátku souboje!" % bonus_block)
+		print("Avatar of Light: +%d bloku na začátku souboje (%d%% z %d max HP)" % [bonus_block, avatar_starting_block_multiplier, max_hp])
 
 func process_heal_end_of_turn():
 	"""Zpracuje léčení na konci tahu - již se volá z Unit.gd"""

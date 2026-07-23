@@ -5,36 +5,47 @@
 extends PanelContainer
 class_name CardTooltip
 
-@onready var name_label: Label = $MarginContainer/VBoxContainer/NameLabel
-@onready var description_label: RichTextLabel = $MarginContainer/VBoxContainer/DescriptionLabel
-@onready var effects_label: RichTextLabel = $MarginContainer/VBoxContainer/EffectsLabel
-@onready var cost_label: Label = $MarginContainer/VBoxContainer/CostLabel
-@onready var keyword_container: KeywordTooltipContainer = $MarginContainer/VBoxContainer/KeywordTooltipContainer
+const TOOLTIP_WIDTH := 360.0
+const MAX_TOOLTIP_HEIGHT := 520.0
+const VIEWPORT_MARGIN := 12.0
+
+@onready var scroll_container: ScrollContainer = $MarginContainer/ScrollContainer
+@onready var name_label: Label = $MarginContainer/ScrollContainer/VBoxContainer/NameLabel
+@onready var description_label: RichTextLabel = $MarginContainer/ScrollContainer/VBoxContainer/DescriptionLabel
+@onready var effects_label: RichTextLabel = $MarginContainer/ScrollContainer/VBoxContainer/EffectsLabel
+@onready var cost_label: Label = $MarginContainer/ScrollContainer/VBoxContainer/CostLabel
+@onready var keyword_separator: HSeparator = $MarginContainer/ScrollContainer/VBoxContainer/KeywordSeparator
+@onready var keyword_container: KeywordTooltipContainer = $MarginContainer/ScrollContainer/VBoxContainer/KeywordTooltipContainer
+
+var _show_tween: Tween = null
 
 func _ready():
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	custom_minimum_size = Vector2(TOOLTIP_WIDTH, 0)
 
 func show_tooltip(card_data: CardData, tooltip_pos: Vector2):
 	"""Zobrazí tooltip s informacemi o kartě na zadané pozici"""
 	if not card_data:
 		hide_tooltip()
 		return
+	mouse_filter = Control.MOUSE_FILTER_STOP
 	
-	# Nastavíme texty
+	if _show_tween != null and _show_tween.is_valid():
+		_show_tween.kill()
+	_show_tween = null
+	modulate.a = 1.0
+	
 	if name_label:
 		name_label.text = card_data.get_localized_name()
 	if cost_label:
 		cost_label.text = TranslationHelper.tr_format("card.tooltip.cost", {"value": card_data.cost})
 	
-	# Plný popis z translations (card.xxx.desc) – hráč vidí celý text, ne zkrácený z karty
 	if description_label:
 		description_label.text = card_data.get_localized_description()
 	
-	# Zobrazíme další informace (range, rarity, tags)
 	var additional_info: Array[String] = []
 	
-	# Range informace
 	match card_data.range_type:
 		CardData.EffectRangeType.NONE:
 			additional_info.append(tr("card.tooltip.range.none"))
@@ -51,7 +62,6 @@ func show_tooltip(card_data: CardData, tooltip_pos: Vector2):
 		CardData.EffectRangeType.FULL_BOARD:
 			additional_info.append(tr("card.tooltip.range.full_board"))
 	
-	# Rarity
 	var rarity_names = {
 		CardData.CardRarity.BASIC: tr("card.rarity.basic"),
 		CardData.CardRarity.COMMON: tr("card.rarity.common"),
@@ -63,34 +73,88 @@ func show_tooltip(card_data: CardData, tooltip_pos: Vector2):
 	if rarity_names.has(card_data.rarity):
 		additional_info.append(TranslationHelper.tr_format("card.tooltip.rarity", {"value": rarity_names[card_data.rarity]}))
 	
-	# Upgradovaná verze
 	if card_data.is_upgraded:
 		additional_info.append(tr("card.tooltip.upgraded"))
 	
 	if effects_label:
 		if not additional_info.is_empty():
 			effects_label.text = "\n".join(additional_info)
+			effects_label.visible = true
 		else:
 			effects_label.text = ""
+			effects_label.visible = false
 	
-	# Keyword tooltips: z efektů karty (Holy, Block, Heal, Exhaust…) + z textu; Holy zobrazí aktuální bonus (+5 nebo +8 s pasivkou)
 	if keyword_container and KeywordManager:
 		keyword_container.populate_from_card(card_data)
 	
-	# Nastavíme pozici
-	global_position = tooltip_pos
+	if keyword_separator:
+		keyword_separator.visible = keyword_container != null and keyword_container.get_child_count() > 0
 	
-	# Zobrazíme tooltip
+	if scroll_container:
+		scroll_container.scroll_vertical = 0
+		scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	
 	visible = true
-	modulate.a = 0.0
-	var tween = create_tween()
-	tween.tween_property(self, "modulate:a", 1.0, 0.2)
+	await _fit_content_height()
+	if not is_instance_valid(self) or not visible:
+		return
+	global_position = _clamp_tooltip_position(tooltip_pos)
+	
+	if modulate.a < 0.5:
+		modulate.a = 0.0
+		_show_tween = create_tween()
+		_show_tween.tween_property(self, "modulate:a", 1.0, 0.2)
+		_show_tween.finished.connect(_on_show_tween_finished)
+	else:
+		modulate.a = 1.0
+
+func _fit_content_height() -> void:
+	"""Shrink panel to content; enable scroll only when content exceeds max height."""
+	await get_tree().process_frame
+	if not is_instance_valid(self) or not visible:
+		return
+	var content := scroll_container.get_child(0) as Control if scroll_container else null
+	if not content:
+		return
+	var content_h = content.get_combined_minimum_size().y
+	var margins = 28.0 # top+bottom margin approx
+	var desired = content_h + margins
+	var capped = minf(desired, MAX_TOOLTIP_HEIGHT)
+	custom_minimum_size = Vector2(TOOLTIP_WIDTH, capped)
+	size = Vector2(TOOLTIP_WIDTH, capped)
+	if scroll_container:
+		if desired > MAX_TOOLTIP_HEIGHT:
+			scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+			scroll_container.custom_minimum_size.y = MAX_TOOLTIP_HEIGHT - margins
+		else:
+			scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+			scroll_container.custom_minimum_size.y = content_h
+	await get_tree().process_frame
+
+func _clamp_tooltip_position(preferred: Vector2) -> Vector2:
+	var screen_size = get_viewport().get_visible_rect().size
+	var tip_size = size
+	if tip_size.x < 1.0 or tip_size.y < 1.0:
+		tip_size = custom_minimum_size
+	var pos = preferred
+	pos.x = clampf(pos.x, VIEWPORT_MARGIN, screen_size.x - tip_size.x - VIEWPORT_MARGIN)
+	pos.y = clampf(pos.y, VIEWPORT_MARGIN, screen_size.y - tip_size.y - VIEWPORT_MARGIN)
+	return pos
+
+func _on_show_tween_finished():
+	_show_tween = null
 
 func hide_tooltip():
 	"""Skryje tooltip s fade out efektem"""
 	if not visible:
 		return
+	if _show_tween != null and _show_tween.is_valid():
+		_show_tween.kill()
+		_show_tween = null
 	
 	var tween = create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.15)
-	tween.tween_callback(func(): visible = false)
+	tween.tween_callback(func():
+		visible = false
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+	)

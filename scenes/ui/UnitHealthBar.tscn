@@ -1,0 +1,52 @@
+[gd_scene load_steps=3 format=3 uid="uid://bfih7cmugedgi"]
+
+[ext_resource type="Script" path="res://scenes/ui/UnitHealthBar.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://c4topxnn115am" path="res://art/fonts/monogram-extended.ttf" id="2_font"]
+
+[node name="UnitHealthBar" type="Control"]
+z_index = 20
+custom_minimum_size = Vector2(72, 34)
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="BarRoot" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 72.0
+offset_bottom = 34.0
+theme_override_constants/separation = 1
+mouse_filter = 2
+
+[node name="HpTrack" type="ColorRect" parent="BarRoot"]
+custom_minimum_size = Vector2(72, 10)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.08, 0.08, 0.1, 0.85)
+
+[node name="HpFill" type="ColorRect" parent="BarRoot/HpTrack"]
+layout_mode = 0
+offset_right = 72.0
+offset_bottom = 10.0
+mouse_filter = 2
+color = Color(0.22, 0.78, 0.32, 1)
+
+[node name="HpLabel" type="Label" parent="BarRoot"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+text = "50/50"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BlockLabel" type="Label" parent="BarRoot"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.85, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "0"
+horizontal_alignment = 1

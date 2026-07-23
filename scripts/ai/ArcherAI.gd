@@ -1,68 +1,87 @@
 # ===================================================================
 # Soubor: res://scripts/ai/ArcherAI.gd
-# POPIS: Pokročilý taktický Archer s vylepšeným AI
+# POPIS: Pokročilý taktický Archer - pozicování, aiming, kryti, move+attack
 # ===================================================================
 extends EnemyAIBase
 
-const MELEE_RANGE = 2 # Vzdálenost, kterou Archer považuje za "příliš blízko"
-const PREFERRED_DISTANCE = 4 # Optimální vzdálenost pro boj
-const COVER_BONUS_MULTIPLIER = 1.5 # Bonus k přesnosti za krytím
-const AIM_DAMAGE_MULTIPLIER = 2.5 # Damage bonus po zaměření
+const MELEE_RANGE = 2  # Vzdálenost, kterou Archer považuje za "příliš blízko"
+const PREFERRED_DISTANCE = 4  # Optimální vzdálenost pro boj
+const COVER_BONUS_MULTIPLIER = 1.5  # Bonus za krytím
+const AIM_DAMAGE_MULTIPLIER = 2.5  # Damage bonus po zaměření
 
-func get_next_action(enemy_unit: Unit, all_player_units: Array, battle_grid: BattleGrid) -> AIAction:
+func get_actions(enemy_unit: Unit, all_player_units: Array, battle_grid: BattleGrid) -> Array[AIAction]:
+	var actions: Array[AIAction] = []
 	var player_unit = find_closest_player(enemy_unit, all_player_units)
 	if not is_instance_valid(player_unit):
-		return create_pass_action()
+		return [create_pass_action()]
 
-	var _archer_range = enemy_unit.unit_data.attack_range
 	var distance_to_player = battle_grid.get_distance(enemy_unit.grid_position, player_unit.grid_position)
 
-	# === PRIORITA 1: ÚTĚK Z MELEE ZÓNY ===
+	# === PRIORITA 1: ÚTĚK Z MELEE ZÓNY + ÚTOK ===
 	if distance_to_player <= MELEE_RANGE:
-		print("🏃 Archer je příliš blízko! Couvá z melee zóny!")
 		var escape_move = find_escape_move(enemy_unit, player_unit, battle_grid)
 		if not escape_move.path.is_empty():
-			return create_move_action(escape_move.path)
-		
-		# Pokud nemůže utéct, zaútočí z blízka (s penalizací)
-		print("😰 Archer je v pasti! Útočí zblízka!")
-		enemy_unit.set_aiming(false) # Ztratí zaměření
-		return create_attack_action(player_unit, 0.7) # Snížený damage z blízka
-
-	# === PRIORITA 2: ÚTOK KDYŽ MŮŽEME ===
-	var is_behind_cover = is_cell_behind_cover(enemy_unit.grid_position, player_unit.grid_position, battle_grid)
-	
-	if can_attack_target(enemy_unit, player_unit, battle_grid):
-		# Pokud zaměřuje, vystřelí s bonusem
-		if enemy_unit.is_aiming:
+			actions.append(create_move_action(escape_move.path))
 			enemy_unit.set_aiming(false)
-			var multiplier = (AIM_DAMAGE_MULTIPLIER * COVER_BONUS_MULTIPLIER) if is_behind_cover else AIM_DAMAGE_MULTIPLIER
-			print("🎯 Archer pálí zaměřený výstřel%s (%.1fx damage)" % [" z krytí!" if is_behind_cover else "!", multiplier])
-			return create_attack_action(player_unit, multiplier)
-		# Pokud je za krytím, střelí hned i bez zaměření (s cover bonusem)
-		elif is_behind_cover:
-			print("🛡️ Archer střílí z krytí!")
-			return create_attack_action(player_unit, COVER_BONUS_MULTIPLIER)
-		# Jinak se zaměří na příští tah
+			
+			# Po útěku: zaútoč pokud jsi v dosahu z nové pozice
+			if escape_move.in_attack_range:
+				actions.append(create_attack_action(player_unit, 0.9))
+			
+			return actions
+		
+		# Nemůže utéct - zaútoč zblízka
+		if can_attack_target(enemy_unit, player_unit, battle_grid):
+			enemy_unit.set_aiming(false)
+			actions.append(create_attack_action(player_unit, 0.7))
+			return actions
+
+	# === PRIORITA 2: AIMED SHOT (po zaměření) ===
+	if enemy_unit.is_aiming and can_attack_target(enemy_unit, player_unit, battle_grid):
+		enemy_unit.set_aiming(false)
+		var is_behind_cover = is_cell_behind_cover(enemy_unit.grid_position, player_unit.grid_position, battle_grid)
+		var multiplier = (AIM_DAMAGE_MULTIPLIER * COVER_BONUS_MULTIPLIER) if is_behind_cover else AIM_DAMAGE_MULTIPLIER
+		actions.append(create_attack_action(player_unit, multiplier))
+		return actions
+
+	# === PRIORITA 3: STŘELBA Z KRYTÍ ===
+	if can_attack_target(enemy_unit, player_unit, battle_grid):
+		var is_behind_cover = is_cell_behind_cover(enemy_unit.grid_position, player_unit.grid_position, battle_grid)
+		
+		if is_behind_cover:
+			# Střílej z krytí s bonusem
+			actions.append(create_attack_action(player_unit, COVER_BONUS_MULTIPLIER))
+			return actions
 		else:
-			print("⏳ Archer zaměřuje pro příští výstřel.")
+			# Zaměř se pro příští tah (aiming)
 			enemy_unit.set_aiming(true)
 			enemy_unit.show_intent(int(enemy_unit.unit_data.attack_damage * AIM_DAMAGE_MULTIPLIER))
-			return create_pass_action()
+			return [create_pass_action()]
 
-	# === PRIORITA 3: TAKTICKÝ POHYB ===
+	# === PRIORITA 4: TAKTICKÝ POHYB + ÚTOK ===
+	# Najdi nejlepší pozici kde můžeš zaútočit
 	var best_move = find_best_tactical_move(enemy_unit, player_unit, battle_grid)
 	
-	# Pokud je nejlepší pozice ta současná
-	if best_move.cell == enemy_unit.grid_position:
-		# Nemůže se zlepšit pozicí, takže pass (už jsme zkontrolovali útok výše)
-		print("🤔 Archer zůstává na pozici (nemůže se zlepšit pohybem).")
-		return create_pass_action()
-	else:
-		# Pohne se na lepší pozici
-		print("🚶 Archer se přesouvá na taktickou pozici: %s (skóre: %.1f)" % [str(best_move.cell), best_move.score])
-		enemy_unit.set_aiming(false) # Ztratí zaměření při pohybu
-		return create_move_action(best_move.path)
+	if best_move.cell != enemy_unit.grid_position and not best_move.path.is_empty():
+		enemy_unit.set_aiming(false)
+		actions.append(create_move_action(best_move.path))
+		
+		# Po pohybu: zaútoč pokud jsi v dosahu z nové pozice
+		if can_attack_from_position(best_move.cell, enemy_unit, player_unit, battle_grid):
+			var is_behind_cover = is_cell_behind_cover(best_move.cell, player_unit.grid_position, battle_grid)
+			var mult = COVER_BONUS_MULTIPLIER if is_behind_cover else 1.0
+			actions.append(create_attack_action(player_unit, mult))
+		
+		return actions
+	
+	# === PRIORITA 5: PŘIBLIŽ SE ===
+	var path = find_path_to_adjacent(enemy_unit, player_unit, battle_grid)
+	if not path.is_empty():
+		enemy_unit.set_aiming(false)
+		actions.append(create_move_action(path))
+		return actions
+	
+	return [create_pass_action()]
 
 # === VYLEPŠENÁ TAKTICKÁ ANALÝZA ===
 
@@ -85,7 +104,6 @@ func find_best_tactical_move(archer: Unit, player: Unit, battle_grid: BattleGrid
 			
 	# Nouzový plán pokud není žádná dobrá pozice
 	if best_score < -50:
-		print("!!! Archer aktivuje nouzový plán: Přiblížit se za každou cenu.")
 		var min_distance = battle_grid.get_distance(best_cell, player.grid_position)
 		for cell in reachable_cells:
 			var unit_on_cell = battle_grid.get_object_on_cell(cell)
@@ -97,11 +115,10 @@ func find_best_tactical_move(archer: Unit, player: Unit, battle_grid: BattleGrid
 				min_distance = distance
 				best_cell = cell
 			
-	var best_path = []
+	var best_path: Array[Vector2i] = []
 	if best_cell != archer.grid_position:
 		best_path = find_path(archer, best_cell, battle_grid)
 		if best_path.is_empty():
-			# Cesta neexistuje, zůstane na současné pozici
 			best_cell = archer.grid_position
 			
 	return {"cell": best_cell, "path": best_path, "score": best_score}
@@ -115,15 +132,15 @@ func evaluate_position_score(cell: Vector2i, archer: Unit, player: Unit, battle_
 		return -INF
 
 	# BEZPEČNOSTNÍ HODNOCENÍ
-	var player_movement = 3 # Předpokládaný pohyb hráče
+	var player_movement = 3
 	var safety_distance = distance - player_movement
 	
 	if safety_distance > MELEE_RANGE:
-		score += 60 # Dobrá bezpečnost
+		score += 60
 	elif safety_distance > 0:
-		score += 30 # Částečná bezpečnost
+		score += 30
 	else:
-		score -= 100 # Nebezpečná zóna
+		score -= 100
 
 	# KRYTÍ - největší bonus
 	if is_cell_behind_cover(cell, player.grid_position, battle_grid):
@@ -135,16 +152,15 @@ func evaluate_position_score(cell: Vector2i, archer: Unit, player: Unit, battle_
 	elif distance == PREFERRED_DISTANCE + 1 or distance == PREFERRED_DISTANCE - 1:
 		score += 20
 	
-	# Bonus za větší vzdálenost (ale stále v dosahu)
 	score += (distance - MELEE_RANGE) * 5.0
 	
 	# TERÉNNÍ VÝHODY
 	var terrain = battle_grid.get_terrain_on_cell(cell)
 	if terrain:
 		if terrain.terrain_name == "HighGround":
-			score += 25 # Bonus za vyvýšené místo
+			score += 25
 		elif terrain.terrain_name == "Forest":
-			score += 15 # Částečné krytí
+			score += 15
 	
 	# PENALTY za melee zónu
 	if distance <= MELEE_RANGE:
@@ -158,6 +174,7 @@ func find_escape_move(archer: Unit, player: Unit, battle_grid: BattleGrid) -> Di
 	var reachable_cells = get_reachable_cells(archer, battle_grid)
 	var best_cell = archer.grid_position
 	var best_score = -INF
+	var in_attack_range = false
 	
 	for cell in reachable_cells:
 		var unit_on_cell = battle_grid.get_object_on_cell(cell)
@@ -166,40 +183,37 @@ func find_escape_move(archer: Unit, player: Unit, battle_grid: BattleGrid) -> Di
 			
 		var distance = battle_grid.get_distance(cell, player.grid_position)
 		
-		# Priorita: co nejdál od hráče, ale ideálně stále v útočném dosahu
-		var score = distance
+		var score = distance * 10.0
 		if distance <= archer.unit_data.attack_range:
 			score += 100  # Bonus za zůstání v dosahu
 		if distance <= MELEE_RANGE:
-			score -= 200  # Penalty za zůstání v melee zóně
+			score -= 200
 		
 		if score > best_score:
 			best_score = score
 			best_cell = cell
+			in_attack_range = (distance <= archer.unit_data.attack_range)
 	
-	var path = []
+	var path: Array[Vector2i] = []
 	if best_cell != archer.grid_position:
 		path = find_path(archer, best_cell, battle_grid)
 		
-	return {"cell": best_cell, "path": path, "distance": battle_grid.get_distance(best_cell, player.grid_position)}
+	return {"cell": best_cell, "path": path, "distance": battle_grid.get_distance(best_cell, player.grid_position), "in_attack_range": in_attack_range}
 
 # === VYLEPŠENÉ KRYTÍ ===
 
 func is_cell_behind_cover(cell: Vector2i, target_cell: Vector2i, battle_grid: BattleGrid) -> bool:
 	var line_points = battle_grid.get_line(cell, target_cell)
-	if line_points.size() <= 2: # Příliš blízko pro krytí
+	if line_points.size() <= 2:
 		return false
 	
-	# Zkontrolujeme body mezi střelcem a cílem
 	for i in range(1, line_points.size() - 1):
 		var point = line_points[i]
 		
-		# Neprůchodný terén poskytuje krytí
 		var terrain = battle_grid.get_terrain_on_cell(point)
 		if terrain and not terrain.is_walkable:
 			return true
 			
-		# Jiné jednotky také poskytují krytí
 		var unit_on_cell = battle_grid.get_object_on_cell(point)
 		if is_instance_valid(unit_on_cell):
 			return true

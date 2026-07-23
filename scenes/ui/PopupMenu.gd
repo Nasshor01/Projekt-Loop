@@ -9,6 +9,7 @@ signal back_to_char_select_pressed
 signal save_and_quit_pressed
 signal back_to_menu_pressed
 signal feedback_pressed
+signal settings_pressed
 
 # Přímé reference na tlačítka ve scéně
 @onready var restart_run_button = %RestartRunButton
@@ -16,8 +17,9 @@ signal feedback_pressed
 @onready var back_to_char_select_button = %BackToCharSelectButton
 @onready var save_and_quit_button = %SaveAndQuitButton
 @onready var back_to_menu_button = %BackToMenuButton
-@onready var back_to_game_button = %BackToGameButton
 @onready var feedback_button = %FeedbackButton
+@onready var settings_button = %SettingsButton
+@onready var back_to_game_button = %BackToGameButton
 
 func _ready():
 	# Menu je na začátku skryté
@@ -29,8 +31,9 @@ func _ready():
 	back_to_char_select_button.pressed.connect(_on_back_to_char_select_pressed)
 	save_and_quit_button.pressed.connect(_on_save_and_quit_pressed)
 	back_to_menu_button.pressed.connect(_on_back_to_menu_pressed)
-	back_to_game_button.pressed.connect(_on_back_to_game_pressed)
 	feedback_button.pressed.connect(_on_feedback_pressed)
+	settings_button.pressed.connect(_on_settings_pressed)
+	back_to_game_button.pressed.connect(_on_back_to_game_pressed)
 	_update_ui_texts()
 
 func _update_ui_texts():
@@ -48,6 +51,8 @@ func _update_ui_texts():
 		back_to_game_button.text = tr("ui.menu.back_to_game")
 	if feedback_button:
 		feedback_button.text = tr("ui.menu.feedback")
+	if settings_button:
+		settings_button.text = tr("ui.main_menu.settings")
 
 func _unhandled_input(event):
 	# Pokud je menu viditelné a hráč stiskne 'Esc' (ui_cancel)
@@ -85,3 +90,7 @@ func _on_back_to_menu_pressed():
 
 func _on_feedback_pressed():
 	emit_signal("feedback_pressed")
+
+func _on_settings_pressed():
+	emit_signal("settings_pressed")
+	hide()

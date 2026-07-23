@@ -34,6 +34,6 @@ metadata/_custom_type_script = "uid://tp0lo3xqiiqb"
 [resource]
 script = ExtResource("5_nsbt1")
 encounter_type = 1
-xp_reward = 50
+xp_reward = 60
 enemies = Array[ExtResource("1_52hxk")]([SubResource("Resource_xypau"), SubResource("Resource_w0i24"), SubResource("Resource_vddxm"), SubResource("Resource_1dxui")])
 metadata/_custom_type_script = "uid://dq86v2djx6q1m"

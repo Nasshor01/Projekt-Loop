@@ -8,8 +8,13 @@ extends CanvasLayer
 @onready var deck_button = $MainPanel/MarginContainer/MainLayout/RightSection/DeckButton
 @onready var menu_button = $MainPanel/MarginContainer/MainLayout/RightSection/MenuButton
 @onready var deck_viewer = $DeckViewer
+@onready var card_tooltip: CardTooltip = $TooltipLayer/CardTooltip
 @onready var popup_menu = %PopupMenu
 @onready var feedback_panel = %PlayerFeedback
+@onready var settings_overlay = %SettingsOverlay
+@onready var version_label = %VersionLabel
+
+var _deck_tooltip_card_data: CardData = null
 
 func _ready():
 	# Připojení k signálům z PlayerData pro aktualizaci UI
@@ -31,10 +36,22 @@ func _ready():
 	popup_menu.save_and_quit_pressed.connect(_on_popup_save_and_quit_pressed)
 	popup_menu.back_to_menu_pressed.connect(_on_popup_back_to_menu_pressed)
 	popup_menu.feedback_pressed.connect(_on_popup_feedback_pressed)
+	popup_menu.settings_pressed.connect(_on_popup_settings_pressed)
+	if settings_overlay != null:
+		settings_overlay.overlay_closed.connect(_on_settings_overlay_closed)
+
+	if deck_viewer.has_signal("card_right_clicked"):
+		deck_viewer.card_right_clicked.connect(_on_deck_viewer_card_right_clicked)
 
 	# Prvotní nastavení všech hodnot v UI
 	_update_ui_texts()
 	_update_all_displays()
+	_update_version_label()
+
+func _update_version_label():
+	if version_label:
+		var version = str(ProjectSettings.get_setting("application/config/version", "0.0.0"))
+		version_label.text = "Pre-Alpha " + version
 
 func _update_ui_texts():
 	if menu_button:
@@ -71,6 +88,21 @@ func _on_deck_button_pressed():
 	if popup_menu.visible:
 		_close_menu()
 	deck_viewer.display_deck(PlayerData.master_deck)
+
+func _on_deck_viewer_card_right_clicked(card_data: CardData):
+	if not card_tooltip:
+		return
+	if card_tooltip.visible and _deck_tooltip_card_data == card_data:
+		card_tooltip.hide_tooltip()
+		_deck_tooltip_card_data = null
+	else:
+		_deck_tooltip_card_data = card_data
+		var screen_size = get_viewport().get_visible_rect().size
+		var tooltip_size = Vector2(360, 420)
+		var tooltip_pos = Vector2(screen_size.x - tooltip_size.x - 20, 90)
+		tooltip_pos.x = clampf(tooltip_pos.x, 10, screen_size.x - tooltip_size.x - 10)
+		tooltip_pos.y = clampf(tooltip_pos.y, 10, screen_size.y - tooltip_size.y - 10)
+		card_tooltip.show_tooltip(card_data, tooltip_pos)
 
 func _on_menu_button_pressed():
 	# Pokud je otevřený prohlížeč balíčku, zavřeme ho
@@ -114,3 +146,10 @@ func _on_popup_back_to_menu_pressed():
 func _on_popup_feedback_pressed():
 	if feedback_panel:
 		feedback_panel.open()
+
+func _on_popup_settings_pressed():
+	if settings_overlay != null:
+		settings_overlay.show_as_overlay()
+
+func _on_settings_overlay_closed():
+	_close_menu()

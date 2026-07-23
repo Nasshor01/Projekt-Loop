@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://drcylmyjefmn0"]
+[gd_scene load_steps=17 format=3 uid="uid://drcylmyjefmn0"]
 
 [ext_resource type="Script" uid="uid://d3ytuwmimqlg4" path="res://scenes/battle/BattleScene.gd" id="1_vd1me"]
 [ext_resource type="Resource" uid="uid://d118t8olbc47a" path="res://data/encounters/first_battle.tres" id="2_q8wks"]
@@ -10,6 +10,18 @@
 [ext_resource type="PackedScene" uid="uid://ckvi6eu1vd02a" path="res://scenes/ui/DevConsole.tscn" id="8_5282s"]
 [ext_resource type="PackedScene" uid="uid://d1e2f3g4h5i6j" path="res://scenes/ui/initiative_bar/InitiativeBar.tscn" id="9_abcde"]
 [ext_resource type="PackedScene" uid="uid://dah2k3m4n5p6q" path="res://scenes/ui/CardTooltip.tscn" id="10_tooltip"]
+[ext_resource type="Shader" uid="uid://m845njhhr6k5" path="res://art/shaders/space_background.gdshader" id="space_shader"]
+[ext_resource type="Texture2D" uid="uid://b5cinf6xqdsui" path="res://art/icons/space_Background_4096x2048.png" id="space_tex"]
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_bg"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_space"]
+render_priority = 0
+shader = ExtResource("space_shader")
+shader_parameter/albedo_texture = ExtResource("space_tex")
+shader_parameter/scroll_speed_x = 0.015
+shader_parameter/scroll_speed_y = 0.008
+shader_parameter/brightness = 0.85
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nnhtb"]
 albedo_color = Color(0.762404, 0.762404, 0.762404, 1)
@@ -23,6 +35,54 @@ roughness = 0.5
 script = ExtResource("1_vd1me")
 encounter_data = ExtResource("2_q8wks")
 camera_3d = NodePath("Camera3D")
+
+[node name="SpaceBackground" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+
+[node name="BackgroundPlane" type="MeshInstance3D" parent="SpaceBackground"]
+transform = Transform3D(40, 0, 0, 0, 1, 0, 0, 0, 25, 0, 0, 0)
+mesh = SubResource("PlaneMesh_bg")
+surface_material_override/0 = SubResource("ShaderMaterial_space")
+
+[node name="BackgroundPlane2" type="MeshInstance3D" parent="SpaceBackground"]
+transform = Transform3D(40, 0, 0, 0, 1, 0, 0, 0, 25, 80, 0, 0)
+mesh = SubResource("PlaneMesh_bg")
+surface_material_override/0 = SubResource("ShaderMaterial_space")
+
+[node name="BackgroundPlane3" type="MeshInstance3D" parent="SpaceBackground"]
+transform = Transform3D(40, 0, 0, 0, 1, 0, 0, 0, 25, 80, 0, -50)
+mesh = SubResource("PlaneMesh_bg")
+surface_material_override/0 = SubResource("ShaderMaterial_space")
+
+[node name="BackgroundPlane4" type="MeshInstance3D" parent="SpaceBackground"]
+transform = Transform3D(40, 0, 0, 0, 1, 0, 0, 0, 25, 0, 0, -50)
+mesh = SubResource("PlaneMesh_bg")
+surface_material_override/0 = SubResource("ShaderMaterial_space")
+
+[node name="BackgroundPlane5" type="MeshInstance3D" parent="SpaceBackground"]
+transform = Transform3D(40, 0, 0, 0, 1, 0, 0, 0, 25, -80, 0, -50)
+mesh = SubResource("PlaneMesh_bg")
+surface_material_override/0 = SubResource("ShaderMaterial_space")
+
+[node name="BackgroundPlane6" type="MeshInstance3D" parent="SpaceBackground"]
+transform = Transform3D(40, 0, 0, 0, 1, 0, 0, 0, 25, -80, 0, 0)
+mesh = SubResource("PlaneMesh_bg")
+surface_material_override/0 = SubResource("ShaderMaterial_space")
+
+[node name="BackgroundPlane7" type="MeshInstance3D" parent="SpaceBackground"]
+transform = Transform3D(40, 0, 0, 0, 1, 0, 0, 0, 25, -80, 0, 50)
+mesh = SubResource("PlaneMesh_bg")
+surface_material_override/0 = SubResource("ShaderMaterial_space")
+
+[node name="BackgroundPlane8" type="MeshInstance3D" parent="SpaceBackground"]
+transform = Transform3D(40, 0, 0, 0, 1, 0, 0, 0, 25, 0, 0, 50)
+mesh = SubResource("PlaneMesh_bg")
+surface_material_override/0 = SubResource("ShaderMaterial_space")
+
+[node name="BackgroundPlane9" type="MeshInstance3D" parent="SpaceBackground"]
+transform = Transform3D(40, 0, 0, 0, 1, 0, 0, 0, 25, 80, 0, 50)
+mesh = SubResource("PlaneMesh_bg")
+surface_material_override/0 = SubResource("ShaderMaterial_space")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 unique_name_in_owner = true
@@ -69,16 +129,22 @@ visible = false
 offset_top = 90.0
 offset_right = 1152.0
 offset_bottom = 738.0
-theme_override_font_sizes/font_size = 50
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 64
 text = "Výhra"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="EnergyLabel" type="Label" parent="CanvasLayer"]
+visible = false
 offset_top = 448.0
-offset_right = 112.0
-offset_bottom = 488.0
-theme_override_font_sizes/font_size = 25
+offset_right = 140.0
+offset_bottom = 492.0
+theme_override_colors/font_color = Color(0.55, 0.9, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 28
 text = "Energie:"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -90,9 +156,9 @@ offset_right = 128.0
 offset_bottom = 632.0
 
 [node name="EnemyInfoPanel" parent="CanvasLayer" instance=ExtResource("4_t3o3d")]
-offset_left = 1040.0
+offset_left = 920.0
 offset_top = 488.0
-offset_right = 1144.0
+offset_right = 1140.0
 offset_bottom = 632.0
 
 [node name="DrawPileButton" parent="CanvasLayer" instance=ExtResource("5_nabc4")]
@@ -108,16 +174,6 @@ offset_left = 1088.0
 offset_top = 392.0
 offset_right = 1136.0
 offset_bottom = 456.0
-
-[node name="CardPileViewer" parent="CanvasLayer" instance=ExtResource("6_q8wks")]
-unique_name_in_owner = true
-visible = false
-modulate = Color(1, 1, 1, 0.784314)
-self_modulate = Color(1, 1, 1, 0.784314)
-offset_left = 64.0
-offset_top = 139.0
-offset_right = 1024.0
-offset_bottom = 488.0
 
 [node name="WinButton" type="Button" parent="CanvasLayer"]
 offset_left = 1032.0
@@ -138,7 +194,6 @@ vertical_alignment = 1
 
 [node name="CardTooltip" parent="CanvasLayer" instance=ExtResource("10_tooltip")]
 unique_name_in_owner = true
-visible = false
 offset_left = 384.0
 offset_top = 168.0
 offset_right = 734.0
@@ -150,5 +205,16 @@ visible = false
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 0.5, 0.866025, 0, -0.866025, 0.5, -0.00160217, 0.0261517, -0.0161982)
 shadow_enabled = true
+
+[node name="OverlayLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="CardPileViewer" parent="OverlayLayer" instance=ExtResource("6_q8wks")]
+unique_name_in_owner = true
+visible = false
+offset_left = 256.0
+offset_top = 152.0
+offset_right = 896.0
+offset_bottom = 448.0
 
 [connection signal="pressed" from="CanvasLayer/EndTurnButton" to="." method="_on_end_turn_button_pressed"]

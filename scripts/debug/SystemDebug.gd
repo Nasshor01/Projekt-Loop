@@ -66,9 +66,7 @@ func _on_health_changed(new_hp: int, max_hp: int):
 	var hp_percentage = (new_hp / float(max_hp)) * 100
 	
 	if new_hp <= 0:
-		DebugLogger.log_critical("Player HP reached 0!", "HEALTH")
-		DebugLogger.log_player_stats()
-		DebugLogger.log_deck_state()
+		DebugLogger.log_info("Player HP reached 0 (game over).", "HEALTH")
 	elif hp_percentage < 20:
 		DebugLogger.log_warning("Low HP warning: %d/%d (%.1f%%)" % [new_hp, max_hp, hp_percentage], "HEALTH")
 	

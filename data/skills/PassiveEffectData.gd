@@ -124,7 +124,7 @@ func get_formatted_description() -> String:
 		EffectType.AURA_ENHANCEMENT:
 			return "Vylepšení aury o +%d" % value
 		EffectType.AVATAR_STARTING_BLOCK:
-			return "Na začátku souboje získej blok rovný %dx tvému max HP" % value
+			return "Na začátku souboje získej blok rovný %d%% tvého max HP" % value
 		EffectType.THORNS_DAMAGE:
 			return "Vrať %d poškození útočníkům" % value
 		EffectType.DOUBLE_HEALING:

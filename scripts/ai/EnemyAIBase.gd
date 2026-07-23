@@ -1,20 +1,26 @@
 # ===================================================================
 # Soubor: res://scripts/ai/EnemyAIBase.gd
-# POPIS: Základní třída pro všechny enemy AI - s přidanou RUSH akcí
+# POPIS: Základní třída pro všechny enemy AI - multi-action systém
 # ===================================================================
 class_name EnemyAIBase
 extends RefCounted
 
 # Vnitřní třída pro akce AI
 class AIAction:
-	enum ActionType { ATTACK, MOVE, SPECIAL, PASS, RUSH }  # PŘIDÁNO: RUSH
+	enum ActionType { ATTACK, MOVE, SPECIAL, PASS, RUSH }
 	var type: ActionType
 	var target_unit: Unit = null
 	var move_path: Array[Vector2i] = []
 	var damage_multiplier: float = 1.0
 	var special_data: Dictionary = {}
 
-# OPRAVENÁ SIGNATURA - používá Array místo Array[Unit] pro kompatibilitu
+# === HLAVNÍ METODA - vrací POLE akcí pro multi-action systém ===
+func get_actions(enemy_unit: Unit, all_player_units: Array, battle_grid: BattleGrid) -> Array[AIAction]:
+	# Výchozí implementace: zavolá get_next_action pro zpětnou kompatibilitu
+	var action = get_next_action(enemy_unit, all_player_units, battle_grid)
+	return [action]
+
+# Zpětná kompatibilita - starší AI mohou stále overridovat tuto metodu
 func get_next_action(_enemy_unit: Unit, _all_player_units: Array, _battle_grid: BattleGrid) -> AIAction:
 	return create_pass_action()
 
@@ -43,6 +49,13 @@ func can_attack_target(attacker: Unit, target: Unit, battle_grid: BattleGrid) ->
 		return false
 	
 	var distance = battle_grid.get_distance(attacker.grid_position, target.grid_position)
+	return distance <= attacker.unit_data.attack_range
+
+# Zjistí, zda by jednotka mohla zaútočit z dané pozice
+func can_attack_from_position(position: Vector2i, attacker: Unit, target: Unit, battle_grid: BattleGrid) -> bool:
+	if not is_instance_valid(attacker) or not is_instance_valid(target):
+		return false
+	var distance = battle_grid.get_distance(position, target.grid_position)
 	return distance <= attacker.unit_data.attack_range
 
 func get_reachable_cells(unit: Unit, battle_grid: BattleGrid) -> Array[Vector2i]:
@@ -74,6 +87,16 @@ func get_reachable_cells(unit: Unit, battle_grid: BattleGrid) -> Array[Vector2i]
 	
 	return reachable
 
+# Získá všechny enemy jednotky na gridu (spojence AI)
+func get_all_enemies(unit: Unit, battle_grid: BattleGrid) -> Array[Unit]:
+	var allies: Array[Unit] = []
+	var all_units = battle_grid.get_all_objects_on_grid()
+	for u in all_units:
+		if u is Unit and u != unit and is_instance_valid(u):
+			if u.unit_data.faction == unit.unit_data.faction:
+				allies.append(u)
+	return allies
+
 # === AKCE TVOŘÍCÍ FUNKCE ===
 func create_pass_action() -> AIAction:
 	var action = AIAction.new()
@@ -99,7 +122,6 @@ func create_special_action(data: Dictionary = {}) -> AIAction:
 	action.special_data = data
 	return action
 
-# NOVÁ FUNKCE: Vytvoří RUSH akci
 func create_rush_action(target: Unit, path: Array[Vector2i], multiplier: float = 3.0) -> AIAction:
 	var action = AIAction.new()
 	action.type = AIAction.ActionType.RUSH
@@ -108,9 +130,44 @@ func create_rush_action(target: Unit, path: Array[Vector2i], multiplier: float =
 	action.damage_multiplier = multiplier
 	return action
 
+# === TAKTICKÉ HELPER FUNKCE ===
+
+# Najde nejlepší pozici pro útok na cíl (přesune se tak, aby mohl zaútočit)
+func find_attack_move_position(unit: Unit, target: Unit, battle_grid: BattleGrid) -> Vector2i:
+	var reachable = get_reachable_cells(unit, battle_grid)
+	var best_cell = Vector2i(-1, -1)
+	var best_distance = INF
+	
+	for cell in reachable:
+		if can_attack_from_position(cell, unit, target, battle_grid):
+			# Preferujeme pozici nejblíže k aktuální pozici (minimum pohybu)
+			var move_dist = battle_grid.get_distance(unit.grid_position, cell)
+			if move_dist < best_distance:
+				best_distance = move_dist
+				best_cell = cell
+	
+	return best_cell
+
+# Najde pozici pro útok z bezpečné vzdálenosti (pro ranged)
+func find_safe_attack_position(unit: Unit, target: Unit, battle_grid: BattleGrid, min_safe_distance: int = 2) -> Vector2i:
+	var reachable = get_reachable_cells(unit, battle_grid)
+	var best_cell = Vector2i(-1, -1)
+	var best_score = -INF
+	
+	for cell in reachable:
+		if can_attack_from_position(cell, unit, target, battle_grid):
+			var dist_to_target = battle_grid.get_distance(cell, target.grid_position)
+			var score = dist_to_target  # Preferujeme větší vzdálenost
+			if dist_to_target < min_safe_distance:
+				score -= 100  # Penalizace za příliš blízko
+			if score > best_score:
+				best_score = score
+				best_cell = cell
+	
+	return best_cell
+
 # === PATHFINDING FUNKCE ===
 
-# Základní pathfinding - najde cestu z from_unit na to_cell
 func find_path(from_unit: Unit, to_cell: Vector2i, battle_grid: BattleGrid) -> Array[Vector2i]:
 	var astar_grid = AStar2D.new()
 	update_astar_grid(astar_grid, from_unit, battle_grid)
@@ -128,7 +185,6 @@ func find_path(from_unit: Unit, to_cell: Vector2i, battle_grid: BattleGrid) -> A
 		
 	return result_path
 
-# Pathfinding s limitem pohybu - omezí cestu na max_movement kroků
 func find_path_with_movement_limit(from_unit: Unit, to_cell: Vector2i, battle_grid: BattleGrid, max_movement: int) -> Array[Vector2i]:
 	var astar_grid = AStar2D.new()
 	update_astar_grid(astar_grid, from_unit, battle_grid)
@@ -142,20 +198,17 @@ func find_path_with_movement_limit(from_unit: Unit, to_cell: Vector2i, battle_gr
 	var path_vectors: PackedVector2Array = astar_grid.get_point_path(start_id, end_id)
 	var result_path: Array[Vector2i] = []
 	
-	# Omez cestu na maximální pohyb
 	var steps_taken = 0
 	for i in range(path_vectors.size()):
 		result_path.append(Vector2i(path_vectors[i]))
-		if i > 0: # Nepočítej startovní pozici
+		if i > 0:
 			steps_taken += 1
 			if steps_taken >= max_movement:
 				break
 	
 	return result_path
 
-# Najde cestu k sousednímu poli cílové jednotky
 func find_path_to_adjacent(from_unit: Unit, to_unit: Unit, battle_grid: BattleGrid) -> Array[Vector2i]:
-	# Najdeme všechna sousední pole k cíli
 	var adjacent_cells: Array[Vector2i] = []
 	for offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
 		var cell = to_unit.grid_position + offset
@@ -169,7 +222,6 @@ func find_path_to_adjacent(from_unit: Unit, to_unit: Unit, battle_grid: BattleGr
 	if adjacent_cells.is_empty():
 		return []
 	
-	# Najdeme nejkratší cestu k nejbližšímu sousednímu poli
 	var best_path: Array[Vector2i] = []
 	var shortest_distance = INF
 	
@@ -181,7 +233,24 @@ func find_path_to_adjacent(from_unit: Unit, to_unit: Unit, battle_grid: BattleGr
 	
 	return best_path
 
-# Aktualizuje A* grid pro pathfinding
+# Pathfinding z konkrétní pozice (pro simulaci pohybu)
+func find_path_from_position(from_pos: Vector2i, to_cell: Vector2i, moving_unit: Unit, battle_grid: BattleGrid) -> Array[Vector2i]:
+	var astar_grid = AStar2D.new()
+	update_astar_grid(astar_grid, moving_unit, battle_grid)
+	var start_id = get_point_id(from_pos, battle_grid)
+	var end_id = get_point_id(to_cell, battle_grid)
+	
+	if not astar_grid.has_point(start_id) or not astar_grid.has_point(end_id) or astar_grid.is_point_disabled(end_id):
+		return []
+
+	var path_vectors: PackedVector2Array = astar_grid.get_point_path(start_id, end_id)
+	var result_path: Array[Vector2i] = []
+	
+	for p in path_vectors:
+		result_path.append(Vector2i(p))
+		
+	return result_path
+
 func update_astar_grid(astar_grid: AStar2D, moving_unit: Unit, battle_grid: BattleGrid):
 	astar_grid.clear()
 	var grid_size = Vector2i(battle_grid.grid_columns, battle_grid.grid_rows)
@@ -212,6 +281,5 @@ func update_astar_grid(astar_grid: AStar2D, moving_unit: Unit, battle_grid: Batt
 					if astar_grid.has_point(to_id) and not astar_grid.is_point_disabled(to_id): 
 						astar_grid.connect_points(from_id, to_id)
 
-# Vypočítá point ID pro A* grid
 func get_point_id(cell: Vector2i, battle_grid: BattleGrid) -> int:
 	return cell.y * battle_grid.grid_columns + cell.x

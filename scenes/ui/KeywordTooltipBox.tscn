@@ -5,12 +5,12 @@
 
 [node name="KeywordTooltipBox" type="HBoxContainer"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 script = ExtResource("1_script")
 
 [node name="IconTexture" type="TextureRect" parent="."]
 layout_mode = 2
-custom_minimum_size = Vector2(24, 24)
+custom_minimum_size = Vector2(28, 28)
 expand_mode = 1
 stretch_mode = 5
 
@@ -21,15 +21,17 @@ size_flags_horizontal = 3
 
 [node name="TitleLabel" type="Label" parent="TextContainer"]
 layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 16
 text = "Vulnerable"
 
 [node name="DescriptionLabel" type="RichTextLabel" parent="TextContainer"]
 custom_minimum_size = Vector2(0, 0)
 layout_mode = 2
 theme_override_fonts/normal_font = ExtResource("2_font")
-theme_override_font_sizes/normal_font_size = 12
+theme_override_font_sizes/normal_font_size = 14
 bbcode_enabled = true
 text = "Target takes 50% more damage."
 fit_content = true

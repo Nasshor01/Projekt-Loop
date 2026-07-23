@@ -55,6 +55,27 @@ layout_mode = 2
 tooltip_text = "Anonymní technická data nám pomáhají najít a opravit chyby v hře."
 text = "Odesílat hlášení o pádu"
 
+[node name="FullscreenCheckBox" type="CheckBox" parent="Panel/VBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "Fullscreen"
+
+[node name="MusicSection" type="VBoxContainer" parent="Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MusicVolumeLabel" type="Label" parent="Panel/VBoxContainer/MusicSection"]
+layout_mode = 2
+text = "Music Volume"
+horizontal_alignment = 1
+
+[node name="MusicVolumeSlider" type="HSlider" parent="Panel/VBoxContainer/MusicSection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+value = 100.0
+
 [node name="CloseButton" type="Button" parent="Panel/VBoxContainer"]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2

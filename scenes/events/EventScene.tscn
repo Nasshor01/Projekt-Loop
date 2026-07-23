@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://dn8aea8c5urnk"]
+[gd_scene load_steps=4 format=3 uid="uid://dn8aea8c5urnk"]
 
 [ext_resource type="Script" uid="uid://i74m13048qkr" path="res://scenes/events/EventScene.gd" id="1_snngf"]
-[ext_resource type="PackedScene" uid="uid://pjdtf3hky6c6" path="res://scenes/ui/CardPileViewer.tscn" id="2_xntkm"]
+[ext_resource type="PackedScene" uid="uid://pjdtf3hky6c6" path="res://scenes/ui/DeckViewer.tscn" id="2_xntkm"]
+[ext_resource type="PackedScene" uid="uid://dah2k3m4n5p6q" path="res://scenes/ui/CardTooltip.tscn" id="3_tooltip"]
 
 [node name="EventScene" type="Node2D"]
 script = ExtResource("1_snngf")
@@ -12,19 +13,21 @@ script = ExtResource("1_snngf")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 2.0
+offset_bottom = 2.0
 grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.215902, 0.215902, 0.215902, 1)
 
 [node name="EventPanel" type="Panel" parent="UI"]
-custom_minimum_size = Vector2(500, 600)
+custom_minimum_size = Vector2(400, 500)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -472.0
-offset_top = -300.0
+offset_left = -448.0
+offset_top = -244.0
 offset_right = 488.0
 offset_bottom = 300.0
 grow_horizontal = 2
@@ -35,6 +38,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 8.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 20
@@ -50,6 +54,8 @@ alignment = 1
 
 [node name="TitleLabel" type="Label" parent="UI/EventPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 48
 text = "Název Eventu"
 horizontal_alignment = 1
@@ -122,3 +128,7 @@ text = "Pokračovat"
 [node name="CardPileViewer" parent="UI" instance=ExtResource("2_xntkm")]
 unique_name_in_owner = true
 visible = false
+offset_left = 64.0
+offset_top = 128.0
+
+[node name="CardTooltip" parent="UI" instance=ExtResource("3_tooltip")]

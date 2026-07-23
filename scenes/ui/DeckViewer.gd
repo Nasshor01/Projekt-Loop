@@ -2,6 +2,7 @@ extends PanelContainer
 
 signal card_selected(card_data: CardData)
 signal card_clicked_in_viewer(card_data)
+signal card_right_clicked(card_data: CardData)
 
 @onready var grid_container: GridContainer = %GridContainer
 @onready var close_button: Button = %CloseButton
@@ -12,7 +13,8 @@ var card_scene = preload("res://scenes/ui/CardUI.tscn")
 func _ready():
 	close_button.pressed.connect(hide)
 	_update_ui_texts()
-	hide() # Začíná skrytý
+	z_index = 200
+	hide()
 
 func _update_ui_texts():
 	if title_label:
@@ -20,107 +22,91 @@ func _update_ui_texts():
 	if close_button:
 		close_button.text = tr("ui.common.close")
 
-
-## Zobrazí každou kartu individuálně.
-func show_cards(cards: Array[CardData], card_scale: Vector2 = Vector2(0.7, 0.7)):
-	# 1. Vyčisti všechny staré karty
+## Individual cards (upgrade pick, remove card, etc.) — full readable face.
+func show_cards(cards: Array[CardData], _card_scale: Vector2 = Vector2.ZERO):
 	_clear_grid()
-
-	# 2. Vytvoř a zobraz nové karty (každou zvlášť)
+	grid_container.columns = 3
 	for card_data in cards:
 		if not is_instance_valid(card_data):
 			continue
-			
-		var card_instance = card_scene.instantiate()
-		
-		# Použijeme metodu 'load_card' z tvého skriptu
-		card_instance.load_card(card_data) 
-		if card_instance is CardUI:
-			card_instance.is_draggable = false
-			card_instance.static_layout = true
-			card_instance.custom_minimum_size = Vector2(200, 300)
-			card_instance.pivot_offset = card_instance.custom_minimum_size * 0.5
-			card_instance.set_target_scale(card_scale)
-			card_instance.scale = card_scale
-			if not card_instance.is_connected("card_clicked", _on_card_clicked_in_viewer):
-				card_instance.card_clicked.connect(_on_card_clicked_in_viewer)
-			call_deferred("_sync_deck_card_layout", card_instance)
-		else:
-			card_instance.scale = card_scale
-		
-		# 3. Připoj signál pro kliknutí k NOVÉMU handleru
-		card_instance.gui_input.connect(_on_card_selected_input.bind(card_data))
-		
-		grid_container.add_child(card_instance)
-
-	# 4. Zobraz celý panel
+		_add_card_to_grid(card_data, CardUI.DisplayMode.DECK)
 	self.show()
+	_set_world_hud_dimmed(true)
 
-
-## Zavolá se, když se klikne na kartu zobrazenou přes 'show_cards'
-func _on_card_selected_input(event: InputEvent, card_data: CardData):
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
-		# Kliknuto! Vyšleme náš hlavní signál 'card_selected' ven.
-		card_selected.emit(card_data)
-		
-		# Po výběru se viewer rovnou skryje a vyčistí
-		hide_and_clear()
-
-## Toto je funkce pro ZOBRAZENÍ DECKU (s počítáním)
+## Deck overview with counts — compact tiles stay legible.
 func display_deck(deck: Array[CardData]):
-	# Vyčistíme staré karty
 	_clear_grid()
+	grid_container.columns = 4
 
-	# Seskupíme karty podle jména a spočítáme jejich počet
 	var card_counts = {}
 	for card_data in deck:
 		if not card_counts.has(card_data.card_name):
 			card_counts[card_data.card_name] = {"data": card_data, "count": 0}
 		card_counts[card_data.card_name]["count"] += 1
 
-	# Vytvoříme a zobrazíme karty
 	for card_name in card_counts:
 		var card_info = card_counts[card_name]
-		var card_instance = card_scene.instantiate()
-		card_instance.load_card(card_info["data"]) # Používáme 'load_card'
-		if card_instance is CardUI:
-			card_instance.is_draggable = false
-			card_instance.static_layout = true
-			card_instance.custom_minimum_size = Vector2(200, 300)
-			card_instance.pivot_offset = card_instance.custom_minimum_size * 0.5
-			card_instance.set_target_scale(Vector2(0.7, 0.7))
-			card_instance.scale = Vector2(0.7, 0.7)
-			if not card_instance.is_connected("card_clicked", _on_card_clicked_in_viewer):
-				card_instance.card_clicked.connect(_on_card_clicked_in_viewer)
-			call_deferred("_sync_deck_card_layout", card_instance)
-
-		# Přidáme label s počtem karet
-		var count_label = Label.new()
-		count_label.text = TranslationHelper.tr_format("ui.deck_viewer.count", {"value": card_info["count"]})
-		count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		count_label.set("theme_override_font_sizes/font_size", 24)
-		count_label.set("theme_override_colors/font_color", Color.WHITE)
-		card_instance.add_child(count_label)
-
-		# Napojíme signál pro zobrazení detailu na PŮVODNÍ handler
-		card_instance.gui_input.connect(_on_card_gui_input.bind(card_info["data"]))
-
-		grid_container.add_child(card_instance)
-
+		var card_instance = _add_card_to_grid(card_info["data"], CardUI.DisplayMode.COMPACT)
+		if card_instance:
+			var count_label = Label.new()
+			count_label.text = TranslationHelper.tr_format("ui.deck_viewer.count", {"value": card_info["count"]})
+			count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			count_label.add_theme_font_size_override("font_size", 22)
+			count_label.add_theme_color_override("font_color", Color(1, 0.95, 0.4, 1))
+			count_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+			count_label.add_theme_constant_override("outline_size", 4)
+			count_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+			count_label.offset_left = -56
+			count_label.offset_top = 4
+			count_label.offset_right = -6
+			count_label.offset_bottom = 28
+			count_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			card_instance.add_child(count_label)
+			card_instance.gui_input.connect(_on_card_gui_input.bind(card_info["data"]))
 	show()
+	_set_world_hud_dimmed(true)
 
+func _add_card_to_grid(card_data: CardData, mode: CardUI.DisplayMode) -> CardUI:
+	var card_instance = card_scene.instantiate()
+	card_instance.load_card(card_data)
+	if not (card_instance is CardUI):
+		return null
+	var card_ui := card_instance as CardUI
+	card_ui.apply_display_mode(mode)
+	if not card_ui.is_connected("card_clicked", _on_card_clicked_in_viewer):
+		card_ui.card_clicked.connect(_on_card_clicked_in_viewer)
+	if not card_ui.card_right_clicked.is_connected(_on_card_right_clicked_in_viewer):
+		card_ui.card_right_clicked.connect(_on_card_right_clicked_in_viewer)
+	card_ui.gui_input.connect(_on_card_selected_input.bind(card_data))
 
-## Zavolá se, když se klikne na kartu zobrazenou přes 'display_deck'
+	var scaled_size = card_ui.get_scaled_size()
+	# Small padding between grid cells
+	var cell = scaled_size + Vector2(12, 16)
+	var wrapper = Control.new()
+	wrapper.custom_minimum_size = cell
+	wrapper.size = cell
+	wrapper.clip_contents = false
+	wrapper.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	wrapper.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	wrapper.add_child(card_ui)
+	card_ui.position = Vector2(6, 8)
+	grid_container.add_child(wrapper)
+	call_deferred("_sync_deck_card_layout", card_ui)
+	return card_ui
+
+func _on_card_selected_input(event: InputEvent, card_data: CardData):
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
+		card_selected.emit(card_data)
+		hide_and_clear()
+
 func _on_card_gui_input(event: InputEvent, card_data: CardData):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
 		print(tr("ui.deck_viewer.detail_card") + " " + card_data.get_localized_name())
-		# Zde se v budoucnu může zobrazit detailní popup
 
-
-## --- NOVÉ POMOCNÉ FUNKCE ---
 func hide_and_clear():
 	hide()
 	_clear_grid()
+	_set_world_hud_dimmed(false)
 
 func _clear_grid():
 	for child in grid_container.get_children():
@@ -131,6 +117,22 @@ func _sync_deck_card_layout(card_ui: CardUI):
 		return
 	card_ui.set_target_position(card_ui.position)
 	card_ui.set_target_scale(card_ui.scale)
+	card_ui.size = card_ui.custom_minimum_size
 
 func _on_card_clicked_in_viewer(card_data: CardData):
 	card_clicked_in_viewer.emit(card_data)
+
+func _on_card_right_clicked_in_viewer(card_data: CardData):
+	card_right_clicked.emit(card_data)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and not visible:
+		_set_world_hud_dimmed(false)
+
+func _set_world_hud_dimmed(dimmed: bool) -> void:
+	"""Hide battle HP bars while deck overlay is open (they draw on battle CanvasLayer)."""
+	if not is_inside_tree():
+		return
+	for n in get_tree().get_nodes_in_group("unit_health_bars"):
+		if is_instance_valid(n):
+			n.visible = not dimmed

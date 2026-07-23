@@ -5,6 +5,7 @@ extends Node2D
 
 @onready var icon_sprite: Sprite2D = $Sprite2D
 @onready var intent_label: Label = $Label
+@onready var countdown_label: Label = $CountdownLabel
 
 var _base_position: Vector2
 var _bob_tween: Tween
@@ -16,6 +17,8 @@ func _ready() -> void:
 	_base_position = position
 	_start_bob()
 	set_process(true)
+	if countdown_label:
+		countdown_label.visible = false
 
 func set_intent(icon: Texture2D, text: String) -> void:
 	if is_instance_valid(icon_sprite):
@@ -24,6 +27,22 @@ func set_intent(icon: Texture2D, text: String) -> void:
 	if is_instance_valid(intent_label):
 		intent_label.text = text
 		intent_label.visible = text != ""
+
+func set_countdown(turns: int) -> void:
+	"""Zobrazí číselný odpočet kol na ikoně (0 = skrýt)"""
+	if not is_instance_valid(countdown_label):
+		return
+	if turns > 0:
+		countdown_label.text = str(turns)
+		countdown_label.visible = true
+	else:
+		countdown_label.text = ""
+		countdown_label.visible = false
+
+func clear_countdown() -> void:
+	"""Skryje odpočet"""
+	if is_instance_valid(countdown_label):
+		countdown_label.visible = false
 
 func get_icon_texture_size() -> Vector2:
 	if is_instance_valid(icon_sprite) and icon_sprite.texture:
@@ -35,6 +54,8 @@ func set_icon_scale(scale_value: float) -> void:
 		icon_sprite.scale = Vector2(scale_value, scale_value)
 	if is_instance_valid(intent_label):
 		intent_label.scale = Vector2(scale_value, scale_value)
+	if is_instance_valid(countdown_label):
+		countdown_label.scale = Vector2(scale_value, scale_value)
 
 func set_screen_position(new_position: Vector2) -> void:
 	_screen_position = new_position

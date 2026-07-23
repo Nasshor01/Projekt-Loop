@@ -1,12 +1,25 @@
-[gd_scene load_steps=2 format=3 uid="uid://b5ybgxi0pnlk7"]
+[gd_scene load_steps=3 format=3 uid="uid://b5ybgxi0pnlk7"]
 
 [ext_resource type="Script" path="res://scripts/CardPileViewer.gd" id="1_1uh4v"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_opaque"]
+bg_color = Color(0.12, 0.12, 0.18, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.4, 0.4, 0.5, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="CardPileViewer" type="PanelContainer"]
 offset_right = 1088.0
 offset_bottom = 576.0
 size_flags_horizontal = 3
 size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_opaque")
 script = ExtResource("1_1uh4v")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
@@ -49,4 +62,4 @@ size_flags_vertical = 3
 [node name="GridContainer" type="GridContainer" parent="MarginContainer/VBoxContainer/ScrollContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-columns = 4
+columns = 3

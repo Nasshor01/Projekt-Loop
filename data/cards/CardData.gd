@@ -69,7 +69,8 @@ enum EffectRangeType {
 	RANGED_FIXED,   # Pevný dosah X buněk
 	RANGED_LINE,    # V linii X buněk
 	GRID_AOE,       # Oblast na mřížce (definovaná v CardEffectData.AreaOfEffectType)
-	FULL_BOARD      # Celé bojiště
+	FULL_BOARD,     # Celé bojiště
+	PLAYER_CENTERED_AOE  # AOE vycházející z pozice hráče (ROW/COLUMN/SQUARE kolem hráče)
 }
 
 
@@ -187,10 +188,10 @@ const SHORTHAND_ICONS: Dictionary = {
 	"regeneration": "res://art/icons/status/Regeneration.png"
 }
 
-const ICON_SIZE: int = 20
+const ICON_SIZE: int = 16
 
 func generate_compact_description() -> String:
-	"""Shorthand format: [Value] [Icon]. NO full sentences. BBCode for RichTextLabel. HOLY: value + icon only."""
+	"""Shorthand: one effect per line — [Value] [Icon]. Details live in the tooltip."""
 	var parts: Array[String] = []
 	for effect in effects:
 		var line := _format_effect_shorthand(effect)
@@ -198,7 +199,7 @@ func generate_compact_description() -> String:
 			parts.append(line)
 	if parts.is_empty():
 		return tr(card_description)
-	return " | ".join(parts).strip_edges()
+	return "\n".join(parts).strip_edges()
 
 func _img(icon_key: String, size: int = ICON_SIZE) -> String:
 	"""Returns BBCode [img] tag for icon from KeywordManager.ICON_MAP (or SHORTHAND_ICONS in editor). NO icon if path missing."""
@@ -212,8 +213,8 @@ func _img(icon_key: String, size: int = ICON_SIZE) -> String:
 	return "[img=%dx%d]%s[/img]" % [size, size, path]
 
 func _num(x: int) -> String:
-	"""Numbers: white bold with 4px black outline for high contrast on any background."""
-	return "[b][outline_size=4][outline_color=black][color=white]%d[/color][/outline_color][/outline_size][/b]" % x
+	"""Plain bold number — outline comes from RichTextLabel theme override."""
+	return "[b]%d[/b]" % x
 
 func _energy(x: int) -> String:
 	"""Energy: [b][color=cyan]X Energy[/color][/b] - NO icon."""
@@ -258,7 +259,7 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 			if effect.area_of_effect_type == CardEffectData.AreaOfEffectType.ALL_ON_GRID:
 				prefix = tr("card.effect.to_all") + " "
 			if effect.damage_type == CardEffectData.DamageType.HOLY:
-				return prefix + _num(dmg_val) + " " + _img("attack") + _img("holy_damage")
+				return prefix + _num(dmg_val) + " " + _img("holy_damage")
 			var icon_key := "damage"
 			var cond := _get_condition_shorthand(effect, "dmg")
 			if cond != "":
@@ -313,9 +314,17 @@ func _format_status_shorthand(effect: CardEffectData) -> String:
 			return _num(effect.value) + " " + _img("damage")
 		"frozen":
 			return "[b]" + tr("status.frozen") + "[/b]"
+		"defensive_stance":
+			return "[b]" + tr("status.defensive_stance.short") + "[/b]"
+		"draw_plus_one":
+			return "[b]" + tr("status.draw_plus_one.short") + "[/b]"
+		"remove_all_debuffs":
+			return "[b]" + tr("status.remove_all_debuffs") + "[/b]"
 		_:
 			var s := _get_status_display_description(effect)
-			return "[b]" + (s if s != "" else _get_status_description(effect)) + "[/b]"
+			if s.is_empty():
+				s = _get_status_description(effect)
+			return "[b]" + s + "[/b]"
 
 func _get_condition_shorthand(effect: CardEffectData, effect_type: String) -> String:
 	"""Compact condition suffix. Returns empty if no condition."""
@@ -354,10 +363,19 @@ func _get_target_description(effect: CardEffectData) -> String:
 			return ""  # Pro SELECTED je cíl jasný z kontextu
 
 func _get_status_description(effect: CardEffectData) -> String:
-	"""Vrátí popis status efektu"""
-	if effect.string_value != "":
-		return effect.string_value
-	return "Status efekt"
+	"""Localized status label — never return raw string_value IDs on the card face."""
+	if effect.string_value.is_empty():
+		return tr("status.unknown")
+	var key := "status.%s" % effect.string_value
+	var localized := tr(key)
+	if localized != key:
+		return localized
+	var short_key := "status.%s.short" % effect.string_value
+	var short_localized := tr(short_key)
+	if short_localized != short_key:
+		return short_localized
+	# Last resort: humanize snake_case without leaking the raw id as-is look
+	return effect.string_value.replace("_", " ").capitalize()
 
 func _get_status_display_description(effect: CardEffectData) -> String:
 	"""Vrátí pěkný popis status efektu pro zobrazení"""
@@ -382,6 +400,10 @@ func _get_status_display_description(effect: CardEffectData) -> String:
 			return TranslationHelper.tr_format("status.aiming", {"value": effect.value - 100})
 		"remove_all_debuffs":
 			return tr("status.remove_all_debuffs")
+		"defensive_stance":
+			return tr("status.defensive_stance.short")
+		"draw_plus_one":
+			return tr("status.draw_plus_one.short")
 		_:
 			return ""
 

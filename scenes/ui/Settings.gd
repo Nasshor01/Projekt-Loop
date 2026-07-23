@@ -1,9 +1,16 @@
 extends CanvasLayer
 
+## Emitován při zavření v overlay režimu (během runu) – GlobalUI zavře popup a unpause
+signal overlay_closed
+
+var _overlay_mode: bool = false
+
 @onready var title_label: Label = $Panel/VBoxContainer/TitleLabel
 @onready var language_label: Label = $Panel/VBoxContainer/LanguageSection/LanguageLabel
 @onready var language_option: OptionButton = %LanguageOptionButton
 @onready var reports_checkbox: CheckBox = %ReportsCheckBox
+@onready var fullscreen_checkbox: CheckBox = %FullscreenCheckBox
+@onready var music_volume_slider: HSlider = %MusicVolumeSlider
 @onready var close_button: Button = $Panel/VBoxContainer/CloseButton
 
 var current_locale: String = "en"
@@ -12,10 +19,14 @@ func _ready():
 	close_button.pressed.connect(_on_close_pressed)
 	language_option.item_selected.connect(_on_language_selected)
 	reports_checkbox.toggled.connect(_on_reports_toggled)
+	fullscreen_checkbox.toggled.connect(_on_fullscreen_toggled)
+	music_volume_slider.value_changed.connect(_on_music_volume_changed)
 	
 	_setup_language_options()
 	_load_current_language()
 	_load_report_preference()
+	_load_fullscreen_preference()
+	_load_music_volume()
 	_update_ui_texts()
 
 func _setup_language_options():
@@ -82,6 +93,28 @@ func _update_ui_texts():
 	if reports_checkbox:
 		reports_checkbox.text = tr("ui.settings.reports_checkbox")
 		reports_checkbox.tooltip_text = tr("ui.settings.reports_tooltip")
+	if fullscreen_checkbox:
+		fullscreen_checkbox.text = tr("ui.settings.fullscreen")
+		fullscreen_checkbox.tooltip_text = tr("ui.settings.fullscreen_tooltip")
+	# Music volume label - optional, slider shows value
+	if $Panel/VBoxContainer/MusicSection.has_node("MusicVolumeLabel"):
+		$Panel/VBoxContainer/MusicSection/MusicVolumeLabel.text = tr("ui.settings.music_volume")
+
+func _load_music_volume():
+	var cfg = ConfigFile.new()
+	if cfg.load("user://settings.cfg") == OK and cfg.has_section_key("settings", "music_volume"):
+		var v = cfg.get_value("settings", "music_volume", 100)
+		music_volume_slider.value = v
+	elif has_node("/root/MusicManager"):
+		music_volume_slider.value = int(MusicManager.get_volume_linear() * 100)
+
+func _on_music_volume_changed(value: float):
+	if has_node("/root/MusicManager"):
+		MusicManager.set_volume_linear(value / 100.0)
+	var cfg = ConfigFile.new()
+	var _err = cfg.load("user://settings.cfg")
+	cfg.set_value("settings", "music_volume", int(value))
+	cfg.save("user://settings.cfg")
 
 func _update_main_menu_if_visible():
 	"""Aktualizuje MainMenu texty, pokud je viditelný"""
@@ -94,12 +127,19 @@ func _update_main_menu_if_visible():
 
 func _on_close_pressed():
 	hide()
-	GameManager.go_to_main_menu()
+	if _overlay_mode:
+		_overlay_mode = false
+		emit_signal("overlay_closed")
+		get_tree().paused = false
+	else:
+		GameManager.go_to_main_menu()
 
 func show_settings():
 	show()
 	_load_current_language()
 	_load_report_preference()
+	_load_fullscreen_preference()
+	_load_music_volume()
 
 func _on_reports_toggled(value: bool):
 	if has_node("/root/DebugLogger"):
@@ -123,6 +163,43 @@ func _save_report_preference(value: bool):
 		config = ConfigFile.new()
 	config.set_value("settings", "can_send_reports", value)
 	config.save("user://settings.cfg")
+
+func _load_fullscreen_preference():
+	var fullscreen = _get_saved_fullscreen()
+	if fullscreen_checkbox:
+		fullscreen_checkbox.button_pressed = fullscreen
+	_apply_fullscreen(fullscreen)
+
+func _get_saved_fullscreen() -> bool:
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+	if err == OK and config.has_section_key("settings", "fullscreen"):
+		return bool(config.get_value("settings", "fullscreen", false))
+	return false
+
+func _apply_fullscreen(fullscreen: bool):
+	if fullscreen:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+	else:
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+
+func _on_fullscreen_toggled(checked: bool):
+	_apply_fullscreen(checked)
+	_save_fullscreen_preference(checked)
+
+func _save_fullscreen_preference(value: bool):
+	var config = ConfigFile.new()
+	var err = config.load("user://settings.cfg")
+	if err != OK:
+		config = ConfigFile.new()
+	config.set_value("settings", "fullscreen", value)
+	config.save("user://settings.cfg")
+
+func show_as_overlay():
+	"""Zobrazí Settings jako overlay během runu (z popup menu). Při zavření vrátí do hry."""
+	_overlay_mode = true
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	show_settings()
 
 func hide_settings():
 	hide()

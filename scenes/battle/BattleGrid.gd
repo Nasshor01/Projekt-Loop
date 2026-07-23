@@ -51,6 +51,8 @@ var _targetable_cells_color: Color = attack_highlight_color
 var _spawn_highlight_nodes: Array[MeshInstance3D] = []
 var _spawn_pulse_active: bool = false
 var _enemy_overlap_pulse_nodes: Array[MeshInstance3D] = []  # buňky kde move == attack (modrá ↔ červená)
+# Coop: vybrané spawn buňky – Dictionary { Vector2i -> Color }
+var _coop_selected_spawns: Dictionary = {}
 
 func _ready():
 	_terrain_container = Node3D.new()
@@ -212,7 +214,12 @@ func update_visual_highlights():
 			create_cursor.call(cell, attack_highlight_color, false, 1.25)
 	for cell in _movable_cells: create_cursor.call(cell, movement_highlight_color, false, 1.15)        # zelená = move player
 	for cell in _warning_cells: create_cursor.call(cell, movement_warning_color, false, 1.0)
-	for cell in _player_spawn_cells: create_cursor.call(cell, player_spawn_highlight_color, true, 1.0)
+	for cell in _player_spawn_cells:
+		if _coop_selected_spawns.has(cell):
+			continue  # Vybrané spawny vykreslíme zvlášť s jinou barvou
+		create_cursor.call(cell, player_spawn_highlight_color, true, 1.0)
+	for cell in _coop_selected_spawns:
+		create_cursor.call(cell, _coop_selected_spawns[cell], false, 2.0)
 	for cell in _targetable_cells: create_cursor.call(cell, _targetable_cells_color, false, 1.25)      # červená = attack (nebo modrá support)
 	for cell in _aoe_cells: create_cursor.call(cell, aoe_highlight_color, false, 1.1)
 	
@@ -426,6 +433,19 @@ func get_cells_for_aoe(origin_cell: Vector2i, aoe_type: CardEffectData.AreaOfEff
 				if unit.unit_data.faction == UnitData.Faction.ENEMY: cells.append(unit.grid_position)
 	return cells
 
+func get_cells_for_centered_aoe(center_cell: Vector2i, aoe_type: CardEffectData.AreaOfEffectType, param_x: int, param_y: int) -> Array[Vector2i]:
+	"""Vypočítá AOE buňky CENTROVANÉ na center_cell (pro player-centered karty).
+	SQUARE je vycentrovaný, ROW/COLUMN zůstává stejný (řádek/sloupec center_cell)."""
+	match aoe_type:
+		CardEffectData.AreaOfEffectType.SQUARE_X_BY_Y:
+			var offset_x = param_x / 2
+			var offset_y = param_y / 2
+			var origin = Vector2i(center_cell.x - offset_x, center_cell.y - offset_y)
+			return get_cells_for_aoe(origin, aoe_type, param_x, param_y)
+		_:
+			# ROW, COLUMN, ALL_ON_GRID — center_cell stačí jako origin
+			return get_cells_for_aoe(center_cell, aoe_type, param_x, param_y)
+
 func place_terrain(grid_position: Vector2i, terrain_data: TerrainData):
 	if not is_cell_active(grid_position): return
 	terrain_layer[grid_position] = terrain_data
@@ -481,10 +501,20 @@ func show_player_spawn_points(cells: Array[Vector2i]):
 func hide_player_spawn_points():
 	if not _player_spawn_cells.is_empty():
 		_player_spawn_cells.clear()
+		_coop_selected_spawns.clear()
 		update_visual_highlights()
 
 func is_cell_a_valid_spawn_point(cell: Vector2i) -> bool:
 	return _player_spawn_cells.has(cell)
+
+func set_coop_selected_spawn(cell: Vector2i, color: Color):
+	"""Coop: označí buňku jako vybraný spawn s danou barvou."""
+	_coop_selected_spawns[cell] = color
+	update_visual_highlights()
+
+func clear_coop_selected_spawns():
+	_coop_selected_spawns.clear()
+	update_visual_highlights()
 
 func show_danger_zone(enemy_units: Array):
 	_danger_cells.clear()

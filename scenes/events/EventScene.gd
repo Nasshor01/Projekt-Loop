@@ -18,7 +18,9 @@ const EVENT_POOL = preload("res://data/events/all_events_pool.tres")
 @onready var continue_button: Button = $UI/ResultPanel/MarginContainer/VBoxContainer/ContinueButton
 
 @onready var card_removal_viewer: PanelContainer = $UI/CardPileViewer
+@onready var card_tooltip: CardTooltip = $UI/CardTooltip
 
+var _current_tooltip_card_data: CardData = null
 var current_event: EventData
 var event_resolved: bool = false
 var choice_buttons: Array[Button] = []
@@ -27,6 +29,9 @@ var rng: RandomNumberGenerator
 var pending_card_removal: bool = false
 var pending_card_upgrade: bool = false
 var cards_to_remove_count: int = 0
+
+var _is_coop: bool = false
+var _is_host: bool = true
 
 func _ready():
 	DebugLogger.log_info("=== EVENT SCENE STARTED ===", "EVENT")
@@ -40,10 +45,29 @@ func _ready():
 	# Skryj card removal viewer na začátku
 	if card_removal_viewer:
 		card_removal_viewer.visible = false
+	if card_removal_viewer.has_signal("card_right_clicked"):
+		card_removal_viewer.card_right_clicked.connect(_on_card_right_clicked_tooltip)
 	
 	continue_button.pressed.connect(_on_continue_pressed)
 	
-	# Načti event pomocí vlastního poolu a EventManager logiky
+	_is_coop = has_node("/root/GameManager") and GameManager.is_coop_run
+	_is_host = not _is_coop or (has_node("/root/MultiplayerManager") and MultiplayerManager.is_server())
+	
+	if _is_coop and not _is_host:
+		# Klient: použij event path od hosta (pending data)
+		var pending_path = GameManager._coop_pending_event_path
+		if not pending_path.is_empty():
+			var ev = load(pending_path) as EventData
+			if is_instance_valid(ev):
+				current_event = ev
+				GameManager._coop_pending_event_path = ""
+				display_event()
+				return
+		# Data ještě nepřišla – čekáme (poll)
+		_wait_for_event_data()
+		return
+	
+	# Host / solo: načti event normálně
 	current_event = _get_random_event_for_floor(PlayerData.floors_cleared)
 	
 	if not current_event:
@@ -52,6 +76,29 @@ func _ready():
 		return
 	
 	display_event()
+	
+	# Coop host: pošli event klientovi přes autoload
+	if _is_coop and _is_host and is_instance_valid(current_event):
+		MultiplayerManager.rpc("receive_go_to_event", current_event.resource_path)
+
+func _wait_for_event_data():
+	"""Klient: čeká na event data od hosta."""
+	for i in range(50):
+		await get_tree().create_timer(0.1).timeout
+		var pending_path = GameManager._coop_pending_event_path
+		if not pending_path.is_empty():
+			var ev = load(pending_path) as EventData
+			if is_instance_valid(ev):
+				current_event = ev
+				GameManager._coop_pending_event_path = ""
+				display_event()
+				return
+	# Fallback: generuj lokálně
+	current_event = _get_random_event_for_floor(PlayerData.floors_cleared)
+	if current_event:
+		display_event()
+	else:
+		_show_error_message()
 
 func _get_random_event_for_floor(floor: int) -> EventData:
 	"""Získá náhodný event z vlastního poolu pomocí EventManager logiky"""
@@ -139,6 +186,10 @@ func _on_choice_made(choice_index: int):
 	if event_resolved or not current_event:
 		return
 	
+	# Coop: jen host může vybrat (klient je read-only divák)
+	if _is_coop and not _is_host:
+		return
+	
 	event_resolved = true
 	var choice: EventChoice = current_event.choices[choice_index]
 	
@@ -149,6 +200,23 @@ func _on_choice_made(choice_index: int):
 		button.disabled = true
 	
 	# Zpracuj volbu
+	_process_choice_new(choice)
+	
+	# Coop: pošli výsledek klientovi
+	if _is_coop and _is_host:
+		rpc("_rpc_event_choice_made", choice_index)
+
+@rpc("any_peer", "call_remote")
+func _rpc_event_choice_made(choice_index: int):
+	"""Klient: host vybral volbu – zpracuj ji lokálně."""
+	if event_resolved or not current_event:
+		return
+	if choice_index < 0 or choice_index >= current_event.choices.size():
+		return
+	event_resolved = true
+	var choice: EventChoice = current_event.choices[choice_index]
+	for button in choice_buttons:
+		button.disabled = true
 	_process_choice_new(choice)
 
 func _process_choice_new(choice: EventChoice):
@@ -210,6 +278,10 @@ func show_result(result_lines: Array):
 			result_text.append_text(line + "\n")
 
 func _on_continue_pressed():
+	# Coop: jen host může pokračovat
+	if _is_coop and not _is_host:
+		return
+	
 	# Zkontroluj pending akce
 	if pending_card_removal:
 		_open_card_removal_screen()
@@ -234,13 +306,15 @@ func _open_card_removal_screen():
 	
 	# Zobraz karty
 	card_removal_viewer.visible = true
-	card_removal_viewer.show_cards(PlayerData.master_deck, Vector2(0.7, 0.7))
+	card_removal_viewer.show_cards(PlayerData.master_deck)
 	
-	# Připoj signály pro kliknutí na karty
+	# Připoj signály pro kliknutí na karty (signál card_clicked emituje 1 argument – card_data)
 	for card_ui in card_removal_viewer.get_node("MarginContainer/VBoxContainer/ScrollContainer/GridContainer").get_children():
 		if card_ui.has_signal("card_clicked"):
 			if not card_ui.is_connected("card_clicked", _on_removal_card_clicked):
-				card_ui.card_clicked.connect(_on_removal_card_clicked.bind(card_ui.card_data))
+				card_ui.card_clicked.connect(_on_removal_card_clicked)
+	# Zavření vieweru (Zavřít / Escape) vrátí na result panel
+	_connect_card_removal_viewer_close()
 
 func _on_removal_card_clicked(card_data: CardData):
 	# Odstraň kartu
@@ -280,13 +354,14 @@ func _open_card_upgrade_screen():
 	
 	# Zobraz upgradeable karty
 	card_removal_viewer.visible = true
-	card_removal_viewer.show_cards(upgradeable_cards, Vector2(0.7, 0.7))
+	card_removal_viewer.show_cards(upgradeable_cards)
 	
-	# Připoj signály
+	# Připoj signály (signál card_clicked emituje 1 argument – card_data)
 	for card_ui in card_removal_viewer.get_node("MarginContainer/VBoxContainer/ScrollContainer/GridContainer").get_children():
 		if card_ui.has_signal("card_clicked"):
 			if not card_ui.is_connected("card_clicked", _on_upgrade_card_clicked):
-				card_ui.card_clicked.connect(_on_upgrade_card_clicked.bind(card_ui.card_data))
+				card_ui.card_clicked.connect(_on_upgrade_card_clicked)
+	_connect_card_removal_viewer_close()
 
 func _on_upgrade_card_clicked(card_data: CardData):
 	# Vylepši kartu
@@ -302,3 +377,49 @@ func _on_upgrade_card_clicked(card_data: CardData):
 		
 		# Aktualizuj result text
 		result_text.append_text("\n[color=cyan]" + TranslationHelper.tr_format("event.reward.upgraded_card", {"from": card_data.get_localized_name(), "to": upgraded.get_localized_name()}) + "[/color]")
+
+func _connect_card_removal_viewer_close():
+	"""Připoj tlačítko Zavřít a Escape – při šedé obrazovce (viewer bez výběru) lze vrátit na result."""
+	if not is_instance_valid(card_removal_viewer):
+		return
+	var btn = card_removal_viewer.get_node_or_null("MarginContainer/VBoxContainer/HBoxContainer/Control/CloseButton")
+	if btn and not btn.pressed.is_connected(_on_card_removal_viewer_closed):
+		btn.pressed.connect(_on_card_removal_viewer_closed)
+
+func _on_card_removal_viewer_closed():
+	"""Zavření vieweru bez výběru karty – vrátí na result panel, aby hráč neuvízl na šedé obrazovce."""
+	card_removal_viewer.visible = false
+	result_panel.visible = true
+	if pending_card_removal:
+		pending_card_removal = false
+		cards_to_remove_count = 0
+		result_text.append_text("\n[color=gray]" + tr("event.result.no_card_removed") + "[/color]")
+	if pending_card_upgrade:
+		pending_card_upgrade = false
+		result_text.append_text("\n[color=gray]" + tr("event.reward.upgrade_none") + "[/color]")
+
+func _unhandled_input(event: InputEvent):
+	if not event.is_action_pressed("ui_cancel"):
+		return
+	if is_instance_valid(card_removal_viewer) and card_removal_viewer.visible:
+		_on_card_removal_viewer_closed()
+
+func _on_card_right_clicked_tooltip(card_data: CardData):
+	if not card_tooltip:
+		return
+	if card_tooltip.visible and _current_tooltip_card_data == card_data:
+		card_tooltip.hide_tooltip()
+		_current_tooltip_card_data = null
+	else:
+		_current_tooltip_card_data = card_data
+		_show_card_tooltip()
+
+func _show_card_tooltip():
+	if not _current_tooltip_card_data or not card_tooltip:
+		return
+	var screen_size = get_viewport().get_visible_rect().size
+	var tooltip_size = Vector2(360, 420)
+	var tooltip_pos = Vector2(screen_size.x - tooltip_size.x - 20, 80)
+	tooltip_pos.x = clampf(tooltip_pos.x, 10, screen_size.x - tooltip_size.x - 10)
+	tooltip_pos.y = clampf(tooltip_pos.y, 10, screen_size.y - tooltip_size.y - 10)
+	card_tooltip.show_tooltip(_current_tooltip_card_data, tooltip_pos)

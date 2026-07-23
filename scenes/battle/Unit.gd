@@ -3,6 +3,7 @@ extends Node3D
 
 const FloatingTextScene = preload("res://scenes/ui/FloatingText.tscn")
 const IntentIconScene = preload("res://scenes/ui/IntentIcon.tscn")
+const UnitHealthBarScene = preload("res://scenes/ui/UnitHealthBar.tscn")
 const INTENT_ICON_AIMING = preload("res://art/icons/status/Aim.png")
 const INTENT_ICON_RUSH = preload("res://art/icons/status/Rage_rush.png")
 const INTENT_ICON_METEOR1 = preload("res://art/icons/status/Meteor1.png")
@@ -13,9 +14,9 @@ const INTENT_ICON_ATTACK = preload("res://art/icons/status/attack.png")
 const INTENT_ICON_MOVE = preload("res://art/icons/status/move.png")
 
 const ARCHER_AIM_DAMAGE_MULTIPLIER = 2.5
-const BERSERKER_RAGE_TURNS_REQUIRED = 5
+const BERSERKER_RAGE_TURNS_REQUIRED = 3
 const BERSERKER_RUSH_DAMAGE_MULTIPLIER = 3.0
-const MAGE_METEOR_TURNS_REQUIRED = 10
+const MAGE_METEOR_TURNS_REQUIRED = 6
 const MAGE_METEOR_DAMAGE_MULTIPLIER = 2.0
 
 signal died(unit_node)
@@ -52,25 +53,42 @@ var is_permanently_enraged: bool = false
 
 @onready var _sprite_node: Sprite3D = $Sprite3D
 var _intent_icon: Node2D = null
+var _health_bar: Control = null
 var _intent_world_padding_ratio: float = 0.08
+
+func _is_local_player() -> bool:
+	"""Vrátí true jen pokud je tato jednotka LOKÁLNÍHO hráče (ne coop spoluhráče).
+	V solo režimu vždy true pro player faction. V coop porovnává owner_peer_id."""
+	if unit_data.faction != UnitData.Faction.PLAYER:
+		return false
+	if not has_meta("owner_peer_id"):
+		return true  # Solo režim – není nastaveno, takže jsme to my
+	return get_meta("owner_peer_id") == multiplayer.get_unique_id()
 
 func _ready():
 	if unit_data:
 		unit_data = unit_data.duplicate()
 
 		if unit_data.faction == UnitData.Faction.PLAYER:
-			current_health = PlayerData.current_hp
-			retained_block = PlayerData.starting_retained_block
-			current_block = retained_block + PlayerData.global_shield
+			# V coop režimu: jen lokální hráč čte z PlayerData.
+			# Spoluhráčova jednotka dostane HP přes snapshot od hosta.
+			if _is_local_player():
+				current_health = PlayerData.current_hp
+				retained_block = PlayerData.starting_retained_block
+				current_block = retained_block + PlayerData.global_shield
+			else:
+				# Spoluhráč – nastavíme max HP ze skill tree (stejná třída),
+				# skutečné HP přijde ze snapshotu.
+				current_health = PlayerData.max_hp
+				retained_block = 0
+				current_block = 0
 			
 			add_to_group("player")
 			add_to_group("units")
 			
 		else:
 			if PlayerData.loop_level > 0:
-				var multiplier = 1.0 + (PlayerData.loop_level * 0.3)  # Změněno z 0.5 na 0.3 pro lepší scaling
-				unit_data.max_health = int(unit_data.max_health * multiplier)
-				unit_data.attack_damage = int(unit_data.attack_damage * multiplier)
+				_apply_ng_plus_scaling()
 
 			current_health = unit_data.max_health
 			add_to_group("units")
@@ -78,9 +96,12 @@ func _ready():
 	if _sprite_node and unit_data.sprite_texture:
 		_sprite_node.texture = unit_data.sprite_texture
 	
-	if unit_data and unit_data.faction == UnitData.Faction.ENEMY:
-		var canvas = get_tree().root.find_child("CanvasLayer", true, false)
-		if canvas:
+	var canvas = get_tree().root.find_child("CanvasLayer", true, false)
+	if canvas:
+		_health_bar = UnitHealthBarScene.instantiate()
+		canvas.add_child(_health_bar)
+		_refresh_health_bar()
+		if unit_data and unit_data.faction == UnitData.Faction.ENEMY:
 			_intent_icon = IntentIconScene.instantiate()
 			canvas.add_child(_intent_icon)
 			_intent_icon.visible = false
@@ -89,9 +110,47 @@ func _ready():
 	position.y = 0
 	
 	await get_tree().process_frame
+	_refresh_health_bar()
 	emit_signal("stats_changed", self)
 
+func _exit_tree() -> void:
+	if _intent_icon and is_instance_valid(_intent_icon):
+		_intent_icon.queue_free()
+		_intent_icon = null
+	if _health_bar and is_instance_valid(_health_bar):
+		_health_bar.queue_free()
+		_health_bar = null
+
+func _apply_ng_plus_scaling():
+	"""Aplikuje NG+ scaling na enemy jednotky - nejen čísla, ale i mechaniky."""
+	var loop = PlayerData.loop_level
+	var stat_multiplier = 1.0 + (loop * 0.3)
+	
+	# Základní stat scaling (HP, damage)
+	unit_data.max_health = int(unit_data.max_health * stat_multiplier)
+	unit_data.attack_damage = int(unit_data.attack_damage * stat_multiplier)
+	
+	# NG+2+: Nepřátelé začínají s blokem (úměrně loop levelu)
+	if loop >= 2:
+		var base_block = 2 + (loop - 2) * 2  # NG+2: 2, NG+3: 4, NG+4: 6...
+		current_block = base_block
+		retained_block = base_block
+	
+	# NG+3+: Elitní a Boss nepřátelé získávají bonus pohyb
+	if loop >= 3:
+		if unit_data.max_health >= 80:  # Elite/Boss threshold (po scalingu)
+			unit_data.movement_range = min(unit_data.movement_range + 1, 6)
+	
+	# NG+4+: Všichni nepřátelé začínají s lehkým bufem
+	if loop >= 4:
+		# Rage-like status pro extra agresivitu (nepřidáváme přímo status,
+		# ale zvýšíme útok o dalších 10% za každý loop nad 3)
+		var extra_loop_bonus = (loop - 3) * 0.1
+		unit_data.attack_damage = int(unit_data.attack_damage * (1.0 + extra_loop_bonus))
+
 func _process(_delta: float) -> void:
+	if _health_bar and is_instance_valid(_health_bar):
+		_update_health_bar_screen_position()
 	if _intent_icon and _intent_icon.visible:
 		_update_intent_icon_screen_position()
 		_update_intent_icon_scale()
@@ -112,9 +171,10 @@ func attack(target: Node, extra_additive: int = 0, damage_type: int = 0, is_holy
 		target.set_last_attacker(self)
 	
 	var base_value = unit_data.attack_damage
-	var include_card_bonuses = (unit_data.faction == UnitData.Faction.PLAYER)
+	var include_card_bonuses = _is_local_player()
 	var is_critical = false
-	if unit_data.faction == UnitData.Faction.PLAYER:
+	# Crit šance jen pro lokálního hráče (spoluhráčovy útoky řeší jeho klient)
+	if _is_local_player():
 		var total_crit_chance = PlayerData.get_critical_chance()
 		if has_node("/root/ArtifactManager"):
 			total_crit_chance += ArtifactManager.get_critical_chance()
@@ -129,15 +189,18 @@ func attack(target: Node, extra_additive: int = 0, damage_type: int = 0, is_holy
 	
 	await target.take_damage(damage, true)
 
-func take_damage(amount: int, already_calculated: bool = false) -> void:
-	if unit_data.ai_script and unit_data.ai_script.resource_path.contains("AssassinAI"):
+func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: bool = false) -> void:
+	# Dodge: Assassin má 35% šanci na dodge.
+	# Přeskočit při RPC sync (výsledek už byl rozhodnut na odesílající straně).
+	if not is_rpc_sync and unit_data.ai_script and unit_data.ai_script.resource_path.contains("AssassinAI"):
 		var dodge_roll = randi_range(1, 100)
 		if dodge_roll <= 35:
 			show_status_text("DODGE!", "heal")
 			print("💨 Assassin se vyhnul útoku!")
 			return
 	
-	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/ArtifactManager"):
+	# Artefakty on_damage_taken jen pro LOKÁLNÍHO hráče (ne spoluhráče)
+	if _is_local_player() and has_node("/root/ArtifactManager"):
 		var attacker = get_last_attacker()
 		ArtifactManager.on_damage_taken(amount, attacker)
 
@@ -170,12 +233,14 @@ func take_damage(amount: int, already_calculated: bool = false) -> void:
 		if current_health < 0:
 			current_health = 0
 		
-		if unit_data.faction == UnitData.Faction.PLAYER:
+		# PlayerData.take_damage jen pro LOKÁLNÍHO hráče
+		if _is_local_player():
 			PlayerData.take_damage(damage_to_deal)
 	
 	_update_stats_and_emit_signal()
 	
-	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/ArtifactManager"):
+	# Conditional artefakty jen pro LOKÁLNÍHO hráče
+	if _is_local_player() and has_node("/root/ArtifactManager"):
 		ArtifactManager.check_conditional_artifacts()
 	
 	if current_health <= 0:
@@ -186,7 +251,8 @@ func reset_for_new_turn():
 	has_used_base_move = false
 	extra_moves = 0
 	
-	if unit_data.faction == UnitData.Faction.PLAYER and PlayerData.heal_end_of_turn > 0:
+	# Heal per turn jen pro lokálního hráče
+	if _is_local_player() and PlayerData.heal_end_of_turn > 0:
 		var heal_amount = PlayerData.heal_end_of_turn
 		if PlayerData.double_healing_bonus > 0:
 			heal_amount = int(float(heal_amount) * (100.0 + float(PlayerData.double_healing_bonus)) / 100.0)
@@ -207,6 +273,9 @@ func set_aiming(state: bool):
 func can_move() -> bool:
 	# Frozen - nemůže se hýbat
 	if is_frozen or active_statuses.has("frozen"):
+		return false
+	# Entangled - kořeny drží na místě
+	if active_statuses.has("entangled"):
 		return false
 	return not has_used_base_move or extra_moves > 0
 
@@ -250,7 +319,7 @@ func process_turn_start_statuses() -> int:
 	if active_statuses.has("aura_devotion_plus"):
 		var status_data = active_statuses["aura_devotion_plus"]
 		var aura_value = status_data.value
-		if unit_data.faction == UnitData.Faction.PLAYER and PlayerData.aura_enhancement > 0:
+		if _is_local_player() and PlayerData.aura_enhancement > 0:
 			aura_value = aura_value * (100 + PlayerData.aura_enhancement) / 100
 		retained_block += aura_value
 		add_block(aura_value)
@@ -258,7 +327,7 @@ func process_turn_start_statuses() -> int:
 	if active_statuses.has("aura_devotion"):
 		var status_data = active_statuses["aura_devotion"]
 		var aura_value = status_data.value
-		if unit_data.faction == UnitData.Faction.PLAYER and PlayerData.aura_enhancement > 0:
+		if _is_local_player() and PlayerData.aura_enhancement > 0:
 			aura_value = aura_value * (100 + PlayerData.aura_enhancement) / 100
 		add_block(aura_value)
 		
@@ -324,7 +393,7 @@ func process_turn_end_statuses():
 func get_current_movement_range() -> int:
 	var current_range = unit_data.movement_range
 	# Hráč: base_movement_range + PlayerData.movement_bonus (pasivní strom, např. Svatý krok)
-	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/PlayerData"):
+	if _is_local_player() and has_node("/root/PlayerData"):
 		current_range += PlayerData.movement_bonus
 	if unit_data.ai_script and unit_data.ai_script.resource_path.contains("BerserkerAI"):
 		current_range = 2
@@ -337,12 +406,16 @@ func get_current_movement_range() -> int:
 		movement_penalty = chilled_data.value
 		current_range = max(0, current_range - movement_penalty)
 	
+	# Entangled - žádný pohyb (Druid kořeny)
+	if active_statuses.has("entangled"):
+		current_range = 0
+	
 	# Frozen - žádný pohyb
 	if is_frozen or active_statuses.has("frozen"):
 		current_range = 0
 	
 	var base_positive = unit_data.movement_range > 0
-	var player_bonus_positive = unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/PlayerData") and PlayerData.movement_bonus > 0
+	var player_bonus_positive = _is_local_player() and has_node("/root/PlayerData") and PlayerData.movement_bonus > 0
 	if base_positive or player_bonus_positive:
 		return max(0, current_range)
 	else:
@@ -363,13 +436,13 @@ func heal_to_full():
 		return
 	var health_before = current_health
 	var max_hp_target = unit_data.max_health
-	if unit_data.faction == UnitData.Faction.PLAYER and is_instance_valid(PlayerData):
+	if _is_local_player() and is_instance_valid(PlayerData):
 		max_hp_target = PlayerData.max_hp
 	current_health = max_hp_target
 	var amount_healed = current_health - health_before
 	_show_floating_text(amount_healed, "heal")
 	
-	if unit_data.faction == UnitData.Faction.PLAYER and amount_healed > 0:
+	if _is_local_player() and amount_healed > 0:
 		PlayerData.heal(amount_healed)
 		
 	_update_stats_and_emit_signal()
@@ -379,6 +452,11 @@ func _die():
 	_intent_visibility_allowed = false
 	if _intent_icon and is_instance_valid(_intent_icon):
 		_intent_icon.queue_free()
+		_intent_icon = null
+	if _health_bar and is_instance_valid(_health_bar):
+		_health_bar.queue_free()
+		_health_bar = null
+	# energy_on_kill zůstává pro enemy faction - oba hráči to vidí stejně
 	if unit_data.faction == UnitData.Faction.ENEMY:
 		if PlayerData.energy_on_kill > 0:
 			PlayerData.process_energy_on_kill()
@@ -387,20 +465,22 @@ func _die():
 
 func heal(amount: int):
 	var enhanced_amount = amount
-	if unit_data.faction == UnitData.Faction.PLAYER:
+	# Heal bonusy jen pro lokálního hráče
+	if _is_local_player():
 		if has_node("/root/ArtifactManager"):
 			enhanced_amount += ArtifactManager.get_heal_bonus()
 		enhanced_amount = PlayerData.should_heal_enhanced(enhanced_amount)
 	
 	var max_health_target = unit_data.max_health
-	if unit_data.faction == UnitData.Faction.PLAYER:
+	if _is_local_player():
 		max_health_target = PlayerData.max_hp
 	
 	var health_to_restore = min(enhanced_amount, max_health_target - current_health)
 	current_health += health_to_restore
 	_show_floating_text(health_to_restore, "heal")
 	
-	if unit_data.faction == UnitData.Faction.PLAYER and health_to_restore > 0:
+	# PlayerData.heal a artifact trigger jen pro lokálního hráče
+	if _is_local_player() and health_to_restore > 0:
 		PlayerData.heal(health_to_restore)
 		if has_node("/root/ArtifactManager"):
 			ArtifactManager.on_heal(health_to_restore)
@@ -409,7 +489,8 @@ func heal(amount: int):
 
 func add_block(amount: int):
 	var total_block = amount
-	if unit_data.faction == UnitData.Faction.PLAYER:
+	# Artifact a PlayerData block bonusy jen pro lokálního hráče
+	if _is_local_player():
 		if has_node("/root/ArtifactManager"):
 			total_block += ArtifactManager.get_block_bonus()
 		total_block += PlayerData.process_block_on_card_play()
@@ -417,14 +498,41 @@ func add_block(amount: int):
 	current_block += total_block
 	_show_floating_text(total_block, "block_gain")
 	
-	if unit_data.faction == UnitData.Faction.PLAYER and has_node("/root/ArtifactManager"):
+	if _is_local_player() and has_node("/root/ArtifactManager"):
 		ArtifactManager.on_block_gained(total_block)
 	
 	_update_stats_and_emit_signal()
 
 func get_unit_data() -> UnitData: return unit_data
 
-func _update_stats_and_emit_signal(): emit_signal("stats_changed", self)
+func _update_stats_and_emit_signal():
+	_refresh_health_bar()
+	emit_signal("stats_changed", self)
+
+func _refresh_health_bar() -> void:
+	if not _health_bar or not is_instance_valid(_health_bar):
+		return
+	if not _health_bar.has_method("update_values"):
+		return
+	var max_hp = unit_data.max_health if is_instance_valid(unit_data) else 1
+	if unit_data and unit_data.faction == UnitData.Faction.PLAYER and _is_local_player():
+		max_hp = PlayerData.max_hp
+	_health_bar.update_values(current_health, max_hp, current_block)
+
+func _update_health_bar_screen_position() -> void:
+	if not _health_bar or not is_instance_valid(_health_bar):
+		return
+	var camera = get_viewport().get_camera_3d()
+	if not camera:
+		return
+	var half_height = _get_sprite_world_height() * 0.5
+	var center = global_position + Vector3(0, _get_sprite_world_center_offset_y(), 0)
+	var world_pos = center + Vector3(0, -half_height - 0.15, 0)
+	var screen_pos = camera.unproject_position(world_pos)
+	if _health_bar.has_method("set_screen_position"):
+		_health_bar.set_screen_position(screen_pos)
+	else:
+		_health_bar.global_position = screen_pos
 
 func set_selected_visual(selected: bool):
 	is_selected = selected
@@ -463,6 +571,10 @@ func update_intent(player_unit: Unit, battle_grid: BattleGrid) -> void:
 	current_intent_text = intent_data.text
 	if _intent_icon and _intent_icon.has_method("set_intent"):
 		_intent_icon.set_intent(intent_data.icon, intent_data.short_text)
+		# Odpočet kol na ikoně
+		var countdown = intent_data.get("countdown", 0)
+		if _intent_icon.has_method("set_countdown"):
+			_intent_icon.set_countdown(countdown)
 		if _intent_visibility_allowed and intent_data.id != "":
 			_intent_icon.show_intent()
 		else:
@@ -537,66 +649,197 @@ func get_enemy_class_display() -> String:
 
 func get_enemy_passives_display() -> String:
 	var passives = _get_passives_text()
-	return tr("Passives: ") + passives
+	return tr("enemy.label.passives") + passives
 
 func get_status_counters_display() -> String:
 	var counters: Array[String] = []
+	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data.ai_script) else ""
+	
 	if is_aiming:
-		counters.append(tr("Aiming: YES"))
+		counters.append(tr("enemy.counter.aiming"))
 	if berserker_frustration > 0:
-		counters.append(tr("Rage: %d/%d turns") % [berserker_frustration, BERSERKER_RAGE_TURNS_REQUIRED])
+		counters.append(TranslationHelper.tr_format("enemy.counter.rage", {"current": berserker_frustration, "max": BERSERKER_RAGE_TURNS_REQUIRED}))
+	if is_permanently_enraged:
+		counters.append(tr("enemy.counter.enraged"))
 	if has_meta("mage_turn_count"):
 		var turn_count = int(get_meta("mage_turn_count"))
 		if turn_count > 0:
-			counters.append(tr("Meteor: %d/%d turns") % [turn_count, MAGE_METEOR_TURNS_REQUIRED])
+			counters.append(TranslationHelper.tr_format("enemy.counter.meteor", {"current": turn_count, "max": MAGE_METEOR_TURNS_REQUIRED}))
+	if has_meta("spell_index"):
+		var spell_names = [tr("enemy.spell.fire"), tr("enemy.spell.ice"), tr("enemy.spell.lightning"), tr("enemy.spell.shield")]
+		var idx = int(get_meta("spell_index")) % 4
+		counters.append(TranslationHelper.tr_format("enemy.counter.next_spell", {"spell": spell_names[idx]}))
+	if has_meta("boss_phase"):
+		var phase = int(get_meta("boss_phase"))
+		counters.append(TranslationHelper.tr_format("enemy.counter.phase", {"value": phase}))
+	if has_meta("boss_turn_count") and ai_path.contains("BossAI"):
+		var btc = int(get_meta("boss_turn_count"))
+		if has_meta("boss_phase") and int(get_meta("boss_phase")) == 1:
+			var next_slash = 3 - (btc % 3)
+			counters.append(TranslationHelper.tr_format("enemy.counter.dark_slash", {"value": next_slash}))
+		else:
+			var next_hellfire = 4 - (btc % 4)
+			counters.append(TranslationHelper.tr_format("enemy.counter.hellfire", {"value": next_hellfire}))
+	if has_meta("entangle_cooldown"):
+		var cd = int(get_meta("entangle_cooldown"))
+		if cd > 0:
+			counters.append(TranslationHelper.tr_format("enemy.counter.entangle_cd", {"value": cd}))
+	if has_meta("war_cry_cooldown"):
+		var cd = int(get_meta("war_cry_cooldown"))
+		if cd > 0:
+			counters.append(TranslationHelper.tr_format("enemy.counter.war_cry_cd", {"value": cd}))
+	if has_meta("has_howled") and get_meta("has_howled"):
+		counters.append(tr("enemy.counter.howled"))
+	
 	if counters.is_empty():
-		return tr("Status/Counters: None")
-	return tr("Status/Counters: ") + ", ".join(counters)
+		return tr("enemy.label.counters_none")
+	return tr("enemy.label.counters") + ", ".join(counters)
 
 func _calculate_intent(player_unit: Unit, battle_grid: BattleGrid) -> Dictionary:
 	var intent_id = "move"
 	var intent_short = tr("MOVE")
 	var intent_text = tr("Next Move: Move")
 	var icon = INTENT_ICON_MOVE
-	# Rage status or Berserker permanent rage overrides all other intents – must not revert to move/attack while active
+	var countdown = 0  # Odpočet kol (0 = nezobrazovat)
 	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data.ai_script) else ""
+	
+	# === BERSERKER RAGE ===
 	var berserker_rage = ai_path.contains("BerserkerAI") and is_permanently_enraged
 	if active_statuses.has("rage") or berserker_rage:
 		return {
-			"id": "rush",
-			"short_text": tr("RUSH"),
+			"id": "rush", "short_text": tr("RUSH"),
 			"text": tr("Next Move: Rush (300% DMG)"),
-			"icon": INTENT_ICON_RUSH
+			"icon": INTENT_ICON_RUSH, "countdown": 0
 		}
 	
+	# === BOSS AI ===
+	if ai_path.contains("BossAI"):
+		var boss_phase = int(get_meta("boss_phase")) if has_meta("boss_phase") else 1
+		var btc = int(get_meta("boss_turn_count")) if has_meta("boss_turn_count") else 0
+		
+		if boss_phase == 2:
+			var next_hellfire = 4 - ((btc) % 4)
+			if next_hellfire == 4:
+				next_hellfire = 0  # Nastane tento tah
+			if btc > 0 and (btc + 1) % 4 == 0:
+				return {"id": "attack", "short_text": tr("HELLFIRE"), "text": tr("Next Move: Hellfire AoE"), "icon": INTENT_ICON_ATTACK, "countdown": 0}
+			else:
+				return {"id": "attack", "short_text": tr("ENRAGED"), "text": tr("Next Move: Enraged Attack"), "icon": INTENT_ICON_RUSH, "countdown": next_hellfire}
+		else:
+			var next_slash = 3 - ((btc) % 3)
+			if next_slash == 3:
+				next_slash = 0
+			if btc > 0 and (btc + 1) % 3 == 0:
+				return {"id": "attack", "short_text": tr("SLASH"), "text": tr("Next Move: Dark Slash"), "icon": INTENT_ICON_ATTACK, "countdown": 0}
+			else:
+				# Ukaž odpočet do dark slash
+				countdown = next_slash
+	
+	# === DARK BEAST AI ===
+	if ai_path.contains("DarkBeastAI"):
+		var health_pct = float(current_health) / float(unit_data.max_health) if unit_data.max_health > 0 else 1.0
+		if health_pct <= 0.3 and has_meta("has_howled") and not get_meta("has_howled"):
+			return {"id": "attack", "short_text": tr("HOWL"), "text": tr("Next Move: Howl (buff allies)"), "icon": INTENT_ICON_RUSH, "countdown": 0}
+		var dist = battle_grid.get_distance(grid_position, player_unit.grid_position) if is_instance_valid(player_unit) else 0
+		if dist >= 3:
+			return {"id": "attack", "short_text": tr("POUNCE"), "text": tr("Next Move: Pounce (+50% DMG)"), "icon": INTENT_ICON_ATTACK, "countdown": 0}
+	
+	# === ARCHER AIMING ===
 	if ai_path.contains("ArcherAI") and is_aiming:
 		intent_id = "aiming"
 		intent_short = tr("AIMING")
-		intent_text = tr("Next Move: Aiming (250% DMG)")
+		intent_text = tr("Next Move: Aimed Shot (250% DMG)")
 		icon = INTENT_ICON_AIMING
-	elif ai_path.contains("BerserkerAI") and _is_aligned_with_player(player_unit) and berserker_frustration >= BERSERKER_RAGE_TURNS_REQUIRED:
-		intent_id = "rush"
-		intent_short = tr("RUSH")
-		intent_text = tr("Next Move: Rush (300% DMG)")
-		icon = INTENT_ICON_RUSH
+	# === BERSERKER RUSH / TREMOR ===
+	elif ai_path.contains("BerserkerAI"):
+		if _is_aligned_with_player(player_unit) and berserker_frustration >= BERSERKER_RAGE_TURNS_REQUIRED:
+			intent_id = "rush"
+			intent_short = tr("RUSH")
+			intent_text = tr("Next Move: Rush (300% DMG)")
+			icon = INTENT_ICON_RUSH
+		elif berserker_frustration >= 2:
+			var dist = battle_grid.get_distance(grid_position, player_unit.grid_position) if is_instance_valid(player_unit) else 0
+			if dist <= 4:
+				intent_id = "attack"
+				intent_short = tr("TREMOR")
+				intent_text = tr("Next Move: Tremor AoE")
+				icon = INTENT_ICON_ATTACK
+		# Odpočet do rage
+		if berserker_frustration < BERSERKER_RAGE_TURNS_REQUIRED:
+			countdown = BERSERKER_RAGE_TURNS_REQUIRED - berserker_frustration
+	# === MAGE METEOR COUNTDOWN ===
 	elif ai_path.contains("MageAI"):
 		var turn_count = int(get_meta("mage_turn_count")) if has_meta("mage_turn_count") else 0
-		if turn_count >= MAGE_METEOR_TURNS_REQUIRED:
+		var turns_left = MAGE_METEOR_TURNS_REQUIRED - turn_count
+		
+		if turn_count + 1 >= MAGE_METEOR_TURNS_REQUIRED:
 			intent_id = "meteor"
 			intent_short = tr("METEOR")
-			intent_text = tr("Next Move: Meteor (200% DMG)")
+			intent_text = tr("Next Move: Meteor (200% DMG to ALL)")
 			icon = INTENT_ICON_METEOR4
 		else:
-			var turns_left = MAGE_METEOR_TURNS_REQUIRED - turn_count
-			if turns_left >= 8:
+			# Meteor countdown číslo
+			countdown = turns_left
+			
+			if turns_left >= 5:
 				icon = INTENT_ICON_METEOR1
-			elif turns_left >= 5:
+			elif turns_left >= 3:
 				icon = INTENT_ICON_METEOR2
 			elif turns_left >= 2:
 				icon = INTENT_ICON_METEOR3
 			elif turns_left >= 1:
 				icon = INTENT_ICON_METEOR4
+			
+			# Zobraz jaký spell bude další
+			if has_meta("spell_index"):
+				var spell_names = ["FIRE", "ICE", "LIGHTNING", "SHIELD"]
+				var idx = int(get_meta("spell_index")) % 4
+				intent_short = tr(spell_names[idx])
+				intent_text = tr("Next Spell: %s (Meteor in %d)") % [spell_names[idx], turns_left]
+	# === ASSASSIN ===
+	elif ai_path.contains("AssassinAI"):
+		var dist = battle_grid.get_distance(grid_position, player_unit.grid_position) if is_instance_valid(player_unit) else 0
+		if dist >= 4:
+			intent_id = "attack"
+			intent_short = tr("SHADOW")
+			intent_text = tr("Next Move: Shadow Strike (+50% DMG)")
+			icon = INTENT_ICON_ATTACK
+	# === HEALER ===
+	elif ai_path.contains("HealerAI"):
+		var all_units = battle_grid.get_all_objects_on_grid()
+		for u in all_units:
+			if u is Unit and u != self and is_instance_valid(u):
+				if u.unit_data.faction == unit_data.faction:
+					var hp_pct = float(u.current_health) / float(u.unit_data.max_health)
+					if hp_pct < 0.5:
+						intent_id = "heal"
+						intent_short = tr("HEAL")
+						intent_text = tr("Next Move: Heal Ally")
+						icon = INTENT_ICON_MOVE
+						break
+	# === DRUID ===
+	elif ai_path.contains("DruidAI"):
+		var entangle_cd = int(get_meta("entangle_cooldown")) if has_meta("entangle_cooldown") else 0
+		var dist = battle_grid.get_distance(grid_position, player_unit.grid_position) if is_instance_valid(player_unit) else 0
+		if entangle_cd <= 0 and dist <= 3:
+			intent_id = "attack"
+			intent_short = tr("ENTANGLE")
+			intent_text = tr("Next Move: Entangle (root)")
+			icon = INTENT_ICON_ATTACK
+		elif entangle_cd > 0:
+			countdown = entangle_cd  # Odpočet do entangle
+	# === MONK ===
+	elif ai_path.contains("MonkAI"):
+		var wc_cd = int(get_meta("war_cry_cooldown")) if has_meta("war_cry_cooldown") else 0
+		if wc_cd <= 0:
+			intent_id = "buff"
+			intent_short = tr("BUFF")
+			intent_text = tr("Next Move: Blessing/War Cry")
+			icon = INTENT_ICON_MOVE
+		else:
+			countdown = wc_cd  # Odpočet do war cry
 	
+	# Fallback: pokud jsme stále na "move", zkontroluj útok
 	if intent_id == "move":
 		if _can_attack_player(player_unit, battle_grid):
 			intent_id = "attack"
@@ -608,7 +851,8 @@ func _calculate_intent(player_unit: Unit, battle_grid: BattleGrid) -> Dictionary
 		"id": intent_id,
 		"short_text": intent_short,
 		"text": intent_text,
-		"icon": icon
+		"icon": icon,
+		"countdown": countdown
 	}
 
 func _can_attack_player(player_unit: Unit, battle_grid: BattleGrid) -> bool:
@@ -623,6 +867,10 @@ func _is_aligned_with_player(player_unit: Unit) -> bool:
 	return grid_position.x == player_unit.grid_position.x or grid_position.y == player_unit.grid_position.y
 
 func _get_ai_class_name(ai_path: String) -> String:
+	if ai_path.contains("BossAI"):
+		return tr("Demon Boss")
+	if ai_path.contains("DarkBeastAI"):
+		return tr("Dark Beast")
 	if ai_path.contains("AssassinAI"):
 		return tr("Assassin")
 	if ai_path.contains("BerserkerAI"):
@@ -643,23 +891,27 @@ func _get_ai_class_name(ai_path: String) -> String:
 
 func _get_passives_text() -> String:
 	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data.ai_script) else ""
+	if ai_path.contains("BossAI"):
+		return tr("enemy.passive.boss")
+	if ai_path.contains("DarkBeastAI"):
+		return tr("enemy.passive.darkbeast")
 	if ai_path.contains("AssassinAI"):
-		return tr("35% Dodge, 25% Double Strike")
+		return tr("enemy.passive.assassin")
 	if ai_path.contains("BerserkerAI"):
-		return tr("Rage after 5 turns, Rush 300% DMG")
+		return tr("enemy.passive.berserker")
 	if ai_path.contains("ArcherAI"):
-		return tr("Aim for 250% DMG")
+		return tr("enemy.passive.archer")
 	if ai_path.contains("MageAI"):
-		return tr("Meteor after 10 turns")
+		return tr("enemy.passive.mage")
 	if ai_path.contains("HealerAI"):
-		return tr("Heals allies")
+		return tr("enemy.passive.healer")
 	if ai_path.contains("DruidAI"):
-		return tr("Summons spirits")
+		return tr("enemy.passive.druid")
 	if ai_path.contains("MonkAI"):
-		return tr("Blesses allies")
+		return tr("enemy.passive.monk")
 	if ai_path.contains("FighterAI"):
-		return tr("Balanced strikes")
-	return tr("None")
+		return tr("enemy.passive.fighter")
+	return tr("enemy.passive.none")
 
 func _get_intent_icon_for_id(intent_id: String) -> Texture2D:
 	match intent_id:
@@ -680,22 +932,22 @@ func _show_floating_text(amount: int, type: String):
 	match type:
 		"damage":
 			text_to_display = "-" + str(amount)
-			color = Color.CRIMSON
+			color = Color(1.0, 0.25, 0.25)
 		"heal":
 			text_to_display = "+" + str(amount)
-			color = Color.PALE_GREEN
+			color = Color(0.35, 1.0, 0.45)
 		"block_gain":
 			text_to_display = "+" + str(amount)
-			color = Color.LIGHT_SKY_BLUE
+			color = Color(0.45, 0.85, 1.0)
 		"block_loss":
 			text_to_display = "-" + str(amount)
-			color = Color.SLATE_GRAY
+			color = Color(0.7, 0.8, 0.95)
 		"critical":
 			text_to_display = "CRIT! -" + str(amount)
-			color = Color.ORANGE
+			color = Color(1.0, 0.7, 0.15)
 		"holy_effective":
 			text_to_display = "✨ -" + str(amount)
-			color = Color.GOLD
+			color = Color(1.0, 0.9, 0.3)
 
 	var canvas = get_tree().root.find_child("CanvasLayer", true, false)
 	if canvas:
@@ -744,12 +996,12 @@ func show_status_text(text_to_show: String, color_type: String):
 	var color: Color
 
 	match color_type:
-		"damage": color = Color.CRIMSON
-		"heal": color = Color.PALE_GREEN
-		"block_gain": color = Color.LIGHT_SKY_BLUE
-		"block_loss": color = Color.SLATE_GRAY
-		"critical": color = Color.ORANGE
-		"curse": color = Color.PURPLE
+		"damage": color = Color(1.0, 0.25, 0.25)
+		"heal": color = Color(0.35, 1.0, 0.45)
+		"block_gain": color = Color(0.45, 0.85, 1.0)
+		"block_loss": color = Color(0.7, 0.8, 0.95)
+		"critical": color = Color(1.0, 0.7, 0.15)
+		"curse": color = Color(0.85, 0.35, 1.0)
 		_: color = Color.WHITE
 
 	var canvas = get_tree().root.find_child("CanvasLayer", true, false)
@@ -811,3 +1063,72 @@ func can_act() -> bool:
 func use_action():
 	_has_acted_this_turn = true
 	print(TranslationHelper.tr_format("log.unit.used_action", {"name": unit_data.get_localized_name()}))
+
+# ===== COOP SERIALIZATION =====
+
+func serialize_statuses() -> Array:
+	"""Serializuje active_statuses do pole slovníků pro RPC."""
+	var result: Array = []
+	for status_id in active_statuses:
+		var s = active_statuses[status_id]
+		result.append({"id": status_id, "value": s.get("value", 0), "duration": s.get("duration", 0)})
+	return result
+
+func deserialize_statuses(data: Array):
+	"""Přepíše active_statuses z RPC dat."""
+	active_statuses.clear()
+	for entry in data:
+		var sid: String = entry.get("id", "")
+		if sid.is_empty():
+			continue
+		active_statuses[sid] = {"id": sid, "value": int(entry.get("value", 0)), "duration": int(entry.get("duration", 0))}
+	# Synchronizuj odvozené flagy
+	is_frozen = active_statuses.has("frozen")
+	movement_penalty = int(active_statuses["chilled"].value) if active_statuses.has("chilled") else 0
+	is_aiming = active_statuses.has("aiming")
+	_update_stats_and_emit_signal()
+
+func serialize_intent() -> Dictionary:
+	"""Serializuje aktuální intent pro RPC."""
+	return {"id": current_intent_id, "text": current_intent_text}
+
+func apply_intent_from_data(data: Dictionary):
+	"""Aplikuje intent přijatý od hosta."""
+	current_intent_id = data.get("id", "")
+	current_intent_text = data.get("text", "")
+	if _intent_icon and _intent_icon.has_method("set_intent"):
+		_intent_icon.set_intent(_get_intent_icon_for_id(current_intent_id), "")
+		if _intent_visibility_allowed and current_intent_id != "":
+			_intent_icon.show_intent()
+		else:
+			_intent_icon.hide_intent()
+
+func serialize_ai_meta() -> Dictionary:
+	"""Serializuje AI meta data pro RPC (berserker, mage, boss stav)."""
+	var meta: Dictionary = {}
+	meta["is_permanently_enraged"] = is_permanently_enraged
+	meta["berserker_frustration"] = berserker_frustration
+	meta["is_aiming"] = is_aiming
+	if has_meta("boss_phase"):
+		meta["boss_phase"] = int(get_meta("boss_phase"))
+	if has_meta("boss_turn_count"):
+		meta["boss_turn_count"] = int(get_meta("boss_turn_count"))
+	if has_meta("mage_turn_count"):
+		meta["mage_turn_count"] = int(get_meta("mage_turn_count"))
+	if has_meta("spell_index"):
+		meta["spell_index"] = int(get_meta("spell_index"))
+	return meta
+
+func apply_ai_meta(meta: Dictionary):
+	"""Aplikuje AI meta data přijatá od hosta."""
+	is_permanently_enraged = meta.get("is_permanently_enraged", false)
+	berserker_frustration = int(meta.get("berserker_frustration", 0))
+	is_aiming = meta.get("is_aiming", false)
+	if meta.has("boss_phase"):
+		set_meta("boss_phase", int(meta["boss_phase"]))
+	if meta.has("boss_turn_count"):
+		set_meta("boss_turn_count", int(meta["boss_turn_count"]))
+	if meta.has("mage_turn_count"):
+		set_meta("mage_turn_count", int(meta["mage_turn_count"]))
+	if meta.has("spell_index"):
+		set_meta("spell_index", int(meta["spell_index"]))

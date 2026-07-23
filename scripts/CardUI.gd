@@ -4,6 +4,25 @@
 class_name CardUI
 extends Control
 
+## Design size in CardUI.tscn — contexts scale from this, don't crush below ~0.8 for readable text.
+const DESIGN_SIZE: Vector2 = Vector2(192, 240)
+
+## How the card is presented. Data still comes from CardData (.tres).
+enum DisplayMode {
+	FULL,    ## Hand — animated, ~0.88 scale
+	SHOP,    ## Shop slot — 1.0 scale, full face
+	REWARD,  ## Reward / rest pick — ~0.95 scale
+	DECK,    ## Deck / pile viewer — ~0.85 scale, still full face
+	COMPACT, ## Tiny grid tile: cost + name + short line (no art crush)
+}
+
+const SCALE_HAND := Vector2(0.88, 0.88)
+const SCALE_SHOP := Vector2(1.0, 1.0)
+const SCALE_REWARD := Vector2(0.95, 0.95)
+const SCALE_DECK := Vector2(0.85, 0.85)
+const SCALE_COMPACT := Vector2(1.0, 1.0)
+const COMPACT_SIZE := Vector2(168, 210)
+
 @export var card_data: CardData:
 	set(new_card_data):
 		card_data = new_card_data
@@ -13,6 +32,7 @@ extends Control
 @export var placeholder_artwork: Texture2D
 @export var static_layout: bool = false
 
+var display_mode: DisplayMode = DisplayMode.FULL
 var initial_scale: Vector2 = Vector2.ZERO
 
 var _ui_nodes_ready = false
@@ -23,7 +43,7 @@ var _ui_nodes_ready = false
 @onready var card_template: TextureRect = $CardTemplateImage
 var _usage_label: Label = null
 
-var original_scale: Vector2 = Vector2(0.7, 0.7)
+var original_scale: Vector2 = SCALE_HAND
 var base_scale: Vector2 = Vector2.ONE
 var target_scale: Vector2 = Vector2.ONE
 var target_position: Vector2 = Vector2.ZERO
@@ -43,53 +63,166 @@ func _ready():
 	_usage_label = get_node_or_null("UsageLabel") as Label
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_set_child_mouse_filters()
-	
-	# ZMĚNA: Použijeme initial_scale, pokud je nastaveno
-	if initial_scale != Vector2.ZERO:
-		original_scale = initial_scale
-	scale = original_scale
-	base_scale = scale
-	target_scale = scale
 	target_position = position
 	set_process(true)
+	custom_minimum_size = DESIGN_SIZE
+	size = DESIGN_SIZE
 
+	if not static_layout and display_mode == DisplayMode.FULL:
+		if initial_scale != Vector2.ZERO:
+			original_scale = initial_scale
+		else:
+			original_scale = SCALE_HAND
+		scale = original_scale
+		base_scale = scale
+		target_scale = scale
+	else:
+		if base_scale == Vector2.ONE and target_scale == Vector2.ONE:
+			base_scale = scale
+			target_scale = scale
+			original_scale = scale
+
+	_apply_readability_theme()
 	if card_data:
 		update_display()
-	
-	if description_label:
-		description_label.fit_content = true
-		description_label.scroll_active = false
-		description_label.add_theme_constant_override("line_separation", 6)
-		# Ensure font size at least 18px and default color for readability
-		if description_label.get_theme_font_size("normal_font_size") < 18:
-			description_label.add_theme_font_size_override("normal_font_size", 18)
-		description_label.add_theme_color_override("default_color", Color(1, 1, 1, 1))
 
 	if static_layout:
 		target_position = position
 		target_scale = scale
 
+func _apply_readability_theme() -> void:
+	if description_label:
+		description_label.fit_content = true
+		description_label.scroll_active = false
+		description_label.add_theme_constant_override("line_separation", 4)
+		description_label.add_theme_color_override("default_color", Color(1, 1, 1, 1))
+		description_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		description_label.add_theme_constant_override("outline_size", 4)
+	if name_label:
+		name_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		name_label.add_theme_constant_override("outline_size", 5)
+	if cost_label:
+		cost_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		cost_label.add_theme_constant_override("outline_size", 5)
+
+## Call after instantiate / before or after add_child. Sets scale + layout for context.
+func apply_display_mode(mode: DisplayMode) -> void:
+	display_mode = mode
+	if mode == DisplayMode.FULL:
+		static_layout = false
+		is_draggable = true
+	else:
+		static_layout = true
+		is_draggable = false
+
+	match mode:
+		DisplayMode.FULL:
+			_layout_full()
+			_set_visual_scale(SCALE_HAND)
+		DisplayMode.SHOP:
+			_layout_full()
+			_set_visual_scale(SCALE_SHOP)
+		DisplayMode.REWARD:
+			_layout_full()
+			_set_visual_scale(SCALE_REWARD)
+		DisplayMode.DECK:
+			_layout_full()
+			_set_visual_scale(SCALE_DECK)
+		DisplayMode.COMPACT:
+			_layout_compact()
+			_set_visual_scale(SCALE_COMPACT)
+
+	if card_data and _ui_nodes_ready:
+		update_display()
+
+func get_scaled_size() -> Vector2:
+	return custom_minimum_size * scale
+
+func _set_visual_scale(s: Vector2) -> void:
+	original_scale = s
+	base_scale = s
+	target_scale = s
+	scale = s
+
+func _layout_full() -> void:
+	custom_minimum_size = DESIGN_SIZE
+	size = DESIGN_SIZE
+	if card_template:
+		card_template.custom_minimum_size = DESIGN_SIZE
+		card_template.size = DESIGN_SIZE
+		card_template.visible = true
+	if artwork_texture_rect:
+		artwork_texture_rect.visible = true
+		artwork_texture_rect.position = Vector2(48, 40)
+		artwork_texture_rect.size = Vector2(99, 52)
+	if name_label:
+		name_label.position = Vector2(30, 96)
+		name_label.size = Vector2(132, 26)
+		name_label.add_theme_font_size_override("font_size", 18)
+	if cost_label:
+		cost_label.position = Vector2(18, 14)
+		cost_label.size = Vector2(32, 32)
+		cost_label.add_theme_font_size_override("font_size", 34)
+	if description_label:
+		description_label.visible = true
+		description_label.position = Vector2(36, 124)
+		description_label.size = Vector2(120, 84)
+		description_label.add_theme_font_size_override("normal_font_size", 18)
+	if _usage_label:
+		_usage_label.position = Vector2(130, 208)
+
+func _layout_compact() -> void:
+	"""Readable tile without scaling text to mush: no art, bigger name + short effects."""
+	custom_minimum_size = COMPACT_SIZE
+	size = COMPACT_SIZE
+	if card_template:
+		card_template.custom_minimum_size = COMPACT_SIZE
+		card_template.size = COMPACT_SIZE
+		card_template.visible = true
+	if artwork_texture_rect:
+		artwork_texture_rect.visible = false
+	if cost_label:
+		cost_label.position = Vector2(14, 10)
+		cost_label.size = Vector2(36, 36)
+		cost_label.add_theme_font_size_override("font_size", 32)
+	if name_label:
+		name_label.position = Vector2(16, 52)
+		name_label.size = Vector2(136, 48)
+		name_label.add_theme_font_size_override("font_size", 20)
+		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if description_label:
+		description_label.visible = true
+		description_label.position = Vector2(16, 108)
+		description_label.size = Vector2(136, 88)
+		description_label.add_theme_font_size_override("normal_font_size", 18)
+	if _usage_label:
+		_usage_label.visible = false
+
 func _set_child_mouse_filters():
-	# Umožní parentu zachytit hover/click přes celý obsah karty
 	for child in get_children():
 		if child is Control:
 			child.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func update_display():
-	if not _ui_nodes_ready or not card_data: return
+	if not _ui_nodes_ready or not card_data:
+		return
 
 	name_label.text = card_data.get_localized_name()
 	cost_label.text = str(card_data.cost)
-	
-	# Použijeme dynamický popis s BBCode shorthand (center-aligned)
+
 	var desc := card_data.get_display_description()
+	if display_mode == DisplayMode.COMPACT:
+		# Cap to first 3 effect lines so tile stays scannable
+		var lines = desc.split("\n")
+		if lines.size() > 3:
+			lines = PackedStringArray([lines[0], lines[1], lines[2]])
+			desc = "\n".join(lines)
 	description_label.text = "[center]%s[/center]" % desc if not desc.is_empty() else ""
-	
-	if artwork_texture_rect and card_data.artwork:
+
+	if artwork_texture_rect and artwork_texture_rect.visible and card_data.artwork:
 		artwork_texture_rect.texture = card_data.artwork
-	
-	# Usage x/x – zobrazit jen když má karta max_uses_before_removal > 0
-	if _usage_label:
+
+	if _usage_label and display_mode != DisplayMode.COMPACT:
 		if card_data.max_uses_before_removal > 0:
 			var used: int = 0
 			if not Engine.is_editor_hint() and PlayerData:
@@ -98,27 +231,21 @@ func update_display():
 			_usage_label.visible = true
 		else:
 			_usage_label.visible = false
-	
-	# Nastavíme barvu karty podle rarity
+
 	_update_rarity_colors()
 
 func _update_rarity_colors():
-	"""Nastaví barvu karty podle rarity"""
 	if not card_template or not card_data:
 		return
-	
-	# Barevné rozlišení podle rarity (lehčí modulace pro zachování čitelnosti)
 	var rarity_colors = {
-		CardData.CardRarity.BASIC: Color(0.9, 0.9, 0.9, 1.0),      # Bílá/Šedá
-		CardData.CardRarity.COMMON: Color(1.0, 1.0, 1.0, 1.0),     # Bílá
-		CardData.CardRarity.UNCOMMON: Color(0.7, 1.0, 0.7, 1.0),   # Světle zelená
-		CardData.CardRarity.RARE: Color(0.7, 0.7, 1.0, 1.0),       # Světle modrá
-		CardData.CardRarity.EPIC: Color(1.0, 0.7, 1.0, 1.0),       # Světle fialová
-		CardData.CardRarity.LEGENDARY: Color(1.0, 0.9, 0.5, 1.0)   # Zlatá
+		CardData.CardRarity.BASIC: Color(0.9, 0.9, 0.9, 1.0),
+		CardData.CardRarity.COMMON: Color(1.0, 1.0, 1.0, 1.0),
+		CardData.CardRarity.UNCOMMON: Color(0.7, 1.0, 0.7, 1.0),
+		CardData.CardRarity.RARE: Color(0.7, 0.7, 1.0, 1.0),
+		CardData.CardRarity.EPIC: Color(1.0, 0.7, 1.0, 1.0),
+		CardData.CardRarity.LEGENDARY: Color(1.0, 0.9, 0.5, 1.0)
 	}
-	
 	if rarity_colors.has(card_data.rarity):
-		# Lehce změníme barvu pozadí karty (modulace)
 		card_template.modulate = rarity_colors[card_data.rarity]
 	else:
 		card_template.modulate = Color.WHITE
@@ -129,7 +256,6 @@ func load_card(new_card_data: CardData):
 func _process(delta):
 	if static_layout:
 		return
-	# Aktualizovat usage x/x (aby ostatní kopie v ruce ukázaly aktuální počet)
 	if _usage_label and _usage_label.visible and card_data and card_data.max_uses_before_removal > 0 and not Engine.is_editor_hint() and PlayerData:
 		_usage_label.text = "%d/%d" % [PlayerData.get_card_usage_count(card_data.card_id), card_data.max_uses_before_removal]
 	if is_dragging:
@@ -139,10 +265,10 @@ func _process(delta):
 		var target_global_pos = mouse_pos - visual_size / 2
 		global_position = global_position.lerp(target_global_pos, delta * 15.0)
 		return
-	
+
 	if position.distance_to(target_position) < 1.0 and scale.distance_to(target_scale) < 0.01:
 		return
-	
+
 	var next_scale = scale.lerp(target_scale, delta * 5.0)
 	if next_scale.distance_to(target_scale) < 0.002:
 		scale = target_scale
@@ -157,40 +283,29 @@ func set_target_position(new_pos: Vector2):
 	target_position = new_pos
 
 func _gui_input(event: InputEvent):
-	# 1. LEVÝ KLIK
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			_modulate_click_feedback()
-			# Pokud karta není draggable (Shop/Rewards), emitujeme klik a končíme
 			if not is_draggable:
 				card_clicked.emit(card_data)
 				accept_event()
 				return
-			
-			# Pokud je draggable (Boj), připravíme drag
 			_drag_released = false
 			_start_drag()
 		else:
 			if is_draggable:
 				_end_drag()
-
-	# 2. PRAVÝ KLIK (Vždy zkusí ukázat tooltip)
 	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
 		if event.pressed:
-			# SIGNÁL PRO TOOLTIP (Tohle je nejčistší cesta)
-			# Pokud máš CardTooltip jako globální/nadřazený uzel, napoj se na tento signál
-			card_right_clicked.emit(card_data) 
-			
-			# Alternativně tvoje stará logika, pokud uzel existuje:
+			card_right_clicked.emit(card_data)
 			if has_node("TooltipComponent"):
 				get_node("TooltipComponent").show_tooltip()
-			
 			accept_event()
 
 func _start_drag():
 	is_dragging = true
 	_drag_start_pos = global_position
-	target_scale = Vector2(0.5, 0.5)
+	target_scale = original_scale * 0.75
 	scale = target_scale
 	var mouse_pos = get_viewport().get_mouse_position()
 	var visual_size = custom_minimum_size * scale

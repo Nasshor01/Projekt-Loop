@@ -9,14 +9,19 @@ extends PanelContainer
 @onready var options_container: HBoxContainer = $HBoxContainer/LeftColumn/OptionsContainer
 @onready var card_pile_viewer = $HBoxContainer/LeftColumn/CardPileViewer
 @onready var upgrade_preview: PanelContainer = $HBoxContainer/RightColumn/UpgradePreview
+@onready var card_tooltip: CardTooltip = $CanvasLayer/CardTooltip
 
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 const HEAVY_STRIKE_CARD = preload("res://data/cards/everyone/heavy_strike.tres")
+
+var _current_tooltip_card_data: CardData = null
 
 func _ready():
 	heal_button.pressed.connect(_on_heal_pressed)
 	upgrade_button.pressed.connect(_on_upgrade_pressed)
 	leave_button.pressed.connect(_on_leave_pressed)
+	if card_pile_viewer.has_signal("card_right_clicked"):
+		card_pile_viewer.card_right_clicked.connect(_on_card_right_clicked)
 	_update_ui_texts()
 	
 	upgrade_preview.hide()
@@ -60,7 +65,7 @@ func _on_upgrade_pressed():
 				upgradeable_cards.append(card)
 		_highlight_upgrade_button(false)
 
-	card_pile_viewer.show_cards(upgradeable_cards, Vector2(0.7, 0.7))
+	card_pile_viewer.show_cards(upgradeable_cards)
 	if not card_pile_viewer.is_connected("card_clicked_in_viewer", _on_card_selected_for_upgrade):
 		card_pile_viewer.card_clicked_in_viewer.connect(_on_card_selected_for_upgrade)
 	_connect_upgrade_card_signals()
@@ -74,8 +79,6 @@ func _connect_upgrade_card_signals():
 				card_ui.mouse_exited.connect(_on_card_exit_for_preview)
 			if not card_ui.is_connected("card_clicked", _on_card_selected_for_upgrade):
 				card_ui.card_clicked.connect(_on_card_selected_for_upgrade)
-			if not card_ui.is_connected("card_right_clicked", _on_card_right_clicked):
-				card_ui.card_right_clicked.connect(_on_card_right_clicked)
 
 func _on_card_selected_for_upgrade(card_to_upgrade: CardData):
 	var card_index = PlayerData.master_deck.find(card_to_upgrade)
@@ -96,11 +99,7 @@ func _on_card_hovered(card_to_preview: CardData):
 
 	var original_card_ui = CardUIScene.instantiate()
 	original_card_ui.card_data = card_to_preview
-	original_card_ui.is_draggable = false
-	original_card_ui.static_layout = true
-	original_card_ui.custom_minimum_size = Vector2(140, 210)
-	original_card_ui.pivot_offset = original_card_ui.custom_minimum_size * 0.5
-	original_card_ui.set_target_scale(Vector2(0.7, 0.7))
+	original_card_ui.apply_display_mode(CardUI.DisplayMode.REWARD)
 	preview_container.add_child(original_card_ui)
 	call_deferred("_sync_preview_card_layout", original_card_ui)
 
@@ -112,11 +111,7 @@ func _on_card_hovered(card_to_preview: CardData):
 
 	var upgraded_card_ui = CardUIScene.instantiate()
 	upgraded_card_ui.card_data = card_to_preview.upgraded_version
-	upgraded_card_ui.is_draggable = false
-	upgraded_card_ui.static_layout = true
-	upgraded_card_ui.custom_minimum_size = Vector2(140, 210)
-	upgraded_card_ui.pivot_offset = upgraded_card_ui.custom_minimum_size * 0.5
-	upgraded_card_ui.set_target_scale(Vector2(0.7, 0.7))
+	upgraded_card_ui.apply_display_mode(CardUI.DisplayMode.REWARD)
 	preview_container.add_child(upgraded_card_ui)
 	call_deferred("_sync_preview_card_layout", upgraded_card_ui)
 	
@@ -125,9 +120,25 @@ func _on_card_hovered(card_to_preview: CardData):
 func _on_card_exit_for_preview():
 	upgrade_preview.hide()
 
-func _on_card_right_clicked(_data: CardData):
-	"""Right-click tooltip - RestScene has no CardTooltip; override in subclass or add node to show tooltip."""
-	pass
+func _on_card_right_clicked(card_data: CardData):
+	if not card_tooltip:
+		return
+	if card_tooltip.visible and _current_tooltip_card_data == card_data:
+		card_tooltip.hide_tooltip()
+		_current_tooltip_card_data = null
+	else:
+		_current_tooltip_card_data = card_data
+		_show_card_tooltip()
+
+func _show_card_tooltip():
+	if not _current_tooltip_card_data or not card_tooltip:
+		return
+	var screen_size = get_viewport().get_visible_rect().size
+	var tooltip_size = Vector2(360, 420)
+	var tooltip_pos = Vector2(screen_size.x - tooltip_size.x - 20, 80)
+	tooltip_pos.x = clampf(tooltip_pos.x, 10, screen_size.x - tooltip_size.x - 10)
+	tooltip_pos.y = clampf(tooltip_pos.y, 10, screen_size.y - tooltip_size.y - 10)
+	card_tooltip.show_tooltip(_current_tooltip_card_data, tooltip_pos)
 
 func _sync_preview_card_layout(card_ui: CardUI):
 	if not is_instance_valid(card_ui):
@@ -136,10 +147,34 @@ func _sync_preview_card_layout(card_ui: CardUI):
 	card_ui.set_target_scale(card_ui.scale)
 	card_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
+var _coop_my_ready: bool = false
+var _coop_other_ready: bool = false
+
 func _on_leave_pressed():
 	if has_node("/root/GameManager") and GameManager.tutorial_active and GameManager.tutorial_step == GameManager.TUTORIAL_STEP_CAMP_UPGRADE:
 		GameManager.tutorial_step = GameManager.TUTORIAL_STEP_MAP_FINAL
+	
+	# Coop: čekáme na oba hráče
+	var is_coop = has_node("/root/GameManager") and GameManager.is_coop_run
+	if is_coop and has_node("/root/MultiplayerManager"):
+		_coop_my_ready = true
+		leave_button.disabled = true
+		leave_button.text = tr("ui.rest.waiting")
+		rpc("_rpc_rest_peer_ready")
+		_check_rest_both_ready()
+		return
+	
 	GameManager.reward_chosen()
+
+@rpc("any_peer", "call_remote")
+func _rpc_rest_peer_ready():
+	"""Druhý hráč je připraven odejít z rest scény."""
+	_coop_other_ready = true
+	_check_rest_both_ready()
+
+func _check_rest_both_ready():
+	if _coop_my_ready and _coop_other_ready:
+		GameManager.reward_chosen()
 
 func _highlight_upgrade_button(enable: bool):
 	if not is_instance_valid(upgrade_button):

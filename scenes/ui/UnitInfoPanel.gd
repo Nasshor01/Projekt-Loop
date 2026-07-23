@@ -3,6 +3,30 @@
 # HP hráče je v Global UI, takže v tomto panelu se u hráče nezobrazuje.
 extends PanelContainer
 
+# Status ikony - preload
+const ICON_BURNING = preload("res://art/icons/status/Bleed.png")
+const ICON_CHILLED = preload("res://art/icons/status/Freeze.png")
+const ICON_SHOCKED = preload("res://art/icons/status/Stunned.png")
+const ICON_FROZEN = preload("res://art/icons/status/Freeze.png")
+const ICON_ENTANGLED = preload("res://art/icons/status/Slow_Down.png")
+const ICON_MONK_BLESSING = preload("res://art/icons/status/Strenght.png")
+const ICON_REGENERATION = preload("res://art/icons/status/Regeneration.png")
+const ICON_SLOW = preload("res://art/icons/status/Slow_Down.png")
+const ICON_VULNERABLE = preload("res://art/icons/status/Vulnerable.png")
+const ICON_AIMING = preload("res://art/icons/status/Aim.png")
+const ICON_AURA_DEVOTION = preload("res://art/icons/status/block.png")
+const ICON_POISON = preload("res://art/icons/status/Poison.png")
+const ICON_WEAKNESS = preload("res://art/icons/status/Weakness.png")
+const ICON_THORNS = preload("res://art/icons/status/Thorns.png")
+const ICON_HEAL = preload("res://art/icons/status/Heal.png")
+const ICON_ATTACK = preload("res://art/icons/status/attack.png")
+const ICON_BLOCK = preload("res://art/icons/status/block.png")
+const ICON_RAGE = preload("res://art/icons/status/Rage_rush.png")
+const ICON_LEECH = preload("res://art/icons/status/Leech.png")
+const ICON_DEFAULT = preload("res://art/icons/status/Poison.png")
+
+const STATUS_ICON_SIZE = 20  # Velikost ikony v panelu
+
 @onready var name_label: Label = %NameLabel
 @onready var hp_slot: HBoxContainer = %HPSlot
 @onready var hp_label: Label = %HPLabel
@@ -33,9 +57,20 @@ func update_stats(unit_node: Node):
 
 	# --- Dedikované sloty: HP / Block / Energy ---
 	if data.faction == UnitData.Faction.PLAYER:
-		hp_slot.visible = false
-		energy_slot.visible = true
-		energy_label.text = TranslationHelper.tr_format("ui.unit_info.energy", {"current": PlayerData.current_energy, "max": PlayerData.max_energy})
+		# Coop: pokud klikáme na jednotku DRUHÉHO hráče, ukaž její HP a skryj energii
+		var is_other_coop_unit = false
+		if GameManager.is_coop_run and unit_node.has_meta("owner_peer_id"):
+			var owner_id = unit_node.get_meta("owner_peer_id")
+			if owner_id != unit_node.multiplayer.get_unique_id():
+				is_other_coop_unit = true
+		if is_other_coop_unit:
+			hp_slot.visible = true
+			hp_label.text = TranslationHelper.tr_format("ui.unit_info.hp", {"current": unit_node.current_health, "max": data.max_health})
+			energy_slot.visible = false
+		else:
+			hp_slot.visible = false
+			energy_slot.visible = true
+			energy_label.text = TranslationHelper.tr_format("ui.unit_info.energy", {"current": PlayerData.current_energy, "max": PlayerData.max_energy})
 	else:
 		hp_slot.visible = true
 		energy_slot.visible = false
@@ -96,28 +131,117 @@ func _update_status_display(unit_node: Node):
 		
 	status_effects_list.visible = true
 	
-	# Zobraz každý status s příslušnou ikonou a popisem
 	for status_id in unit_node.active_statuses:
 		var status_data = unit_node.active_statuses[status_id]
-		var status_label = Label.new()
-		
-		# Speciální zobrazení pro různé typy statusů
-		match status_id:
-			"aiming":
-				status_label.text = TranslationHelper.tr_format("status.label.aiming", {"value": status_data.value - 100})
-				status_label.add_theme_color_override("font_color", Color.ORANGE)
-			"aura_devotion":
-				status_label.text = TranslationHelper.tr_format("status.label.aura_devotion", {"value": status_data.value})
-				status_label.add_theme_color_override("font_color", Color.LIGHT_BLUE)
-			"aura_devotion_plus":
-				status_label.text = TranslationHelper.tr_format("status.label.aura_devotion_plus", {"value": status_data.value})  
-				status_label.add_theme_color_override("font_color", Color.CYAN)
-			_:
-				# Výchozí zobrazení
-				var display_name = status_id.replace("_", " ").capitalize()
-				status_label.text = "%s: %d" % [display_name, status_data.value]
-		
-		status_effects_list.add_child(status_label)
+		var row = _create_status_row(status_id, status_data)
+		status_effects_list.add_child(row)
+
+func _create_status_row(status_id: String, status_data: Dictionary) -> HBoxContainer:
+	"""Vytvoří řádek se statusem: [ikona] text"""
+	var row = HBoxContainer.new()
+	row.add_theme_constant_override("separation", 4)
+	
+	# Ikona
+	var icon_rect = TextureRect.new()
+	icon_rect.custom_minimum_size = Vector2(STATUS_ICON_SIZE, STATUS_ICON_SIZE)
+	icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_rect.texture = _get_status_icon(status_id)
+	row.add_child(icon_rect)
+	
+	# Text
+	var label = Label.new()
+	label.add_theme_font_size_override("font_size", 13)
+	
+	var info = _get_status_display_info(status_id, status_data)
+	label.text = info.text
+	label.add_theme_color_override("font_color", info.color)
+	
+	row.add_child(label)
+	return row
+
+func _get_status_icon(status_id: String) -> Texture2D:
+	"""Vrátí ikonu pro daný status"""
+	match status_id:
+		"burning":
+			return ICON_BURNING
+		"chilled":
+			return ICON_CHILLED
+		"shocked":
+			return ICON_SHOCKED
+		"frozen":
+			return ICON_FROZEN
+		"entangled":
+			return ICON_ENTANGLED
+		"monk_blessing":
+			return ICON_MONK_BLESSING
+		"regeneration":
+			return ICON_REGENERATION
+		"Slow":
+			return ICON_SLOW
+		"vulnerable":
+			return ICON_VULNERABLE
+		"aiming":
+			return ICON_AIMING
+		"aura_devotion", "aura_devotion_plus":
+			return ICON_AURA_DEVOTION
+		"weakness":
+			return ICON_WEAKNESS
+		"thorns":
+			return ICON_THORNS
+		"poison":
+			return ICON_POISON
+		"rage":
+			return ICON_RAGE
+		"defensive_stance":
+			return ICON_BLOCK
+		"leech":
+			return ICON_LEECH
+	return ICON_DEFAULT
+
+func _get_status_display_info(status_id: String, status_data: Dictionary) -> Dictionary:
+	"""Vrátí text a barvu pro daný status"""
+	var dur = status_data.get("duration", 0)
+	var val = status_data.get("value", 0)
+	
+	match status_id:
+		"aiming":
+			return {"text": TranslationHelper.tr_format("status.label.aiming", {"value": val - 100}), "color": Color.ORANGE}
+		"aura_devotion":
+			return {"text": TranslationHelper.tr_format("status.label.aura_devotion", {"value": val}), "color": Color.LIGHT_BLUE}
+		"aura_devotion_plus":
+			return {"text": TranslationHelper.tr_format("status.label.aura_devotion_plus", {"value": val}), "color": Color.CYAN}
+		"burning":
+			return {"text": "%d DMG (%d t)" % [val, dur], "color": Color.ORANGE_RED}
+		"chilled":
+			return {"text": "-%d Move (%d t)" % [val, dur], "color": Color.LIGHT_BLUE}
+		"shocked":
+			return {"text": "Shocked (%d t)" % dur, "color": Color.YELLOW}
+		"frozen":
+			return {"text": "FROZEN! (%d t)" % dur, "color": Color.DEEP_SKY_BLUE}
+		"entangled":
+			return {"text": "Rooted (%d t)" % dur, "color": Color.DARK_GREEN}
+		"monk_blessing":
+			return {"text": "+%d DMG (%d t)" % [val, dur], "color": Color.GOLD}
+		"regeneration":
+			return {"text": "+%d HP/t (%d t)" % [val, dur], "color": Color.GREEN}
+		"Slow":
+			return {"text": "%d Move (%d t)" % [val, dur], "color": Color.SLATE_GRAY}
+		"vulnerable":
+			return {"text": "+50%% DMG (%d t)" % dur, "color": Color.INDIAN_RED}
+		"defensive_stance":
+			return {"text": "-50%% DMG (%d t)" % dur, "color": Color.STEEL_BLUE}
+		"weakness":
+			return {"text": "-%d DMG (%d t)" % [val, dur], "color": Color.DIM_GRAY}
+		"thorns":
+			return {"text": "%d reflect (%d t)" % [val, dur], "color": Color.DARK_ORANGE}
+		"poison":
+			return {"text": "%d DMG/t (%d t)" % [val, dur], "color": Color.PURPLE}
+		"rage":
+			return {"text": "+%d DMG (%d t)" % [val, dur], "color": Color.RED}
+		_:
+			var display_name = status_id.replace("_", " ").capitalize()
+			return {"text": "%s %d (%d t)" % [display_name, val, dur], "color": Color.WHITE}
 
 func hide_panel():
 	visible = false

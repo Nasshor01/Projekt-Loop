@@ -201,33 +201,11 @@ func _draw_connections(is_editor_preview: bool):
 			var from_node = tree_data.get_node_by_id(skill_node.id)
 			var to_node = tree_data.get_node_by_id(to_id_string)
 			
-			# NOVÝ ČISTÝ DESIGN - jednodušší spojení
+			# Rovné čáry mezi uzly
 			var line = Line2D.new()
-			
-			# Pokud jsou uzly ve stejném tieru (horizontální spojení), použijeme přímou čáru
-			if from_node and to_node and from_node.tier == to_node.tier:
-				line.width = 3.0
-				line.add_point(from_pos)
-				line.add_point(to_pos)
-			# Pokud jsou uzly ve stejné větvi (vertikální spojení), použijeme přímou čáru
-			elif from_node and to_node and from_node.branch == to_node.branch:
-				line.width = 4.0
-				line.add_point(from_pos)
-				line.add_point(to_pos)
-			# Cross-branch spojení (např. do Aura Mastery) - mírná křivka
-			else:
-				line.width = 5.0
-				var mid_x = (from_pos.x + to_pos.x) / 2.0
-				var mid_y = (from_pos.y + to_pos.y) / 2.0
-				var curve_offset = 30.0  # Menší oblouk pro čistší vzhled
-				var direction = 1.0 if from_pos.x < to_pos.x else -1.0
-				var mid_point = Vector2(mid_x + curve_offset * direction, mid_y)
-				
-				# Jednoduchá křivka s méně body
-				for i in range(7):  # Méně bodů = jednodušší křivka
-					var t = i / 6.0
-					var point = from_pos.lerp(mid_point, t).lerp(to_pos.lerp(mid_point, 1.0 - t), t)
-					line.add_point(point)
+			line.width = 3.0
+			line.add_point(from_pos)
+			line.add_point(to_pos)
 			
 			# --- ZMĚNA ZDE: POUŽÍVÁME NOVÉ @export PROMĚNNÉ ---
 			var from_count = allocated_skills.get(String(skill_node.id), 0)

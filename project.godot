@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Projekt Loop v2"
-config/version="0.1.8"
+config/version="0.2.0"
 run/main_scene="uid://se10c1yredoi"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
@@ -26,21 +26,23 @@ SaveManager="*res://scripts/autoload/SaveManager.gd"
 DebugLogger="*res://scripts/autoload/DebugLogger.gd"
 PlayerData="*res://scripts/autoload/PlayerData.gd"
 GameManager="*res://scripts/autoload/GameManager.gd"
+MultiplayerManager="*res://scripts/autoload/MultiplayerManager.gd"
 SystemDebug="*res://scripts/debug/SystemDebug.gd"
 EventManager="*res://scripts/autoload/EventManager.gd"
 ArtifactManager="*res://scripts/autoload/ArtifactManager.gd"
 TurnManager="*res://scripts/autoload/TurnManager.gd"
 DamageCalculator="*res://scripts/autoload/DamageCalculator.gd"
 KeywordManager="*res://scripts/autoload/KeywordManager.gd"
+MusicManager="*res://scripts/autoload/MusicManager.gd"
 
 [display]
 
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-window/vsync/vsync_mode=0
 
 [gui]
 
+theme/custom="res://art/ui/game_theme.tres"
 theme/custom_font="uid://c4topxnn115am"
 
 [input]
@@ -85,5 +87,4 @@ locale/translations=PackedStringArray("res://translations.en.translation", "res:
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
+renderer/rendering_method.mobile="forward_plus"

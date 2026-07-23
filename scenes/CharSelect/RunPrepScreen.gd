@@ -18,8 +18,12 @@ func _ready():
 	
 	PlayerData.initialize_player(GameManager.selected_class_data, GameManager.selected_subclass_data)
 	
-	# ZDE VOLÁME SPRÁVNOU FUNKCI _refresh_tree()
-	skill_tree._refresh_tree() 
+	skill_tree._refresh_tree()
+	
+	# Coop: Start smí zmáčknout jen host; klient čeká na přechod na mapu
+	if GameManager.is_coop_run and has_node("/root/MultiplayerManager") and not MultiplayerManager.is_server():
+		start_button.disabled = true
+		start_button.text = "Čekám na hostitele…"
 	
 	_update_ui_texts()
 	update_display()

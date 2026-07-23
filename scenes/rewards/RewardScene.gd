@@ -13,8 +13,8 @@ const SKIP_CARD_GOLD_NORMAL: int = 10
 # --- Přednačtené scény ---
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 const ArtifactChoiceUIScene = preload("res://scenes/ui/ArtifactChoiceUI.tscn")
-const REWARD_CARD_SIZE = Vector2(170, 255)
-const REWARD_CARD_SCALE = Vector2(0.6, 0.6)
+const REWARD_CARD_SIZE = CardUI.DESIGN_SIZE
+const REWARD_CARD_SCALE = Vector2(0.95, 0.95)
 
 # --- Cesty k UI prvkům ---
 @onready var title_label: Label = $VBoxContainer/ScrollContainer/ScrollContent/CenterContainer/TitleLabel
@@ -31,6 +31,11 @@ var _current_tooltip_card_data: CardData = null
 var _tutorial_return_to_menu := false
 var _tutorial_hint_text := ""
 var _tutorial_final_reward := false
+# Coop shared reward
+var _coop_my_choice_path: String = ""      # cesta ke kartě, kterou jsem vybral (prázdná = ještě nevybral)
+var _coop_other_choice_path: String = ""   # cesta ke kartě druhého hráče
+var _coop_my_skipped: bool = false         # skipnul jsem?
+var _coop_other_done: bool = false         # druhý hráč vybral/skipnul?
 
 func _ready():
 	# Jen inicializace, ŽÁDNÁ logika pro UI
@@ -67,12 +72,9 @@ func setup_ui():
 			card_container.add_child(card_ui)
 			card_ui.load_card(card_data)
 			if card_ui is CardUI:
-				card_ui.is_draggable = false
-				card_ui.static_layout = true
+				card_ui.apply_display_mode(CardUI.DisplayMode.REWARD)
 				card_ui.custom_minimum_size = REWARD_CARD_SIZE
 				card_ui.pivot_offset = card_ui.custom_minimum_size * 0.5
-				card_ui.set_target_scale(REWARD_CARD_SCALE)
-				card_ui.scale = REWARD_CARD_SCALE
 				card_ui.set_process(false)
 				call_deferred("_sync_reward_card_layout", card_ui)
 			card_ui.card_clicked.connect(_on_card_clicked)
@@ -114,24 +116,24 @@ func setup_ui():
 	if has_node("/root/GameManager") and GameManager.tutorial_active and GameManager.tutorial_step == GameManager.TUTORIAL_STEP_REWARD_1:
 		skip_button.visible = false
 
-func _on_card_clicked(card_to_add: CardData):
-	# Levý klik - výběr karty
-	PlayerData.master_deck.append(card_to_add)
+func _is_coop() -> bool:
+	return has_node("/root/GameManager") and GameManager.is_coop_run and has_node("/root/MultiplayerManager") and MultiplayerManager.has_active_connection()
 
-	# Deaktivujeme možnost vybrat další kartu
+func _on_card_clicked(card_to_add: CardData):
+	if _is_coop():
+		_coop_on_card_clicked(card_to_add)
+		return
+	# Solo: výběr karty
+	PlayerData.master_deck.append(card_to_add)
 	for child in card_container.get_children():
 		child.mouse_filter = MOUSE_FILTER_IGNORE
-
 	card_container.visible = false
 	skip_button.disabled = true
-
-	# Pokud nejsou na výběr artefakty, rovnou končíme
 	if artifact_container.get_child_count() == 0:
 		if _tutorial_return_to_menu:
 			_show_tutorial_card_added()
 			await get_tree().create_timer(0.8).timeout
 		_finish_reward()
-	# Pokud ano, změníme text tlačítka na "Pokračovat"
 	else:
 		skip_button.text = tr("ui.common.continue")
 		skip_button.disabled = false
@@ -140,16 +142,128 @@ func _on_card_clicked(card_to_add: CardData):
 		skip_button.pressed.connect(_finish_reward)
 
 func _on_skip_pressed():
-	# Při skipu po běžném monsteru: cashback v podobě zlata
+	if _is_coop():
+		_coop_on_skip()
+		return
 	if encounter_type == EncounterData.EncounterType.NORMAL and not card_choices.is_empty():
 		PlayerData.add_gold(SKIP_CARD_GOLD_NORMAL)
-		# Aktualizujeme zobrazení zlata (pokud už bylo zobrazené, přičteme cashback)
 		if gold_reward > 0:
 			gold_label.text = TranslationHelper.tr_format("ui.reward.gold", {"value": gold_reward + SKIP_CARD_GOLD_NORMAL})
 		else:
 			gold_label.visible = true
 			gold_label.text = TranslationHelper.tr_format("ui.reward.gold", {"value": SKIP_CARD_GOLD_NORMAL})
 	_finish_reward()
+
+# ===== COOP sdílený reward =====
+
+func _coop_on_card_clicked(card_to_add: CardData):
+	"""Lokální hráč klikl na kartu v coop reward – toggle (klik znovu = odznačení)."""
+	if _coop_my_skipped:
+		return
+	# Toggle: kliknutí na STEJNOU kartu = odznačit
+	if _coop_my_choice_path == card_to_add.resource_path:
+		# Odebrat kartu z decku
+		for i in range(PlayerData.master_deck.size() - 1, -1, -1):
+			if PlayerData.master_deck[i].resource_path == _coop_my_choice_path:
+				PlayerData.master_deck.remove_at(i)
+				break
+		_coop_my_choice_path = ""
+		skip_button.disabled = false
+		_coop_update_card_visuals()
+		rpc("_rpc_coop_reward_card_deselected")
+		return
+	# Nelze vzít kartu, kterou má druhý hráč
+	if card_to_add.resource_path == _coop_other_choice_path:
+		return
+	# Pokud už mám jinou kartu vybranou, nejdřív ji odeberu
+	if not _coop_my_choice_path.is_empty():
+		for i in range(PlayerData.master_deck.size() - 1, -1, -1):
+			if PlayerData.master_deck[i].resource_path == _coop_my_choice_path:
+				PlayerData.master_deck.remove_at(i)
+				break
+	_coop_my_choice_path = card_to_add.resource_path
+	PlayerData.master_deck.append(card_to_add)
+	_coop_update_card_visuals()
+	skip_button.disabled = true
+	rpc("_rpc_coop_reward_card_chosen", card_to_add.resource_path)
+	_coop_check_both_done()
+
+func _coop_on_skip():
+	"""Lokální hráč přeskočil (skip) v coop reward."""
+	if not _coop_my_choice_path.is_empty() or _coop_my_skipped:
+		return
+	_coop_my_skipped = true
+	if encounter_type == EncounterData.EncounterType.NORMAL and not card_choices.is_empty():
+		PlayerData.add_gold(SKIP_CARD_GOLD_NORMAL)
+	# Disable vstup
+	skip_button.disabled = true
+	for child in card_container.get_children():
+		child.mouse_filter = MOUSE_FILTER_IGNORE
+	rpc("_rpc_coop_reward_skipped")
+	_coop_check_both_done()
+
+@rpc("any_peer", "call_remote")
+func _rpc_coop_reward_card_chosen(card_path: String):
+	"""Druhý hráč vybral (nebo změnil) kartu – jen vizuální update, karta se do MÉHO decku NEDÁVÁ."""
+	_coop_other_choice_path = card_path
+	_coop_other_done = true
+	_coop_update_card_visuals()
+	_coop_check_both_done()
+
+@rpc("any_peer", "call_remote")
+func _rpc_coop_reward_card_deselected():
+	"""Druhý hráč odznačil svou kartu."""
+	_coop_other_choice_path = ""
+	_coop_other_done = false
+	_coop_update_card_visuals()
+
+@rpc("any_peer", "call_remote")
+func _rpc_coop_reward_skipped():
+	"""Druhý hráč přeskočil."""
+	_coop_other_done = true
+	_coop_update_card_visuals()
+	_coop_check_both_done()
+
+func _coop_update_card_visuals():
+	"""Vizuální aktualizace karet: moje = zelená (klikatelná pro odznačení), druhého = modrá (disable)."""
+	for child in card_container.get_children():
+		if not child is CardUI:
+			continue
+		var card_data_node: CardData = child.card_data if "card_data" in child else null
+		if not card_data_node:
+			continue
+		var path = card_data_node.resource_path
+		if path == _coop_my_choice_path:
+			child.modulate = Color(0.5, 1.0, 0.5) # zelená = moje
+			child.mouse_filter = MOUSE_FILTER_STOP  # Klikatelná pro odznačení
+		elif path == _coop_other_choice_path:
+			child.modulate = Color(0.4, 0.6, 1.0) # modrá = druhý hráč
+			child.mouse_filter = MOUSE_FILTER_IGNORE
+		elif _coop_my_skipped:
+			child.modulate = Color(0.7, 0.7, 0.7)
+			child.mouse_filter = MOUSE_FILTER_IGNORE
+		else:
+			# Karta je volná – normální barva, klikatelná
+			child.modulate = Color(1, 1, 1)
+			child.mouse_filter = MOUSE_FILTER_STOP
+	# Skip button
+	if _coop_my_skipped:
+		skip_button.disabled = true
+	elif not _coop_my_choice_path.is_empty():
+		skip_button.disabled = true
+	else:
+		skip_button.disabled = false
+
+func _coop_check_both_done():
+	"""Pokud oba vybrali/skipli, přejít na mapu."""
+	var i_am_done = not _coop_my_choice_path.is_empty() or _coop_my_skipped
+	if i_am_done and _coop_other_done:
+		# Krátká pauza aby oba viděli výsledek
+		await get_tree().create_timer(0.8).timeout
+		# Po pauze ověříme znovu – někdo mohl odznačit kartu
+		var still_done = (not _coop_my_choice_path.is_empty() or _coop_my_skipped) and _coop_other_done
+		if still_done:
+			_finish_reward()
 
 func _on_artifact_selected(artifact_to_add: ArtifactsData):
 	PlayerData.add_artifact(artifact_to_add)
@@ -195,7 +309,7 @@ func _show_card_tooltip():
 	
 	# V RewardScene je to PanelContainer, takže musíme použít global_position
 	var screen_size = get_viewport().get_visible_rect().size
-	var tooltip_size = Vector2(350, 250)
+	var tooltip_size = Vector2(360, 420)
 	
 	# Zobrazíme tooltip v pravém horním rohu (relativně k obrazovce) - offset 20px od okrajů
 	var tooltip_pos = Vector2(

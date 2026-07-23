@@ -1,5 +1,6 @@
-[gd_scene load_steps=4 format=3 uid="uid://bni51d7iwmdku"]
+[gd_scene load_steps=5 format=3 uid="uid://bni51d7iwmdku"]
 
+[ext_resource type="Resource" uid="uid://hgxj3yyk4e5s" path="res://data/skills/paladin_skill_tree_manual.tres" id="3_2jjfy"]
 [ext_resource type="Script" uid="uid://mdipbfyn0dpt" path="res://scripts/SkillTreeBuilder.gd" id="3_builder"]
 [ext_resource type="PackedScene" uid="uid://n246vay81cfg" path="res://scenes/ui/PassiveSkillNodeUI.tscn" id="4_scdnf"]
 [ext_resource type="Script" uid="uid://ddesta8q3lv4p" path="res://scenes/ui/PassiveSkillTreeManual.gd" id="5_manual"]
@@ -36,6 +37,7 @@ position = Vector2(576, 48)
 
 [node name="SkillTreeBuilder" type="Node" parent="TextureRect"]
 script = ExtResource("3_builder")
+fallback_tree = ExtResource("3_2jjfy")
 
 [node name="PassiveSkillNodeUI" parent="TextureRect/SkillTreeBuilder" instance=ExtResource("4_scdnf")]
 offset_left = 536.0

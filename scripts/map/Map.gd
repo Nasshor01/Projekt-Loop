@@ -174,6 +174,9 @@ func _render_map_visuals():
 		map_nodes_visual[node_data] = map_node_instance
 
 func _on_map_node_clicked(clicked_node: MapNode):
+	# Coop: výběr uzlu má jen host; klient jen přijímá RPC
+	if _is_coop() and not MultiplayerManager.is_server():
+		return
 	var current_node = PlayerData.get_current_node()
 	var destination_node = clicked_node.node_data
 	
@@ -195,15 +198,57 @@ func _on_map_node_clicked(clicked_node: MapNode):
 	else:
 		print("Neplatný tah!")
 
+func _is_coop() -> bool:
+	return has_node("/root/MultiplayerManager") and GameManager.is_coop_run and MultiplayerManager.has_active_connection()
+
+func _get_node_action_payload(node_data: MapNodeResource) -> Dictionary:
+	"""Vrátí { action_type: String, encounter: EncounterData nebo null } pro coop RPC."""
+	var result = { "action_type": "", "encounter": null }
+	if _is_tutorial_map():
+		if node_data == _tutorial_nodes.get("final"):
+			result.action_type = "battle"
+			result.encounter = load("res://data/encounters/tutorial_final_battle.tres") as EncounterData
+		elif node_data == _tutorial_nodes.get("camp"):
+			result.action_type = "rest"
+		return result
+	match node_data.type:
+		MapNodeResource.NodeType.MONSTER:
+			result.action_type = "battle"
+			if not monster_encounters.is_empty():
+				result.encounter = load(monster_encounters.pick_random()) as EncounterData
+		MapNodeResource.NodeType.ELITE:
+			result.action_type = "battle"
+			if not elite_encounters.is_empty():
+				result.encounter = load(elite_encounters.pick_random()) as EncounterData
+		MapNodeResource.NodeType.BOSS:
+			result.action_type = "battle"
+			if not boss_encounters.is_empty():
+				result.encounter = load(boss_encounters[0]) as EncounterData
+		MapNodeResource.NodeType.TREASURE:
+			result.action_type = "treasure"
+		MapNodeResource.NodeType.SHOP:
+			result.action_type = "shop"
+		MapNodeResource.NodeType.REST:
+			result.action_type = "rest"
+		MapNodeResource.NodeType.EVENT:
+			result.action_type = "event"
+	return result
+
 func _trigger_node_action(node_data: MapNodeResource):
-	var encounter_to_start: EncounterData = null
+	var payload = _get_node_action_payload(node_data)
+	# Coop: host pošle klientovi stejný krok (node_index, action_type, encounter_path)
+	if _is_coop() and MultiplayerManager.is_server():
+		var node_index = map_data.all_nodes.find(node_data)
+		if node_index >= 0:
+			var encounter_path = payload.encounter.resource_path if is_instance_valid(payload.encounter) else ""
+			MultiplayerManager.rpc("receive_coop_node_action", node_index, payload.action_type, encounter_path)
+
+	var encounter_to_start: EncounterData = payload.encounter
 	if _is_tutorial_map() and node_data == _tutorial_nodes.get("final"):
-		encounter_to_start = load("res://data/encounters/tutorial_final_battle.tres")
 		if encounter_to_start:
 			GameManager.tutorial_step = GameManager.TUTORIAL_STEP_FINAL_BATTLE
 		else:
 			printerr("Tutorial encounter missing.")
-		# Uložíme stav kamery
 		GameManager.saved_camera_position = camera.position
 		GameManager.saved_camera_zoom = camera.zoom
 		GameManager.has_saved_camera_state = true
@@ -211,7 +256,6 @@ func _trigger_node_action(node_data: MapNodeResource):
 		return
 	elif _is_tutorial_map() and node_data == _tutorial_nodes.get("camp"):
 		GameManager.tutorial_step = GameManager.TUTORIAL_STEP_CAMP_UPGRADE
-		# Uložíme stav kamery
 		GameManager.saved_camera_position = camera.position
 		GameManager.saved_camera_zoom = camera.zoom
 		GameManager.has_saved_camera_state = true
@@ -219,62 +263,38 @@ func _trigger_node_action(node_data: MapNodeResource):
 		return
 
 	match node_data.type:
-		MapNodeResource.NodeType.MONSTER:
-			if not monster_encounters.is_empty():
-				encounter_to_start = load(monster_encounters.pick_random())
-		
-		MapNodeResource.NodeType.ELITE:
-			if not elite_encounters.is_empty():
-				encounter_to_start = load(elite_encounters.pick_random())
-
-		MapNodeResource.NodeType.BOSS:
-			if not boss_encounters.is_empty():
-				encounter_to_start = load(boss_encounters[0])
-		
 		MapNodeResource.NodeType.TREASURE:
 			GameManager.show_treasure_node()
 			return
-
 		MapNodeResource.NodeType.SHOP:
-			# Uložíme stav kamery, stejně jako před bitvou
 			GameManager.saved_camera_position = camera.position
 			GameManager.saved_camera_zoom = camera.zoom
 			GameManager.has_saved_camera_state = true
 			GameManager.go_to_shop()
-			return # Ukončíme funkci, nepokračujeme do bitvy
-
+			return
 		MapNodeResource.NodeType.REST:
-			# Uložíme stav kamery pro případný návrat
 			GameManager.saved_camera_position = camera.position
 			GameManager.saved_camera_zoom = camera.zoom
 			GameManager.has_saved_camera_state = true
-			# Zavoláme správnou funkci v GameManageru
 			GameManager.go_to_rest_scene()
 			return
-
 		MapNodeResource.NodeType.EVENT:
 			GameManager.go_to_event_scene()
 			return
+		_:
+			pass
 
-
-		_: # Defaultní případ
-			print("Akce typu '%s' zatím není implementována." % MapNodeResource.NodeType.keys()[node_data.type])
-			_update_highlighting()
-			return
-
-
-	# Zkontrolujeme, zda se podařilo načíst data pro souboj.
+	# Bitva (MONSTER / ELITE / BOSS) nebo neznámý typ
 	if is_instance_valid(encounter_to_start):
-		# Klíčový krok: Před opuštěním scény mapy si uložíme stav kamery.
 		GameManager.saved_camera_position = camera.position
 		GameManager.saved_camera_zoom = camera.zoom
 		GameManager.has_saved_camera_state = true
-		
-		# Přes GameManager spustíme přechod na bojovou scénu.
 		GameManager.start_battle(encounter_to_start)
 	else:
-		# Pokud se data souboje nenačetla, vypíšeme chybu a jen aktualizujeme mapu.
-		printerr("Nepodařilo se načíst data souboje pro typ: ", MapNodeResource.NodeType.keys()[node_data.type])
+		if node_data.type != MapNodeResource.NodeType.MONSTER and node_data.type != MapNodeResource.NodeType.ELITE and node_data.type != MapNodeResource.NodeType.BOSS:
+			print("Akce typu '%s' zatím není implementována." % MapNodeResource.NodeType.keys()[node_data.type])
+		else:
+			printerr("Nepodařilo se načíst data souboje pro typ: ", MapNodeResource.NodeType.keys()[node_data.type])
 		_update_highlighting()
 
 func _is_tutorial_map() -> bool:

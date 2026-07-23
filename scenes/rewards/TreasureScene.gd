@@ -8,10 +8,68 @@ const ARTIFACT_POOL = preload("res://data/artifacts/pool/treasure_room_pool.tres
 @onready var title_label: Label = $Label
 @onready var choices_container: HBoxContainer = $HBoxContainer
 
+var _is_coop: bool = false
+var _is_host: bool = true
+# Coop: sledování výběru
+var _coop_my_choice_path: String = ""
+var _coop_other_choice_path: String = ""
+var _coop_my_done: bool = false
+var _coop_other_done: bool = false
+
 func _ready():
 	if title_label:
 		title_label.text = tr("ui.treasure.title")
+	
+	_is_coop = has_node("/root/GameManager") and GameManager.is_coop_run
+	_is_host = not _is_coop or (has_node("/root/MultiplayerManager") and MultiplayerManager.is_server())
+	
+	if _is_coop and not _is_host:
+		# Klient: použij pending data od hosta
+		var pending = GameManager._coop_pending_treasure_paths
+		if not pending.is_empty():
+			_generate_from_host_data(pending)
+			GameManager._coop_pending_treasure_paths = []
+		else:
+			# Data ještě nepřišla – čekáme (poll)
+			_wait_for_treasure_data()
+	else:
+		_generate_artifact_choices()
+		# Host v coopu: pošli artifact paths klientovi přes autoload
+		if _is_coop and _is_host and has_node("/root/MultiplayerManager"):
+			var paths: Array = []
+			for child in choices_container.get_children():
+				if child.has_method("get_artifact_data"):
+					var ad = child.get_artifact_data()
+					if is_instance_valid(ad):
+						paths.append(ad.resource_path)
+			MultiplayerManager.rpc("receive_go_to_treasure", paths)
+
+func _wait_for_treasure_data():
+	"""Klient: čeká na treasure data od hosta."""
+	for i in range(50):
+		await get_tree().create_timer(0.1).timeout
+		var pending = GameManager._coop_pending_treasure_paths
+		if not pending.is_empty():
+			_generate_from_host_data(pending)
+			GameManager._coop_pending_treasure_paths = []
+			return
+	# Fallback
 	_generate_artifact_choices()
+
+func _generate_from_host_data(paths: Array):
+	for child in choices_container.get_children():
+		child.queue_free()
+	if paths.is_empty():
+		_create_skip_option()
+		return
+	for path in paths:
+		var artifact_data = load(path) as ArtifactsData
+		if not is_instance_valid(artifact_data):
+			continue
+		var choice_ui = ArtifactChoiceScene.instantiate()
+		choices_container.add_child(choice_ui)
+		choice_ui.display_artifact(artifact_data)
+		choice_ui.artifact_chosen.connect(_on_artifact_chosen)
 
 func _generate_artifact_choices():
 	for child in choices_container.get_children():
@@ -86,11 +144,56 @@ func _create_skip_option():
 	choices_container.add_child(skip_button)
 
 func _on_skip_pressed():
-	GameManager.treasure_collected()
+	if _is_coop:
+		_coop_my_done = true
+		rpc("_rpc_treasure_peer_done", "")
+		_coop_check_both_done()
+	else:
+		GameManager.treasure_collected()
 
 func _on_artifact_chosen(artifact_data: ArtifactsData):
-	if PlayerData.add_artifact(artifact_data):
-		GameManager.treasure_collected()
+	if _is_coop:
+		# Zkontroluj jestli druhý hráč nevybral stejný artefakt
+		if artifact_data.resource_path == _coop_other_choice_path:
+			return  # Blokuj
+		if PlayerData.add_artifact(artifact_data):
+			_coop_my_choice_path = artifact_data.resource_path
+			_coop_my_done = true
+			_coop_update_visuals()
+			rpc("_rpc_treasure_peer_done", artifact_data.resource_path)
+			_coop_check_both_done()
 	else:
-		print(tr("log.treasure.cannot_gain_artifact"))
-		# Zde by se mohlo zobrazit nějaké upozornění pro hráče
+		if PlayerData.add_artifact(artifact_data):
+			GameManager.treasure_collected()
+		else:
+			print(tr("log.treasure.cannot_gain_artifact"))
+
+@rpc("any_peer", "call_remote")
+func _rpc_treasure_peer_done(chosen_path: String):
+	"""Druhý hráč vybral artefakt (nebo skipnul)."""
+	_coop_other_choice_path = chosen_path
+	_coop_other_done = true
+	_coop_update_visuals()
+	_coop_check_both_done()
+
+func _coop_update_visuals():
+	"""Vizuální označení vybraných artefaktů."""
+	for child in choices_container.get_children():
+		if not child.has_method("get_artifact_data"):
+			continue
+		var ad = child.get_artifact_data()
+		if not is_instance_valid(ad):
+			continue
+		if ad.resource_path == _coop_my_choice_path:
+			child.modulate = Color(0.5, 1.0, 0.5)  # Zelená – moje volba
+		elif ad.resource_path == _coop_other_choice_path:
+			child.modulate = Color(0.5, 0.5, 1.0)  # Modrá – druhý hráč
+			child.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Nelze kliknout
+		else:
+			child.modulate = Color.WHITE
+			child.mouse_filter = Control.MOUSE_FILTER_STOP
+
+func _coop_check_both_done():
+	if _coop_my_done and _coop_other_done:
+		await get_tree().create_timer(0.5).timeout
+		GameManager.treasure_collected()

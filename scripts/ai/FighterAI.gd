@@ -1,25 +1,37 @@
 # ===================================================================
 # Soubor: res://scripts/ai/FighterAI.gd
-# POPIS: Jednoduchá melee AI - jdi a zaútoč
+# POPIS: Melee AI - pohyb + útok v jednom tahu, taktické rozhodování
 # ===================================================================
 extends EnemyAIBase
 
-func get_next_action(enemy_unit: Unit, all_player_units: Array, battle_grid: BattleGrid) -> AIAction:
+func get_actions(enemy_unit: Unit, all_player_units: Array, battle_grid: BattleGrid) -> Array[AIAction]:
+	var actions: Array[AIAction] = []
 	var player_unit = find_closest_player(enemy_unit, all_player_units)
 	if not is_instance_valid(player_unit):
-		return create_pass_action()
+		return [create_pass_action()]
 	
-	# 1. Pokud můžeme zaútočit, zaútočíme
+	# 1. Pokud jsme v dosahu útoku - zaútoč rovnou
 	if can_attack_target(enemy_unit, player_unit, battle_grid):
-		print("Fighter útočí na hráče!")
-		return create_attack_action(player_unit)
+		actions.append(create_attack_action(player_unit))
+		return actions
 	
-	# 2. Pokud nemůžeme zaútočit, pokusíme se přiblížit
+	# 2. Pokud nejsme v dosahu - pohni se a pak zaútoč
+	# Najdi pozici, ze které můžeme zaútočit
+	var attack_pos = find_attack_move_position(enemy_unit, player_unit, battle_grid)
+	
+	if attack_pos != Vector2i(-1, -1):
+		# Můžeme se přesunout na pozici, odkud dosáhneme na hráče
+		var path = find_path(enemy_unit, attack_pos, battle_grid)
+		if not path.is_empty():
+			actions.append(create_move_action(path))
+			actions.append(create_attack_action(player_unit))
+			return actions
+	
+	# 3. Nemůžeme dosáhnout na hráče tento tah - přibliž se co nejvíc
 	var path = find_path_to_adjacent(enemy_unit, player_unit, battle_grid)
 	if not path.is_empty():
-		print("Fighter se pohybuje směrem k hráči")
-		return create_move_action(path)
+		actions.append(create_move_action(path))
+		return actions
 	
-	# 3. Nemůžeme se pohnout ani zaútočit
-	print("Fighter nemůže najít cestu k hráči")
-	return create_pass_action()
+	# 4. Nemůžeme se pohnout ani zaútočit
+	return [create_pass_action()]
