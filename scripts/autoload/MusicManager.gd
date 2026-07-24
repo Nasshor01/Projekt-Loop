@@ -2,9 +2,12 @@
 extends Node
 
 const RUN_SOUNDTRACK_PATH = "res://music/soundtrack/Discipline of the Inner Citadel.wav"
+const MUSIC_SEARCH_ROOT = "res://music"
 
 var _player: AudioStreamPlayer
 var _volume_linear: float = 1.0
+var _resolved_path: String = ""
+var _warned_missing: bool = false
 
 func _ready():
 	_player = AudioStreamPlayer.new()
@@ -17,11 +20,20 @@ func play_run():
 	"""Spustí soundtrack runu - hraje v loopu až do stop_run()."""
 	if _player == null:
 		return
-	if _current_stream_path() == RUN_SOUNDTRACK_PATH and _player.playing:
+	var path := _resolve_run_soundtrack()
+	if path.is_empty():
+		if not _warned_missing:
+			push_warning("MusicManager: No run soundtrack found (expected %s or any audio under %s)." % [RUN_SOUNDTRACK_PATH, MUSIC_SEARCH_ROOT])
+			_warned_missing = true
 		return
-	var stream = load(RUN_SOUNDTRACK_PATH) as AudioStream
+	if _current_stream_path() == path and _player.playing:
+		return
+	var stream = load(path) as AudioStream
 	if stream == null:
-		push_error("MusicManager: Failed to load run soundtrack: " + RUN_SOUNDTRACK_PATH)
+		if not _warned_missing:
+			push_warning("MusicManager: Failed to load run soundtrack: " + path)
+			_warned_missing = true
+		_resolved_path = ""
 		return
 	_player.stream = stream
 	_player.play()
@@ -58,11 +70,42 @@ func _on_finished():
 		_player.play()
 
 func _current_stream_path() -> String:
-	if _player == null or _player.stream == null:
+	return _resolved_path
+
+func _resolve_run_soundtrack() -> String:
+	if not _resolved_path.is_empty() and ResourceLoader.exists(_resolved_path):
+		return _resolved_path
+	if ResourceLoader.exists(RUN_SOUNDTRACK_PATH):
+		_resolved_path = RUN_SOUNDTRACK_PATH
+		return _resolved_path
+	var fallback := _find_first_audio_file(MUSIC_SEARCH_ROOT)
+	if not fallback.is_empty():
+		_resolved_path = fallback
+		return _resolved_path
+	return ""
+
+func _find_first_audio_file(root_path: String) -> String:
+	var dir: DirAccess = DirAccess.open(root_path)
+	if dir == null:
 		return ""
-	# Godot 4: Resource nemá resource_path přímo na AudioStream vždy
-	# Známe cestu - použijeme ji pro kontrolu
-	return RUN_SOUNDTRACK_PATH
+	var stack: Array[String] = [root_path]
+	while not stack.is_empty():
+		var current_path: String = stack.pop_back()
+		var current_dir: DirAccess = DirAccess.open(current_path)
+		if current_dir == null:
+			continue
+		current_dir.list_dir_begin()
+		var entry_name: String = current_dir.get_next()
+		while entry_name != "":
+			if entry_name != "." and entry_name != "..":
+				var entry_path: String = current_path.path_join(entry_name)
+				if current_dir.current_is_dir():
+					stack.append(entry_path)
+				elif entry_name.ends_with(".wav") or entry_name.ends_with(".ogg") or entry_name.ends_with(".mp3"):
+					return entry_path
+			entry_name = current_dir.get_next()
+		current_dir.list_dir_end()
+	return ""
 
 func _load_volume():
 	var cfg = ConfigFile.new()
