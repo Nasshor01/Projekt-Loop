@@ -69,5 +69,6 @@ custom_minimum_size = Vector2(400, 100)
 layout_mode = 2
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 101
 
 [node name="CardTooltip" parent="CanvasLayer" instance=ExtResource("2_tooltip")]
