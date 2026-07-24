@@ -67,50 +67,52 @@ mouse_filter = 2
 
 [node name="NameLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 30.0
-offset_top = 96.0
-offset_right = 162.0
-offset_bottom = 122.0
+offset_left = 28.0
+offset_top = 94.0
+offset_right = 164.0
+offset_bottom = 118.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
 theme_override_fonts/font = ExtResource("4_w6ddo")
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 17
 text = "Název karty"
 horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 2
+clip_text = true
 
 [node name="CostLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 18.0
-offset_top = 14.0
-offset_right = 50.0
-offset_bottom = 46.0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 52.0
+offset_bottom = 48.0
+theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
 theme_override_fonts/font = ExtResource("4_w6ddo")
-theme_override_font_sizes/font_size = 34
+theme_override_font_sizes/font_size = 30
 text = "XX"
 horizontal_alignment = 1
 vertical_alignment = 1
+clip_text = true
 
 [node name="DescriptionLabel" type="RichTextLabel" parent="."]
 layout_mode = 0
-offset_left = 36.0
-offset_top = 124.0
-offset_right = 156.0
-offset_bottom = 208.0
+offset_left = 26.0
+offset_top = 118.0
+offset_right = 166.0
+offset_bottom = 206.0
 theme_override_colors/default_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
+theme_override_constants/outline_size = 3
+theme_override_constants/line_separation = 2
 theme_override_fonts/normal_font = ExtResource("4_w6ddo")
-theme_override_font_sizes/normal_font_size = 18
+theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
 text = "[center]Popis karty[/center]"
-fit_content = true
 scroll_active = false
+vertical_alignment = 1
 
 [node name="UsageLabel" type="Label" parent="."]
 layout_mode = 0

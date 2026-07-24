@@ -8,6 +8,8 @@ class_name CardTooltip
 const TOOLTIP_WIDTH := 360.0
 const MAX_TOOLTIP_HEIGHT := 520.0
 const VIEWPORT_MARGIN := 12.0
+# GlobalUI MainPanel is 80px tall; keep tooltips clear of the top HUD bar.
+const TOP_SAFE_MARGIN := 90.0
 
 @onready var scroll_container: ScrollContainer = $MarginContainer/ScrollContainer
 @onready var name_label: Label = $MarginContainer/ScrollContainer/VBoxContainer/NameLabel
@@ -137,9 +139,29 @@ func _clamp_tooltip_position(preferred: Vector2) -> Vector2:
 	if tip_size.x < 1.0 or tip_size.y < 1.0:
 		tip_size = custom_minimum_size
 	var pos = preferred
-	pos.x = clampf(pos.x, VIEWPORT_MARGIN, screen_size.x - tip_size.x - VIEWPORT_MARGIN)
-	pos.y = clampf(pos.y, VIEWPORT_MARGIN, screen_size.y - tip_size.y - VIEWPORT_MARGIN)
+	var min_x = VIEWPORT_MARGIN
+	var max_x = screen_size.x - tip_size.x - VIEWPORT_MARGIN
+	var min_y = _get_top_safe_margin()
+	var max_y = screen_size.y - tip_size.y - VIEWPORT_MARGIN
+	if max_x < min_x:
+		pos.x = min_x
+	else:
+		pos.x = clampf(pos.x, min_x, max_x)
+	if max_y < min_y:
+		# Prefer keeping the top below the HUD even if the bottom clips slightly.
+		pos.y = min_y
+	else:
+		pos.y = clampf(pos.y, min_y, max_y)
 	return pos
+
+func _get_top_safe_margin() -> float:
+	"""Reserve space for GlobalUI top bar when the HUD is visible."""
+	if Engine.is_editor_hint() or not is_inside_tree():
+		return VIEWPORT_MARGIN
+	var gm = get_node_or_null("/root/GameManager")
+	if gm != null and is_instance_valid(gm.global_ui_instance) and gm.global_ui_instance.visible:
+		return TOP_SAFE_MARGIN
+	return VIEWPORT_MARGIN
 
 func _on_show_tween_finished():
 	_show_tween = null

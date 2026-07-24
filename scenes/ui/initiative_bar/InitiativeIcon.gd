@@ -1,103 +1,122 @@
-extends PanelContainer
+extends Control
 
 @onready var portrait: TextureRect = %Portrait
-@onready var tooltip: PanelContainer = %Tooltip
-@onready var tooltip_label: Label = %Tooltip/Label
+@onready var initiative_label: Label = %InitiativeLabel
+@onready var frame: Panel = %Frame
 
 var unit: Unit
 var _turn_manager: Node
 
-# NOVÉ PROMĚNNÉ: Použijeme je k "odložení" nastavení,
-# dokud nebude scéna plně připravena.
 var _unit_ref: Unit = null
 var _turn_manager_ref: Node = null
 var _is_setup_pending: bool = false
+var _initiative_value: int = 0
+var _is_hovered: bool = false
 
 
-# Tato funkce se zavolá AŽ POTÉ, co jsou všechny @onready
-# proměnné (jako %Portrait) úspěšně načteny.
 func _ready():
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	custom_minimum_size = Vector2(48, 48)
+	size = custom_minimum_size
+	clip_contents = true
 	if is_instance_valid(portrait):
 		portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	if is_instance_valid(tooltip):
-		tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	# Pokud byl setup() zavolán PŘEDTÍM, než bylo _ready hotové,
-	# musíme teď ta data aplikovat.
+	if is_instance_valid(initiative_label):
+		initiative_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		initiative_label.hide()
+	if is_instance_valid(frame):
+		frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tree_exiting.connect(clear_hover)
 	if _is_setup_pending:
 		_apply_setup_data()
 		_is_setup_pending = false
 
 
 func setup(unit_ref: Unit, turn_manager: Node):
-	# Krok 1: Vždy jen uložíme data, která přišla.
 	_unit_ref = unit_ref
 	_turn_manager_ref = turn_manager
-
-	# Krok 2: Zkontrolujeme, jestli už je scéna "ready".
-	# Uděláme to tak, že zkontrolujeme jednu z @onready proměnných.
 	if portrait == null:
-		# 'portrait' je @onready, takže pokud je null, scéna ještě není připravená.
-		# Nastavíme si "vlaječku", že musíme počkat na _ready().
 		_is_setup_pending = true
 	else:
-		# Scéna už připravená je (např. voláme setup() později).
-		# Můžeme data aplikovat rovnou.
 		_apply_setup_data()
 
 
-# NOVÁ FUNKCE: Toto je kód, který byl původně v setup()
 func _apply_setup_data():
-	# Bezpečně zkopírujeme data z dočasných proměnných
 	unit = _unit_ref
 	_turn_manager = _turn_manager_ref
-	
-	# Pro jistotu zkontrolujeme, jestli @onready proměnné opravdu existují
+
 	if not is_instance_valid(portrait):
 		printerr("InitiativeIcon: @onready var 'portrait' se nepodařilo načíst!")
 		return
-	if not is_instance_valid(tooltip_label):
-		printerr("InitiativeIcon: @onready var 'tooltip_label' se nepodařilo načíst!")
+	if not is_instance_valid(initiative_label):
+		printerr("InitiativeIcon: @onready var 'initiative_label' se nepodařilo načíst!")
 		return
 
-	# Teď už můžeme bezpečně spustit původní kód ze setup()
 	if is_instance_valid(unit) and is_instance_valid(unit.unit_data):
-		
 		if unit.unit_data.sprite_texture != null:
 			portrait.texture = unit.unit_data.sprite_texture
 		else:
 			portrait.texture = null
-		
-		_update_tooltip_text()
+		_update_initiative_value()
 	else:
 		portrait.texture = null
-		tooltip_label.text = tr("ui.initiative.unknown_unit")
+		_initiative_value = 0
+		initiative_label.text = "?"
 
-	tooltip.hide()
+	initiative_label.hide()
+	_is_hovered = false
+
 
 func refresh_initiative():
-	_update_tooltip_text()
+	_update_initiative_value()
+	if _is_hovered:
+		initiative_label.text = str(_initiative_value)
+		initiative_label.show()
 
-func _update_tooltip_text():
+
+func _update_initiative_value():
 	if not is_instance_valid(unit) or not is_instance_valid(unit.unit_data):
+		_initiative_value = 0
+		initiative_label.text = "?"
 		return
 	var base_init = unit.unit_data.initiative
 	var mod = 0
 	if _turn_manager and _turn_manager.has_method("get_initiative_modifier_for_unit"):
 		mod = _turn_manager.get_initiative_modifier_for_unit(unit)
-	var total_initiative = base_init + mod
-	tooltip_label.text = TranslationHelper.tr_format("ui.initiative.tooltip", {"name": unit.unit_data.get_localized_name(), "value": total_initiative})
+	_initiative_value = base_init + mod
+	initiative_label.text = str(_initiative_value)
 
 
 func set_active(is_active: bool):
 	"""Vizuálně zvýrazní ikonu, pokud je jednotka na tahu."""
 	if is_active:
-		self_modulate = Color.YELLOW
+		self_modulate = Color(1.25, 1.15, 0.55)
 	else:
 		self_modulate = Color.WHITE
 
+
 func _on_mouse_entered():
-	tooltip.show()
+	_is_hovered = true
+	_update_initiative_value()
+	initiative_label.text = str(_initiative_value)
+	initiative_label.show()
+	_set_unit_hover(true)
+
 
 func _on_mouse_exited():
-	tooltip.hide()
+	_is_hovered = false
+	initiative_label.hide()
+	_set_unit_hover(false)
+
+
+func _set_unit_hover(hovered: bool) -> void:
+	if is_instance_valid(unit) and unit.has_method("set_initiative_hover_visual"):
+		unit.set_initiative_hover_visual(hovered)
+
+
+func clear_hover() -> void:
+	if _is_hovered:
+		_is_hovered = false
+		if is_instance_valid(initiative_label):
+			initiative_label.hide()
+		_set_unit_hover(false)

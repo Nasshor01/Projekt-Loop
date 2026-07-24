@@ -23,6 +23,15 @@ const SCALE_DECK := Vector2(0.85, 0.85)
 const SCALE_COMPACT := Vector2(1.0, 1.0)
 const COMPACT_SIZE := Vector2(168, 210)
 
+## StS-style face: fixed text slot, clamp lines, shrink font before overflowing the frame.
+const DESC_MAX_LINES_FULL := 4
+const DESC_MAX_LINES_COMPACT := 3
+const DESC_FONT_COMFORTABLE := 16
+const DESC_FONT_DENSE := 14
+const COST_FONT_SIZE := 30
+const NAME_FONT_FULL := 17
+const NAME_FONT_COMPACT := 18
+
 @export var card_data: CardData:
 	set(new_card_data):
 		card_data = new_card_data
@@ -92,16 +101,27 @@ func _ready():
 
 func _apply_readability_theme() -> void:
 	if description_label:
-		description_label.fit_content = true
+		# Keep text inside the fixed face slot (fit_content grows past the frame).
+		description_label.fit_content = false
 		description_label.scroll_active = false
-		description_label.add_theme_constant_override("line_separation", 4)
+		description_label.clip_contents = true
+		description_label.bbcode_enabled = true
+		description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		description_label.add_theme_constant_override("line_separation", 2)
 		description_label.add_theme_color_override("default_color", Color(1, 1, 1, 1))
 		description_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-		description_label.add_theme_constant_override("outline_size", 4)
+		description_label.add_theme_constant_override("outline_size", 3)
+		description_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	if name_label:
+		name_label.clip_text = true
 		name_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 		name_label.add_theme_constant_override("outline_size", 5)
 	if cost_label:
+		# Fixed gem slot: always centered, never wraps.
+		cost_label.clip_text = true
+		cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cost_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		cost_label.add_theme_color_override("font_color", Color(1.0, 0.95, 0.75, 1.0))
 		cost_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 		cost_label.add_theme_constant_override("outline_size", 5)
 
@@ -156,18 +176,21 @@ func _layout_full() -> void:
 		artwork_texture_rect.position = Vector2(48, 40)
 		artwork_texture_rect.size = Vector2(99, 52)
 	if name_label:
-		name_label.position = Vector2(30, 96)
-		name_label.size = Vector2(132, 26)
-		name_label.add_theme_font_size_override("font_size", 18)
+		# Slightly tighter name band → more room for effect lines.
+		name_label.position = Vector2(28, 94)
+		name_label.size = Vector2(136, 24)
+		name_label.add_theme_font_size_override("font_size", NAME_FONT_FULL)
+		name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	if cost_label:
-		cost_label.position = Vector2(18, 14)
-		cost_label.size = Vector2(32, 32)
-		cost_label.add_theme_font_size_override("font_size", 34)
+		# Sit inside the template cost gem (top-left).
+		cost_label.position = Vector2(16, 12)
+		cost_label.size = Vector2(36, 36)
+		cost_label.add_theme_font_size_override("font_size", COST_FONT_SIZE)
 	if description_label:
 		description_label.visible = true
-		description_label.position = Vector2(36, 124)
-		description_label.size = Vector2(120, 84)
-		description_label.add_theme_font_size_override("normal_font_size", 18)
+		# Reclaim side padding; keep clear of usage counter at bottom-right.
+		description_label.position = Vector2(26, 118)
+		description_label.size = Vector2(140, 88)
 	if _usage_label:
 		_usage_label.position = Vector2(130, 208)
 
@@ -184,17 +207,16 @@ func _layout_compact() -> void:
 	if cost_label:
 		cost_label.position = Vector2(14, 10)
 		cost_label.size = Vector2(36, 36)
-		cost_label.add_theme_font_size_override("font_size", 32)
+		cost_label.add_theme_font_size_override("font_size", COST_FONT_SIZE)
 	if name_label:
 		name_label.position = Vector2(16, 52)
-		name_label.size = Vector2(136, 48)
-		name_label.add_theme_font_size_override("font_size", 20)
+		name_label.size = Vector2(136, 40)
+		name_label.add_theme_font_size_override("font_size", NAME_FONT_COMPACT)
 		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if description_label:
 		description_label.visible = true
-		description_label.position = Vector2(16, 108)
-		description_label.size = Vector2(136, 88)
-		description_label.add_theme_font_size_override("normal_font_size", 18)
+		description_label.position = Vector2(16, 100)
+		description_label.size = Vector2(136, 96)
 	if _usage_label:
 		_usage_label.visible = false
 
@@ -203,20 +225,49 @@ func _set_child_mouse_filters():
 		if child is Control:
 			child.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
+func _clamp_description_lines(desc: String, max_lines: int) -> String:
+	if desc.is_empty() or max_lines < 1:
+		return desc
+	var lines := desc.split("\n")
+	if lines.size() <= max_lines:
+		return desc
+	var kept: PackedStringArray = []
+	for i in range(max_lines):
+		kept.append(lines[i])
+	return "\n".join(kept)
+
+func _fit_name_font() -> void:
+	if not name_label:
+		return
+	var base := NAME_FONT_COMPACT if display_mode == DisplayMode.COMPACT else NAME_FONT_FULL
+	var n := name_label.text.length()
+	var size := base
+	if n > 16:
+		size = maxi(base - 2, 13)
+	if n > 22:
+		size = maxi(base - 4, 12)
+	name_label.add_theme_font_size_override("font_size", size)
+
+func _apply_description_font(line_count: int) -> void:
+	if not description_label:
+		return
+	var font_size := DESC_FONT_COMFORTABLE if line_count <= 3 else DESC_FONT_DENSE
+	description_label.add_theme_font_size_override("normal_font_size", font_size)
+	description_label.add_theme_font_size_override("bold_font_size", font_size)
+
 func update_display():
 	if not _ui_nodes_ready or not card_data:
 		return
 
 	name_label.text = card_data.get_localized_name()
+	_fit_name_font()
 	cost_label.text = str(card_data.cost)
 
 	var desc := card_data.get_display_description()
-	if display_mode == DisplayMode.COMPACT:
-		# Cap to first 3 effect lines so tile stays scannable
-		var lines = desc.split("\n")
-		if lines.size() > 3:
-			lines = PackedStringArray([lines[0], lines[1], lines[2]])
-			desc = "\n".join(lines)
+	var max_lines := DESC_MAX_LINES_COMPACT if display_mode == DisplayMode.COMPACT else DESC_MAX_LINES_FULL
+	desc = _clamp_description_lines(desc, max_lines)
+	var line_count := 0 if desc.is_empty() else desc.split("\n").size()
+	_apply_description_font(line_count)
 	description_label.text = "[center]%s[/center]" % desc if not desc.is_empty() else ""
 
 	if artwork_texture_rect and artwork_texture_rect.visible and card_data.artwork:

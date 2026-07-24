@@ -12,8 +12,10 @@ func _ready():
 	_base_container_pos = hbox_container.position
 
 func update_turn_order(units: Array[Unit]):
-	# Vymazat staré ikony
+	# Vymazat staré ikony (a zrušit případný hover highlight)
 	for icon in _icon_nodes:
+		if is_instance_valid(icon) and icon.has_method("clear_hover"):
+			icon.clear_hover()
 		icon.queue_free()
 	_icon_nodes.clear()
 
@@ -76,9 +78,9 @@ func _rotate_icons(steps: int):
 
 func _get_icon_width() -> float:
 	if _icon_nodes.is_empty():
-		return 0.0
+		return 48.0
 	var first_icon = _icon_nodes[0]
 	var width = first_icon.size.x
 	if width <= 0 and first_icon is Control:
 		width = max(width, first_icon.custom_minimum_size.x)
-	return width if width > 0 else 50.0
+	return width if width > 0 else 48.0

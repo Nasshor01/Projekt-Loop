@@ -174,7 +174,7 @@ func _on_player_hand_card_drag_started(card_ui_node: Control, card_data_resource
 		return
 	super._on_player_hand_card_drag_started(card_ui_node, card_data_resource)
 
-func try_play_card(card: CardData, initial_target: Node3D) -> void:
+func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i = Vector2i(-999, -999)) -> void:
 	if _tutorial_stage != TutorialStage.BLOCK_CARD and _tutorial_stage != TutorialStage.HEAL_AND_STRIKE:
 		return
 	
@@ -186,7 +186,7 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 	if _tutorial_stage == TutorialStage.HEAL_AND_STRIKE and card != LESSER_HEAL_CARD and card != QUICK_STRIKE_CARD:
 		return
 	
-	super.try_play_card(card, initial_target)
+	super.try_play_card(card, initial_target, target_cell)
 	
 	if _tutorial_stage == TutorialStage.BLOCK_CARD and card == DEFEND_CARD:
 		_tutorial_stage = TutorialStage.BLOCK_END_TURN
@@ -307,7 +307,8 @@ func _start_enemy_initiative_turn(enemy_unit: Unit):
 			await get_tree().create_timer(0.4).timeout
 			await enemy_unit.attack(_player_unit_node, 0, 0, false)
 	
-	enemy_unit.end_turn()
+	if is_instance_valid(enemy_unit) and enemy_unit.current_health > 0:
+		enemy_unit.end_turn()
 	if has_node("/root/TurnManager"):
 		TurnManager.next_turn()
 
@@ -335,6 +336,8 @@ func _move_dummy_towards_player(dummy_unit: Unit, player_pos: Vector2i):
 		var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(target_cell)
 		if is_instance_valid(terrain_on_cell):
 			dummy_unit.process_terrain_effects(terrain_on_cell)
+			if terrain_on_cell.consume_on_trigger:
+				battle_grid_instance.remove_terrain(target_cell)
 		
 		await get_tree().create_timer(0.08).timeout
 
@@ -351,6 +354,8 @@ func _move_dummy_adjacent(dummy_unit: Unit, player_pos: Vector2i):
 	var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(target_cell)
 	if is_instance_valid(terrain_on_cell):
 		dummy_unit.process_terrain_effects(terrain_on_cell)
+		if terrain_on_cell.consume_on_trigger:
+			battle_grid_instance.remove_terrain(target_cell)
 
 func _go_to_tutorial_reward():
 	if _tutorial_stage == TutorialStage.REWARD:

@@ -1,9 +1,8 @@
 # Soubor: res://scenes/ui/UnitInfoPanel.gd
-# Unit Info Panel s dedikovanými sloty: HP (jen nepřítel), Block, Energy (jen hráč).
-# HP hráče je v Global UI, takže v tomto panelu se u hráče nezobrazuje.
+# Kompaktní info panel (enemy hover / player). HP a intent jsou na gridu —
+# panel prioritizuje hrozbu, pasiva a statusy; výška se clampuje, scroll jen při overflow.
 extends PanelContainer
 
-# Status ikony - preload
 const ICON_BURNING = preload("res://art/icons/status/Bleed.png")
 const ICON_CHILLED = preload("res://art/icons/status/Freeze.png")
 const ICON_SHOCKED = preload("res://art/icons/status/Stunned.png")
@@ -18,32 +17,80 @@ const ICON_AURA_DEVOTION = preload("res://art/icons/status/block.png")
 const ICON_POISON = preload("res://art/icons/status/Poison.png")
 const ICON_WEAKNESS = preload("res://art/icons/status/Weakness.png")
 const ICON_THORNS = preload("res://art/icons/status/Thorns.png")
-const ICON_HEAL = preload("res://art/icons/status/Heal.png")
-const ICON_ATTACK = preload("res://art/icons/status/attack.png")
 const ICON_BLOCK = preload("res://art/icons/status/block.png")
 const ICON_RAGE = preload("res://art/icons/status/Rage_rush.png")
 const ICON_LEECH = preload("res://art/icons/status/Leech.png")
 const ICON_DEFAULT = preload("res://art/icons/status/Poison.png")
 
-const STATUS_ICON_SIZE = 20  # Velikost ikony v panelu
+const PANEL_WIDTH := 260.0
+const PANEL_MARGIN_V := 20.0 # top+bottom content margins
+const VIEWPORT_MARGIN := 12.0
+const BOTTOM_SAFE_MARGIN := 96.0
+const TOP_SAFE_MARGIN := 90.0
+## Keep clear of draw/discard piles anchored on the far-right edge.
+const RIGHT_PILE_SAFE_MARGIN := 88.0
+const STATUS_ICON_SIZE := 16
+const CHIP_FONT_SIZE := 12
 
+const COLOR_MUTED := Color(0.72, 0.76, 0.84, 1)
+const COLOR_CHIP_BG := Color(0.14, 0.16, 0.22, 0.95)
+const COLOR_CHIP_ALERT_BG := Color(0.28, 0.14, 0.12, 0.95)
+const COLOR_CHIP_ALERT_FG := Color(1.0, 0.72, 0.55, 1)
+
+@onready var scroll_container: ScrollContainer = %ScrollContainer
+@onready var content_root: VBoxContainer = %ContentRoot
 @onready var name_label: Label = %NameLabel
+@onready var class_label: Label = %ClassLabel
+@onready var hp_brief_label: Label = %HpBriefLabel
+@onready var vitals_row: HBoxContainer = %VitalsRow
 @onready var hp_slot: HBoxContainer = %HPSlot
 @onready var hp_label: Label = %HPLabel
 @onready var block_slot: HBoxContainer = %BlockSlot
 @onready var block_label: Label = %BlockLabel
 @onready var energy_slot: HBoxContainer = %EnergySlot
 @onready var energy_label: Label = %EnergyLabel
-@onready var enemy_section: VBoxContainer = %EnemySection
+@onready var attack_slot: HBoxContainer = %AttackSlot
 @onready var attack_label: Label = %AttackLabel
-@onready var class_label: Label = %ClassLabel
-@onready var passives_label: Label = %PassivesLabel
-@onready var counters_label: Label = %CountersLabel
-@onready var intent_label: Label = %IntentLabel
+@onready var enemy_section: VBoxContainer = %EnemySection
+@onready var intent_box: PanelContainer = %IntentBox
+@onready var intent_header: Label = %IntentHeader
+@onready var intent_title_label: Label = %IntentTitleLabel
+@onready var intent_detail_label: Label = %IntentDetailLabel
+@onready var passives_section: VBoxContainer = %PassivesSection
+@onready var passives_header: Label = %PassivesHeader
+@onready var passives_flow: HFlowContainer = %PassivesFlow
+@onready var alerts_section: VBoxContainer = %AlertsSection
+@onready var alerts_header: Label = %AlertsHeader
+@onready var alerts_flow: HFlowContainer = %AlertsFlow
+@onready var status_section: VBoxContainer = %StatusSection
+@onready var status_header: Label = %StatusHeader
 @onready var status_effects_list: VBoxContainer = %StatusEffectsList
 
-func update_stats(unit_node: Node):
-	if not name_label or not hp_slot or not block_slot or not energy_slot or not enemy_section or not status_effects_list:
+var _content_fingerprint: String = ""
+var _fit_queued: bool = false
+
+func _ready() -> void:
+	custom_minimum_size = Vector2(PANEL_WIDTH, 0)
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	if scroll_container:
+		scroll_container.mouse_filter = Control.MOUSE_FILTER_STOP
+		scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_apply_section_headers()
+	hide_panel()
+
+func _apply_section_headers() -> void:
+	if intent_header:
+		intent_header.text = tr("ui.unit_info.section.intent")
+	if passives_header:
+		passives_header.text = tr("ui.unit_info.section.passives")
+	if alerts_header:
+		alerts_header.text = tr("ui.unit_info.section.alerts")
+	if status_header:
+		status_header.text = tr("ui.unit_info.section.status")
+
+func update_stats(unit_node: Node) -> void:
+	if not name_label or not content_root or not status_effects_list:
 		printerr(tr("UnitInfoPanel: Missing required nodes!"))
 		visible = false
 		return
@@ -51,117 +98,215 @@ func update_stats(unit_node: Node):
 		visible = false
 		return
 
+	var fingerprint := _build_fingerprint(unit_node)
+	if visible and fingerprint == _content_fingerprint:
+		return
+	_content_fingerprint = fingerprint
+
 	visible = true
 	var data = unit_node.get_unit_data()
+	var is_enemy: bool = data.faction == UnitData.Faction.ENEMY
 	name_label.text = data.get_localized_name()
 
-	# --- Dedikované sloty: HP / Block / Energy ---
+	# --- Header: class + brief HP (enemy) ---
+	if is_enemy:
+		class_label.visible = true
+		if unit_node.has_method("get_enemy_class_name_only"):
+			class_label.text = unit_node.get_enemy_class_name_only()
+		elif unit_node.has_method("get_enemy_class_display"):
+			class_label.text = unit_node.get_enemy_class_display()
+		else:
+			class_label.text = tr("ui.unit_info.class_unknown")
+		hp_brief_label.visible = true
+		hp_brief_label.text = TranslationHelper.tr_format(
+			"ui.unit_info.hp_brief",
+			{"current": unit_node.current_health, "max": data.max_health}
+		)
+		hp_slot.visible = false
+	else:
+		class_label.visible = false
+		hp_brief_label.visible = false
+
+	# --- Vitals: player HP (coop other) / Block / Energy / Attack ---
+	var is_other_coop_unit := false
 	if data.faction == UnitData.Faction.PLAYER:
-		# Coop: pokud klikáme na jednotku DRUHÉHO hráče, ukaž její HP a skryj energii
-		var is_other_coop_unit = false
 		if GameManager.is_coop_run and unit_node.has_meta("owner_peer_id"):
 			var owner_id = unit_node.get_meta("owner_peer_id")
 			if owner_id != unit_node.multiplayer.get_unique_id():
 				is_other_coop_unit = true
 		if is_other_coop_unit:
 			hp_slot.visible = true
-			hp_label.text = TranslationHelper.tr_format("ui.unit_info.hp", {"current": unit_node.current_health, "max": data.max_health})
+			hp_label.text = TranslationHelper.tr_format(
+				"ui.unit_info.hp",
+				{"current": unit_node.current_health, "max": data.max_health}
+			)
 			energy_slot.visible = false
 		else:
 			hp_slot.visible = false
 			energy_slot.visible = true
-			energy_label.text = TranslationHelper.tr_format("ui.unit_info.energy", {"current": PlayerData.current_energy, "max": PlayerData.max_energy})
+			energy_label.text = TranslationHelper.tr_format(
+				"ui.unit_info.energy",
+				{"current": PlayerData.current_energy, "max": PlayerData.max_energy}
+			)
+		attack_slot.visible = false
 	else:
-		hp_slot.visible = true
 		energy_slot.visible = false
-		hp_label.text = TranslationHelper.tr_format("ui.unit_info.hp", {"current": unit_node.current_health, "max": data.max_health})
+		attack_slot.visible = true
+		attack_label.text = TranslationHelper.tr_format("ui.unit_info.atk_brief", {"value": data.attack_damage})
 
-	# Block slot: vždy viditelný
-	block_slot.visible = true
+	# Block: u nepřítele jen když > 0 (HP bar už je na gridu)
 	if unit_node.current_block > 0:
+		block_slot.visible = true
 		if unit_node.retained_block > 0:
-			block_label.text = TranslationHelper.tr_format("ui.unit_info.block_retained", {"current": unit_node.current_block, "retained": unit_node.retained_block})
+			block_label.text = TranslationHelper.tr_format(
+				"ui.unit_info.block_retained",
+				{"current": unit_node.current_block, "retained": unit_node.retained_block}
+			)
 			block_label.tooltip_text = tr("ui.unit_info.block_tooltip_retained")
 		else:
-			block_label.text = TranslationHelper.tr_format("ui.unit_info.block", {"value": unit_node.current_block})
+			block_label.text = TranslationHelper.tr_format(
+				"ui.unit_info.block",
+				{"value": unit_node.current_block}
+			)
 			block_label.tooltip_text = tr("ui.unit_info.block_tooltip")
 	else:
-		block_label.text = TranslationHelper.tr_format("ui.unit_info.block", {"value": 0})
-		block_label.tooltip_text = ""
+		if is_enemy:
+			block_slot.visible = false
+			block_label.tooltip_text = ""
+		else:
+			block_slot.visible = true
+			block_label.text = TranslationHelper.tr_format("ui.unit_info.block", {"value": 0})
+			block_label.tooltip_text = ""
 
-	if data.faction == UnitData.Faction.ENEMY:
-		attack_label.text = TranslationHelper.tr_format("ui.unit_info.attack", {"value": data.attack_damage})
-		attack_label.visible = true
-	else:
-		attack_label.visible = false
+	vitals_row.visible = hp_slot.visible or block_slot.visible or energy_slot.visible or attack_slot.visible
 
 	_update_enemy_details(unit_node, data)
 	_update_status_display(unit_node)
+	_queue_fit_panel_height()
 
 func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
 	if data.faction != UnitData.Faction.ENEMY:
 		enemy_section.visible = false
 		return
 	enemy_section.visible = true
-	if unit_node.has_method("get_enemy_class_display"):
-		class_label.text = unit_node.get_enemy_class_display()
-	else:
-		class_label.text = tr("ui.unit_info.class_unknown")
-	if unit_node.has_method("get_enemy_passives_display"):
-		passives_label.text = unit_node.get_enemy_passives_display()
-	else:
-		passives_label.text = tr("ui.unit_info.passives_none")
-	if unit_node.has_method("get_status_counters_display"):
-		counters_label.text = unit_node.get_status_counters_display()
-	else:
-		counters_label.text = tr("ui.unit_info.counters_none")
-	if unit_node.has_method("get_intent_display_text"):
-		intent_label.text = unit_node.get_intent_display_text()
-	else:
-		intent_label.text = tr("ui.unit_info.intent_unknown")
 
-func _update_status_display(unit_node: Node):
-	# Vymaž staré statusy
-	for child in status_effects_list.get_children():
-		child.queue_free()
-		
+	# Intent — krátký title + detail bez "Next Move:"
+	var short_txt := ""
+	var detail_txt := ""
+	if unit_node.has_method("get_intent_short_text"):
+		short_txt = str(unit_node.get_intent_short_text()).strip_edges()
+	if unit_node.has_method("get_intent_detail_text"):
+		detail_txt = str(unit_node.get_intent_detail_text()).strip_edges()
+	elif unit_node.has_method("get_intent_display_text"):
+		detail_txt = str(unit_node.get_intent_display_text()).strip_edges()
+
+	if short_txt.is_empty() and detail_txt.is_empty():
+		intent_title_label.text = tr("ui.unit_info.intent_unknown")
+		intent_detail_label.visible = false
+	elif short_txt.is_empty():
+		intent_title_label.text = detail_txt
+		intent_detail_label.visible = false
+	else:
+		intent_title_label.text = short_txt
+		# Detail jen když přidává info (ne jen synonymum short title)
+		if _is_useful_intent_detail(short_txt, detail_txt):
+			intent_detail_label.text = detail_txt
+			intent_detail_label.visible = true
+		else:
+			intent_detail_label.visible = false
+	intent_box.visible = true
+
+	# Passives jako chipy
+	_clear_container(passives_flow)
+	var passives: PackedStringArray = PackedStringArray()
+	if unit_node.has_method("get_enemy_passives_list"):
+		passives = unit_node.get_enemy_passives_list()
+	if passives.is_empty():
+		passives_section.visible = false
+	else:
+		passives_section.visible = true
+		for passive_text in passives:
+			passives_flow.add_child(_make_chip(passive_text, COLOR_CHIP_BG, COLOR_MUTED))
+
+	# Alerts / counters — jen když něco je
+	_clear_container(alerts_flow)
+	var alerts: PackedStringArray = PackedStringArray()
+	if unit_node.has_method("get_status_counters_list"):
+		alerts = unit_node.get_status_counters_list()
+	if alerts.is_empty():
+		alerts_section.visible = false
+	else:
+		alerts_section.visible = true
+		for alert_text in alerts:
+			alerts_flow.add_child(_make_chip(alert_text, COLOR_CHIP_ALERT_BG, COLOR_CHIP_ALERT_FG))
+
+func _is_useful_intent_detail(short_txt: String, detail_txt: String) -> bool:
+	if detail_txt.is_empty():
+		return false
+	if detail_txt.to_upper() == short_txt.to_upper():
+		return false
+	if detail_txt.contains("(") or detail_txt.contains("+") or detail_txt.contains("%"):
+		return true
+	return detail_txt.split(" ", false).size() > 1
+
+func _update_status_display(unit_node: Node) -> void:
+	_clear_container(status_effects_list)
 	if not "active_statuses" in unit_node or unit_node.active_statuses.is_empty():
-		status_effects_list.visible = false
+		status_section.visible = false
 		return
-		
-	status_effects_list.visible = true
-	
+
+	status_section.visible = true
 	for status_id in unit_node.active_statuses:
 		var status_data = unit_node.active_statuses[status_id]
-		var row = _create_status_row(status_id, status_data)
-		status_effects_list.add_child(row)
+		status_effects_list.add_child(_create_status_row(status_id, status_data))
 
 func _create_status_row(status_id: String, status_data: Dictionary) -> HBoxContainer:
-	"""Vytvoří řádek se statusem: [ikona] text"""
 	var row = HBoxContainer.new()
 	row.add_theme_constant_override("separation", 4)
-	
-	# Ikona
+
 	var icon_rect = TextureRect.new()
 	icon_rect.custom_minimum_size = Vector2(STATUS_ICON_SIZE, STATUS_ICON_SIZE)
-	icon_rect.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon_rect.texture = _get_status_icon(status_id)
 	row.add_child(icon_rect)
-	
-	# Text
+
 	var label = Label.new()
-	label.add_theme_font_size_override("font_size", 13)
-	
+	label.add_theme_font_size_override("font_size", 12)
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var info = _get_status_display_info(status_id, status_data)
 	label.text = info.text
 	label.add_theme_color_override("font_color", info.color)
-	
 	row.add_child(label)
 	return row
 
+func _make_chip(text: String, bg: Color, fg: Color) -> PanelContainer:
+	var chip := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = bg
+	style.set_corner_radius_all(4)
+	style.content_margin_left = 6
+	style.content_margin_right = 6
+	style.content_margin_top = 2
+	style.content_margin_bottom = 2
+	chip.add_theme_stylebox_override("panel", style)
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", CHIP_FONT_SIZE)
+	label.add_theme_color_override("font_color", fg)
+	chip.add_child(label)
+	return chip
+
+func _clear_container(container: Node) -> void:
+	if not container:
+		return
+	var children := container.get_children()
+	for child in children:
+		container.remove_child(child)
+		child.queue_free()
+
 func _get_status_icon(status_id: String) -> Texture2D:
-	"""Vrátí ikonu pro daný status"""
 	match status_id:
 		"burning":
 			return ICON_BURNING
@@ -200,10 +345,9 @@ func _get_status_icon(status_id: String) -> Texture2D:
 	return ICON_DEFAULT
 
 func _get_status_display_info(status_id: String, status_data: Dictionary) -> Dictionary:
-	"""Vrátí text a barvu pro daný status"""
 	var dur = status_data.get("duration", 0)
 	var val = status_data.get("value", 0)
-	
+
 	match status_id:
 		"aiming":
 			return {"text": TranslationHelper.tr_format("status.label.aiming", {"value": val - 100}), "color": Color.ORANGE}
@@ -243,29 +387,138 @@ func _get_status_display_info(status_id: String, status_data: Dictionary) -> Dic
 			var display_name = status_id.replace("_", " ").capitalize()
 			return {"text": "%s %d (%d t)" % [display_name, val, dur], "color": Color.WHITE}
 
-func hide_panel():
+func hide_panel() -> void:
 	visible = false
+	_content_fingerprint = ""
+	_fit_queued = false
 
-func update_from_player_data():
+func update_from_player_data() -> void:
 	var unit_data = PlayerData.selected_subclass.specific_unit_data
 	if not is_instance_valid(unit_data):
 		hide_panel()
 		return
+	_content_fingerprint = ""
 	name_label.text = unit_data.get_localized_name()
-	# HP hráče není v panelu — je v Global UI
+	class_label.visible = false
+	hp_brief_label.visible = false
 	hp_slot.visible = false
 	block_slot.visible = true
 	block_label.text = TranslationHelper.tr_format("ui.unit_info.block", {"value": 0})
 	block_label.tooltip_text = ""
 	energy_slot.visible = true
-	energy_label.text = TranslationHelper.tr_format("ui.unit_info.energy", {"current": PlayerData.current_energy, "max": PlayerData.max_energy})
+	energy_label.text = TranslationHelper.tr_format(
+		"ui.unit_info.energy",
+		{"current": PlayerData.current_energy, "max": PlayerData.max_energy}
+	)
+	attack_slot.visible = false
+	vitals_row.visible = true
 	enemy_section.visible = false
-	status_effects_list.visible = false
-	for child in status_effects_list.get_children():
-		child.queue_free()
+	status_section.visible = false
+	_clear_container(status_effects_list)
+	_clear_container(passives_flow)
+	_clear_container(alerts_flow)
 	show()
+	_queue_fit_panel_height()
 
-func update_energy_display():
+func update_energy_display() -> void:
 	"""Aktualizuje jen zobrazení energie (volá se při změně energie u hráče)."""
 	if visible and energy_slot.visible and energy_label:
-		energy_label.text = TranslationHelper.tr_format("ui.unit_info.energy", {"current": PlayerData.current_energy, "max": PlayerData.max_energy})
+		energy_label.text = TranslationHelper.tr_format(
+			"ui.unit_info.energy",
+			{"current": PlayerData.current_energy, "max": PlayerData.max_energy}
+		)
+
+func _build_fingerprint(unit_node: Node) -> String:
+	var parts: PackedStringArray = []
+	parts.append(str(unit_node.get_instance_id()))
+	parts.append(str(unit_node.current_health))
+	parts.append(str(unit_node.current_block))
+	parts.append(str(unit_node.retained_block))
+	if unit_node.has_method("get_intent_short_text"):
+		parts.append(str(unit_node.get_intent_short_text()))
+	if unit_node.has_method("get_intent_detail_text"):
+		parts.append(str(unit_node.get_intent_detail_text()))
+	elif "current_intent_text" in unit_node:
+		parts.append(str(unit_node.current_intent_text))
+	if "active_statuses" in unit_node:
+		parts.append(str(unit_node.active_statuses))
+	if unit_node.has_method("get_status_counters_list"):
+		parts.append(",".join(unit_node.get_status_counters_list()))
+	if unit_node.get_unit_data().faction == UnitData.Faction.PLAYER:
+		parts.append("%d/%d" % [PlayerData.current_energy, PlayerData.max_energy])
+	return "|".join(parts)
+
+func _queue_fit_panel_height() -> void:
+	if _fit_queued:
+		return
+	_fit_queued = true
+	# Po přidání chipů/labelů počkáme 1 frame na layout (jako CardTooltip)
+	if is_inside_tree():
+		get_tree().process_frame.connect(_fit_panel_height, CONNECT_ONE_SHOT)
+	else:
+		call_deferred("_fit_panel_height")
+
+func _fit_panel_height() -> void:
+	_fit_queued = false
+	if not visible or not is_instance_valid(scroll_container) or not is_instance_valid(content_root):
+		return
+
+	var max_h := _get_max_panel_height()
+	var content_width := PANEL_WIDTH - 24.0 # side margins
+	_set_wrap_width(content_root, content_width)
+
+	scroll_container.scroll_vertical = 0
+	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll_container.custom_minimum_size = Vector2(content_width, 0)
+
+	# Necháme layout spočítat min. výšku obsahu
+	var content_h: float = content_root.get_combined_minimum_size().y
+	var desired: float = content_h + PANEL_MARGIN_V
+	var capped: float = minf(desired, max_h)
+
+	custom_minimum_size = Vector2(PANEL_WIDTH, capped)
+	size = Vector2(PANEL_WIDTH, capped)
+	_apply_anchored_height(capped)
+
+	if desired > max_h + 0.5:
+		scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+		scroll_container.custom_minimum_size.y = maxf(0.0, capped - PANEL_MARGIN_V)
+	else:
+		scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll_container.custom_minimum_size.y = content_h
+
+func _apply_anchored_height(height: float) -> void:
+	"""U bottom-anchored panelu nastaví offset_top tak, aby výška = height (roste nahoru)."""
+	if anchor_bottom < 0.99:
+		return
+	offset_top = offset_bottom - height
+	# Enemy panel (right-anchored): never grow into the draw/discard pile column.
+	if anchor_right >= 0.99 and anchor_left >= 0.99:
+		if offset_right > -RIGHT_PILE_SAFE_MARGIN:
+			offset_right = -RIGHT_PILE_SAFE_MARGIN
+		offset_left = offset_right - PANEL_WIDTH
+
+func _set_wrap_width(node: Node, width: float) -> void:
+	if node is Label:
+		var label := node as Label
+		if label.autowrap_mode != TextServer.AUTOWRAP_OFF:
+			label.custom_minimum_size.x = width
+	elif node is RichTextLabel:
+		var rtl := node as RichTextLabel
+		rtl.custom_minimum_size.x = width
+	elif node is HFlowContainer:
+		(node as HFlowContainer).custom_minimum_size.x = width
+	for child in node.get_children():
+		_set_wrap_width(child, width)
+
+func _get_max_panel_height() -> float:
+	var viewport_h := get_viewport().get_visible_rect().size.y
+	var top_safe := TOP_SAFE_MARGIN
+	if Engine.is_editor_hint() or not is_inside_tree():
+		top_safe = VIEWPORT_MARGIN
+	else:
+		var gm = get_node_or_null("/root/GameManager")
+		if gm == null or not is_instance_valid(gm.global_ui_instance) or not gm.global_ui_instance.visible:
+			top_safe = VIEWPORT_MARGIN
+	var available := viewport_h - top_safe - BOTTOM_SAFE_MARGIN
+	return clampf(available, 120.0, 360.0)
