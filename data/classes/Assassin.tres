@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ClassData" load_steps=3 format=3 uid="uid://classassassin01lp"]
+
+[ext_resource type="Resource" uid="uid://unittrapper01loop" path="res://data/units/trapper_unit.tres" id="1_unit"]
+[ext_resource type="Script" uid="uid://dko03iddvmufq" path="res://data/classes/ClassData.gd" id="1_cls"]
+
+[resource]
+script = ExtResource("1_cls")
+class_id = "assassin"
+display_name = "class.assassin"
+description = "class.assassin.desc"
+base_unit_data = ExtResource("1_unit")

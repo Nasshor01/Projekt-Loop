@@ -146,14 +146,15 @@ func unregister_unit(unit: Unit):
 		_combatants.erase(unit)
 	
 	if _turn_order.has(unit):
-		# Pokud mazáme jednotku před aktuálním indexem, posuneme index
+		# Pokud mažeme aktuální nebo dřívější jednotku, posuneme index dozadu,
+		# aby následující next_turn() (+1) správně skočil na další živou jednotku.
 		var unit_index = _turn_order.find(unit)
-		if unit_index < _current_turn_index:
-			_current_turn_index -= 1
-		
 		_turn_order.erase(unit)
+		if unit_index <= _current_turn_index:
+			_current_turn_index = maxi(-1, _current_turn_index - 1)
 	
-	print("TurnManager: Jednotka %s vyřazena ze souboje" % unit.unit_data.unit_name)
+	var unit_label = unit.unit_data.unit_name if is_instance_valid(unit) and unit.unit_data else "?"
+	print("TurnManager: Jednotka %s vyřazena ze souboje" % unit_label)
 	
 	# Zkontroluj podmínky konce
 	_check_combat_end()

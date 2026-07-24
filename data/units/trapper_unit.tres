@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=3 format=3 uid="uid://unittrapper01loop"]
+
+[ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_trapu"]
+[ext_resource type="Texture2D" uid="uid://cnpwhd16cwp26" path="res://art/sprites/units/demon_assassin.png" id="2_trapu"]
+
+[resource]
+script = ExtResource("1_trapu")
+unit_id = "trapper"
+unit_name = "unit.trapper"
+description = "unit.trapper.desc"
+faction = 0
+unit_type = 0
+max_health = 42
+attack_damage = 5
+movement_range = 3
+attack_range = 1
+initiative = 14
+sprite_texture = ExtResource("2_trapu")

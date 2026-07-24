@@ -7,6 +7,7 @@ extends Resource
 @export var parent_class: ClassData
 @export var starting_deck: Array[DeckEntry] = []
 @export var specific_unit_data: UnitData
+## Legacy — pasivní skill tree je vypnutý, pole se nepoužívá.
 @export var passive_skill_tree: PassiveSkillTreeData = null
 
 func _init(p_id: String = "", p_name: String = "Podtřída"):

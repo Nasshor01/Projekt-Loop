@@ -208,12 +208,7 @@ func _process(delta):
 	battle_grid_instance.set_mouse_over_cell(grid_cell)
 	
 	var unit_under_mouse = battle_grid_instance.get_object_on_cell(grid_cell)
-	if is_instance_valid(unit_under_mouse) and unit_under_mouse.get_unit_data().faction == UnitData.Faction.ENEMY:
-		enemy_info_panel.update_stats(unit_under_mouse)
-		battle_grid_instance.show_enemy_range(unit_under_mouse)
-	else:
-		enemy_info_panel.hide_panel()
-		_clear_enemy_hover_highlights()
+	_refresh_enemy_info_hover(unit_under_mouse, true)
 		
 	if _player_action_state == PlayerActionState.CARD_SELECTED:
 		if _selected_card_data and not PlayerData.current_hand.has(_selected_card_data):
@@ -428,14 +423,17 @@ func _start_enemy_initiative_turn(enemy_unit: Unit):
 	
 	battle_grid_instance.hide_danger_zone()
 	_set_enemy_intents_visible(false)
-	enemy_unit.hide_intent()
+	if is_instance_valid(enemy_unit):
+		enemy_unit.hide_intent()
 	
 	await get_tree().create_timer(0.4).timeout
-	await _process_enemy_actions(enemy_unit)
+	if is_instance_valid(enemy_unit) and enemy_unit.current_health > 0:
+		await _process_enemy_actions(enemy_unit)
 	await get_tree().create_timer(0.4).timeout
 	
-	# Zavolej end_turn na jednotce
-	enemy_unit.end_turn()
+	# Jednotka mohla zemřít během akce (např. past DAMAGE_ON_ENTER)
+	if is_instance_valid(enemy_unit) and enemy_unit.current_health > 0:
+		enemy_unit.end_turn()
 	
 	# Coop: host přepočte intenty a pošle klientovi kompletní stav
 	if _is_coop_run() and has_node("/root/MultiplayerManager") and MultiplayerManager.is_server():
@@ -444,7 +442,7 @@ func _start_enemy_initiative_turn(enemy_unit: Unit):
 			if is_instance_valid(e) and e.has_method("update_intent"):
 				e.update_intent(_player_unit_node, battle_grid_instance)
 		var payload = _coop_build_battle_state_snapshot()
-		var enemy_idx = _all_enemy_units_ordered.find(enemy_unit)
+		var enemy_idx = _all_enemy_units_ordered.find(enemy_unit) if is_instance_valid(enemy_unit) else -1
 		payload["enemy_turn_index"] = enemy_idx if enemy_idx >= 0 else 0
 		rpc("_rpc_apply_enemy_turn_result", payload)
 	
@@ -478,6 +476,9 @@ func _process_enemy_actions(enemy_unit: Unit):
 			break
 		
 		await _execute_single_action(enemy_unit, action)
+		
+		if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
+			break
 		
 		# Track zda útočil
 		if action.type == EnemyAIBase.AIAction.ActionType.ATTACK or action.type == EnemyAIBase.AIAction.ActionType.RUSH:
@@ -555,16 +556,14 @@ func _execute_single_action(enemy_unit: Unit, action: EnemyAIBase.AIAction):
 				var path = action.move_path
 				
 				if path.size() > 1:
-					var final_target_pos = path[-1]
+					var final_target_pos = _resolve_path_with_terrain(enemy_unit, path)
 					
 					battle_grid_instance.remove_object_by_instance(enemy_unit)
 					battle_grid_instance.place_object_on_cell(enemy_unit, final_target_pos, true)
 					
-					var target_terrain = battle_grid_instance.get_terrain_on_cell(final_target_pos)
-					if is_instance_valid(target_terrain):
-						enemy_unit.process_terrain_effects(target_terrain)
-					
 					await get_tree().create_timer(0.4).timeout
+					if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
+						return
 					
 					if is_instance_valid(action.target_unit) and can_attack_target(enemy_unit, action.target_unit, battle_grid_instance):
 						if action.target_unit == _player_unit_node:
@@ -579,23 +578,17 @@ func _execute_single_action(enemy_unit: Unit, action: EnemyAIBase.AIAction):
 				
 				if path.size() > 1:
 					var move_dist = min(path.size() - 1, enemy_unit.get_current_movement_range())
-					var final_target_pos = path[move_dist]
-					
-					for terrain_check_index in range(1, move_dist + 1):
-						var path_cell = path[terrain_check_index]
-						var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(path_cell)
-						if is_instance_valid(terrain_on_cell) and terrain_on_cell.terrain_name == "Mud":
-							final_target_pos = path_cell
-							break
+					var truncated: Array[Vector2i] = []
+					for i in range(move_dist + 1):
+						truncated.append(path[i])
+					var final_target_pos = _resolve_path_with_terrain(enemy_unit, truncated)
 					
 					battle_grid_instance.remove_object_by_instance(enemy_unit)
 					battle_grid_instance.place_object_on_cell(enemy_unit, final_target_pos, true)
 					
-					var target_terrain = battle_grid_instance.get_terrain_on_cell(final_target_pos)
-					if is_instance_valid(target_terrain):
-						enemy_unit.process_terrain_effects(target_terrain)
-					
 					await get_tree().create_timer(0.4).timeout
+					if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
+						return
 		
 		EnemyAIBase.AIAction.ActionType.PASS:
 			pass
@@ -983,17 +976,17 @@ func _on_unit_died(unit_node: Unit):
 	
 	battle_grid_instance.remove_object_by_instance(unit_node)
 	
+	# Odregistruj IHNED (před animací), ať TurnManager nepracuje se zombie jednotkou
+	if has_node("/root/TurnManager"):
+		TurnManager.unregister_unit(unit_node)
+	
 	# Animace zmizení pro 3D (Scale místo Modulate)
 	var tween = create_tween()
 	tween.tween_property(unit_node, "scale", Vector3.ZERO, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	
-	# Odregistruj až PO animaci
 	await tween.finished
-	
-	if has_node("/root/TurnManager"):
-		TurnManager.unregister_unit(unit_node)
-	
-	unit_node.queue_free()
+	if is_instance_valid(unit_node):
+		unit_node.queue_free()
 
 func _handle_coop_player_death(dead_unit: Unit):
 	"""Coop: jeden hráč zemřel – stane se divákem, druhý pokračuje."""
@@ -1155,8 +1148,15 @@ func _on_player_hand_card_drag_cancelled(_card_ui_node: Control, _card_data_reso
 	_reset_player_selection()
 
 # OPRAVA: Argument je Node3D (nebo Unit, ale Node3D je obecnější pro 3D svět)
-func try_play_card(card: CardData, initial_target: Node3D) -> void:
-	DebugLogger.log_card_played(card.card_name, str(initial_target.name) if initial_target else "none")
+func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i = Vector2i(-999, -999)) -> void:
+	var effect_summaries: Array = []
+	if card:
+		for eff in card.effects:
+			if not eff:
+				continue
+			var type_name = CardEffectData.EffectType.keys()[eff.effect_type]
+			effect_summaries.append("%s(%s,%d)" % [type_name, eff.string_value, eff.value])
+	DebugLogger.log_card_played(card.card_name if card else "null", str(initial_target.name) if initial_target else "none", effect_summaries)
 	if _is_action_processing:
 		_card_play_in_progress = false
 		_clear_card_selection_state_before_play()
@@ -1217,8 +1217,31 @@ func try_play_card(card: CardData, initial_target: Node3D) -> void:
 		var type_name = CardEffectData.EffectType.keys()[eff.effect_type]
 		DebugLogger.log_debug("  effect[%d] type=%s string_value='%s' value=%d" % [idx, type_name, eff.string_value, eff.value])
 	
-	# Iterate ALL effects; each effect needs valid targets to apply
+	# Apply non-damage effects first, then damage. Dodge on DEAL_DAMAGE must not
+	# skip APPLY_STATUS / heals / etc. on the same card (poisoned_dart fantasy).
+	var resolved_cell := target_cell
+	if resolved_cell.x <= -900:
+		resolved_cell = get_grid_cell_under_mouse()
+	
+	var ordered_effects: Array = []
+	var damage_effects: Array = []
 	for effect_data in card.effects:
+		if effect_data == null:
+			continue
+		var is_damage := effect_data.effect_type == CardEffectData.EffectType.DEAL_DAMAGE \
+			or effect_data.effect_type == CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK \
+			or effect_data.effect_type == CardEffectData.EffectType.DEAL_DOUBLE_DAMAGE_FROM_BLOCK
+		if is_damage:
+			damage_effects.append(effect_data)
+		else:
+			ordered_effects.append(effect_data)
+	ordered_effects.append_array(damage_effects)
+	
+	for effect_data in ordered_effects:
+		if effect_data.effect_type == CardEffectData.EffectType.PLACE_TERRAIN:
+			if await _try_place_terrain_effect(effect_data, resolved_cell, card):
+				card_played_successfully = true
+			continue
 		var targets = _get_targets_for_effect(effect_data, initial_target, card)
 		if not targets.is_empty():
 			card_played_successfully = true
@@ -1394,12 +1417,13 @@ func _execute_move(unit_to_move: Unit, target_cell: Vector2i):
 		_reset_player_selection()
 		return
 	unit_to_move.use_move_action()
+	var start_cell = unit_to_move.grid_position
+	var path = battle_grid_instance.find_path(start_cell, target_cell, unit_to_move)
+	if path.is_empty():
+		path = [start_cell, target_cell]
+	var final_cell = _resolve_path_with_terrain(unit_to_move, path)
 	battle_grid_instance.remove_object_by_instance(unit_to_move)
-	battle_grid_instance.place_object_on_cell(unit_to_move, target_cell, true)
-	var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(target_cell)
-	if is_instance_valid(terrain_on_cell):
-		# Voláme přímo funkci na jednotce, která efekt zpracuje
-		unit_to_move.process_terrain_effects(terrain_on_cell)
+	battle_grid_instance.place_object_on_cell(unit_to_move, final_cell, true)
 	_reset_player_selection()
 	if unit_to_move == _player_unit_node:
 		set_enemy_intents()
@@ -1407,7 +1431,39 @@ func _execute_move(unit_to_move: Unit, target_cell: Vector2i):
 	if _is_coop_run() and has_node("/root/MultiplayerManager"):
 		var idx = _coop_get_player_unit_index(unit_to_move)
 		if idx >= 0:
-			rpc("_rpc_apply_move", idx, target_cell.x, target_cell.y)
+			rpc("_rpc_apply_move", idx, final_cell.x, final_cell.y)
+
+func _resolve_path_with_terrain(unit: Unit, path: Array[Vector2i]) -> Vector2i:
+	"""Trigger ON_ENTER terrain for every cell walked onto (not only the destination).
+	Consumable traps are removed on trigger. Mud / stops_movement_on_enter ends the walk early.
+	Returns the cell the unit should land on."""
+	if path.is_empty():
+		return unit.grid_position if is_instance_valid(unit) else Vector2i.ZERO
+	if path.size() == 1:
+		return path[0]
+	var final_pos: Vector2i = path[path.size() - 1]
+	for i in range(1, path.size()):
+		var cell: Vector2i = path[i]
+		final_pos = cell
+		var terrain = battle_grid_instance.get_terrain_on_cell(cell)
+		if is_instance_valid(terrain):
+			var dmg_dealt: int = 0
+			if unit.has_method("process_terrain_effects"):
+				dmg_dealt = unit.process_terrain_effects(terrain)
+			var should_consume: bool = terrain.consume_on_trigger
+			var should_stop: bool = terrain.stops_movement_on_enter or terrain.terrain_id == "mud"
+			var unit_label = unit.unit_data.unit_id if unit.unit_data else str(unit.name)
+			if terrain.effect_type == TerrainData.TerrainEffect.DAMAGE_ON_ENTER or should_consume:
+				DebugLogger.log_info("Trap triggered on %s at %s: %d damage, consumed=%s (terrain=%s)" % [
+					unit_label, str(cell), dmg_dealt, str(should_consume), terrain.terrain_id
+				])
+			if should_consume:
+				battle_grid_instance.remove_terrain(cell)
+			if not is_instance_valid(unit) or unit.current_health <= 0:
+				break
+			if should_stop:
+				break
+	return final_pos
 
 # Converts legacy damage_multiplier to additive bonus for DamageCalculator
 func _damage_multiplier_to_extra(unit: Unit, multiplier: float) -> int:
@@ -1499,7 +1555,11 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 				if target is Unit and target.get_unit_data().faction == UnitData.Faction.ENEMY:
 					enemy_health_before = target.current_health
 				
-				await target.take_damage(damage_to_deal, true)
+				# Dodge skips damage only; subsequent card effects (APPLY_STATUS etc.) still run.
+				var hit_landed: bool = await target.take_damage(damage_to_deal, true)
+				if not hit_landed:
+					DebugLogger.log_info("DEAL_DAMAGE dodged — další efekty karty se přesto aplikují")
+					return
 				
 				# Pokud byl nepřítel zabit touto kartou, zkontroluj, zda karta má gods_lightning efekt
 				if target is Unit and target.get_unit_data().faction == UnitData.Faction.ENEMY:
@@ -1607,8 +1667,13 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 							target._update_stats_and_emit_signal()
 							DebugLogger.log_info("Odstraněno %d debuffů" % statuses_to_remove.size())
 				else:
-					# e.g. regeneration: value = heal per turn, duration = value (3 turns)
-					var duration = effect.value if effect.string_value == "regeneration" else 1
+					# poison aj.: value = síla; aoe_param_x = trvání (pokud > 0), jinak 1
+					# regeneration: duration = value (heal/turn i počet kol)
+					var duration = 1
+					if effect.string_value == "regeneration":
+						duration = effect.value
+					elif effect.aoe_param_x > 0:
+						duration = effect.aoe_param_x
 					target.apply_status(effect.string_value, effect.value, duration)
 			
 		CardEffectData.EffectType.GAIN_EXTRA_MOVE:
@@ -1700,7 +1765,32 @@ func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D
 			# V této hře je hráč jediný spojenec, ale pro budoucí rozšíření můžeme přidat další spojence
 			if is_instance_valid(_player_unit_node):
 				targets.append(_player_unit_node)
+		CardEffectData.TargetType.EMPTY_GRID_CELL, CardEffectData.TargetType.ANY_GRID_CELL:
+			pass  # PLACE_TERRAIN řeší try_play_card zvlášť
 	return targets
+
+func _try_place_terrain_effect(effect: CardEffectData, target_cell: Vector2i, card: CardData) -> bool:
+	if not battle_grid_instance or not is_instance_valid(_player_unit_node):
+		return false
+	if not battle_grid_instance.is_cell_active(target_cell):
+		return false
+	if battle_grid_instance.get_object_on_cell(target_cell) != null:
+		DebugLogger.log_warning("Past lze položit jen na prázdné políčko!")
+		return false
+	var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, target_cell)
+	if distance > card.range_value:
+		DebugLogger.log_warning("Cíl je mimo dosah karty!")
+		return false
+	if effect.string_value.is_empty():
+		DebugLogger.log_error("PLACE_TERRAIN bez cesty k TerrainData")
+		return false
+	var terrain = load(effect.string_value) as TerrainData
+	if not is_instance_valid(terrain):
+		DebugLogger.log_error("Nepodařilo se načíst terrain: %s" % effect.string_value)
+		return false
+	battle_grid_instance.place_terrain(target_cell, terrain)
+	DebugLogger.log_info("Položen terén '%s' na %s" % [terrain.terrain_id, str(target_cell)])
+	return true
 	
 func _clear_card_selection_state_before_play():
 	"""Zruší stav 'karta vybraná' pro vstup, aby další klik na grid nespustil kartu znovu.
@@ -1772,12 +1862,24 @@ func _physics_process(_delta):
 	# Raycast pro enemy hover (card target preview je už v _process, nevolat 2×)
 	var grid_cell = get_grid_cell_under_mouse() 
 	var unit_under_mouse = battle_grid_instance.get_object_on_cell(grid_cell)
-	
+	_refresh_enemy_info_hover(unit_under_mouse, false)
+
+func _is_mouse_over_enemy_info_panel() -> bool:
+	if not is_instance_valid(enemy_info_panel) or not enemy_info_panel.visible:
+		return false
+	return enemy_info_panel.get_global_rect().has_point(enemy_info_panel.get_global_mouse_position())
+
+func _refresh_enemy_info_hover(unit_under_mouse: Node, show_range: bool) -> void:
+	"""Enemy info při hoveru; zůstane otevřené i když myš přejede na panel (scroll)."""
 	if is_instance_valid(unit_under_mouse) and unit_under_mouse.get_unit_data().faction == UnitData.Faction.ENEMY:
 		enemy_info_panel.update_stats(unit_under_mouse)
-	else:
-		enemy_info_panel.hide_panel()
-		_clear_enemy_hover_highlights()
+		if show_range and is_instance_valid(battle_grid_instance):
+			battle_grid_instance.show_enemy_range(unit_under_mouse)
+		return
+	if _is_mouse_over_enemy_info_panel():
+		return
+	enemy_info_panel.hide_panel()
+	_clear_enemy_hover_highlights()
 
 func _show_valid_targets_for_card(card: CardData):
 	var valid_target_cells: Array[Vector2i] = []
@@ -1818,6 +1920,23 @@ func _show_valid_targets_for_card(card: CardData):
 			CardEffectData.TargetType.SELF_UNIT:
 				is_attack = false
 				if not valid_target_cells.has(_player_unit_node.grid_position): valid_target_cells.append(_player_unit_node.grid_position)
+			CardEffectData.TargetType.EMPTY_GRID_CELL:
+				is_attack = false
+				for cell in battle_grid_instance.get_all_active_cells():
+					if battle_grid_instance.get_object_on_cell(cell) != null:
+						continue
+					var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, cell)
+					if distance <= card.range_value:
+						valid_target_cells.append(cell)
+			_:
+				if effect.effect_type == CardEffectData.EffectType.PLACE_TERRAIN:
+					is_attack = false
+					for cell in battle_grid_instance.get_all_active_cells():
+						if battle_grid_instance.get_object_on_cell(cell) != null:
+							continue
+						var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, cell)
+						if distance <= card.range_value:
+							valid_target_cells.append(cell)
 	battle_grid_instance.show_targetable_cells(valid_target_cells, is_attack)
 
 func _clear_enemy_hover_highlights():
@@ -1967,9 +2086,10 @@ func _try_play_selected_card_at_cell(clicked_grid_cell: Vector2i) -> bool:
 	
 	var has_self_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
 	var has_enemy_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
+	var has_empty_cell_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.EMPTY_GRID_CELL or e.effect_type == CardEffectData.EffectType.PLACE_TERRAIN)
 
 	# Pokud karta má pouze SELF efekty (bez ENEMY efektů), použij hráče jako cíl
-	if has_self_effect and not has_enemy_effect:
+	if has_self_effect and not has_enemy_effect and not has_empty_cell_effect:
 		if is_instance_valid(_player_unit_node):
 			_card_play_in_progress = true
 			_clear_card_selection_state_before_play()
@@ -1978,6 +2098,20 @@ func _try_play_selected_card_at_cell(clicked_grid_cell: Vector2i) -> bool:
 		return false
 
 	var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
+
+	if has_empty_cell_effect:
+		if is_instance_valid(target_node):
+			DebugLogger.log_warning("Past lze položit jen na prázdné políčko!")
+			return false
+		if is_instance_valid(_player_unit_node) and battle_grid_instance:
+			var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, clicked_grid_cell)
+			if distance > card_to_play.range_value:
+				DebugLogger.log_warning("Cíl je mimo dosah karty!")
+				return false
+		_card_play_in_progress = true
+		_clear_card_selection_state_before_play()
+		try_play_card(card_to_play, null, clicked_grid_cell)
+		return true
 
 	# Kontrola: Pokud karta vyžaduje nepřítele jako cíl, musí být target_node validní nepřítel
 	if has_enemy_effect:
@@ -1996,7 +2130,7 @@ func _try_play_selected_card_at_cell(clicked_grid_cell: Vector2i) -> bool:
 
 	_card_play_in_progress = true
 	_clear_card_selection_state_before_play()
-	try_play_card(card_to_play, target_node)
+	try_play_card(card_to_play, target_node, clicked_grid_cell)
 	return true
 
 func _execute_card_play_at_cell(card: CardData, clicked_grid_cell: Vector2i) -> bool:
@@ -2015,13 +2149,24 @@ func _execute_card_play_at_cell(card: CardData, clicked_grid_cell: Vector2i) -> 
 		return false
 	var has_self_effect = card.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
 	var has_enemy_effect = card.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
-	if has_self_effect and not has_enemy_effect:
+	var has_empty_cell_effect = card.effects.any(func(e): return e.target_type == CardEffectData.TargetType.EMPTY_GRID_CELL or e.effect_type == CardEffectData.EffectType.PLACE_TERRAIN)
+	if has_self_effect and not has_enemy_effect and not has_empty_cell_effect:
 		if is_instance_valid(_player_unit_node):
 			_card_play_in_progress = true
 			try_play_card(card, _player_unit_node)
 			return true
 		return false
 	var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
+	if has_empty_cell_effect:
+		if is_instance_valid(target_node):
+			return false
+		if is_instance_valid(_player_unit_node) and battle_grid_instance:
+			var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, clicked_grid_cell)
+			if distance > card.range_value:
+				return false
+		_card_play_in_progress = true
+		try_play_card(card, null, clicked_grid_cell)
+		return true
 	if has_enemy_effect:
 		if not is_instance_valid(target_node) or not target_node is Unit or not target_node.get_unit_data().faction == UnitData.Faction.ENEMY:
 			return false
@@ -2033,7 +2178,7 @@ func _execute_card_play_at_cell(card: CardData, clicked_grid_cell: Vector2i) -> 
 			if needs_los and not battle_grid_instance.has_line_of_sight(_player_unit_node.grid_position, target_node.grid_position, target_node):
 				return false
 	_card_play_in_progress = true
-	try_play_card(card, target_node)
+	try_play_card(card, target_node, clicked_grid_cell)
 	return true
 
 func _place_terrain_features():
@@ -2062,6 +2207,14 @@ func _apply_terrain_effect(unit: Node3D, terrain: TerrainData):
 				unit.apply_status(terrain.effect_string_value, terrain.effect_duration)
 		TerrainData.TerrainEffect.MODIFY_DEFENSE_ON_TILE:
 			if unit.has_method("add_block"): unit.add_block(terrain.effect_numeric_value)
+		TerrainData.TerrainEffect.DAMAGE_ON_ENTER:
+			if unit.has_method("take_damage") and terrain.effect_numeric_value > 0:
+				# Pasti nelze vyhnout
+				unit.take_damage(terrain.effect_numeric_value, true, false, false)
+				var unit_label = unit.unit_data.unit_id if unit is Unit and unit.unit_data else str(unit.name)
+				DebugLogger.log_info("Trap triggered on %s: %d damage, consumed=%s" % [
+					unit_label, terrain.effect_numeric_value, str(terrain.consume_on_trigger)
+				])
 
 func _generate_grid_from_shape():
 	var all_shapes = [SHAPE_DEFAULT, SHAPE_CROSS, SHAPE_DIAMOND]
@@ -2314,12 +2467,22 @@ func _rpc_apply_move(unit_index: int, cell_x: int, cell_y: int):
 	if not is_instance_valid(unit) or not battle_grid_instance:
 		return
 	var target_cell = Vector2i(cell_x, cell_y)
+	# Peer already resolved path + terrain on the mover side; just snap to final cell.
+	# Re-process landing terrain only if still present (consume may have already happened locally).
 	unit.use_move_action()
 	battle_grid_instance.remove_object_by_instance(unit)
 	battle_grid_instance.place_object_on_cell(unit, target_cell, true)
 	var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(target_cell)
 	if is_instance_valid(terrain_on_cell) and unit.has_method("process_terrain_effects"):
-		unit.process_terrain_effects(terrain_on_cell)
+		var dmg_dealt = unit.process_terrain_effects(terrain_on_cell)
+		var should_consume = terrain_on_cell.consume_on_trigger
+		if terrain_on_cell.effect_type == TerrainData.TerrainEffect.DAMAGE_ON_ENTER or should_consume:
+			var unit_label = unit.unit_data.unit_id if unit.unit_data else str(unit.name)
+			DebugLogger.log_info("Trap triggered on %s at %s: %d damage, consumed=%s (terrain=%s)" % [
+				unit_label, str(target_cell), dmg_dealt, str(should_consume), terrain_on_cell.terrain_id
+			])
+		if should_consume:
+			battle_grid_instance.remove_terrain(target_cell)
 	set_enemy_intents()
 
 @rpc("any_peer", "call_remote")
@@ -2392,11 +2555,13 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 					unit.apply_status("burning", 2, 3)
 		
 		"teleport":
-			# Mage teleport - přesune se na cílovou pozici
+			# Mage teleport - přesune se na cílovou pozici (landing cell stále spouští past)
 			var target_pos = action.special_data.get("target_position", Vector2i(-1, -1))
 			if target_pos != Vector2i(-1, -1):
+				var teleport_path: Array[Vector2i] = [enemy_unit.grid_position, target_pos]
+				var land_pos = _resolve_path_with_terrain(enemy_unit, teleport_path)
 				battle_grid_instance.remove_object_by_instance(enemy_unit)
-				battle_grid_instance.place_object_on_cell(enemy_unit, target_pos, true)
+				battle_grid_instance.place_object_on_cell(enemy_unit, land_pos, true)
 				await get_tree().create_timer(0.3).timeout
 		
 		"arcane_shield":
@@ -2539,11 +2704,13 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 					_took_damage_last_turn = true
 		
 		"shadow_dash":
-			# Boss teleport na pozici vedle hráče
+			# Boss teleport na pozici vedle hráče (landing cell spouští past)
 			var target_pos = action.special_data.get("target_position", Vector2i(-1, -1))
 			if target_pos != Vector2i(-1, -1):
+				var dash_path: Array[Vector2i] = [enemy_unit.grid_position, target_pos]
+				var land_pos = _resolve_path_with_terrain(enemy_unit, dash_path)
 				battle_grid_instance.remove_object_by_instance(enemy_unit)
-				battle_grid_instance.place_object_on_cell(enemy_unit, target_pos, true)
+				battle_grid_instance.place_object_on_cell(enemy_unit, land_pos, true)
 				await get_tree().create_timer(0.3).timeout
 		
 		"hellfire":
@@ -2587,11 +2754,14 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 		
 		# ===== ASSASSIN ABILITIES =====
 		"disengage":
-			# Assassin ústup po útoku (bonus pohyb, nepoužívá can_move)
+			# Assassin ústup po útoku — projít každou buňku cesty (pasti, mud)
 			var disengage_path = action.special_data.get("move_path", [])
 			if disengage_path is Array and disengage_path.size() > 1:
 				var move_dist = min(disengage_path.size() - 1, 2)  # Max 2 pole ústup
-				var final_pos = disengage_path[move_dist]
+				var truncated: Array[Vector2i] = []
+				for i in range(move_dist + 1):
+					truncated.append(disengage_path[i])
+				var final_pos = _resolve_path_with_terrain(enemy_unit, truncated)
 				battle_grid_instance.remove_object_by_instance(enemy_unit)
 				battle_grid_instance.place_object_on_cell(enemy_unit, final_pos, true)
 				await get_tree().create_timer(0.3).timeout

@@ -1,7 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://r5w3x6a5y0hr"]
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://r5w3x6a5y0hr"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_71uty"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_n56f4"]
+[ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_reqpal"]
 
 [sub_resource type="Resource" id="Resource_cr8q0"]
 script = ExtResource("1_71uty")
@@ -46,6 +47,7 @@ range_type = 6
 range_value = 3
 tags = Array[int]([0])
 rarity = 2
+required_subclass = ExtResource("3_reqpal")
 effects = Array[ExtResource("1_71uty")]([SubResource("Resource_cr8q0"), SubResource("Resource_cr8q0_exhaust")])
 is_upgraded = true
 max_uses_per_turn = -1

@@ -19,7 +19,7 @@ func get_available_cards(player_class: ClassData = null, player_subclass: Subcla
 		if not is_instance_valid(card):
 			continue
 		
-		# Filtruj podle třídy/podtřídy
+		# Filtruj podle třídy/podtřídy (everyone / Paladin / Trapper)
 		if not card.can_be_used_by(player_class, player_subclass):
 			continue
 		
@@ -27,13 +27,7 @@ func get_available_cards(player_class: ClassData = null, player_subclass: Subcla
 		if card.rarity == CardData.CardRarity.BASIC:
 			continue
 		
-		# Pokud je karta specifická pro subclassu:
-		# - Pokud existuje seznam odemčených karet, použij ho
-		# - Pokud je seznam prázdný, považuj všechny subclass karty za dostupné (bez gates)
-		if card.required_subclass != null:
-			if not unlocked_cards.is_empty() and not unlocked_cards.has(card.card_id):
-				continue
-		
+		# Unlock gate ze skill tree je vypnutý — stačí class/subclass filtr výše.
 		available.append(card)
 	
 	return available

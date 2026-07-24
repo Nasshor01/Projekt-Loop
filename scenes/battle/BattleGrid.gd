@@ -27,6 +27,7 @@ extends Node3D
 @export var movement_warning_color: Color = Color(0.9, 0.75, 0.1, 0.45)
 @export var danger_zone_color: Color = Color(0.85, 0.2, 0.2, 0.4)
 @export var enemy_range_highlight_color: Color = Color(0.2, 0.45, 0.95, 0.5) # modrá – move enemy
+@export var initiative_hover_color: Color = Color(1.0, 0.82, 0.08, 0.78) # zlatá – hover v initiative baru
 
 @onready var units_container: Node3D = $UnitsContainer
 var _terrain_container: Node3D
@@ -37,6 +38,8 @@ var camera: Camera3D
 var _active_cells: Dictionary = {}
 var _grid_objects: Dictionary = {}
 var terrain_layer: Dictionary = {}
+## Sprite3D overlays for placed terrain (keyed by grid cell). Separate from floor tiles in _terrain_container.
+var _terrain_visuals: Dictionary = {}
 var _mouse_over_cell: Vector2i = Vector2i(-1, -1)
 
 var _movable_cells: Array[Vector2i] = []
@@ -53,6 +56,7 @@ var _spawn_pulse_active: bool = false
 var _enemy_overlap_pulse_nodes: Array[MeshInstance3D] = []  # buňky kde move == attack (modrá ↔ červená)
 # Coop: vybrané spawn buňky – Dictionary { Vector2i -> Color }
 var _coop_selected_spawns: Dictionary = {}
+var _initiative_hover_cell: Vector2i = Vector2i(-1, -1)
 
 func _ready():
 	_terrain_container = Node3D.new()
@@ -83,6 +87,11 @@ func set_mouse_over_cell(cell: Vector2i):
 
 func build_from_shape(shape_array: Array):
 	_active_cells.clear()
+	terrain_layer.clear()
+	for spr in _terrain_visuals.values():
+		if is_instance_valid(spr):
+			spr.queue_free()
+	_terrain_visuals.clear()
 	
 	if _terrain_container:
 		for child in _terrain_container.get_children():
@@ -119,6 +128,12 @@ func build_from_shape(shape_array: Array):
 
 func is_cell_active(grid_position: Vector2i) -> bool:
 	return _active_cells.has(grid_position)
+
+func get_all_active_cells() -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for cell in _active_cells.keys():
+		cells.append(cell)
+	return cells
 
 func place_object_on_cell(object_node: Node3D, grid_position: Vector2i, is_moving: bool = false) -> bool:
 	if not is_cell_active(grid_position) or _grid_objects.has(grid_position): return false
@@ -225,6 +240,22 @@ func update_visual_highlights():
 	
 	if is_valid_grid_position(_mouse_over_cell) and is_cell_active(_mouse_over_cell):
 		create_cursor.call(_mouse_over_cell, highlight_color, false, 1.2)
+	if _initiative_hover_cell != Vector2i(-1, -1) and is_cell_active(_initiative_hover_cell):
+		create_cursor.call(_initiative_hover_cell, initiative_hover_color, false, 2.5)
+
+func show_initiative_hover_cell(cell: Vector2i) -> void:
+	if not is_cell_active(cell):
+		return
+	if _initiative_hover_cell == cell:
+		return
+	_initiative_hover_cell = cell
+	update_visual_highlights()
+
+func hide_initiative_hover_cell(cell: Vector2i) -> void:
+	if _initiative_hover_cell != cell:
+		return
+	_initiative_hover_cell = Vector2i(-1, -1)
+	update_visual_highlights()
 
 func _create_enemy_overlap_highlight(cell: Vector2i) -> void:
 	# Překryv move+attack: vždy ČERVENÁ (dmg range), jen jemně pulzuje = vidět že jde i o move
@@ -448,6 +479,7 @@ func get_cells_for_centered_aoe(center_cell: Vector2i, aoe_type: CardEffectData.
 
 func place_terrain(grid_position: Vector2i, terrain_data: TerrainData):
 	if not is_cell_active(grid_position): return
+	remove_terrain(grid_position)
 	terrain_layer[grid_position] = terrain_data
 	
 	if terrain_data.sprite:
@@ -459,6 +491,7 @@ func place_terrain(grid_position: Vector2i, terrain_data: TerrainData):
 		terrain_sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 		
 		_terrain_container.add_child(terrain_sprite)
+		_terrain_visuals[grid_position] = terrain_sprite
 		
 		# --- ROZHODOVÁNÍ PODLE TYPU TERÉNU ---
 		if terrain_data.is_flat_on_ground:
@@ -480,8 +513,57 @@ func place_terrain(grid_position: Vector2i, terrain_data: TerrainData):
 			# Pozice: Zvedneme ho (0.7), aby nebyl zapadlý v zemi
 			terrain_sprite.position = Vector3(grid_position.x * cell_size_3d, 0.7, grid_position.y * cell_size_3d)
 
+func remove_terrain(grid_position: Vector2i) -> void:
+	terrain_layer.erase(grid_position)
+	if _terrain_visuals.has(grid_position):
+		var spr = _terrain_visuals[grid_position]
+		_terrain_visuals.erase(grid_position)
+		if is_instance_valid(spr):
+			spr.queue_free()
+
 func get_terrain_on_cell(grid_position: Vector2i) -> TerrainData:
 	return terrain_layer.get(grid_position, null)
+
+func find_path(from_cell: Vector2i, to_cell: Vector2i, moving_unit: Node = null) -> Array[Vector2i]:
+	"""BFS 4-dir path. Returns [from, ..., to] or empty if unreachable."""
+	var empty: Array[Vector2i] = []
+	if not is_cell_active(from_cell) or not is_cell_active(to_cell):
+		return empty
+	if from_cell == to_cell:
+		return [from_cell]
+	var parents: Dictionary = {}
+	var queue: Array[Vector2i] = [from_cell]
+	var visited: Dictionary = {from_cell: true}
+	var found := false
+	while not queue.is_empty():
+		var current: Vector2i = queue.pop_front()
+		for offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+			var next_cell: Vector2i = current + offset
+			if visited.has(next_cell) or not is_cell_active(next_cell):
+				continue
+			var obj = get_object_on_cell(next_cell)
+			if is_instance_valid(obj) and obj != moving_unit:
+				continue
+			var terrain = get_terrain_on_cell(next_cell)
+			if terrain and not terrain.is_walkable:
+				continue
+			visited[next_cell] = true
+			parents[next_cell] = current
+			if next_cell == to_cell:
+				found = true
+				queue.clear()
+				break
+			queue.append(next_cell)
+	if not found:
+		return empty
+	var path: Array[Vector2i] = []
+	var walk: Vector2i = to_cell
+	while true:
+		path.push_front(walk)
+		if walk == from_cell:
+			break
+		walk = parents[walk]
+	return path
 
 func get_player_spawn_points(num_columns: int) -> Array[Vector2i]:
 	var spawn_points: Array[Vector2i] = []

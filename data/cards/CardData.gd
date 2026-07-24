@@ -126,6 +126,9 @@ func get_keywords_from_effects() -> Array[String]:
 			elif effect.string_value == "consecrated_weapon":
 				if not keys.has("consecrated_weapon"):
 					keys.append("consecrated_weapon")
+			elif effect.string_value == "poison":
+				if not keys.has("poison"):
+					keys.append("poison")
 	if max_uses_before_removal > 0 and not keys.has("usage"):
 		keys.append("usage")
 	return keys
@@ -139,15 +142,25 @@ func can_be_used_by(player_class: ClassData, player_subclass: SubclassData) -> b
 		return true # Neutrální karta
 
 	if required_subclass != null:
-		return player_subclass == required_subclass
+		if player_subclass == null:
+			return false
+		if player_subclass == required_subclass:
+			return true
+		return player_subclass.subclass_id == required_subclass.subclass_id
 	
 	if required_class != null:
 		# Karta je pro hlavní třídu, pokud hráčova subclassa patří pod tuto hlavní třídu
 		# NEBO pokud hráč nemá subclassu a jeho hlavní třída odpovídá.
 		if player_subclass != null:
-			return player_subclass.parent_class == required_class
+			if player_subclass.parent_class == required_class:
+				return true
+			if player_subclass.parent_class != null and player_subclass.parent_class.class_id == required_class.class_id:
+				return true
+			return false
 		else:
-			return player_class == required_class
+			if player_class == required_class:
+				return true
+			return player_class != null and player_class.class_id == required_class.class_id
 			
 	return false # Nemělo by nastat, pokud je logika správná
 
@@ -185,7 +198,8 @@ const SHORTHAND_ICONS: Dictionary = {
 	"heal": "res://art/icons/status/Heal.png",
 	"heart": "res://art/icons/status/Heal.png",
 	"vulnerable": "res://art/icons/status/Vulnerable.png",
-	"regeneration": "res://art/icons/status/Regeneration.png"
+	"regeneration": "res://art/icons/status/Regeneration.png",
+	"poison": "res://art/icons/status/Poison.png"
 }
 
 const ICON_SIZE: int = 16
@@ -296,6 +310,9 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 		CardEffectData.EffectType.SUMMON_UNIT:
 			return "[b]" + tr("card.effect.summon") + "[/b]"
 		
+		CardEffectData.EffectType.PLACE_TERRAIN:
+			return _format_place_terrain_shorthand(effect)
+		
 		_:
 			return ""
 
@@ -306,6 +323,9 @@ func _format_status_shorthand(effect: CardEffectData) -> String:
 			return _img("vulnerable") + " " + _turns(effect.value)
 		"regeneration":
 			return _num(effect.value) + " " + _img("regeneration")
+		"poison":
+			# value = stacks/strength; duration lives in tooltip (aoe_param_x)
+			return _num(effect.value) + " " + _img("poison")
 		"aura_devotion", "aura_devotion_plus":
 			return _num(effect.value) + " " + _img("block")
 		"consecrated_weapon":
@@ -325,6 +345,39 @@ func _format_status_shorthand(effect: CardEffectData) -> String:
 			if s.is_empty():
 				s = _get_status_description(effect)
 			return "[b]" + s + "[/b]"
+
+
+func _format_place_terrain_shorthand(effect: CardEffectData) -> String:
+	"""PLACE_TERRAIN: show effect (dmg / Slow), never the terrain display name
+	(avoids 'Bear Trap' + 'Spike Trap' double title on the card face)."""
+	if effect.string_value.is_empty() or not ResourceLoader.exists(effect.string_value):
+		return "[b]" + tr("card.effect.place_terrain") + "[/b]"
+	var terrain = load(effect.string_value)
+	if terrain == null:
+		return "[b]" + tr("card.effect.place_terrain") + "[/b]"
+	var effect_type = terrain.effect_type if "effect_type" in terrain else 0
+	if effect_type == TerrainData.TerrainEffect.DAMAGE_ON_ENTER:
+		var dmg: int = int(terrain.effect_numeric_value) if "effect_numeric_value" in terrain else 0
+		if dmg > 0:
+			return _num(dmg) + " " + _img("damage")
+	if effect_type == TerrainData.TerrainEffect.APPLY_STATUS_ON_ENTER:
+		var status_id := str(terrain.effect_string_value) if "effect_string_value" in terrain else ""
+		if status_id.to_lower() == "slow":
+			return "[b]" + tr("status.slow.short") + "[/b]"
+	return "[b]" + tr("card.effect.place_terrain") + "[/b]"
+
+
+func _get_terrain_display_name(path: String) -> String:
+	if path.is_empty() or not ResourceLoader.exists(path):
+		return ""
+	var terrain = load(path)
+	if terrain == null:
+		return ""
+	if terrain.has_method("get_localized_name"):
+		return terrain.get_localized_name()
+	if "terrain_name" in terrain:
+		return tr(str(terrain.terrain_name))
+	return ""
 
 func _get_condition_shorthand(effect: CardEffectData, effect_type: String) -> String:
 	"""Compact condition suffix. Returns empty if no condition."""

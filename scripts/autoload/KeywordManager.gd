@@ -15,7 +15,8 @@ const ICON_MAP: Dictionary = {
 	"heal": "res://art/icons/status/Heal.png",
 	"heart": "res://art/icons/status/Heal.png",
 	"vulnerable": "res://art/icons/status/Vulnerable.png",
-	"regeneration": "res://art/icons/status/Regeneration.png"
+	"regeneration": "res://art/icons/status/Regeneration.png",
+	"poison": "res://art/icons/status/Poison.png"
 }
 
 ## Dictionary of all known keywords. Keys are internal names (e.g. "vulnerable").
@@ -91,6 +92,13 @@ const KEYWORDS: Dictionary = {
 		"description": "keyword.block.description",
 		"color": "#95A5A6",
 		"search_terms": ["block", "blok"]
+	},
+	"poison": {
+		"title": "keyword.poison.title",
+		"icon": "res://art/icons/status/Poison.png",
+		"description": "keyword.poison.description",
+		"color": "#9B59B6",
+		"search_terms": ["poison", "jed"]
 	},
 	"exhaust": {
 		"title": "keyword.exhaust.title",

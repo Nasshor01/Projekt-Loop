@@ -20,7 +20,8 @@ enum EffectType {
 	EXHAUST,                # Karta zmizí
 	GAIN_EXTRA_MOVE,         # Získá další pohybovou akci v tomto kole
 	DEAL_DOUBLE_DAMAGE_FROM_BLOCK,  #způsobí double požkození z aktuálního bloku
-	MODIFY_INITIATIVE_NEXT_ROUND
+	MODIFY_INITIATIVE_NEXT_ROUND,
+	PLACE_TERRAIN,            # Položí TerrainData na prázdné políčko (string_value = resource path)
 }
 
 enum TargetType {

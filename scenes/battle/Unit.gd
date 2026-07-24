@@ -18,6 +18,9 @@ const BERSERKER_RAGE_TURNS_REQUIRED = 3
 const BERSERKER_RUSH_DAMAGE_MULTIPLIER = 3.0
 const MAGE_METEOR_TURNS_REQUIRED = 6
 const MAGE_METEOR_DAMAGE_MULTIPLIER = 2.0
+const INITIATIVE_HOVER_MODULATE := Color(2.25, 1.9, 0.35, 1.0)
+const SELECTED_MODULATE := Color(1.5, 1.5, 1.5)
+const INITIATIVE_HOVER_SCALE := 1.12
 
 signal died(unit_node)
 signal stats_changed(unit_node)
@@ -30,6 +33,10 @@ var retained_block: int = 0
 
 var grid_position: Vector2i
 var is_selected: bool = false
+var _initiative_bar_hovered: bool = false
+var _pre_initiative_hover_modulate: Color = Color.WHITE
+var _initiative_hover_tween: Tween = null
+var _initiative_hover_base_scale: Vector3 = Vector3.ONE
 var active_statuses: Dictionary = {}
 
 var has_used_base_move: bool = false
@@ -38,6 +45,7 @@ var _has_acted_this_turn: bool = false
 var last_attacker: Unit = null
 var current_intent_id: String = ""
 var current_intent_text: String = ""
+var current_intent_short: String = ""
 var _intent_visibility_allowed: bool = false
 
 # Elementární status efekty
@@ -114,6 +122,8 @@ func _ready():
 	emit_signal("stats_changed", self)
 
 func _exit_tree() -> void:
+	if _initiative_bar_hovered:
+		set_initiative_hover_visual(false)
 	if _intent_icon and is_instance_valid(_intent_icon):
 		_intent_icon.queue_free()
 		_intent_icon = null
@@ -189,15 +199,20 @@ func attack(target: Node, extra_additive: int = 0, damage_type: int = 0, is_holy
 	
 	await target.take_damage(damage, true)
 
-func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: bool = false) -> void:
-	# Dodge: Assassin má 35% šanci na dodge.
+## Returns false if the hit was dodged (no HP/block change). Dodge only applies to attack hits
+## (allow_dodge=true); DoT / terrain / forced damage should pass allow_dodge=false.
+func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: bool = false, allow_dodge: bool = true) -> bool:
+	# Dodge: Assassin má 35% šanci na dodge útoku (ne DoT/pastí).
 	# Přeskočit při RPC sync (výsledek už byl rozhodnut na odesílající straně).
-	if not is_rpc_sync and unit_data.ai_script and unit_data.ai_script.resource_path.contains("AssassinAI"):
+	if allow_dodge and not is_rpc_sync and unit_data.ai_script and unit_data.ai_script.resource_path.contains("AssassinAI"):
 		var dodge_roll = randi_range(1, 100)
 		if dodge_roll <= 35:
 			show_status_text("DODGE!", "heal")
-			print("💨 Assassin se vyhnul útoku!")
-			return
+			if has_node("/root/DebugLogger"):
+				DebugLogger.log_info("💨 Assassin se vyhnul útoku! (poškození přeskočeno, ostatní efekty karty stále platí)")
+			else:
+				print("💨 Assassin se vyhnul útoku!")
+			return false
 	
 	# Artefakty on_damage_taken jen pro LOKÁLNÍHO hráče (ne spoluhráče)
 	if _is_local_player() and has_node("/root/ArtifactManager"):
@@ -245,7 +260,7 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 	
 	if current_health <= 0:
 		_die()
-
+	return true
 func reset_for_new_turn():
 	current_block = retained_block
 	has_used_base_move = false
@@ -291,6 +306,8 @@ func gain_extra_move():
 func apply_status(status_id: String, value: int, duration: int = 1):
 	if active_statuses.has(status_id):
 		active_statuses[status_id].value += value
+		# Keep the longer remaining duration (poison etc. must not wipe early on re-apply).
+		active_statuses[status_id].duration = maxi(int(active_statuses[status_id].duration), duration)
 		# Pro frozen/chilled - aktualizuj movement_penalty
 		if status_id == "chilled":
 			movement_penalty = active_statuses[status_id].value
@@ -310,6 +327,9 @@ func apply_status(status_id: String, value: int, duration: int = 1):
 				apply_status("frozen", 1, 1)
 		if status_id == "frozen":
 			is_frozen = true
+	if has_node("/root/DebugLogger"):
+		var unit_label = unit_data.unit_id if unit_data else name
+		DebugLogger.log_info("Status '%s' applied to %s (value=%d, duration=%d)" % [status_id, unit_label, value, duration])
 	_update_stats_and_emit_signal()
 
 func process_turn_start_statuses() -> int:
@@ -363,16 +383,25 @@ func process_turn_end_statuses():
 			continue
 		# Regeneration heals at start of turn (see process_turn_start_statuses), only tick duration here
 		
-		# Burning - poškození na konci tahu
+		# Burning - poškození na konci tahu (DoT nelze vyhnout)
 		if status_id == "burning":
 			var status_data = active_statuses[status_id]
 			var damage = status_data.value
-			take_damage(damage)
+			take_damage(damage, false, false, false)
 			_show_floating_text(damage, "damage")
 			# Snížíme hodnotu nebo duration
 			status_data.value = max(0, status_data.value - 1)  # Snížíme poškození každé kolo
 			if status_data.value <= 0:
 				statuses_to_remove.append(status_id)
+
+		# Poison (StS-like duration model): deal strength, then reduce remaining turns.
+		# Cards set value = DMG/turn and aoe_param_x = duration. DoT nelze vyhnout.
+		if status_id == "poison":
+			var poison_data = active_statuses[status_id]
+			var poison_dmg: int = int(poison_data.value)
+			if poison_dmg > 0:
+				take_damage(poison_dmg, false, false, false)
+				_show_floating_text(poison_dmg, "damage")
 
 		active_statuses[status_id].duration -= 1
 		if active_statuses[status_id].duration <= 0:
@@ -421,15 +450,25 @@ func get_current_movement_range() -> int:
 	else:
 		return 0
 
-func process_terrain_effects(terrain_data: TerrainData):
+## Applies ON_ENTER terrain. Returns damage dealt (0 for status-only / none).
+## Trap/terrain damage cannot be dodged.
+func process_terrain_effects(terrain_data: TerrainData) -> int:
 	if not terrain_data or terrain_data.effect_type == TerrainData.TerrainEffect.NONE:
-		return
+		return 0
 	if terrain_data.effect_type == TerrainData.TerrainEffect.APPLY_STATUS_ON_ENTER:
 		var status_id = terrain_data.effect_string_value
 		var value = terrain_data.effect_numeric_value
 		var duration = terrain_data.effect_duration
 		if status_id != "":
 			apply_status(status_id, value, duration)
+		return 0
+	elif terrain_data.effect_type == TerrainData.TerrainEffect.DAMAGE_ON_ENTER:
+		var dmg = terrain_data.effect_numeric_value
+		if dmg > 0:
+			# already_calculated + allow_dodge=false: pasti vždy zraní (i Assassin)
+			take_damage(dmg, true, false, false)
+			return dmg
+	return 0
 
 func heal_to_full():
 	if not is_instance_valid(unit_data):
@@ -536,11 +575,73 @@ func _update_health_bar_screen_position() -> void:
 
 func set_selected_visual(selected: bool):
 	is_selected = selected
+	if not _sprite_node:
+		return
+	if _initiative_bar_hovered:
+		_pre_initiative_hover_modulate = SELECTED_MODULATE if selected else Color.WHITE
+		_apply_initiative_hover_sprite()
+		return
+	if selected:
+		_sprite_node.modulate = SELECTED_MODULATE
+	else:
+		_sprite_node.modulate = Color.WHITE
+
+
+func _get_battle_grid() -> BattleGrid:
+	var battle_scene = get_tree().get_first_node_in_group("battle_scene")
+	if battle_scene and battle_scene.get("battle_grid_instance"):
+		return battle_scene.battle_grid_instance
+	return null
+
+
+func _apply_initiative_hover_sprite() -> void:
+	if not _sprite_node:
+		return
+	_sprite_node.modulate = INITIATIVE_HOVER_MODULATE
+	_start_initiative_hover_pulse()
+
+
+func _start_initiative_hover_pulse() -> void:
+	if not _sprite_node:
+		return
+	_stop_initiative_hover_pulse()
+	var target_scale = _initiative_hover_base_scale * INITIATIVE_HOVER_SCALE
+	_initiative_hover_tween = create_tween().set_loops()
+	_initiative_hover_tween.tween_property(_sprite_node, "scale", target_scale, 0.35)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_initiative_hover_tween.tween_property(_sprite_node, "scale", _initiative_hover_base_scale, 0.35)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+
+func _stop_initiative_hover_pulse() -> void:
+	if _initiative_hover_tween and _initiative_hover_tween.is_valid():
+		_initiative_hover_tween.kill()
+	_initiative_hover_tween = null
 	if _sprite_node:
-		if selected:
-			_sprite_node.modulate = Color(1.5, 1.5, 1.5)
-		else:
-			_sprite_node.modulate = Color.WHITE
+		_sprite_node.scale = _initiative_hover_base_scale
+
+
+func set_initiative_hover_visual(hovered: bool) -> void:
+	"""Zvýrazní jednotku při hoveru slotu v initiative baru (HoMM3-styl)."""
+	if not _sprite_node:
+		return
+	var battle_grid = _get_battle_grid()
+	if hovered:
+		if not _initiative_bar_hovered:
+			_pre_initiative_hover_modulate = _sprite_node.modulate
+			_initiative_hover_base_scale = _sprite_node.scale
+			_initiative_bar_hovered = true
+		_apply_initiative_hover_sprite()
+		if battle_grid:
+			battle_grid.show_initiative_hover_cell(grid_position)
+	elif _initiative_bar_hovered:
+		_stop_initiative_hover_pulse()
+		_sprite_node.modulate = _pre_initiative_hover_modulate
+		_initiative_bar_hovered = false
+		if is_selected:
+			_sprite_node.modulate = SELECTED_MODULATE
+		if battle_grid:
+			battle_grid.hide_initiative_hover_cell(grid_position)
 
 func show_intent(attack_damage: int = 0):
 	if not _intent_icon or not _intent_visibility_allowed:
@@ -569,6 +670,7 @@ func update_intent(player_unit: Unit, battle_grid: BattleGrid) -> void:
 	var intent_data = _calculate_intent(player_unit, battle_grid)
 	current_intent_id = intent_data.id
 	current_intent_text = intent_data.text
+	current_intent_short = intent_data.get("short_text", "")
 	if _intent_icon and _intent_icon.has_method("set_intent"):
 		_intent_icon.set_intent(intent_data.icon, intent_data.short_text)
 		# Odpočet kol na ikoně
@@ -638,6 +740,24 @@ func _get_sprite_screen_height(camera: Camera3D) -> float:
 func get_intent_display_text() -> String:
 	return current_intent_text
 
+func get_intent_short_text() -> String:
+	return current_intent_short
+
+func get_intent_detail_text() -> String:
+	"""Krátký popis intentu bez prefixu 'Next Move:' (pro info panel)."""
+	var text := current_intent_text.strip_edges()
+	if text.is_empty():
+		return ""
+	var prefixes := [
+		"Next Move: ", "Next Spell: ",
+		tr("Next Move: "), tr("Next Spell: "),
+		"Úmysl: ", "Další tah: ",
+	]
+	for prefix in prefixes:
+		if prefix != "" and text.begins_with(prefix):
+			return text.substr(prefix.length()).strip_edges()
+	return text
+
 func get_intent_ui() -> Node2D:
 	return _intent_icon
 
@@ -647,13 +767,37 @@ func get_enemy_class_display() -> String:
 	var class_name_text = _get_ai_class_name(unit_data.ai_script.resource_path)
 	return tr("Class: ") + class_name_text
 
+func get_enemy_class_name_only() -> String:
+	if not is_instance_valid(unit_data) or not is_instance_valid(unit_data.ai_script):
+		return tr("Unknown")
+	return _get_ai_class_name(unit_data.ai_script.resource_path)
+
 func get_enemy_passives_display() -> String:
 	var passives = _get_passives_text()
 	return tr("enemy.label.passives") + passives
 
+func get_enemy_passives_list() -> PackedStringArray:
+	"""Kompaktní seznam pasiv (split podle čárky) pro chip UI."""
+	var raw := _get_passives_text().strip_edges()
+	var none_text := tr("enemy.passive.none")
+	if raw.is_empty() or raw == none_text or raw == "None" or raw == "Žádné":
+		return PackedStringArray()
+	var parts := PackedStringArray()
+	for part in raw.split(",", false):
+		var cleaned := str(part).strip_edges()
+		if not cleaned.is_empty():
+			parts.append(cleaned)
+	return parts
+
 func get_status_counters_display() -> String:
-	var counters: Array[String] = []
-	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data.ai_script) else ""
+	var counters := get_status_counters_list()
+	if counters.is_empty():
+		return tr("enemy.label.counters_none")
+	return tr("enemy.label.counters") + ", ".join(counters)
+
+func get_status_counters_list() -> PackedStringArray:
+	var counters: PackedStringArray = []
+	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data) and is_instance_valid(unit_data.ai_script) else ""
 	
 	if is_aiming:
 		counters.append(tr("enemy.counter.aiming"))
@@ -690,10 +834,7 @@ func get_status_counters_display() -> String:
 			counters.append(TranslationHelper.tr_format("enemy.counter.war_cry_cd", {"value": cd}))
 	if has_meta("has_howled") and get_meta("has_howled"):
 		counters.append(tr("enemy.counter.howled"))
-	
-	if counters.is_empty():
-		return tr("enemy.label.counters_none")
-	return tr("enemy.label.counters") + ", ".join(counters)
+	return counters
 
 func _calculate_intent(player_unit: Unit, battle_grid: BattleGrid) -> Dictionary:
 	var intent_id = "move"
@@ -1090,14 +1231,15 @@ func deserialize_statuses(data: Array):
 
 func serialize_intent() -> Dictionary:
 	"""Serializuje aktuální intent pro RPC."""
-	return {"id": current_intent_id, "text": current_intent_text}
+	return {"id": current_intent_id, "text": current_intent_text, "short_text": current_intent_short}
 
 func apply_intent_from_data(data: Dictionary):
 	"""Aplikuje intent přijatý od hosta."""
 	current_intent_id = data.get("id", "")
 	current_intent_text = data.get("text", "")
+	current_intent_short = data.get("short_text", "")
 	if _intent_icon and _intent_icon.has_method("set_intent"):
-		_intent_icon.set_intent(_get_intent_icon_for_id(current_intent_id), "")
+		_intent_icon.set_intent(_get_intent_icon_for_id(current_intent_id), current_intent_short)
 		if _intent_visibility_allowed and current_intent_id != "":
 			_intent_icon.show_intent()
 		else:

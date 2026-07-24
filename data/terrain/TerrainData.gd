@@ -27,13 +27,18 @@ enum TerrainEffect {
 	MODIFY_DEFENSE_ON_TILE, 
 	MODIFY_ATTACK_ON_TILE, 
 	CHANCE_TO_MISS_TARGET, 
-	IMPASSABLE 
+	IMPASSABLE,
+	DAMAGE_ON_ENTER  # Přímé poškození při vstupu (pasti)
 }
 @export_group("Effects")
 @export var effect_type: TerrainEffect = TerrainEffect.NONE
 @export var effect_string_value: String = "" 
 @export var effect_numeric_value: int = 0 
 @export var effect_duration: int = 1
+## If true, terrain is removed after its enter effect triggers (spike traps, single-use caltrops).
+@export var consume_on_trigger: bool = false
+## If true, unit stops on this cell when walking a multi-cell path (e.g. mud).
+@export var stops_movement_on_enter: bool = false
 
 func get_localized_name() -> String:
 	return tr(terrain_name)

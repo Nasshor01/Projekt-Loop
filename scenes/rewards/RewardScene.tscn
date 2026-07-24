@@ -91,6 +91,7 @@ size_flags_vertical = 8
 text = "přeskočit"
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 101
 
 [node name="CardTooltip" parent="CanvasLayer" instance=ExtResource("2_tooltip")]
 unique_name_in_owner = true

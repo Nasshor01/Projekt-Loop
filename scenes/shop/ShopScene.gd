@@ -314,23 +314,11 @@ func _show_card_tooltip():
 	
 	var screen_size = get_viewport().get_visible_rect().size
 	var tooltip_size = Vector2(360, 420)
-	
-	# Zobrazíme tooltip v pravém horním rohu (offset 20px od okrajů)
+	# Preferovaný roh; CardTooltip clampne pod GlobalUI lištu a do viewportu.
 	var tooltip_pos = Vector2(
 		screen_size.x - tooltip_size.x - 20,
-		20
+		90
 	)
-	
-	# Kontrola, aby tooltip nevyšel z obrazovky
-	if tooltip_pos.x + tooltip_size.x > screen_size.x:
-		tooltip_pos.x = screen_size.x - tooltip_size.x - 10
-	if tooltip_pos.y + tooltip_size.y > screen_size.y:
-		tooltip_pos.y = screen_size.y - tooltip_size.y - 10
-	if tooltip_pos.x < 0:
-		tooltip_pos.x = 10
-	if tooltip_pos.y < 0:
-		tooltip_pos.y = 10
-	
 	card_tooltip.show_tooltip(_current_tooltip_card_data, tooltip_pos)
 
 func _on_card_hovered(card_data: CardData):

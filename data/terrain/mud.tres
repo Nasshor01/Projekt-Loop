@@ -16,4 +16,6 @@ effect_type = 1
 effect_string_value = "Slow"
 effect_numeric_value = -2
 effect_duration = 2
+consume_on_trigger = false
+stops_movement_on_enter = true
 metadata/_custom_type_script = "uid://bdck0xpv16hbr"

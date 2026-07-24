@@ -1,0 +1,51 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://b7trphstep001"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_fx"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_cd"]
+
+[sub_resource type="Resource" id="Resource_mv"]
+script = ExtResource("1_fx")
+effect_type = 10
+value = 1
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+
+[sub_resource type="Resource" id="Resource_dr"]
+script = ExtResource("1_fx")
+effect_type = 3
+value = 1
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+
+[resource]
+script = ExtResource("2_cd")
+card_id = "hunters_step"
+card_name = "card.hunters_step"
+card_description = "card.hunters_step.desc"
+editor_description = "Gain 1 extra move. Draw 1 card."
+cost = 0
+range_type = 1
+range_value = 0
+tags = Array[int]([5, 8])
+rarity = 5
+effects = Array[ExtResource("1_fx")]([SubResource("Resource_mv"), SubResource("Resource_dr")])
+is_upgraded = false
+max_uses_per_turn = -1
+debuff_on_overuse = {}
+max_uses_before_removal = -1
