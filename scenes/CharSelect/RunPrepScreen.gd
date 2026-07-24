@@ -2,14 +2,14 @@
 extends Control
 
 # Cesty k uzlům
-@onready var level_label: Label = $MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/LevelLabel
-@onready var xp_bar: ProgressBar = $MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/XPBar
-@onready var xp_label: Label = $MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/XPLabel
-@onready var points_label: Label = $MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/PointsLabel
-@onready var start_button: Button = $MarginContainer/VBoxContainer/VBoxContainer/StartButton
-@onready var back_button: Button = $MarginContainer/VBoxContainer/VBoxContainer/BackButton
-@onready var title_label: Label = $MarginContainer/VBoxContainer/VBoxContainer/TitleLabel
-@onready var skill_tree = $MarginContainer/VBoxContainer/HSplitContainer/RightPanel/SubViewportContainer/SubViewport/PassiveSkillTree
+@onready var level_label: Label = $CenterContainer/MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/LevelLabel
+@onready var xp_bar: ProgressBar = $CenterContainer/MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/XPBar
+@onready var xp_label: Label = $CenterContainer/MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/XPLabel
+@onready var points_label: Label = $CenterContainer/MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/PointsLabel
+@onready var start_button: Button = $CenterContainer/MarginContainer/VBoxContainer/VBoxContainer/StartButton
+@onready var back_button: Button = $CenterContainer/MarginContainer/VBoxContainer/VBoxContainer/BackButton
+@onready var title_label: Label = $CenterContainer/MarginContainer/VBoxContainer/VBoxContainer/TitleLabel
+@onready var skill_tree = $CenterContainer/MarginContainer/VBoxContainer/HSplitContainer/RightPanel/SubViewportContainer/SubViewport/PassiveSkillTree
 
 func _ready():
 	start_button.pressed.connect(GameManager.start_new_run)
@@ -18,7 +18,21 @@ func _ready():
 	
 	PlayerData.initialize_player(GameManager.selected_class_data, GameManager.selected_subclass_data)
 	
-	skill_tree._refresh_tree()
+	# Skill tree UI skryté — systém je vypnutý
+	if is_instance_valid(skill_tree):
+		var right_panel = skill_tree.get_parent()
+		while right_panel and right_panel.name != "RightPanel" and right_panel.name != "HSplitContainer":
+			right_panel = right_panel.get_parent()
+		if right_panel and right_panel.name == "RightPanel":
+			right_panel.visible = false
+			var hsplit = right_panel.get_parent()
+			if hsplit is HSplitContainer:
+				hsplit.custom_minimum_size = Vector2(0, 0)
+		elif skill_tree.get_parent():
+			skill_tree.get_parent().visible = false
+	
+	if is_instance_valid(points_label):
+		points_label.visible = false
 	
 	# Coop: Start smí zmáčknout jen host; klient čeká na přechod na mapu
 	if GameManager.is_coop_run and has_node("/root/MultiplayerManager") and not MultiplayerManager.is_server():
@@ -31,7 +45,7 @@ func _ready():
 func _update_ui_texts():
 	if title_label:
 		title_label.text = tr("ui.run_prep.title")
-	if start_button:
+	if start_button and not (GameManager.is_coop_run and has_node("/root/MultiplayerManager") and not MultiplayerManager.is_server()):
 		start_button.text = tr("ui.run_prep.start")
 	if back_button:
 		back_button.text = tr("ui.common.back")
@@ -41,14 +55,9 @@ func update_display():
 	var xp_needed = SaveManager.get_xp_for_next_level()
 	
 	level_label.text = TranslationHelper.tr_format("ui.run_prep.level", {"value": meta.player_level})
-	points_label.text = TranslationHelper.tr_format("ui.run_prep.points", {"value": meta.skill_points})
+	if is_instance_valid(points_label):
+		points_label.text = ""
 	xp_label.text = TranslationHelper.tr_format("ui.run_prep.xp", {"current": meta.total_xp, "max": xp_needed})
 	
 	xp_bar.max_value = xp_needed
 	xp_bar.value = meta.total_xp
-	
-	# ZDE UŽ NIC NENÍ POTŘEBA VOLAT
-	# `SaveManager.meta_progress_changed` zavolá `update_display`,
-	# a to by mělo stačit. Pokud by se strom nepřekresloval po level-upu,
-	# přidali bychom sem `skill_tree._refresh_tree()` znovu.
-	# Prozatím je to čistší takto.

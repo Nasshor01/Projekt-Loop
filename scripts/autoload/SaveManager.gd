@@ -90,7 +90,7 @@ func _check_for_level_up():
 	while meta_progress.total_xp >= xp_needed:
 		meta_progress.total_xp -= xp_needed
 		meta_progress.player_level += 1
-		meta_progress.skill_points += 1
+		# Skill tree vypnutý — body se neudělují
 		print("GRATULACE! Hráč postoupil na level %d." % meta_progress.player_level)
 		xp_needed = get_xp_for_next_level()
 
@@ -108,6 +108,9 @@ func load_meta_progress():
 	else:
 		meta_progress = MetaProgress.new()
 		print("Žádná uložená data nenalezena, vytvářím nová.")
+	if meta_progress and meta_progress.clear_skill_tree_progress():
+		print("SaveManager: vyčištěn legacy skill tree progress.")
+		save_meta_progress()
 	emit_signal("meta_progress_changed")
 
 func add_xp(amount: int):
@@ -118,28 +121,10 @@ func add_xp(amount: int):
 	save_meta_progress()
 
 func recalculate_skill_points():
-	"""Přepočítá skill points podle aktuálního levelu a resetuje alokované skilly"""
+	"""Legacy no-op — skill tree je vypnutý."""
 	if not meta_progress:
-		printerr("SaveManager: meta_progress není načten!")
 		return
-	
-	var old_skill_points = meta_progress.skill_points
-	
-	# Vypočítáme správný počet skill points: level 1 = 0, level 2 = 1, ..., level N = N-1
-	var correct_skill_points = max(0, meta_progress.player_level - 1)
-	
-	# Resetujeme alokované skilly
-	meta_progress.allocated_skills.clear()
-	
-	# Nastavíme správný počet skill points
-	meta_progress.skill_points = correct_skill_points
-	
-	print("=== RESET SKILL POINTS ===")
-	print("Level: %d" % meta_progress.player_level)
-	print("Staré skill points: %d" % old_skill_points)
-	print("Nové skill points: %d" % meta_progress.skill_points)
-	print("Alokované skilly resetovány")
-	
+	meta_progress.clear_skill_tree_progress()
 	save_meta_progress()
 	emit_signal("meta_progress_changed")
 

@@ -1,25 +1,18 @@
-# Soubor: scripts/data/MetaProgress.gd (NOVÝ SKRIPT)
+# Soubor: scripts/data/MetaProgress.gd
 class_name MetaProgress
 extends Resource
 
 @export var total_xp: int = 0
 @export var player_level: int = 1
-# PŘIDÁNO: Počet bodů, které může hráč utratit ve stromu dovedností
-@export var skill_points: int = 0
 
-# NOVÉ: Dictionary pro stackovatelné pasivy
-# { "skill_id": allocation_count }
-# Místo starého unlocked_skill_ids, které nepodporovalo stackování
+# Legacy — pasivní skill tree je vypnutý; pole se při loadu čistí.
+@export var skill_points: int = 0
 @export var allocated_skills: Dictionary = {}
 
-# NOVÉ: Seznam odemčených karet (card_id)
 @export var unlocked_cards: Array[String] = []
 
-# ZPĚTNÁ KOMPATIBILITA: Pokud máš staré uložené hry s unlocked_skill_ids
-func _init():
-	# Migrace ze starého systému
-	if not allocated_skills.is_empty():
-		return  # Už máme nový systém
-	
-	# Pokud máme starý systém, migrujeme ho
-	# (toto se spustí jen při prvním načtení starého save)
+func clear_skill_tree_progress() -> bool:
+	var had_data := skill_points != 0 or not allocated_skills.is_empty()
+	skill_points = 0
+	allocated_skills.clear()
+	return had_data
