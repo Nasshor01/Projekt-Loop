@@ -1,17 +1,34 @@
-[gd_scene load_steps=4 format=3 uid="uid://cx0eokfi1stc4"]
+[gd_scene load_steps=5 format=3 uid="uid://cx0eokfi1stc4"]
 
 [ext_resource type="Script" uid="uid://f1bfi2viwtrk" path="res://scenes/shop/ShopScene.gd" id="1_y0td3"]
 [ext_resource type="PackedScene" uid="uid://pjdtf3hky6c6" path="res://scenes/ui/DeckViewer.tscn" id="2_d8mpu"]
 [ext_resource type="PackedScene" uid="uid://dah2k3m4n5p6q" path="res://scenes/ui/CardTooltip.tscn" id="3_tooltip"]
+[ext_resource type="Texture2D" uid="uid://db74txehf7rrp" path="res://art/sprites/backgrounds/bg_shop_lantern_alley-Sheet-export.png" id="4_bg"]
 
 [node name="ShopScene" type="Node2D"]
 script = ExtResource("1_y0td3")
 
-[node name="Background" type="TextureRect" parent="."]
-offset_right = 40.0
-offset_bottom = 40.0
-
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Background" type="TextureRect" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="DimOverlay" type="ColorRect" parent="CanvasLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.04, 0.05, 0.08, 0.3)
 
 [node name="MainContainer" type="MarginContainer" parent="CanvasLayer"]
 anchors_preset = 15

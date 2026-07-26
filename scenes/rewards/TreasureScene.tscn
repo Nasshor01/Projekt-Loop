@@ -1,18 +1,30 @@
-[gd_scene load_steps=2 format=3 uid="uid://bojpq3tydo1tl"]
+[gd_scene load_steps=3 format=3 uid="uid://bojpq3tydo1tl"]
 
 [ext_resource type="Script" uid="uid://cygnyo7kpi8hh" path="res://scenes/rewards/TreasureScene.gd" id="1_jjf1o"]
+[ext_resource type="Texture2D" uid="uid://c5ud8evr75ovg" path="res://art/sprites/backgrounds/bg_treasure_gold_shrine-Sheet-export.png" id="2_bg"]
 
 [node name="TreasureScene" type="CanvasLayer"]
 script = ExtResource("1_jjf1o")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="Background" type="TextureRect" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0, 0, 0, 0.588235)
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="DimOverlay" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.02, 0.04, 0.4)
 
 [node name="Label" type="Label" parent="."]
 anchors_preset = 10

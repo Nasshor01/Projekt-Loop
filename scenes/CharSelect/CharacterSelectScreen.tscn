@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://bmsqxk7qw1bd0"]
+[gd_scene load_steps=9 format=3 uid="uid://bmsqxk7qw1bd0"]
 
 [ext_resource type="Script" uid="uid://cdxpf617wcyde" path="res://scenes/CharSelect/CharacterSelectScreen.gd" id="1_jvmhw"]
 [ext_resource type="Resource" uid="uid://dbgquedjcu78p" path="res://data/classes/Tank.tres" id="2_tank"]
@@ -6,7 +6,8 @@
 [ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_paladin"]
 [ext_resource type="Resource" uid="uid://classassassin01lp" path="res://data/classes/Assassin.tres" id="4_assassin"]
 [ext_resource type="Resource" uid="uid://classtrapper01lp" path="res://data/classes/Trapper.tres" id="5_trapper"]
-[ext_resource type="Texture2D" uid="uid://cnpwhd16cwp26" path="res://art/sprites/units/demon_assassin.png" id="6_trapper_art"]
+[ext_resource type="Texture2D" uid="uid://c04yhfwcnno6v" path="res://art/icons/trapper_portrait.png" id="6_trapper_art"]
+[ext_resource type="Texture2D" uid="uid://diu4i873cqthb" path="res://art/sprites/backgrounds/bg_menu_cathedral_cliff-Sheet-export.png" id="7_bg"]
 
 [node name="CharacterSelectScreen" type="Control"]
 layout_mode = 3
@@ -20,6 +21,28 @@ paladin_class = ExtResource("2_tank")
 paladin_subclass = ExtResource("3_paladin")
 trapper_class = ExtResource("4_assassin")
 trapper_subclass = ExtResource("5_trapper")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="DimOverlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.04, 0.05, 0.08, 0.4)
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
