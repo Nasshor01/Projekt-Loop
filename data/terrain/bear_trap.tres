@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="TerrainData" load_steps=0 format=3 uid="uid://4tymc5j6a441"]
+
+[ext_resource type="Script" uid="uid://bdck0xpv16hbr" path="res://data/terrain/TerrainData.gd" id="1_bear"]
+[ext_resource type="Texture2D" uid="uid://c5ad4fl5e0jyu" path="res://art/sprites/map/trapper/bear trap.png" id="2_bear"]
+
+[resource]
+script = ExtResource("1_bear")
+terrain_id = "bear_trap"
+terrain_name = "terrain.bear_trap"
+description = "terrain.bear_trap.desc"
+sprite = ExtResource("2_bear")
+is_flat_on_ground = true
+is_walkable = true
+blocks_line_of_sight = false
+movement_cost = 1
+effect_type = 6
+effect_string_value = ""
+effect_numeric_value = 6
+effect_duration = 1
+consume_on_trigger = true
+stops_movement_on_enter = false
+metadata/_custom_type_script = "uid://bdck0xpv16hbr"

@@ -8,7 +8,7 @@
 script = ExtResource("1_fx")
 effect_type = 13
 value = 0
-string_value = "res://data/terrain/spike_trap.tres"
+string_value = "res://data/terrain/tripwire.tres"
 target_type = 5
 area_of_effect_type = 0
 aoe_param_x = 1
@@ -39,7 +39,7 @@ script = ExtResource("2_cd")
 card_id = "tripwire"
 card_name = "card.tripwire"
 card_description = "card.tripwire.desc"
-editor_description = "Place a spike trap: 6 damage on enter, then removed. Draw 1 card."
+editor_description = "Place a tripwire: 6 damage on enter, then removed. Draw 1 card."
 cost = 1
 range_type = 3
 range_value = 2

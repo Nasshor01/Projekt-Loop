@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="TerrainData" format=3 uid="uid://b3imcv2irerrf"]
 
 [ext_resource type="Script" uid="uid://bdck0xpv16hbr" path="res://data/terrain/TerrainData.gd" id="1_caltr"]
-[ext_resource type="Texture2D" uid="uid://dtgj32q2hjoj8" path="res://art/sprites/map/battlegrid/bahno.png" id="2_caltr"]
+[ext_resource type="Texture2D" uid="uid://gldgmtw78e21" path="res://art/sprites/map/trapper/CALTROP TOSS.png" id="2_caltr"]
 
 [resource]
 script = ExtResource("1_caltr")

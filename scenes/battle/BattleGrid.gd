@@ -485,8 +485,6 @@ func place_terrain(grid_position: Vector2i, terrain_data: TerrainData):
 	if terrain_data.sprite:
 		var terrain_sprite = Sprite3D.new()
 		terrain_sprite.texture = terrain_data.sprite
-		# Zvětšili jsme pixely, aby to bylo hezky vidět (stejně jako Unit)
-		terrain_sprite.pixel_size = 0.04 
 		terrain_sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
 		terrain_sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 		
@@ -495,15 +493,21 @@ func place_terrain(grid_position: Vector2i, terrain_data: TerrainData):
 		
 		# --- ROZHODOVÁNÍ PODLE TYPU TERÉNU ---
 		if terrain_data.is_flat_on_ground:
-			# A) BAHNO / POCE (Leží na zemi)
+			# A) BAHNO / PASTI (Leží na zemi) — škáluj do ~jedné buňky
 			# Osa Y znamená, že sprite leží "na zádech"
 			terrain_sprite.axis = Vector3.AXIS_Y 
 			terrain_sprite.billboard = BaseMaterial3D.BILLBOARD_DISABLED
+			var tex_w: float = float(terrain_data.sprite.get_width())
+			var tex_h: float = float(terrain_data.sprite.get_height())
+			var max_px: float = maxf(tex_w, tex_h)
+			# ~75 % buňky, ať past nepřetéká do sousedů
+			terrain_sprite.pixel_size = (cell_size_3d * 0.75) / max_px if max_px > 0.0 else 0.01
 			# Pozice: X, 0.02 (těsně nad podlahou, aby neproblikávalo), Z
 			terrain_sprite.position = Vector3(grid_position.x * cell_size_3d, 0.02, grid_position.y * cell_size_3d)
 		
 		else:
 			# B) KÁMEN / STROM (Stojí)
+			terrain_sprite.pixel_size = 0.04
 			# Osa Z je standard pro stojící sprity
 			terrain_sprite.axis = Vector3.AXIS_Z
 			# Zapneme Y-Billboard, aby se otáčel za kamerou (jako postavy)
