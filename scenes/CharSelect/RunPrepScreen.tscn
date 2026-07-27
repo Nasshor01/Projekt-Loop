@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://bvyeogw4m1mmk"]
+[gd_scene load_steps=6 format=3 uid="uid://bvyeogw4m1mmk"]
 
 [ext_resource type="Script" uid="uid://c68st28udgsme" path="res://scenes/CharSelect/RunPrepScreen.gd" id="1_nhtog"]
-[ext_resource type="Texture2D" uid="uid://dxwv0ss2gox45" path="res://art/icons/20.png" id="2_pbubs"]
+[ext_resource type="Texture2D" uid="uid://befhniipfiopx" path="res://art/icons/paladin portrait.png" id="2_paladin_art"]
 [ext_resource type="PackedScene" uid="uid://saye51gujkj3" path="res://scenes/ui/PassiveSkillTree.tscn" id="3_pbubs"]
 [ext_resource type="Texture2D" uid="uid://diu4i873cqthb" path="res://art/sprites/backgrounds/bg_menu_cathedral_cliff-Sheet-export.png" id="4_bg"]
+[ext_resource type="Texture2D" uid="uid://c04yhfwcnno6v" path="res://art/icons/trapper_portrait.png" id="5_trapper_art"]
 
 [node name="RunPrepScreen" type="Control"]
 layout_mode = 3
@@ -92,7 +93,7 @@ custom_minimum_size = Vector2(180, 180)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
-texture = ExtResource("2_pbubs")
+texture = ExtResource("2_paladin_art")
 expand_mode = 1
 stretch_mode = 5
 

@@ -1,4 +1,4 @@
-extends Node2D
+extends Control
 
 @export var bob_height: float = 6.0
 @export var bob_duration: float = 1.2
@@ -14,13 +14,20 @@ var _bob_offset: float = 0.0
 
 func _ready() -> void:
 	visible = false
+	_force_mouse_passthrough()
 	_base_position = position
 	_start_bob()
 	set_process(true)
 	if countdown_label:
 		countdown_label.visible = false
 
+func _force_mouse_passthrough() -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child in find_children("*", "Control", true, false):
+		(child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 func set_intent(icon: Texture2D, text: String) -> void:
+	_force_mouse_passthrough()
 	if is_instance_valid(icon_sprite):
 		icon_sprite.texture = icon
 		icon_sprite.visible = icon != null
@@ -32,6 +39,7 @@ func set_countdown(turns: int) -> void:
 	"""Zobrazí číselný odpočet kol na ikoně (0 = skrýt)"""
 	if not is_instance_valid(countdown_label):
 		return
+	_force_mouse_passthrough()
 	if turns > 0:
 		countdown_label.text = str(turns)
 		countdown_label.visible = true
@@ -59,9 +67,10 @@ func set_icon_scale(scale_value: float) -> void:
 
 func set_screen_position(new_position: Vector2) -> void:
 	_screen_position = new_position
-	position = _screen_position + Vector2(0, _bob_offset)
+	global_position = _screen_position + Vector2(0, _bob_offset)
 
 func show_intent() -> void:
+	_force_mouse_passthrough()
 	visible = true
 
 func hide_intent() -> void:
@@ -76,4 +85,4 @@ func _start_bob() -> void:
 	_bob_tween.tween_property(self, "_bob_offset", bob_height, bob_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _process(_delta: float) -> void:
-	position = _screen_position + Vector2(0, _bob_offset)
+	global_position = _screen_position + Vector2(0, _bob_offset)

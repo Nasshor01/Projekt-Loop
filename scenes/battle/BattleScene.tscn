@@ -103,7 +103,10 @@ player_spawn_highlight_color = Color(0.2, 0.901961, 0.901961, 0.588235)
 movement_warning_color = Color(0.901961, 0.8, 0.101961, 0.588235)
 danger_zone_color = Color(0.8, 0.2, 0.2, 0.588235)
 
+[node name="UnitWorldUILayer" type="CanvasLayer" parent="."]
+
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
+layer = 2
 
 [node name="InitiativeBar" parent="CanvasLayer" instance=ExtResource("9_abcde")]
 offset_left = -287.0

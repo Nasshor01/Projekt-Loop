@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cdxpf617wcyde" path="res://scenes/CharSelect/CharacterSelectScreen.gd" id="1_jvmhw"]
 [ext_resource type="Resource" uid="uid://dbgquedjcu78p" path="res://data/classes/Tank.tres" id="2_tank"]
-[ext_resource type="Texture2D" uid="uid://dxwv0ss2gox45" path="res://art/icons/20.png" id="2_icon"]
+[ext_resource type="Texture2D" uid="uid://befhniipfiopx" path="res://art/icons/paladin portrait.png" id="2_paladin_art"]
 [ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_paladin"]
 [ext_resource type="Resource" uid="uid://classassassin01lp" path="res://data/classes/Assassin.tres" id="4_assassin"]
 [ext_resource type="Resource" uid="uid://classtrapper01lp" path="res://data/classes/Trapper.tres" id="5_trapper"]
@@ -95,7 +95,7 @@ custom_minimum_size = Vector2(140, 140)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
-texture = ExtResource("2_icon")
+texture = ExtResource("2_paladin_art")
 expand_mode = 1
 stretch_mode = 5
 

@@ -1,7 +1,11 @@
 # Soubor: scenes/CharSelect/RunPrepScreen.gd (FINÁLNÍ VERZE)
 extends Control
 
+const PALADIN_PORTRAIT = preload("res://art/icons/paladin portrait.png")
+const TRAPPER_PORTRAIT = preload("res://art/icons/trapper_portrait.png")
+
 # Cesty k uzlům
+@onready var portrait: TextureRect = $CenterContainer/MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/Portrait
 @onready var level_label: Label = $CenterContainer/MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/LevelLabel
 @onready var xp_bar: ProgressBar = $CenterContainer/MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/XPBar
 @onready var xp_label: Label = $CenterContainer/MarginContainer/VBoxContainer/HSplitContainer/LeftPanel/XPLabel
@@ -17,6 +21,7 @@ func _ready():
 	SaveManager.meta_progress_changed.connect(update_display)
 	
 	PlayerData.initialize_player(GameManager.selected_class_data, GameManager.selected_subclass_data)
+	_update_portrait()
 	
 	# Skill tree UI skryté — systém je vypnutý
 	if is_instance_valid(skill_tree):
@@ -49,6 +54,15 @@ func _update_ui_texts():
 		start_button.text = tr("ui.run_prep.start")
 	if back_button:
 		back_button.text = tr("ui.common.back")
+
+func _update_portrait() -> void:
+	if not is_instance_valid(portrait):
+		return
+	var subclass = GameManager.selected_subclass_data
+	if subclass and subclass.subclass_id == "trapper":
+		portrait.texture = TRAPPER_PORTRAIT
+	else:
+		portrait.texture = PALADIN_PORTRAIT
 
 func update_display():
 	var meta = SaveManager.meta_progress

@@ -13,11 +13,15 @@ var _screen_position: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	add_to_group("unit_health_bars")
+	_force_mouse_passthrough()
+	_hp_track.custom_minimum_size = Vector2(BAR_WIDTH, BAR_HEIGHT)
+	_hp_track.size = Vector2(BAR_WIDTH, BAR_HEIGHT)
+
+func _force_mouse_passthrough() -> void:
+	# Labels default to STOP and would block hand cards under the bar.
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for child in find_children("*", "Control", true, false):
 		(child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hp_track.custom_minimum_size = Vector2(BAR_WIDTH, BAR_HEIGHT)
-	_hp_track.size = Vector2(BAR_WIDTH, BAR_HEIGHT)
 
 func set_screen_position(pos: Vector2) -> void:
 	_screen_position = pos

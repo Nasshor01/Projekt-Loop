@@ -4,7 +4,7 @@
 [ext_resource type="FontFile" uid="uid://c4topxnn115am" path="res://art/fonts/monogram-extended.ttf" id="2_font"]
 
 [node name="UnitHealthBar" type="Control"]
-z_index = 1
+z_index = -10
 custom_minimum_size = Vector2(72, 34)
 mouse_filter = 2
 script = ExtResource("1_script")
@@ -31,6 +31,7 @@ color = Color(0.22, 0.78, 0.32, 1)
 
 [node name="HpLabel" type="Label" parent="BarRoot"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
@@ -43,6 +44,7 @@ vertical_alignment = 1
 [node name="BlockLabel" type="Label" parent="BarRoot"]
 visible = false
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.55, 0.85, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4

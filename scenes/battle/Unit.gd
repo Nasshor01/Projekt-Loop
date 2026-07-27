@@ -63,7 +63,7 @@ var is_permanently_enraged: bool = false
 #---------------------------------------------
 
 @onready var _sprite_node: Sprite3D = $Sprite3D
-var _intent_icon: Node2D = null
+var _intent_icon: Control = null
 var _health_bar: Control = null
 var _intent_world_padding_ratio: float = 0.08
 
@@ -112,14 +112,14 @@ func _ready():
 		# Offset zůstává v pixelech (node scale ho stejně zmenší ve world space).
 		_sprite_node.offset = Vector2(0, unit_data.sprite_offset_y)
 	
-	var canvas = get_tree().root.find_child("CanvasLayer", true, false)
-	if canvas:
+	var world_ui = _get_unit_world_ui_layer()
+	if world_ui:
 		_health_bar = UnitHealthBarScene.instantiate()
-		canvas.add_child(_health_bar)
+		world_ui.add_child(_health_bar)
 		_refresh_health_bar()
 		if unit_data and unit_data.faction == UnitData.Faction.ENEMY:
 			_intent_icon = IntentIconScene.instantiate()
-			canvas.add_child(_intent_icon)
+			world_ui.add_child(_intent_icon)
 			_intent_icon.visible = false
 	
 	# Pozice ve 3D - zarovnání na zem
@@ -128,6 +128,18 @@ func _ready():
 	await get_tree().process_frame
 	_refresh_health_bar()
 	emit_signal("stats_changed", self)
+
+func _get_unit_world_ui_layer() -> CanvasLayer:
+	# Prefer layer below battle hand UI so HP bars never steal card clicks.
+	var scene = get_tree().current_scene
+	if scene:
+		var world_ui := scene.get_node_or_null("UnitWorldUILayer") as CanvasLayer
+		if world_ui:
+			return world_ui
+		var canvas := scene.get_node_or_null("CanvasLayer") as CanvasLayer
+		if canvas:
+			return canvas
+	return get_tree().root.find_child("CanvasLayer", true, false) as CanvasLayer
 
 func _exit_tree() -> void:
 	if _initiative_bar_hovered:
@@ -793,7 +805,7 @@ func get_intent_detail_text() -> String:
 			return text.substr(prefix.length()).strip_edges()
 	return text
 
-func get_intent_ui() -> Node2D:
+func get_intent_ui() -> Control:
 	return _intent_icon
 
 func get_enemy_class_display() -> String:

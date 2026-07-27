@@ -1,7 +1,11 @@
 # Soubor: FloatingText.gd
 extends Label
 
+func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 func start(text_to_show: String, color: Color):
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	self.text = text_to_show
 	# Tint fill only so black outline stays readable.
 	add_theme_color_override("font_color", color)
