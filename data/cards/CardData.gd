@@ -450,7 +450,8 @@ func _get_status_display_description(effect: CardEffectData) -> String:
 		"frozen":
 			return tr("status.frozen")
 		"aiming":
-			return TranslationHelper.tr_format("status.aiming", {"value": effect.value - 100})
+			# Status value is absolute % of base damage (250 = 250% / 2.5×).
+			return TranslationHelper.tr_format("status.aiming", {"value": effect.value})
 		"remove_all_debuffs":
 			return tr("status.remove_all_debuffs")
 		"defensive_stance":

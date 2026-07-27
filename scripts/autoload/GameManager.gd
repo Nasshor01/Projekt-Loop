@@ -1,6 +1,7 @@
 # Soubor: scripts/autoload/GameManager.gd (Kombinace funkčního základu a nové logiky)
 extends Node
 
+var village_scene = "res://scenes/ui/VillageScene.tscn"
 var main_menu_scene = "res://scenes/ui/MainMenu.tscn"
 var character_select_scene = "res://scenes/CharSelect/CharacterSelectScreen.tscn"
 var run_prep_scene = "res://scenes/CharSelect/RunPrepScreen.tscn"
@@ -222,6 +223,10 @@ func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -
 		PlayerData.current_run_xp += gained_xp
 		DebugLogger.log_info("XP gained from encounter: %d (Total this run: %d)" % [gained_xp, PlayerData.current_run_xp], "PROGRESSION")
 
+		# Loop Vesnice: střepy za vyhraný fight
+		var shard_enc_type = current_encounter.encounter_type if is_instance_valid(current_encounter) else EncounterData.EncounterType.NORMAL
+		SaveManager.add_shards(VillageBonuses.shards_for_encounter(shard_enc_type))
+
 		if is_instance_valid(current_encounter) and current_encounter.encounter_type == EncounterData.EncounterType.BOSS:
 			_is_post_boss_reward = true
 			last_run_was_victory = true
@@ -273,6 +278,9 @@ func go_to_tutorial():
 
 func go_to_settings():
 	_change_scene(settings_scene)
+
+func go_to_village():
+	_change_scene(village_scene)
 
 func go_to_lobby():
 	_change_scene(lobby_scene)
@@ -350,6 +358,8 @@ func coop_host_on_battle_ended_by_client(gold: int, final_hp: int, final_shield:
 		if PlayerData.loop_level > 0:
 			gained_xp = int(gained_xp * (1.0 + (PlayerData.loop_level * 0.3)))
 		PlayerData.current_run_xp += gained_xp
+	# Loop Vesnice střepy (coop host)
+	SaveManager.add_shards(VillageBonuses.shards_for_encounter(encounter_type))
 	# Použij karty od klienta (aby byly stejné)
 	if not card_paths.is_empty():
 		var cards: Array = []
@@ -491,7 +501,7 @@ func _change_scene(scene_path: String):
 
 	if is_instance_valid(global_ui_instance):
 		# GlobalUI se skrývá jen v menu/nastavení/tutoriálu/výběru postavy/přípravě runu
-		var hide_scenes = [main_menu_scene, character_select_scene, run_prep_scene, tutorial_scene, settings_scene, lobby_scene]
+		var hide_scenes = [main_menu_scene, character_select_scene, run_prep_scene, tutorial_scene, settings_scene, lobby_scene, village_scene, end_of_run_scene, game_over_scene]
 		if scene_path in hide_scenes:
 			global_ui_instance.hide()
 		else:
@@ -555,15 +565,19 @@ func _change_scene(scene_path: String):
 
 func _prepare_battle_rewards():
 	last_battle_rewards.clear()
+	var reward_card_count := VillageBonuses.get_reward_card_count()
+	var effective_rare_chance := VillageBonuses.get_rare_card_chance()
+	var uncommon_chance := VillageBonuses.get_uncommon_chance()
 	if tutorial_active and tutorial_step == TUTORIAL_STEP_FINAL_BATTLE:
 		var available_cards: Array = []
 		if is_instance_valid(CARD_REWARD_POOL):
 			available_cards = CARD_REWARD_POOL.pick_weighted_cards(
-				3,
-				rare_card_chance,
+				reward_card_count,
+				effective_rare_chance,
 				PlayerData.selected_class,
 				PlayerData.selected_subclass,
-				PlayerData.unlocked_cards
+				PlayerData.unlocked_cards,
+				uncommon_chance
 			)
 		last_battle_rewards["gold"] = 0
 		last_battle_rewards["cards"] = available_cards
@@ -588,15 +602,16 @@ func _prepare_battle_rewards():
 	last_battle_rewards["gold"] = gold
 	last_battle_rewards["encounter_type"] = encounter_type
 
-	# 2. Odměna karet (pro všechny typy kromě bosse) – weighted by rarity
+	# 2. Odměna karet (pro všechny typy kromě bosse) – weighted by rarity + Village library
 	if encounter_type != EncounterData.EncounterType.BOSS:
 		if is_instance_valid(CARD_REWARD_POOL):
 			var reward_cards = CARD_REWARD_POOL.pick_weighted_cards(
-				3,
-				rare_card_chance,
+				reward_card_count,
+				effective_rare_chance,
 				PlayerData.selected_class,
 				PlayerData.selected_subclass,
-				PlayerData.unlocked_cards
+				PlayerData.unlocked_cards,
+				uncommon_chance
 			)
 			last_battle_rewards["cards"] = reward_cards
 			if reward_cards.is_empty():

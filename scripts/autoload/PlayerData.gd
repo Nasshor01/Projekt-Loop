@@ -35,6 +35,8 @@ var floors_cleared: int = 0:
 			floors_cleared = value
 			emit_signal("floor_changed", floors_cleared)
 var current_run_xp: int = 0
+## Střepy získané v aktuálním runu (pro EndOfRun UI).
+var current_run_shards: int = 0
 var path_taken: Array[MapNodeResource] = []
 var active_skill_tree = null
 ## Počet použití karet s max_uses_before_removal za tento run (card_id -> počet použití)
@@ -132,6 +134,7 @@ func start_new_run_state():
 	master_deck.clear()
 	card_usage_count.clear()
 	shop_card_removals_count = 0
+	current_run_shards = 0
 	if is_instance_valid(selected_subclass):
 		var subclass_name = "Unknown"
 		if "subclass_name" in selected_subclass and selected_subclass.subclass_name != "":
@@ -159,6 +162,7 @@ func start_new_run_state():
 	artifacts.clear()
 	floors_cleared = 0
 	current_run_xp = 0
+	current_run_shards = 0
 	
 	# 4. Oznámíme UI, jaký je finální stav
 	emit_signal("artifacts_changed")
@@ -175,6 +179,7 @@ func start_loop_state():
 	path_taken.clear()
 	floors_cleared = 0
 	current_run_xp = 0
+	current_run_shards = 0
 	shop_card_removals_count = 0
 	
 	reset_battle_stats()
@@ -185,8 +190,8 @@ func start_loop_state():
 	self.loop_level = loop_level # re-emit loop level
 
 func apply_passive_skills():
-	# Pasivní skill tree je vypnutý — apply jen base + artefakty.
-	DebugLogger.log_info("=== APPLYING RUN BONUSES (skill tree disabled) ===", "SKILLS")
+	# Skill tree vypnutý — base stats + Loop Vesnice + artefakty.
+	DebugLogger.log_info("=== APPLYING RUN BONUSES (village + artifacts) ===", "SKILLS")
 	DebugLogger.start_performance_timer("apply_passive_skills")
 	
 	max_hp = 50
@@ -253,6 +258,11 @@ func apply_passive_skills():
 	if SaveManager and SaveManager.meta_progress:
 		unlocked_cards = SaveManager.meta_progress.unlocked_cards.duplicate()
 	
+	# Loop Vesnice bonuses
+	max_hp += VillageBonuses.get_max_hp_bonus()
+	gold += VillageBonuses.get_starting_gold_bonus()
+	starting_retained_block += VillageBonuses.get_battle_start_block()
+	
 	if has_node("/root/ArtifactManager"):
 		max_hp += ArtifactManager.get_max_hp_bonus()
 		max_energy += ArtifactManager.get_max_energy_bonus()
@@ -270,7 +280,7 @@ func apply_passive_skills():
 		thorns_damage += ArtifactManager.get_thorns_damage()
 	
 	current_hp = max_hp
-	DebugLogger.log_info("Finální staty: HP %d, Gold %d, Energy %d" % [max_hp, gold, max_energy], "SKILLS")
+	DebugLogger.log_info("Finální staty: HP %d, Gold %d, Energy %d, StartBlock %d" % [max_hp, gold, max_energy, starting_retained_block], "SKILLS")
 	DebugLogger.end_performance_timer("apply_passive_skills")
 	emit_signal("health_changed", current_hp, max_hp)
 

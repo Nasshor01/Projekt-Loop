@@ -120,6 +120,34 @@ func add_xp(amount: int):
 	_check_for_level_up()
 	save_meta_progress()
 
+func add_shards(amount: int) -> void:
+	"""Přidá Střepy do meta progresu (Loop Vesnice). Tutoriál nic nepřidá."""
+	if amount <= 0:
+		return
+	if has_node("/root/GameManager") and GameManager.tutorial_active:
+		return
+	if not meta_progress:
+		return
+	meta_progress.shards += amount
+	if has_node("/root/PlayerData"):
+		PlayerData.current_run_shards += amount
+	DebugLogger.log_info("Shards +%d (total %d, run %d)" % [amount, meta_progress.shards, PlayerData.current_run_shards], "PROGRESSION")
+	save_meta_progress()
+
+func spend_shards(amount: int) -> bool:
+	if amount <= 0:
+		return true
+	if not meta_progress or meta_progress.shards < amount:
+		return false
+	meta_progress.shards -= amount
+	save_meta_progress()
+	return true
+
+func get_shards() -> int:
+	if not meta_progress:
+		return 0
+	return meta_progress.shards
+
 func recalculate_skill_points():
 	"""Legacy no-op — skill tree je vypnutý."""
 	if not meta_progress:

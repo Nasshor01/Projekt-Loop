@@ -14,10 +14,13 @@ const INTENT_ICON_ATTACK = preload("res://art/icons/status/attack.png")
 const INTENT_ICON_MOVE = preload("res://art/icons/status/move.png")
 
 const ARCHER_AIM_DAMAGE_MULTIPLIER = 2.5
+const ARCHER_AIM_DAMAGE_PERCENT = int(ARCHER_AIM_DAMAGE_MULTIPLIER * 100) # 250%
 const BERSERKER_RAGE_TURNS_REQUIRED = 3
-const BERSERKER_RUSH_DAMAGE_MULTIPLIER = 3.0
+const BERSERKER_RUSH_DAMAGE_MULTIPLIER = 1.8 # matches BerserkerAI.RUSH_DAMAGE_MULTIPLIER
+const BERSERKER_RUSH_DAMAGE_PERCENT = int(BERSERKER_RUSH_DAMAGE_MULTIPLIER * 100) # 180%
 const MAGE_METEOR_TURNS_REQUIRED = 6
 const MAGE_METEOR_DAMAGE_MULTIPLIER = 2.0
+const MAGE_METEOR_DAMAGE_PERCENT = int(MAGE_METEOR_DAMAGE_MULTIPLIER * 100) # 200%
 const INITIATIVE_HOVER_MODULATE := Color(2.25, 1.9, 0.35, 1.0)
 const SELECTED_MODULATE := Color(1.5, 1.5, 1.5)
 const INITIATIVE_HOVER_SCALE := 1.12
@@ -103,6 +106,11 @@ func _ready():
 			
 	if _sprite_node and unit_data.sprite_texture:
 		_sprite_node.texture = unit_data.sprite_texture
+		var display_scale = maxf(0.1, unit_data.sprite_display_scale)
+		_sprite_node.scale = Vector3(display_scale, display_scale, display_scale)
+		_initiative_hover_base_scale = _sprite_node.scale
+		# Offset zůstává v pixelech (node scale ho stejně zmenší ve world space).
+		_sprite_node.offset = Vector2(0, unit_data.sprite_offset_y)
 	
 	var canvas = get_tree().root.find_child("CanvasLayer", true, false)
 	if canvas:
@@ -278,8 +286,7 @@ func reset_for_new_turn():
 func set_aiming(state: bool):
 	is_aiming = state
 	if is_aiming:
-		apply_status("aiming", 250, 999)
-		show_status_text("Míří!", "critical")
+		apply_status("aiming", ARCHER_AIM_DAMAGE_PERCENT, 999)
 	else:
 		if active_statuses.has("aiming"):
 			active_statuses.erase("aiming")
@@ -800,7 +807,7 @@ func get_status_counters_list() -> PackedStringArray:
 	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data) and is_instance_valid(unit_data.ai_script) else ""
 	
 	if is_aiming:
-		counters.append(tr("enemy.counter.aiming"))
+		counters.append(TranslationHelper.tr_format("enemy.counter.aiming", {"value": ARCHER_AIM_DAMAGE_PERCENT}))
 	if berserker_frustration > 0:
 		counters.append(TranslationHelper.tr_format("enemy.counter.rage", {"current": berserker_frustration, "max": BERSERKER_RAGE_TURNS_REQUIRED}))
 	if is_permanently_enraged:
@@ -849,7 +856,7 @@ func _calculate_intent(player_unit: Unit, battle_grid: BattleGrid) -> Dictionary
 	if active_statuses.has("rage") or berserker_rage:
 		return {
 			"id": "rush", "short_text": tr("RUSH"),
-			"text": tr("Next Move: Rush (300% DMG)"),
+			"text": tr("Next Move: Rush (%d%% DMG)") % BERSERKER_RUSH_DAMAGE_PERCENT,
 			"icon": INTENT_ICON_RUSH, "countdown": 0
 		}
 	
@@ -889,14 +896,14 @@ func _calculate_intent(player_unit: Unit, battle_grid: BattleGrid) -> Dictionary
 	if ai_path.contains("ArcherAI") and is_aiming:
 		intent_id = "aiming"
 		intent_short = tr("AIMING")
-		intent_text = tr("Next Move: Aimed Shot (250% DMG)")
+		intent_text = tr("Next Move: Aimed Shot (%d%% DMG)") % ARCHER_AIM_DAMAGE_PERCENT
 		icon = INTENT_ICON_AIMING
 	# === BERSERKER RUSH / TREMOR ===
 	elif ai_path.contains("BerserkerAI"):
 		if _is_aligned_with_player(player_unit) and berserker_frustration >= BERSERKER_RAGE_TURNS_REQUIRED:
 			intent_id = "rush"
 			intent_short = tr("RUSH")
-			intent_text = tr("Next Move: Rush (300% DMG)")
+			intent_text = tr("Next Move: Rush (%d%% DMG)") % BERSERKER_RUSH_DAMAGE_PERCENT
 			icon = INTENT_ICON_RUSH
 		elif berserker_frustration >= 2:
 			var dist = battle_grid.get_distance(grid_position, player_unit.grid_position) if is_instance_valid(player_unit) else 0
@@ -916,7 +923,7 @@ func _calculate_intent(player_unit: Unit, battle_grid: BattleGrid) -> Dictionary
 		if turn_count + 1 >= MAGE_METEOR_TURNS_REQUIRED:
 			intent_id = "meteor"
 			intent_short = tr("METEOR")
-			intent_text = tr("Next Move: Meteor (200% DMG to ALL)")
+			intent_text = tr("Next Move: Meteor (%d%% DMG to ALL)") % MAGE_METEOR_DAMAGE_PERCENT
 			icon = INTENT_ICON_METEOR4
 		else:
 			# Meteor countdown číslo

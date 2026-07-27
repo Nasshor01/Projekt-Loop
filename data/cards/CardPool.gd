@@ -42,8 +42,9 @@ func get_cards_by_rarity(rarity: CardData.CardRarity, player_class: ClassData = 
 			result.append(card)
 	return result
 
-# Weighted random selection for rewards/shop. rare_card_chance = chance for Rare (default 0.1), rest split Common/Uncommon
-func pick_weighted_cards(count: int, rare_card_chance: float, player_class: ClassData = null, player_subclass: SubclassData = null, unlocked_cards: Array[String] = []) -> Array[CardData]:
+# Weighted random selection for rewards/shop.
+# rare_card_chance = chance for Rare (default 0.1); uncommon_chance = weight after rare (default 0.35).
+func pick_weighted_cards(count: int, rare_card_chance: float, player_class: ClassData = null, player_subclass: SubclassData = null, unlocked_cards: Array[String] = [], uncommon_chance: float = 0.35) -> Array[CardData]:
 	var available = get_available_cards(player_class, player_subclass, unlocked_cards)
 	if available.is_empty():
 		return []
@@ -57,7 +58,6 @@ func pick_weighted_cards(count: int, rare_card_chance: float, player_class: Clas
 	var uncommon: Array = (by_rarity.get(CardData.CardRarity.UNCOMMON, [])).duplicate()
 	var rare: Array = (by_rarity.get(CardData.CardRarity.RARE, [])).duplicate()
 	var result: Array[CardData] = []
-	var uncommon_chance = 0.35
 	for i in range(count):
 		var roll = randf()
 		var pool: Array = common

@@ -39,6 +39,10 @@ enum UnitType {
 @export var initiative: int = 10  # ===== PŘIDÁNO: Iniciativa pro tahový systém =====
 
 @export var sprite_texture: Texture2D
+## Vizuální měřítko Sprite3D na boardu (1.0 = výchozí jako Paladin).
+@export var sprite_display_scale: float = 1.0
+## Vertikální offset Sprite3D v pixelech (výchozí 80). Vyšší = nohy výš nad zemí.
+@export var sprite_offset_y: float = 80.0
 
 # ===== PŘIDANÁ PROMĚNNÁ =====
 @export var ai_script: Script = null

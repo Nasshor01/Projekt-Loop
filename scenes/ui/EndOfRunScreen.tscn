@@ -25,7 +25,7 @@ offset_right = 150.0
 offset_bottom = 108.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 50
+theme_override_constants/separation = 24
 
 [node name="ResultLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
@@ -37,9 +37,18 @@ layout_mode = 2
 text = "Získáno XP: 150"
 horizontal_alignment = 1
 
+[node name="ShardsLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Shards this run: 0"
+horizontal_alignment = 1
+
 [node name="PlayAgainButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2
 text = "Hrát znovu"
+
+[node name="VillageButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Visit Village"
 
 [node name="EndRunButton" type="Button" parent="VBoxContainer"]
 layout_mode = 2

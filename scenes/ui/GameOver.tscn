@@ -53,3 +53,10 @@ offset_right = 560.0
 offset_bottom = 345.0
 text = "Nový pokus"
 
+[node name="VillageButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 440.0
+offset_top = 360.0
+offset_right = 585.0
+offset_bottom = 400.0
+text = "Visit Village"

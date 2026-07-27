@@ -89,13 +89,15 @@ func _generate_shop_inventory():
 	for child in items_grid.get_children():
 		child.queue_free()
 
-	# KARTY - weighted by rarity (rare_card_chance)
+	# KARTY - weighted by rarity (Village library bonuses)
+	rare_card_chance = VillageBonuses.get_rare_card_chance()
 	var cards_to_sell = SHOP_CARD_POOL.pick_weighted_cards(
-		3,
+		VillageBonuses.get_shop_card_count(),
 		rare_card_chance,
 		PlayerData.selected_class,
 		PlayerData.selected_subclass,
-		PlayerData.unlocked_cards
+		PlayerData.unlocked_cards,
+		VillageBonuses.get_uncommon_chance()
 	)
 	if cards_to_sell.is_empty():
 		print(tr("log.shop.no_cards"))

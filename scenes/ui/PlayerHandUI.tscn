@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bbmavis6cw87a" path="res://scenes/ui/PlayerHandUI.gd" id="1_rb2pt"]
 
 [node name="PlayerHandUI" type="Control"]
+z_index = 15
 layout_mode = 3
 anchors_preset = 0
 offset_left = 128.0

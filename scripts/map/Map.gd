@@ -193,6 +193,9 @@ func _on_map_node_clicked(clicked_node: MapNode):
 	
 	if is_valid_move:
 		PlayerData.path_taken.append(destination_node)
+		# Loop Vesnice: +1 střep za každý dokončený floor uzel
+		if has_node("/root/SaveManager"):
+			SaveManager.add_shards(1)
 		_update_highlighting()
 		_trigger_node_action(destination_node)
 	else:

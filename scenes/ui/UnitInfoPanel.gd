@@ -350,7 +350,8 @@ func _get_status_display_info(status_id: String, status_data: Dictionary) -> Dic
 
 	match status_id:
 		"aiming":
-			return {"text": TranslationHelper.tr_format("status.label.aiming", {"value": val - 100}), "color": Color.ORANGE}
+			# Status value is absolute % of base damage (250 = 250% / 2.5×), same as ArcherAI.
+			return {"text": TranslationHelper.tr_format("status.label.aiming", {"value": val}), "color": Color.ORANGE}
 		"aura_devotion":
 			return {"text": TranslationHelper.tr_format("status.label.aura_devotion", {"value": val}), "color": Color.LIGHT_BLUE}
 		"aura_devotion_plus":

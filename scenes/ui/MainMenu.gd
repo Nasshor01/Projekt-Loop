@@ -3,6 +3,7 @@ extends Control
 
 @onready var title_label: Label = $Label
 @onready var play_button: Button = $VBoxContainer/PlayButton
+@onready var village_button: Button = %VillageButton
 @onready var load_run_button: Button = %LoadRunButton
 @onready var multiplayer_button: Button = $VBoxContainer/MultiplayerButton
 @onready var tutorial_button: Button = $VBoxContainer/TutorialButton
@@ -25,6 +26,8 @@ func _enter_tree():
 
 func _ready():
 	play_button.pressed.connect(GameManager.go_to_character_select)
+	if village_button:
+		village_button.pressed.connect(GameManager.go_to_village)
 	load_run_button.pressed.connect(_on_load_run_button_pressed)
 	multiplayer_button.pressed.connect(_on_multiplayer_pressed)
 	tutorial_button.pressed.connect(GameManager.go_to_tutorial)
@@ -53,6 +56,8 @@ func _update_ui_texts():
 		title_label.text = tr("game.title")
 	if play_button:
 		play_button.text = tr("ui.main_menu.new_game")
+	if village_button:
+		village_button.text = tr("ui.main_menu.village")
 	if tutorial_button:
 		tutorial_button.text = tr("ui.main_menu.tutorial")
 	if settings_button:

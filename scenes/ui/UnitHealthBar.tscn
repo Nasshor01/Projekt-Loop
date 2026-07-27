@@ -4,7 +4,7 @@
 [ext_resource type="FontFile" uid="uid://c4topxnn115am" path="res://art/fonts/monogram-extended.ttf" id="2_font"]
 
 [node name="UnitHealthBar" type="Control"]
-z_index = 20
+z_index = 1
 custom_minimum_size = Vector2(72, 34)
 mouse_filter = 2
 script = ExtResource("1_script")
