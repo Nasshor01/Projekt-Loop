@@ -10,6 +10,7 @@ terrain_name = "terrain.spike_trap"
 description = "terrain.spike_trap.desc"
 sprite = ExtResource("2_spike")
 is_flat_on_ground = true
+follow_camera_yaw = true
 is_walkable = true
 blocks_line_of_sight = false
 movement_cost = 1

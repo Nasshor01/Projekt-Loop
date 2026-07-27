@@ -76,7 +76,7 @@ func get_reachable_cells(unit: Unit, battle_grid: BattleGrid) -> Array[Vector2i]
 			
 			if new_cost <= movement_range and battle_grid.is_cell_active(neighbor):
 				var object_on_cell = battle_grid.get_object_on_cell(neighbor)
-				if not object_on_cell or object_on_cell == unit:
+				if not is_instance_valid(object_on_cell) or object_on_cell == unit:
 					var terrain = battle_grid.get_terrain_on_cell(neighbor)
 					if not terrain or terrain.is_walkable:
 						if not costs.has(neighbor) or new_cost < costs[neighbor]:

@@ -156,7 +156,7 @@ func unregister_unit(unit: Unit):
 	var unit_label = unit.unit_data.unit_name if is_instance_valid(unit) and unit.unit_data else "?"
 	print("TurnManager: Jednotka %s vyřazena ze souboje" % unit_label)
 	
-	# Zkontroluj podmínky konce
+	# Zkontroluj podmínky konce (BattleScene pak ještě počká na animaci před odměnami)
 	_check_combat_end()
 
 func _check_combat_end() -> bool:

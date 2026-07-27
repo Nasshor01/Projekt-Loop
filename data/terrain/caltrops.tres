@@ -10,6 +10,7 @@ terrain_name = "terrain.caltrops"
 description = "terrain.caltrops.desc"
 sprite = ExtResource("2_caltr")
 is_flat_on_ground = true
+follow_camera_yaw = true
 is_walkable = true
 blocks_line_of_sight = false
 movement_cost = 2

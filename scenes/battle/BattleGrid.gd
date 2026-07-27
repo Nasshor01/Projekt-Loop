@@ -40,6 +40,12 @@ var _grid_objects: Dictionary = {}
 var terrain_layer: Dictionary = {}
 ## Sprite3D overlays for placed terrain (keyed by grid cell). Separate from floor tiles in _terrain_container.
 var _terrain_visuals: Dictionary = {}
+## Floor tile meshes for tint highlights (keyed by grid cell).
+var _floor_tiles: Dictionary = {}
+var _floor_tile_is_light: Dictionary = {}
+## Flat trap sprites that yaw-follow the camera.
+var _yaw_follow_sprites: Array[Sprite3D] = []
+var _highlight_tweens: Array[Tween] = []
 var _mouse_over_cell: Vector2i = Vector2i(-1, -1)
 
 var _movable_cells: Array[Vector2i] = []
@@ -78,7 +84,16 @@ func _ready():
 func set_camera(cam_ref: Camera3D):
 	self.camera = cam_ref
 
-func _process(_delta): pass 
+func _process(_delta: float) -> void:
+	if not camera or _yaw_follow_sprites.is_empty():
+		return
+	var yaw := camera.global_rotation.y
+	for i in range(_yaw_follow_sprites.size() - 1, -1, -1):
+		var spr := _yaw_follow_sprites[i]
+		if not is_instance_valid(spr):
+			_yaw_follow_sprites.remove_at(i)
+			continue
+		spr.rotation.y = yaw
 
 func set_mouse_over_cell(cell: Vector2i):
 	if cell != _mouse_over_cell:
@@ -88,6 +103,9 @@ func set_mouse_over_cell(cell: Vector2i):
 func build_from_shape(shape_array: Array):
 	_active_cells.clear()
 	terrain_layer.clear()
+	_floor_tiles.clear()
+	_floor_tile_is_light.clear()
+	_yaw_follow_sprites.clear()
 	for spr in _terrain_visuals.values():
 		if is_instance_valid(spr):
 			spr.queue_free()
@@ -115,16 +133,14 @@ func build_from_shape(shape_array: Array):
 					tile.mesh = floor_mesh
 					tile.name = "Tile_%d_%d" % [x, y]
 					
-					# --- ŠACHOVNICOVÁ LOGIKA ---
+					var is_light := (x + y) % 2 == 0
+					_floor_tile_is_light[pos] = is_light
 					if material_light and material_dark:
-						if (x + y) % 2 == 0:
-							tile.material_override = material_light
-						else:
-							tile.material_override = material_dark
+						tile.material_override = material_light if is_light else material_dark
 					
 					_terrain_container.add_child(tile)
-					# Fixní výška podlahy
 					tile.position = Vector3(x * cell_size_3d, -0.1, y * cell_size_3d)
+					_floor_tiles[pos] = tile
 
 func is_cell_active(grid_position: Vector2i) -> bool:
 	return _active_cells.has(grid_position)
@@ -135,7 +151,14 @@ func get_all_active_cells() -> Array[Vector2i]:
 		cells.append(cell)
 	return cells
 
-func place_object_on_cell(object_node: Node3D, grid_position: Vector2i, is_moving: bool = false) -> bool:
+func get_world_position_for_cell(grid_position: Vector2i) -> Vector3:
+	return Vector3(grid_position.x * cell_size_3d, 0.0, grid_position.y * cell_size_3d)
+
+func place_object_on_cell(object_node: Node3D, grid_position: Vector2i, is_moving: bool = false, move_duration: float = 0.3) -> bool:
+	if not is_instance_valid(object_node):
+		return false
+	# Pozn.: HP se nenastavuje tady — při spawně je current_health ještě 0 (před _ready).
+	# Mrtvé jednotky se po pasti nepokládají přes BattleScene._move_unit_along_path.
 	if not is_cell_active(grid_position) or _grid_objects.has(grid_position): return false
 	
 	if object_node.get_parent() != units_container:
@@ -146,7 +169,7 @@ func place_object_on_cell(object_node: Node3D, grid_position: Vector2i, is_movin
 	
 	if is_moving:
 		var tween = create_tween()
-		tween.tween_property(object_node, "position", target_pos_3d, 0.3).set_trans(Tween.TRANS_SINE)
+		tween.tween_property(object_node, "position", target_pos_3d, maxf(0.01, move_duration)).set_trans(Tween.TRANS_SINE)
 	else:
 		object_node.position = target_pos_3d
 	
@@ -157,13 +180,13 @@ func place_object_on_cell(object_node: Node3D, grid_position: Vector2i, is_movin
 	return true
 
 func remove_object_by_instance(object_node: Node):
-	var key_to_remove = null
-	for cell in _grid_objects:
-		if _grid_objects[cell] == object_node:
-			key_to_remove = cell
-			break
-	if key_to_remove != null:
-		_grid_objects.erase(key_to_remove)
+	var keys_to_remove: Array = []
+	for cell in _grid_objects.keys():
+		var obj = _grid_objects[cell]
+		if not is_instance_valid(obj) or obj == object_node:
+			keys_to_remove.append(cell)
+	for cell in keys_to_remove:
+		_grid_objects.erase(cell)
 
 func get_distance(cell_a: Vector2i, cell_b: Vector2i) -> int: 
 	return abs(cell_a.x - cell_b.x) + abs(cell_a.y - cell_b.y)
@@ -172,7 +195,13 @@ func is_valid_grid_position(grid_position: Vector2i) -> bool:
 	return grid_position.x >= 0 and grid_position.x < grid_columns and grid_position.y >= 0 and grid_position.y < grid_rows
 
 func get_object_on_cell(grid_position: Vector2i) -> Node:
-	return _grid_objects.get(grid_position, null)
+	if not _grid_objects.has(grid_position):
+		return null
+	var obj = _grid_objects[grid_position]
+	if not is_instance_valid(obj):
+		_grid_objects.erase(grid_position)
+		return null
+	return obj
 
 func get_all_objects_on_grid() -> Array:
 	var units = []
@@ -181,67 +210,94 @@ func get_all_objects_on_grid() -> Array:
 	return units
 
 func update_visual_highlights():
-	for child in _highlights_container.get_children():
-		child.queue_free()
+	_kill_highlight_tweens()
+	_reset_floor_tile_materials()
 	_spawn_highlight_nodes.clear()
 	_enemy_overlap_pulse_nodes.clear()
-	
-	if not cursor_mesh: return
+	# Plane overlay už nepoužíváme — zvýrazníme přímo blok podlahy
+	for child in _highlights_container.get_children():
+		child.queue_free()
 
-	var create_cursor = func(cell: Vector2i, color: Color, is_spawn: bool = false, emission_strength: float = 1.0):
-		if not is_cell_active(cell): return
-		var mesh_inst = MeshInstance3D.new()
-		mesh_inst.mesh = cursor_mesh
-		
-		var mat = StandardMaterial3D.new()
-		var alpha = clampf(color.a, 0.25, 0.65)
-		mat.albedo_color = Color(color.r, color.g, color.b, alpha)
-		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-		
-		mat.emission_enabled = true
-		var emit_mult = 3.5 * emission_strength
-		mat.emission = Color(color.r * emit_mult, color.g * emit_mult, color.b * emit_mult)
-		mat.emission_energy_multiplier = 1.0
-		
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		mat.render_priority = 10
-		
-		mesh_inst.material_override = mat
-		
-		_highlights_container.add_child(mesh_inst)
-		mesh_inst.position = Vector3(cell.x * cell_size_3d, 0.02, cell.y * cell_size_3d)
-		
-		if is_spawn:
-			_spawn_highlight_nodes.append(mesh_inst)
-			if _spawn_pulse_active:
-				_start_spawn_pulse_on_mesh(mesh_inst)
+	# cell -> { color, emit, spawn, pulse }
+	var tints: Dictionary = {}
+	var put := func(cell: Vector2i, color: Color, emit: float = 1.0, is_spawn: bool = false, pulse: bool = false):
+		if not is_cell_active(cell):
+			return
+		tints[cell] = {"color": color, "emit": emit, "spawn": is_spawn, "pulse": pulse}
 
-	# Pořadí vrstev (poslední = nahoře): danger → enemy modrá (jen move) → enemy červená (attack + překryv s pulzem) → zelená move player → …
-	# Zelená = move player, modrá = move enemy, červená = attack (včetně překryvu move+attack s jemným pulzem)
-	for cell in _danger_cells: create_cursor.call(cell, danger_zone_color, false, 1.0)
+	for cell in _danger_cells:
+		put.call(cell, danger_zone_color, 1.0)
 	for cell in _enemy_range_cells:
 		if not _enemy_attack_range_cells.has(cell):
-			create_cursor.call(cell, enemy_range_highlight_color, false, 1.15)
+			put.call(cell, enemy_range_highlight_color, 1.15)
 	for cell in _enemy_attack_range_cells:
 		if _enemy_range_cells.has(cell):
-			_create_enemy_overlap_highlight(cell)
+			put.call(cell, attack_highlight_color, 1.3, false, true)
 		else:
-			create_cursor.call(cell, attack_highlight_color, false, 1.25)
-	for cell in _movable_cells: create_cursor.call(cell, movement_highlight_color, false, 1.15)        # zelená = move player
-	for cell in _warning_cells: create_cursor.call(cell, movement_warning_color, false, 1.0)
+			put.call(cell, attack_highlight_color, 1.25)
+	for cell in _movable_cells:
+		put.call(cell, movement_highlight_color, 1.15)
+	for cell in _warning_cells:
+		put.call(cell, movement_warning_color, 1.0)
 	for cell in _player_spawn_cells:
 		if _coop_selected_spawns.has(cell):
-			continue  # Vybrané spawny vykreslíme zvlášť s jinou barvou
-		create_cursor.call(cell, player_spawn_highlight_color, true, 1.0)
+			continue
+		put.call(cell, player_spawn_highlight_color, 1.0, true)
 	for cell in _coop_selected_spawns:
-		create_cursor.call(cell, _coop_selected_spawns[cell], false, 2.0)
-	for cell in _targetable_cells: create_cursor.call(cell, _targetable_cells_color, false, 1.25)      # červená = attack (nebo modrá support)
-	for cell in _aoe_cells: create_cursor.call(cell, aoe_highlight_color, false, 1.1)
-	
+		put.call(cell, _coop_selected_spawns[cell], 2.0)
+	for cell in _targetable_cells:
+		put.call(cell, _targetable_cells_color, 1.25)
+	for cell in _aoe_cells:
+		put.call(cell, aoe_highlight_color, 1.1)
+
 	if is_valid_grid_position(_mouse_over_cell) and is_cell_active(_mouse_over_cell):
-		create_cursor.call(_mouse_over_cell, highlight_color, false, 1.2)
+		put.call(_mouse_over_cell, highlight_color, 1.35)
 	if _initiative_hover_cell != Vector2i(-1, -1) and is_cell_active(_initiative_hover_cell):
-		create_cursor.call(_initiative_hover_cell, initiative_hover_color, false, 2.5)
+		put.call(_initiative_hover_cell, initiative_hover_color, 2.5)
+
+	for cell in tints:
+		_apply_floor_tint(cell, tints[cell])
+
+func _kill_highlight_tweens() -> void:
+	for tw in _highlight_tweens:
+		if is_instance_valid(tw):
+			tw.kill()
+	_highlight_tweens.clear()
+
+func _reset_floor_tile_materials() -> void:
+	for cell in _floor_tiles:
+		var tile: MeshInstance3D = _floor_tiles[cell]
+		if not is_instance_valid(tile):
+			continue
+		var is_light: bool = _floor_tile_is_light.get(cell, false)
+		if material_light and material_dark:
+			tile.material_override = material_light if is_light else material_dark
+
+func _apply_floor_tint(cell: Vector2i, info: Dictionary) -> void:
+	var tile: MeshInstance3D = _floor_tiles.get(cell)
+	if not is_instance_valid(tile):
+		return
+	var is_light: bool = _floor_tile_is_light.get(cell, false)
+	var base: StandardMaterial3D = material_light if is_light else material_dark
+	if not base:
+		return
+	var mat := base.duplicate() as StandardMaterial3D
+	var c: Color = info.color
+	var blend := clampf(c.a + 0.2, 0.4, 0.85)
+	mat.albedo_color = base.albedo_color.lerp(Color(c.r, c.g, c.b), blend)
+	mat.emission_enabled = true
+	var emit_str: float = float(info.get("emit", 1.0))
+	mat.emission = Color(c.r, c.g, c.b) * (0.55 * emit_str)
+	mat.emission_energy_multiplier = 1.0
+	tile.material_override = mat
+
+	if info.get("spawn", false):
+		_spawn_highlight_nodes.append(tile)
+		if _spawn_pulse_active:
+			_start_spawn_pulse_on_mesh(tile)
+	if info.get("pulse", false):
+		_enemy_overlap_pulse_nodes.append(tile)
+		_start_enemy_overlap_pulse_on_mesh(tile)
 
 func show_initiative_hover_cell(cell: Vector2i) -> void:
 	if not is_cell_active(cell):
@@ -257,38 +313,16 @@ func hide_initiative_hover_cell(cell: Vector2i) -> void:
 	_initiative_hover_cell = Vector2i(-1, -1)
 	update_visual_highlights()
 
-func _create_enemy_overlap_highlight(cell: Vector2i) -> void:
-	# Překryv move+attack: vždy ČERVENÁ (dmg range), jen jemně pulzuje = vidět že jde i o move
-	if not is_cell_active(cell): return
-	var mesh_inst = MeshInstance3D.new()
-	mesh_inst.mesh = cursor_mesh
-	var mat = StandardMaterial3D.new()
-	var red := attack_highlight_color
-	var alpha = clampf(red.a, 0.35, 0.7)
-	mat.albedo_color = Color(red.r, red.g, red.b, alpha)
-	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mat.emission_enabled = true
-	var emit_mult := 3.5 * 1.3
-	mat.emission = Color(red.r * emit_mult, red.g * emit_mult, red.b * emit_mult)
-	mat.emission_energy_multiplier = 1.0
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.render_priority = 11
-	mesh_inst.material_override = mat
-	_highlights_container.add_child(mesh_inst)
-	mesh_inst.position = Vector3(cell.x * cell_size_3d, 0.02, cell.y * cell_size_3d)
-	_enemy_overlap_pulse_nodes.append(mesh_inst)
-	_start_enemy_overlap_pulse_on_mesh(mesh_inst)
-
 func _start_enemy_overlap_pulse_on_mesh(mesh_inst: MeshInstance3D) -> void:
-	# Jemné pulzování sítě (červená zůstane, jen „dýchá“) = naznačí move+attack
 	if not is_instance_valid(mesh_inst):
 		return
 	var mat := mesh_inst.material_override as StandardMaterial3D
 	if not is_instance_valid(mat):
 		return
 	var tween := create_tween().set_loops()
-	tween.tween_property(mat, "emission_energy_multiplier", 1.4, 0.5)
+	tween.tween_property(mat, "emission_energy_multiplier", 1.45, 0.5)
 	tween.tween_property(mat, "emission_energy_multiplier", 1.0, 0.5)
+	_highlight_tweens.append(tween)
 
 func start_spawn_pulse():
 	_spawn_pulse_active = true
@@ -298,18 +332,15 @@ func start_spawn_pulse():
 func _start_spawn_pulse_on_mesh(mesh_inst: MeshInstance3D):
 	if not is_instance_valid(mesh_inst):
 		return
-	var start_color = Color(1, 1, 1, 1)
-	var pulse_color = Color(0.4, 0.4, 1, 0.5)
-	var tween = create_tween().set_loops()
-	if mesh_inst.has_method("set_modulate"):
-		tween.tween_property(mesh_inst, "modulate", start_color, 0.7)
-		tween.tween_property(mesh_inst, "modulate", pulse_color, 0.7)
-	else:
-		var mat := mesh_inst.material_override as StandardMaterial3D
-		if not is_instance_valid(mat):
-			return
-		tween.tween_property(mat, "albedo_color", start_color, 0.7)
-		tween.tween_property(mat, "albedo_color", pulse_color, 0.7)
+	var mat := mesh_inst.material_override as StandardMaterial3D
+	if not is_instance_valid(mat):
+		return
+	var base_col := mat.albedo_color
+	var pulse_col := base_col.lerp(Color(0.45, 0.55, 1.0), 0.55)
+	var tween := create_tween().set_loops()
+	tween.tween_property(mat, "albedo_color", pulse_col, 0.7)
+	tween.tween_property(mat, "albedo_color", base_col, 0.7)
+	_highlight_tweens.append(tween)
 
 func show_targetable_cells(cells: Array[Vector2i], is_attack: bool):
 	_targetable_cells = cells
@@ -319,7 +350,6 @@ func show_targetable_cells(cells: Array[Vector2i], is_attack: bool):
 func hide_targetable_cells():
 	_targetable_cells.clear()
 	update_visual_highlights()
-
 func show_enemy_range(enemy_node: Node):
 	_enemy_range_cells.clear()
 	_enemy_attack_range_cells.clear()
@@ -493,28 +523,24 @@ func place_terrain(grid_position: Vector2i, terrain_data: TerrainData):
 		
 		# --- ROZHODOVÁNÍ PODLE TYPU TERÉNU ---
 		if terrain_data.is_flat_on_ground:
-			# A) BAHNO / PASTI (Leží na zemi) — škáluj do ~jedné buňky
-			# Osa Y znamená, že sprite leží "na zádech"
-			terrain_sprite.axis = Vector3.AXIS_Y 
+			# A) Bahno / pasti — leží na zemi; pasti ještě yaw-follow kameru
+			terrain_sprite.axis = Vector3.AXIS_Y
 			terrain_sprite.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 			var tex_w: float = float(terrain_data.sprite.get_width())
 			var tex_h: float = float(terrain_data.sprite.get_height())
 			var max_px: float = maxf(tex_w, tex_h)
-			# ~75 % buňky, ať past nepřetéká do sousedů
 			terrain_sprite.pixel_size = (cell_size_3d * 0.75) / max_px if max_px > 0.0 else 0.01
-			# Pozice: X, 0.02 (těsně nad podlahou, aby neproblikávalo), Z
 			terrain_sprite.position = Vector3(grid_position.x * cell_size_3d, 0.02, grid_position.y * cell_size_3d)
-		
+			if terrain_data.follow_camera_yaw:
+				_yaw_follow_sprites.append(terrain_sprite)
+				if camera:
+					terrain_sprite.rotation.y = camera.global_rotation.y
 		else:
-			# B) KÁMEN / STROM (Stojí)
+			# B) Kámen / strom — původní stojící billboard
 			terrain_sprite.pixel_size = 0.04
-			# Osa Z je standard pro stojící sprity
 			terrain_sprite.axis = Vector3.AXIS_Z
-			# Zapneme Y-Billboard, aby se otáčel za kamerou (jako postavy)
 			terrain_sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-			# Vypneme Centered, aby stál nohama na zemi (nebo upravíme offset)
 			terrain_sprite.centered = true
-			# Pozice: Zvedneme ho (0.7), aby nebyl zapadlý v zemi
 			terrain_sprite.position = Vector3(grid_position.x * cell_size_3d, 0.7, grid_position.y * cell_size_3d)
 
 func remove_terrain(grid_position: Vector2i) -> void:
@@ -522,6 +548,9 @@ func remove_terrain(grid_position: Vector2i) -> void:
 	if _terrain_visuals.has(grid_position):
 		var spr = _terrain_visuals[grid_position]
 		_terrain_visuals.erase(grid_position)
+		var idx := _yaw_follow_sprites.find(spr)
+		if idx >= 0:
+			_yaw_follow_sprites.remove_at(idx)
 		if is_instance_valid(spr):
 			spr.queue_free()
 

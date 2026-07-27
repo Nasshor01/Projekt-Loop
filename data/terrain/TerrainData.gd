@@ -13,6 +13,8 @@ extends Resource
 @export var is_flat_on_ground: bool = true 
 # TRUE = Bahno, Louže, Past (leží na podlaze jako textura)
 # FALSE = Kámen, Strom, Zeď (stojí kolmo a otáčí se na kameru)
+## Flat decals that spin on Y to face the camera (trapper traps).
+@export var follow_camera_yaw: bool = false
 
 # --- Herní pravidla ---
 @export_group("Rules")

@@ -363,6 +363,12 @@ func process_turn_start_statuses() -> int:
 		var status_data = active_statuses["regeneration"]
 		var heal_amount = status_data.value
 		heal(heal_amount)
+
+	# Poison: damage at START of turn (visible before they act), then duration -= 1
+	if active_statuses.has("poison"):
+		await _tick_poison_status()
+	if not is_instance_valid(self) or current_health <= 0:
+		return extra_draw
 	
 	var statuses_to_remove = []
 	for status_id in active_statuses.keys():
@@ -380,6 +386,33 @@ func process_turn_start_statuses() -> int:
 		
 	return extra_draw
 
+func _tick_poison_status() -> void:
+	if not active_statuses.has("poison"):
+		return
+	var poison_data: Dictionary = active_statuses["poison"]
+	var poison_dmg: int = int(poison_data.get("value", 0))
+	if has_node("/root/PlayerData") and unit_data and unit_data.faction == UnitData.Faction.ENEMY:
+		poison_dmg += PlayerData.poison_damage_bonus
+	if poison_dmg > 0:
+		await take_damage(poison_dmg, true, false, false)
+		if not is_instance_valid(self):
+			return
+		show_status_text("POISON -%d" % poison_dmg, "critical")
+	if not active_statuses.has("poison"):
+		return
+	var remaining: int = int(active_statuses["poison"].get("duration", 1)) - 1
+	if remaining <= 0:
+		active_statuses.erase("poison")
+		if has_node("/root/DebugLogger"):
+			var unit_label = unit_data.unit_id if unit_data else name
+			DebugLogger.log_info("Poison expired on %s" % unit_label)
+	else:
+		active_statuses["poison"].duration = remaining
+		if has_node("/root/DebugLogger"):
+			var unit_label = unit_data.unit_id if unit_data else name
+			DebugLogger.log_info("Poison on %s: %d dmg, %d turns left" % [unit_label, poison_dmg, remaining])
+	_update_stats_and_emit_signal()
+
 func process_turn_end_statuses():
 	if active_statuses.is_empty():
 		return
@@ -387,6 +420,9 @@ func process_turn_end_statuses():
 	var statuses_to_remove = []
 	for status_id in active_statuses.keys():
 		if status_id == "aura_devotion" or status_id == "aura_devotion_plus":
+			continue
+		# Poison ticks at start of turn — skip here so duration isn't double-decremented
+		if status_id == "poison":
 			continue
 		# Regeneration heals at start of turn (see process_turn_start_statuses), only tick duration here
 		
@@ -400,15 +436,6 @@ func process_turn_end_statuses():
 			status_data.value = max(0, status_data.value - 1)  # Snížíme poškození každé kolo
 			if status_data.value <= 0:
 				statuses_to_remove.append(status_id)
-
-		# Poison (StS-like duration model): deal strength, then reduce remaining turns.
-		# Cards set value = DMG/turn and aoe_param_x = duration. DoT nelze vyhnout.
-		if status_id == "poison":
-			var poison_data = active_statuses[status_id]
-			var poison_dmg: int = int(poison_data.value)
-			if poison_dmg > 0:
-				take_damage(poison_dmg, false, false, false)
-				_show_floating_text(poison_dmg, "damage")
 
 		active_statuses[status_id].duration -= 1
 		if active_statuses[status_id].duration <= 0:
@@ -473,7 +500,8 @@ func process_terrain_effects(terrain_data: TerrainData) -> int:
 		var dmg = terrain_data.effect_numeric_value
 		if dmg > 0:
 			# already_calculated + allow_dodge=false: pasti vždy zraní (i Assassin)
-			take_damage(dmg, true, false, false)
+			# await: ať volající nepokračuje v cestě dřív, než se aplikuje HP / smrt
+			await take_damage(dmg, true, false, false)
 			return dmg
 	return 0
 
@@ -1198,7 +1226,7 @@ func start_turn() -> int:
 	print(TranslationHelper.tr_format("log.unit.turn_start", {"name": unit_data.get_localized_name()}))
 	_has_acted_this_turn = false
 	reset_for_new_turn()
-	var extra_draw = process_turn_start_statuses()
+	var extra_draw = await process_turn_start_statuses()
 	return extra_draw
 
 func end_turn():

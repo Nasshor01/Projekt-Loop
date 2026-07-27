@@ -349,8 +349,14 @@ func _on_turn_started(unit: Unit):
 		TurnManager.next_turn()
 		return
 	
-	# Zavolej start_turn na jednotce
-	var extra_draw = unit.start_turn()
+	# Zavolej start_turn na jednotce (může await — např. poison DoT)
+	var extra_draw = await unit.start_turn()
+
+	# Jednotka mohla zemřít na poison na začátku tahu
+	if not is_instance_valid(unit) or unit.current_health <= 0:
+		if has_node("/root/TurnManager"):
+			TurnManager.next_turn()
+		return
 	
 	# Rozhodní, zda jde o hráče nebo AI
 	if unit.unit_data.faction == UnitData.Faction.PLAYER:
@@ -556,12 +562,7 @@ func _execute_single_action(enemy_unit: Unit, action: EnemyAIBase.AIAction):
 				var path = action.move_path
 				
 				if path.size() > 1:
-					var final_target_pos = _resolve_path_with_terrain(enemy_unit, path)
-					
-					battle_grid_instance.remove_object_by_instance(enemy_unit)
-					battle_grid_instance.place_object_on_cell(enemy_unit, final_target_pos, true)
-					
-					await get_tree().create_timer(0.4).timeout
+					await _rush_unit_along_path(enemy_unit, path)
 					if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
 						return
 					
@@ -581,12 +582,7 @@ func _execute_single_action(enemy_unit: Unit, action: EnemyAIBase.AIAction):
 					var truncated: Array[Vector2i] = []
 					for i in range(move_dist + 1):
 						truncated.append(path[i])
-					var final_target_pos = _resolve_path_with_terrain(enemy_unit, truncated)
-					
-					battle_grid_instance.remove_object_by_instance(enemy_unit)
-					battle_grid_instance.place_object_on_cell(enemy_unit, final_target_pos, true)
-					
-					await get_tree().create_timer(0.4).timeout
+					await _move_unit_along_path(enemy_unit, truncated)
 					if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
 						return
 		
@@ -596,6 +592,15 @@ func _execute_single_action(enemy_unit: Unit, action: EnemyAIBase.AIAction):
 func _on_combat_ended(player_won: bool):
 	"""Volá se když TurnManager ukončí souboj"""
 	_current_battle_state = BattleState.BATTLE_OVER
+	if is_instance_valid(end_turn_button):
+		end_turn_button.disabled = true
+
+	# Dej hráči čas vidět poslední pohyb / past / smrt, než skok na odměny
+	if player_won:
+		if is_instance_valid(victory_label):
+			victory_label.visible = true
+		await get_tree().create_timer(1.8).timeout
+
 	# Coop: jen HOST volá battle_finished (připraví rewards, pošle RPC klientovi).
 	# Klient čeká na RPC receive_go_to_reward / receive_game_over.
 	if _is_coop_run() and has_node("/root/MultiplayerManager") and not MultiplayerManager.is_server():
@@ -980,9 +985,15 @@ func _on_unit_died(unit_node: Unit):
 	if has_node("/root/TurnManager"):
 		TurnManager.unregister_unit(unit_node)
 	
+	# Okamžitě aktualizuj initiative bar (jinak mrtvý zůstane v UI do konce kola)
+	if is_instance_valid(initiative_bar) and has_node("/root/TurnManager"):
+		initiative_bar.update_turn_order(TurnManager.get_turn_order())
+	
 	# Animace zmizení pro 3D (Scale místo Modulate)
+	# Nepřátelé pomaleji — ať je vidět smrt z pasti / poslední hit
+	var death_dur := 0.95 if unit_node.unit_data and unit_node.unit_data.faction == UnitData.Faction.ENEMY else 0.5
 	var tween = create_tween()
-	tween.tween_property(unit_node, "scale", Vector3.ZERO, 0.5).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tween.tween_property(unit_node, "scale", Vector3.ZERO, death_dur).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 	
 	await tween.finished
 	if is_instance_valid(unit_node):
@@ -1421,10 +1432,10 @@ func _execute_move(unit_to_move: Unit, target_cell: Vector2i):
 	var path = battle_grid_instance.find_path(start_cell, target_cell, unit_to_move)
 	if path.is_empty():
 		path = [start_cell, target_cell]
-	var final_cell = _resolve_path_with_terrain(unit_to_move, path)
-	battle_grid_instance.remove_object_by_instance(unit_to_move)
-	battle_grid_instance.place_object_on_cell(unit_to_move, final_cell, true)
+	var final_cell = await _move_unit_along_path(unit_to_move, path)
 	_reset_player_selection()
+	if not is_instance_valid(unit_to_move) or unit_to_move.current_health <= 0:
+		return
 	if unit_to_move == _player_unit_node:
 		set_enemy_intents()
 	# Real-time coop: druhý peer musí vidět stejný pohyb
@@ -1433,23 +1444,39 @@ func _execute_move(unit_to_move: Unit, target_cell: Vector2i):
 		if idx >= 0:
 			rpc("_rpc_apply_move", idx, final_cell.x, final_cell.y)
 
-func _resolve_path_with_terrain(unit: Unit, path: Array[Vector2i]) -> Vector2i:
-	"""Trigger ON_ENTER terrain for every cell walked onto (not only the destination).
-	Consumable traps are removed on trigger. Mud / stops_movement_on_enter ends the walk early.
-	Returns the cell the unit should land on."""
+func _move_unit_along_path(unit: Unit, path: Array[Vector2i], step_duration: float = 0.3) -> Vector2i:
+	"""Krok po kroku: nejdřív vizuální došlápnutí na buňku, teprve pak ON_ENTER past/mud.
+	Vrací buňku, na které jednotka skončila (nebo zemřela).
+	step_duration: běžný pohyb ~0.3s; speciály (rush/dash/teleport) volej přes _dash_unit_along_path."""
+	if not is_instance_valid(unit):
+		return Vector2i.ZERO
 	if path.is_empty():
-		return unit.grid_position if is_instance_valid(unit) else Vector2i.ZERO
+		return unit.grid_position
 	if path.size() == 1:
 		return path[0]
-	var final_pos: Vector2i = path[path.size() - 1]
+
+	var final_pos: Vector2i = path[0]
+
 	for i in range(1, path.size()):
+		if not is_instance_valid(unit) or unit.current_health <= 0:
+			break
 		var cell: Vector2i = path[i]
 		final_pos = cell
+
+		battle_grid_instance.remove_object_by_instance(unit)
+		if not battle_grid_instance.place_object_on_cell(unit, cell, true, step_duration):
+			break
+
+		await get_tree().create_timer(step_duration).timeout
+
+		if not is_instance_valid(unit) or unit.current_health <= 0:
+			break
+
 		var terrain = battle_grid_instance.get_terrain_on_cell(cell)
 		if is_instance_valid(terrain):
 			var dmg_dealt: int = 0
 			if unit.has_method("process_terrain_effects"):
-				dmg_dealt = unit.process_terrain_effects(terrain)
+				dmg_dealt = await unit.process_terrain_effects(terrain)
 			var should_consume: bool = terrain.consume_on_trigger
 			var should_stop: bool = terrain.stops_movement_on_enter or terrain.terrain_id == "mud"
 			var unit_label = unit.unit_data.unit_id if unit.unit_data else str(unit.name)
@@ -1463,7 +1490,127 @@ func _resolve_path_with_terrain(unit: Unit, path: Array[Vector2i]) -> Vector2i:
 				break
 			if should_stop:
 				break
+
 	return final_pos
+
+func _rush_unit_along_path(unit: Unit, path: Array[Vector2i]) -> Vector2i:
+	"""Plynulý charge: jedna souvislá animace přes celou cestu (ne krokování).
+	Po dojetí vyhodnotí pasti/mud po buňkách a případně zastaví dřív."""
+	if not is_instance_valid(unit):
+		return Vector2i.ZERO
+	if path.is_empty():
+		return unit.grid_position
+	if path.size() == 1:
+		return path[0]
+
+	battle_grid_instance.remove_object_by_instance(unit)
+
+	var steps := path.size() - 1
+	var per_cell := clampf(0.28 / float(steps), 0.045, 0.1)
+	var tween := create_tween()
+	# EASE_IN = zrychlení do cíle (charge feel)
+	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	for i in range(1, path.size()):
+		var world_pos := battle_grid_instance.get_world_position_for_cell(path[i])
+		tween.tween_property(unit, "position", world_pos, per_cell)
+
+	await tween.finished
+	if not is_instance_valid(unit):
+		return path[path.size() - 1]
+
+	# Po vizuálním charge vyhodnoť terén v pořadí (pasti po cestě)
+	var final_pos: Vector2i = path[0]
+	for i in range(1, path.size()):
+		var cell: Vector2i = path[i]
+		final_pos = cell
+		unit.grid_position = cell
+		unit.position = battle_grid_instance.get_world_position_for_cell(cell)
+
+		var terrain = battle_grid_instance.get_terrain_on_cell(cell)
+		if is_instance_valid(terrain):
+			var dmg_dealt: int = 0
+			if unit.has_method("process_terrain_effects"):
+				dmg_dealt = await unit.process_terrain_effects(terrain)
+			var should_consume: bool = terrain.consume_on_trigger
+			var should_stop: bool = terrain.stops_movement_on_enter or terrain.terrain_id == "mud"
+			var unit_label = unit.unit_data.unit_id if unit.unit_data else str(unit.name)
+			if terrain.effect_type == TerrainData.TerrainEffect.DAMAGE_ON_ENTER or should_consume:
+				DebugLogger.log_info("Trap triggered on %s at %s: %d damage, consumed=%s (terrain=%s)" % [
+					unit_label, str(cell), dmg_dealt, str(should_consume), terrain.terrain_id
+				])
+			if should_consume:
+				battle_grid_instance.remove_terrain(cell)
+			if not is_instance_valid(unit) or unit.current_health <= 0:
+				return final_pos
+			if should_stop:
+				break
+
+	if is_instance_valid(unit) and unit.current_health > 0:
+		battle_grid_instance.place_object_on_cell(unit, final_pos, false)
+	return final_pos
+
+func _teleport_unit_to_cell(unit: Unit, target_cell: Vector2i) -> Vector2i:
+	"""Blink / shadow teleport: zmizí → objeví se na cíli (landing spouští past)."""
+	if not is_instance_valid(unit):
+		return Vector2i.ZERO
+	if target_cell == unit.grid_position:
+		return target_cell
+
+	# Unit je Node3D — modulate je na Sprite3D, ne na rootu
+	var sprite: Sprite3D = unit.get_node_or_null("Sprite3D") as Sprite3D
+	var start_mod: Color = sprite.modulate if is_instance_valid(sprite) else Color.WHITE
+	var start_scale: Vector3 = unit.scale
+
+	var vanish := create_tween()
+	if is_instance_valid(sprite):
+		vanish.tween_property(sprite, "modulate:a", 0.0, 0.12).set_trans(Tween.TRANS_SINE)
+	vanish.parallel().tween_property(unit, "scale", start_scale * 0.35, 0.12).set_trans(Tween.TRANS_BACK)
+	await vanish.finished
+	if not is_instance_valid(unit):
+		return target_cell
+
+	battle_grid_instance.remove_object_by_instance(unit)
+	if not battle_grid_instance.place_object_on_cell(unit, target_cell, false):
+		if is_instance_valid(sprite):
+			sprite.modulate = start_mod
+		unit.scale = start_scale
+		battle_grid_instance.place_object_on_cell(unit, unit.grid_position, false)
+		return unit.grid_position
+
+	if is_instance_valid(sprite):
+		sprite.modulate.a = 0.0
+	var appear := create_tween()
+	if is_instance_valid(sprite):
+		appear.tween_property(sprite, "modulate:a", start_mod.a, 0.14).set_trans(Tween.TRANS_SINE)
+	appear.parallel().tween_property(unit, "scale", start_scale, 0.14).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	await appear.finished
+	if is_instance_valid(unit):
+		if is_instance_valid(sprite):
+			sprite.modulate = start_mod
+		unit.scale = start_scale
+
+	if not is_instance_valid(unit) or unit.current_health <= 0:
+		return target_cell
+
+	var terrain = battle_grid_instance.get_terrain_on_cell(target_cell)
+	if is_instance_valid(terrain) and unit.has_method("process_terrain_effects"):
+		var dmg_dealt = await unit.process_terrain_effects(terrain)
+		var should_consume = terrain.consume_on_trigger
+		if terrain.effect_type == TerrainData.TerrainEffect.DAMAGE_ON_ENTER or should_consume:
+			var unit_label = unit.unit_data.unit_id if unit.unit_data else str(unit.name)
+			DebugLogger.log_info("Trap triggered on %s at %s: %d damage, consumed=%s (terrain=%s)" % [
+				unit_label, str(target_cell), dmg_dealt, str(should_consume), terrain.terrain_id
+			])
+		if should_consume:
+			battle_grid_instance.remove_terrain(target_cell)
+
+	return target_cell
+
+func _dash_unit_along_path(unit: Unit, path: Array[Vector2i]) -> Vector2i:
+	"""Legacy rychlý pohyb po buňkách — preferuj _rush / _teleport pro speciály."""
+	if path.size() <= 2:
+		return await _move_unit_along_path(unit, path, 0.1)
+	return await _rush_unit_along_path(unit, path)
 
 # Converts legacy damage_multiplier to additive bonus for DamageCalculator
 func _damage_multiplier_to_extra(unit: Unit, multiplier: float) -> int:
@@ -1667,14 +1814,19 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 							target._update_stats_and_emit_signal()
 							DebugLogger.log_info("Odstraněno %d debuffů" % statuses_to_remove.size())
 				else:
-					# poison aj.: value = síla; aoe_param_x = trvání (pokud > 0), jinak 1
+					# poison: value = DMG/turn; aoe_param_x = počet kol (povinně > 0)
 					# regeneration: duration = value (heal/turn i počet kol)
 					var duration = 1
+					var status_value = effect.value
 					if effect.string_value == "regeneration":
 						duration = effect.value
+					elif effect.string_value == "poison":
+						duration = effect.aoe_param_x if effect.aoe_param_x > 0 else 3
+						if has_node("/root/PlayerData"):
+							status_value += PlayerData.poison_damage_bonus
 					elif effect.aoe_param_x > 0:
 						duration = effect.aoe_param_x
-					target.apply_status(effect.string_value, effect.value, duration)
+					target.apply_status(effect.string_value, status_value, duration)
 			
 		CardEffectData.EffectType.GAIN_EXTRA_MOVE:
 			if target.has_method("gain_extra_move"): target.gain_extra_move()
@@ -2474,7 +2626,7 @@ func _rpc_apply_move(unit_index: int, cell_x: int, cell_y: int):
 	battle_grid_instance.place_object_on_cell(unit, target_cell, true)
 	var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(target_cell)
 	if is_instance_valid(terrain_on_cell) and unit.has_method("process_terrain_effects"):
-		var dmg_dealt = unit.process_terrain_effects(terrain_on_cell)
+		var dmg_dealt = await unit.process_terrain_effects(terrain_on_cell)
 		var should_consume = terrain_on_cell.consume_on_trigger
 		if terrain_on_cell.effect_type == TerrainData.TerrainEffect.DAMAGE_ON_ENTER or should_consume:
 			var unit_label = unit.unit_data.unit_id if unit.unit_data else str(unit.name)
@@ -2555,14 +2707,12 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 					unit.apply_status("burning", 2, 3)
 		
 		"teleport":
-			# Mage teleport - přesune se na cílovou pozici (landing cell stále spouští past)
+			# Mage teleport - blink na cílovou pozici (landing spouští past)
 			var target_pos = action.special_data.get("target_position", Vector2i(-1, -1))
 			if target_pos != Vector2i(-1, -1):
-				var teleport_path: Array[Vector2i] = [enemy_unit.grid_position, target_pos]
-				var land_pos = _resolve_path_with_terrain(enemy_unit, teleport_path)
-				battle_grid_instance.remove_object_by_instance(enemy_unit)
-				battle_grid_instance.place_object_on_cell(enemy_unit, land_pos, true)
-				await get_tree().create_timer(0.3).timeout
+				await _teleport_unit_to_cell(enemy_unit, target_pos)
+				if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
+					return
 		
 		"arcane_shield":
 			# Mage dá sobě block
@@ -2704,14 +2854,22 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 					_took_damage_last_turn = true
 		
 		"shadow_dash":
-			# Boss teleport na pozici vedle hráče (landing cell spouští past)
+			# Boss blink vedle hráče (landing spouští past)
 			var target_pos = action.special_data.get("target_position", Vector2i(-1, -1))
 			if target_pos != Vector2i(-1, -1):
-				var dash_path: Array[Vector2i] = [enemy_unit.grid_position, target_pos]
-				var land_pos = _resolve_path_with_terrain(enemy_unit, dash_path)
-				battle_grid_instance.remove_object_by_instance(enemy_unit)
-				battle_grid_instance.place_object_on_cell(enemy_unit, land_pos, true)
-				await get_tree().create_timer(0.3).timeout
+				await _teleport_unit_to_cell(enemy_unit, target_pos)
+				if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
+					return
+
+		"shadow_strike":
+			# Assassin blink na útočnou pozici
+			var target_pos = action.special_data.get("target_position", Vector2i(-1, -1))
+			if target_pos != Vector2i(-1, -1):
+				if enemy_unit.can_move():
+					enemy_unit.use_move_action()
+				await _teleport_unit_to_cell(enemy_unit, target_pos)
+				if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
+					return
 		
 		"hellfire":
 			# Boss AoE kolem sebe
@@ -2761,10 +2919,9 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 				var truncated: Array[Vector2i] = []
 				for i in range(move_dist + 1):
 					truncated.append(disengage_path[i])
-				var final_pos = _resolve_path_with_terrain(enemy_unit, truncated)
-				battle_grid_instance.remove_object_by_instance(enemy_unit)
-				battle_grid_instance.place_object_on_cell(enemy_unit, final_pos, true)
-				await get_tree().create_timer(0.3).timeout
+				await _dash_unit_along_path(enemy_unit, truncated)
+				if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
+					return
 		
 		# ===== DARK BEAST ABILITIES =====
 		"howl":

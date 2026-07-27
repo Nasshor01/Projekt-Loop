@@ -335,7 +335,7 @@ func _move_dummy_towards_player(dummy_unit: Unit, player_pos: Vector2i):
 		battle_grid_instance.place_object_on_cell(dummy_unit, target_cell, true)
 		var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(target_cell)
 		if is_instance_valid(terrain_on_cell):
-			dummy_unit.process_terrain_effects(terrain_on_cell)
+			await dummy_unit.process_terrain_effects(terrain_on_cell)
 			if terrain_on_cell.consume_on_trigger:
 				battle_grid_instance.remove_terrain(target_cell)
 		
@@ -353,7 +353,7 @@ func _move_dummy_adjacent(dummy_unit: Unit, player_pos: Vector2i):
 	battle_grid_instance.place_object_on_cell(dummy_unit, target_cell, true)
 	var terrain_on_cell = battle_grid_instance.get_terrain_on_cell(target_cell)
 	if is_instance_valid(terrain_on_cell):
-		dummy_unit.process_terrain_effects(terrain_on_cell)
+		await dummy_unit.process_terrain_effects(terrain_on_cell)
 		if terrain_on_cell.consume_on_trigger:
 			battle_grid_instance.remove_terrain(target_cell)
 

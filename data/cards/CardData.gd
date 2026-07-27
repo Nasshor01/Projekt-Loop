@@ -324,8 +324,9 @@ func _format_status_shorthand(effect: CardEffectData) -> String:
 		"regeneration":
 			return _num(effect.value) + " " + _img("regeneration")
 		"poison":
-			# value = stacks/strength; duration lives in tooltip (aoe_param_x)
-			return _num(effect.value) + " " + _img("poison")
+			# value = DMG/turn; aoe_param_x = počet kol
+			var turns = effect.aoe_param_x if effect.aoe_param_x > 0 else 3
+			return _num(effect.value) + " " + _img("poison") + " " + _turns(turns)
 		"aura_devotion", "aura_devotion_plus":
 			return _num(effect.value) + " " + _img("block")
 		"consecrated_weapon":

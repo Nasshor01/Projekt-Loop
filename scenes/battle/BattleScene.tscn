@@ -11,7 +11,7 @@
 [ext_resource type="PackedScene" uid="uid://d1e2f3g4h5i6j" path="res://scenes/ui/initiative_bar/InitiativeBar.tscn" id="9_abcde"]
 [ext_resource type="PackedScene" uid="uid://dah2k3m4n5p6q" path="res://scenes/ui/CardTooltip.tscn" id="10_tooltip"]
 [ext_resource type="Shader" uid="uid://m845njhhr6k5" path="res://art/shaders/space_background.gdshader" id="space_shader"]
-[ext_resource type="Texture2D" uid="uid://bdsf53uo4dyq5" path="res://art/sprites/backgrounds/bg_battle_ruined_arena-Sheet-export.png" id="space_tex"]
+[ext_resource type="Texture2D" uid="uid://b5cinf6xqdsui" path="res://art/icons/space_Background_4096x2048.png" id="space_tex"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_bg"]
 
@@ -19,9 +19,9 @@
 render_priority = 0
 shader = ExtResource("space_shader")
 shader_parameter/albedo_texture = ExtResource("space_tex")
-shader_parameter/scroll_speed_x = 0.0
-shader_parameter/scroll_speed_y = 0.0
-shader_parameter/brightness = 0.9
+shader_parameter/scroll_speed_x = 0.015
+shader_parameter/scroll_speed_y = 0.008
+shader_parameter/brightness = 0.85
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nnhtb"]
 albedo_color = Color(0.762404, 0.762404, 0.762404, 1)
