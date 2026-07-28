@@ -1,3 +1,4 @@
+res://scenes/ui/MainMenu.gd
 res://main.tscn
 res://art/ui/game_theme.tres
 res://data/encounters/first_battle.tres
@@ -108,8 +109,5 @@ res://scenes/ui/PassiveSkillUI.tscn
 res://data/skills/passive_skill_tree_manual.tscn
 res://scenes/ui/PassiveSkillNodeUI.tscn
 res://scenes/battle/arenas/ArenaDefault.tscn
-res://scenes/CharSelect/RunPrepScreen.gd
-res://scenes/ui/DevConsole.gd
-res://scripts/autoload/DebugLogger.gd
-res://scripts/autoload/SaveManager.gd
-res://scripts/data/MetaProgress.gd
+res://translations.en.translation
+res://translations.cs.translation

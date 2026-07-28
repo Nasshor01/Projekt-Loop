@@ -1,7 +1,6 @@
 # Soubor: scenes/ui/MainMenu.gd
 extends Control
 
-@onready var title_label: Label = $Label
 @onready var play_button: Button = $VBoxContainer/PlayButton
 @onready var village_button: Button = %VillageButton
 @onready var load_run_button: Button = %LoadRunButton
@@ -52,8 +51,6 @@ func _ready():
 	_update_version_label()
 
 func _update_ui_texts():
-	if title_label:
-		title_label.text = tr("game.title")
 	if play_button:
 		play_button.text = tr("ui.main_menu.new_game")
 	if village_button:
