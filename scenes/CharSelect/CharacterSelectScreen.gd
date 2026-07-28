@@ -27,15 +27,20 @@ func _ready():
 	continue_button.text = tr("ui.char_select.continue")
 	back_button.text = tr("ui.common.back")
 	
-	var level_text = TranslationHelper.tr_format("ui.char_select.level", {"value": SaveManager.meta_progress.player_level})
 	if paladin_name and paladin_subclass:
 		paladin_name.text = paladin_subclass.get_localized_name()
 	if trapper_name and trapper_subclass:
 		trapper_name.text = trapper_subclass.get_localized_name()
-	if paladin_level:
-		paladin_level.text = level_text
-	if trapper_level:
-		trapper_level.text = level_text
+	if paladin_level and paladin_subclass:
+		paladin_level.text = TranslationHelper.tr_format(
+			"ui.char_select.level",
+			{"value": SaveManager.meta_progress.get_hero_level(paladin_subclass.subclass_id)}
+		)
+	if trapper_level and trapper_subclass:
+		trapper_level.text = TranslationHelper.tr_format(
+			"ui.char_select.level",
+			{"value": SaveManager.meta_progress.get_hero_level(trapper_subclass.subclass_id)}
+		)
 	
 	paladin_panel.gui_input.connect(_on_paladin_gui_input)
 	trapper_panel.gui_input.connect(_on_trapper_gui_input)

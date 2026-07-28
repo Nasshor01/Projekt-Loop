@@ -465,7 +465,22 @@ func log_meta_progress():
 		return
 		
 	log_info("=== META PROGRESS ===", "META")
-	log_info("Total XP: %d" % SaveManager.meta_progress.total_xp, "META")
+	var hero_progress: Dictionary = SaveManager.meta_progress.hero_progress
+	if hero_progress.is_empty():
+		log_info("Legacy Total XP: %d / Level: %d" % [
+			SaveManager.meta_progress.total_xp,
+			SaveManager.meta_progress.player_level
+		], "META")
+	else:
+		for hero_id in hero_progress.keys():
+			log_info(
+				"Hero %s — Level %d, XP %d" % [
+					hero_id,
+					SaveManager.meta_progress.get_hero_level(hero_id),
+					SaveManager.meta_progress.get_hero_xp(hero_id)
+				],
+				"META"
+			)
 	var allocated_skills = SaveManager.meta_progress.allocated_skills
 	log_info("Unlocked skills: %d" % allocated_skills.size(), "META")
 	
@@ -799,8 +814,17 @@ func _build_full_game_state_text() -> String:
 	
 	lines.append("=== META PROGRESS ===")
 	if SaveManager:
-		lines.append("Total XP: %d" % SaveManager.meta_progress.total_xp)
-		lines.append("Player level: %d" % SaveManager.meta_progress.player_level)
+		var hero_progress: Dictionary = SaveManager.meta_progress.hero_progress
+		if hero_progress.is_empty():
+			lines.append("Total XP: %d" % SaveManager.meta_progress.total_xp)
+			lines.append("Player level: %d" % SaveManager.meta_progress.player_level)
+		else:
+			for hero_id in hero_progress.keys():
+				lines.append("Hero %s — Level %d, XP %d" % [
+					hero_id,
+					SaveManager.meta_progress.get_hero_level(hero_id),
+					SaveManager.meta_progress.get_hero_xp(hero_id)
+				])
 		lines.append("Skill points: %d" % SaveManager.meta_progress.skill_points)
 	else:
 		lines.append("Meta progress not available")

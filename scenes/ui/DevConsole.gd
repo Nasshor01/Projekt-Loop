@@ -245,13 +245,14 @@ func _cmd_reset_skill_points():
 		return
 	
 	var old_skill_points = meta.skill_points
-	var level = meta.player_level
+	var hero_id: String = SaveManager.resolve_hero_id()
+	var level: int = meta.get_hero_level(hero_id)
 	
 	# Zavoláme funkci pro přepočet skill points
 	save_manager.recalculate_skill_points()
 	
 	log_success("🔄 Skill points resetovány!")
-	log_message("  Level: %d" % level)
+	log_message("  Hero: %s Level: %d" % [hero_id, level])
 	log_message("  Staré skill points: %d" % old_skill_points)
 	log_message("  Nové skill points: %d" % meta.skill_points)
 	log_message("  Alokované skilly byly resetovány")

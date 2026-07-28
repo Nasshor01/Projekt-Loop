@@ -65,13 +65,17 @@ func _update_portrait() -> void:
 		portrait.texture = PALADIN_PORTRAIT
 
 func update_display():
-	var meta = SaveManager.meta_progress
-	var xp_needed = SaveManager.get_xp_for_next_level()
-	
-	level_label.text = TranslationHelper.tr_format("ui.run_prep.level", {"value": meta.player_level})
+	var hero_id := ""
+	if GameManager.selected_subclass_data:
+		hero_id = GameManager.selected_subclass_data.subclass_id
+	var level := SaveManager.meta_progress.get_hero_level(hero_id)
+	var xp := SaveManager.meta_progress.get_hero_xp(hero_id)
+	var xp_needed := SaveManager.get_xp_for_next_level(hero_id)
+
+	level_label.text = TranslationHelper.tr_format("ui.run_prep.level", {"value": level})
 	if is_instance_valid(points_label):
 		points_label.text = ""
-	xp_label.text = TranslationHelper.tr_format("ui.run_prep.xp", {"current": meta.total_xp, "max": xp_needed})
-	
+	xp_label.text = TranslationHelper.tr_format("ui.run_prep.xp", {"current": xp, "max": xp_needed})
+
 	xp_bar.max_value = xp_needed
-	xp_bar.value = meta.total_xp
+	xp_bar.value = xp

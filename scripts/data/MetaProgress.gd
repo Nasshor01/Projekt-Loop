@@ -2,8 +2,13 @@
 class_name MetaProgress
 extends Resource
 
+## Legacy shared XP/level — kept for save migration; prefer hero_progress.
 @export var total_xp: int = 0
 @export var player_level: int = 1
+
+## Per-hero meta XP. Keys = subclass_id ("paladin", "trapper", ...).
+## Value = { "level": int, "xp": int }
+@export var hero_progress: Dictionary = {}
 
 # Legacy — pasivní skill tree je vypnutý; pole se při loadu čistí.
 @export var skill_points: int = 0
@@ -16,11 +21,45 @@ extends Resource
 ## building_id -> level (int)
 @export var building_levels: Dictionary = {}
 
+const DEFAULT_HERO_IDS: PackedStringArray = ["paladin", "trapper"]
+
 func clear_skill_tree_progress() -> bool:
 	var had_data := skill_points != 0 or not allocated_skills.is_empty()
 	skill_points = 0
 	allocated_skills.clear()
 	return had_data
+
+## One-time: copy old shared level into each known hero so nothing is lost.
+func migrate_legacy_hero_progress() -> bool:
+	if not hero_progress.is_empty():
+		return false
+	if player_level <= 1 and total_xp <= 0:
+		return false
+	for hero_id in DEFAULT_HERO_IDS:
+		hero_progress[hero_id] = {"level": player_level, "xp": total_xp}
+	return true
+
+func get_hero_entry(hero_id: String) -> Dictionary:
+	if hero_id.is_empty():
+		hero_id = "unknown"
+	if not hero_progress.has(hero_id) or typeof(hero_progress[hero_id]) != TYPE_DICTIONARY:
+		hero_progress[hero_id] = {"level": 1, "xp": 0}
+	var entry: Dictionary = hero_progress[hero_id]
+	if not entry.has("level"):
+		entry["level"] = 1
+	if not entry.has("xp"):
+		entry["xp"] = 0
+	hero_progress[hero_id] = entry
+	return entry
+
+func get_hero_level(hero_id: String) -> int:
+	return int(get_hero_entry(hero_id).get("level", 1))
+
+func get_hero_xp(hero_id: String) -> int:
+	return int(get_hero_entry(hero_id).get("xp", 0))
+
+func set_hero_progress(hero_id: String, level: int, xp: int) -> void:
+	hero_progress[hero_id] = {"level": max(1, level), "xp": max(0, xp)}
 
 func get_building_level(building_id: String) -> int:
 	return int(building_levels.get(building_id, 0))

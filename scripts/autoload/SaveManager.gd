@@ -81,25 +81,51 @@ func _perform_clean_reset():
 # Meta Progress
 #==============================================================================
 
-func get_xp_for_next_level() -> int:
-	# Plynulejší progrese: L1->L2 = 80 XP, L5->L6 = 200 XP, L10->L11 = 350 XP
-	return 50 + meta_progress.player_level * 30
+func resolve_hero_id(hero_id: String = "") -> String:
+	if not hero_id.is_empty():
+		return hero_id
+	if has_node("/root/PlayerData") and is_instance_valid(PlayerData.selected_subclass):
+		var sid: String = str(PlayerData.selected_subclass.subclass_id)
+		if not sid.is_empty():
+			return sid
+	if has_node("/root/GameManager") and is_instance_valid(GameManager.selected_subclass_data):
+		var sid2: String = str(GameManager.selected_subclass_data.subclass_id)
+		if not sid2.is_empty():
+			return sid2
+	return "paladin"
 
-func _check_for_level_up():
-	var xp_needed = get_xp_for_next_level()
-	while meta_progress.total_xp >= xp_needed:
-		meta_progress.total_xp -= xp_needed
-		meta_progress.player_level += 1
+func get_xp_for_next_level(hero_id: String = "") -> int:
+	# Plynulejší progrese: L1->L2 = 80 XP, L5->L6 = 200 XP, L10->L11 = 350 XP
+	hero_id = resolve_hero_id(hero_id)
+	return 50 + meta_progress.get_hero_level(hero_id) * 30
+
+func _check_for_level_up(hero_id: String = ""):
+	hero_id = resolve_hero_id(hero_id)
+	var level := meta_progress.get_hero_level(hero_id)
+	var xp := meta_progress.get_hero_xp(hero_id)
+	var xp_needed := 50 + level * 30
+	while xp >= xp_needed:
+		xp -= xp_needed
+		level += 1
 		# Skill tree vypnutý — body se neudělují
-		print("GRATULACE! Hráč postoupil na level %d." % meta_progress.player_level)
-		xp_needed = get_xp_for_next_level()
+		print("GRATULACE! %s postoupil na level %d." % [hero_id, level])
+		xp_needed = 50 + level * 30
+	meta_progress.set_hero_progress(hero_id, level, xp)
+	# Legacy mirror (current hero) for old debug/UI readers
+	meta_progress.player_level = level
+	meta_progress.total_xp = xp
 
 func save_meta_progress():
 	var error = ResourceSaver.save(meta_progress, META_SAVE_PATH)
 	if error != OK:
 		DebugLogger.log_error("Failed to save meta progress! Error: %d" % error, "SAVE")
 	else:
-		DebugLogger.log_save_load("save_meta_progress", true, "Level: %d, XP: %d" % [meta_progress.player_level, meta_progress.total_xp])
+		var hero_id := resolve_hero_id()
+		DebugLogger.log_save_load(
+			"save_meta_progress",
+			true,
+			"Hero %s Level: %d, XP: %d" % [hero_id, meta_progress.get_hero_level(hero_id), meta_progress.get_hero_xp(hero_id)]
+		)
 	emit_signal("meta_progress_changed")
 
 func load_meta_progress():
@@ -108,16 +134,25 @@ func load_meta_progress():
 	else:
 		meta_progress = MetaProgress.new()
 		print("Žádná uložená data nenalezena, vytvářím nová.")
+	var dirty := false
 	if meta_progress and meta_progress.clear_skill_tree_progress():
 		print("SaveManager: vyčištěn legacy skill tree progress.")
+		dirty = true
+	if meta_progress and meta_progress.migrate_legacy_hero_progress():
+		print("SaveManager: migrován shared level na per-hero progress.")
+		dirty = true
+	if dirty:
 		save_meta_progress()
 	emit_signal("meta_progress_changed")
 
-func add_xp(amount: int):
-	if amount <= 0: return
-	
-	meta_progress.total_xp += amount
-	_check_for_level_up()
+func add_xp(amount: int, hero_id: String = ""):
+	if amount <= 0:
+		return
+	hero_id = resolve_hero_id(hero_id)
+	var level := meta_progress.get_hero_level(hero_id)
+	var xp := meta_progress.get_hero_xp(hero_id) + amount
+	meta_progress.set_hero_progress(hero_id, level, xp)
+	_check_for_level_up(hero_id)
 	save_meta_progress()
 
 func add_shards(amount: int) -> void:
