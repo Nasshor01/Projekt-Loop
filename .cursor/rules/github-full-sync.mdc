@@ -1,0 +1,14 @@
+---
+description: Always push the full local project state to GitHub
+alwaysApply: true
+---
+
+# GitHub sync = whole project
+
+When the user asks to push / commit / "hoď na GitHub" / sync to GitHub:
+
+- Commit and push the **entire local project state**, not a curated subset of "relevant" files.
+- Include everything needed to continue elsewhere exactly as-is: scenes, scripts, art, data, addons, `project.godot`, and tracked `.godot/` editor/import/cache files (force-add if gitignored but already tracked in this repo).
+- Do **not** skip leftover scenes, import files, or editor state because they seem unused or noisy.
+- Prefer the existing repo style: `chore: sync full local project state to GitHub` when doing a catch-all sync.
+- Only exclude true secrets (e.g. `secrets.cfg` per `.gitignore`).
