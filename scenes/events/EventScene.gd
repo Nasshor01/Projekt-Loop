@@ -29,6 +29,8 @@ var rng: RandomNumberGenerator
 var pending_card_removal: bool = false
 var pending_card_upgrade: bool = false
 var cards_to_remove_count: int = 0
+var _preview_upgraded_faces: bool = true
+var _upgrade_preview_toggle: Button = null
 
 var _is_coop: bool = false
 var _is_host: bool = true
@@ -47,6 +49,7 @@ func _ready():
 		card_removal_viewer.visible = false
 	if card_removal_viewer.has_signal("card_right_clicked"):
 		card_removal_viewer.card_right_clicked.connect(_on_card_right_clicked_tooltip)
+	_ensure_upgrade_preview_toggle()
 	
 	continue_button.pressed.connect(_on_continue_pressed)
 	
@@ -300,19 +303,24 @@ func _open_card_removal_screen():
 		# Vytvoř viewer pokud neexistuje
 		card_removal_viewer = CardPileViewerScene.instantiate()
 		$UI.add_child(card_removal_viewer)
+		if card_removal_viewer.has_signal("card_right_clicked"):
+			card_removal_viewer.card_right_clicked.connect(_on_card_right_clicked_tooltip)
 	
 	# Skryj result panel
 	result_panel.visible = false
+	if is_instance_valid(_upgrade_preview_toggle):
+		_upgrade_preview_toggle.visible = false
 	
 	# Zobraz karty
 	card_removal_viewer.visible = true
-	card_removal_viewer.show_cards(PlayerData.master_deck)
+	var deck_cards: Array[CardData] = []
+	for card in PlayerData.master_deck:
+		if card:
+			deck_cards.append(card)
+	card_removal_viewer.show_cards(deck_cards)
 	
-	# Připoj signály pro kliknutí na karty (signál card_clicked emituje 1 argument – card_data)
-	for card_ui in card_removal_viewer.get_node("MarginContainer/VBoxContainer/ScrollContainer/GridContainer").get_children():
-		if card_ui.has_signal("card_clicked"):
-			if not card_ui.is_connected("card_clicked", _on_removal_card_clicked):
-				card_ui.card_clicked.connect(_on_removal_card_clicked)
+	if not card_removal_viewer.card_clicked_in_viewer.is_connected(_on_removal_card_clicked):
+		card_removal_viewer.card_clicked_in_viewer.connect(_on_removal_card_clicked)
 	# Zavření vieweru (Zavřít / Escape) vrátí na result panel
 	_connect_card_removal_viewer_close()
 
@@ -326,22 +334,50 @@ func _on_removal_card_clicked(card_data: CardData):
 	# Pokud už není co odstranit, pokračuj
 	if cards_to_remove_count <= 0:
 		pending_card_removal = false
-		card_removal_viewer.visible = false
+		if card_removal_viewer.has_method("hide_and_clear"):
+			card_removal_viewer.hide_and_clear()
+		else:
+			card_removal_viewer.visible = false
 		result_panel.visible = true
 		
 		# Aktualizuj result text
 		result_text.append_text("\n[color=gray]" + TranslationHelper.tr_format("event.result.removed_card", {"name": card_data.get_localized_name()}) + "[/color]")
 
+func _ensure_upgrade_preview_toggle() -> void:
+	if is_instance_valid(_upgrade_preview_toggle):
+		return
+	_upgrade_preview_toggle = Button.new()
+	_upgrade_preview_toggle.name = "UpgradePreviewToggle"
+	_upgrade_preview_toggle.visible = false
+	_upgrade_preview_toggle.toggle_mode = true
+	_upgrade_preview_toggle.button_pressed = true
+	_upgrade_preview_toggle.text = tr("ui.rest.preview_upgrades_on")
+	_upgrade_preview_toggle.pressed.connect(_on_upgrade_preview_toggle_pressed)
+	$UI.add_child(_upgrade_preview_toggle)
+	_upgrade_preview_toggle.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_upgrade_preview_toggle.offset_left = 24
+	_upgrade_preview_toggle.offset_top = 24
+	_upgrade_preview_toggle.offset_right = 280
+	_upgrade_preview_toggle.offset_bottom = 64
+	_upgrade_preview_toggle.z_index = 250
+
+func _on_upgrade_preview_toggle_pressed() -> void:
+	_preview_upgraded_faces = _upgrade_preview_toggle.button_pressed
+	_upgrade_preview_toggle.text = tr("ui.rest.preview_upgrades_on") if _preview_upgraded_faces else tr("ui.rest.preview_upgrades_off")
+	if card_removal_viewer and card_removal_viewer.has_method("set_upgrade_preview_faces"):
+		card_removal_viewer.set_upgrade_preview_faces(_preview_upgraded_faces)
+
 func _open_card_upgrade_screen():
-	"""Otevře obrazovku pro výběr karty k vylepšení"""
+	"""Otevře výběr karty k vylepšení — stejný UX jako Rest (náhled +/−)."""
 	if not card_removal_viewer:
 		card_removal_viewer = CardPileViewerScene.instantiate()
 		$UI.add_child(card_removal_viewer)
+		if card_removal_viewer.has_signal("card_right_clicked"):
+			card_removal_viewer.card_right_clicked.connect(_on_card_right_clicked_tooltip)
 	
-	# Filtruj jen upgradeable karty
-	var upgradeable_cards = []
+	var upgradeable_cards: Array[CardData] = []
 	for card in PlayerData.master_deck:
-		if card and not card.is_upgraded and card.upgraded_version:
+		if card and not card.is_upgraded and is_instance_valid(card.upgraded_version):
 			upgradeable_cards.append(card)
 	
 	if upgradeable_cards.is_empty():
@@ -349,30 +385,38 @@ func _open_card_upgrade_screen():
 		result_text.append_text("\n[color=gray]" + tr("event.reward.upgrade_none") + "[/color]")
 		return
 	
-	# Skryj result panel
 	result_panel.visible = false
+	_preview_upgraded_faces = true
+	_ensure_upgrade_preview_toggle()
+	_upgrade_preview_toggle.visible = true
+	_upgrade_preview_toggle.button_pressed = true
+	_upgrade_preview_toggle.text = tr("ui.rest.preview_upgrades_on")
 	
-	# Zobraz upgradeable karty
 	card_removal_viewer.visible = true
-	card_removal_viewer.show_cards(upgradeable_cards)
+	if card_removal_viewer.has_method("show_upgrade_selection"):
+		card_removal_viewer.show_upgrade_selection(upgradeable_cards, _preview_upgraded_faces)
+	else:
+		card_removal_viewer.show_cards(upgradeable_cards)
 	
-	# Připoj signály (signál card_clicked emituje 1 argument – card_data)
-	for card_ui in card_removal_viewer.get_node("MarginContainer/VBoxContainer/ScrollContainer/GridContainer").get_children():
-		if card_ui.has_signal("card_clicked"):
-			if not card_ui.is_connected("card_clicked", _on_upgrade_card_clicked):
-				card_ui.card_clicked.connect(_on_upgrade_card_clicked)
+	if not card_removal_viewer.card_clicked_in_viewer.is_connected(_on_upgrade_card_clicked):
+		card_removal_viewer.card_clicked_in_viewer.connect(_on_upgrade_card_clicked)
 	_connect_card_removal_viewer_close()
 
 func _on_upgrade_card_clicked(card_data: CardData):
-	# Vylepši kartu
+	# Vylepši kartu (card_data je vždy base, i když face ukazuje upgraded)
 	var index = PlayerData.master_deck.find(card_data)
-	if index != -1 and card_data.upgraded_version:
+	if index != -1 and is_instance_valid(card_data.upgraded_version):
 		var upgraded = card_data.upgraded_version
 		PlayerData.master_deck[index] = upgraded
 		print(TranslationHelper.tr_format("event.card_upgraded", {"from": card_data.get_localized_name(), "to": upgraded.get_localized_name()}))
 		
 		pending_card_upgrade = false
-		card_removal_viewer.visible = false
+		if is_instance_valid(_upgrade_preview_toggle):
+			_upgrade_preview_toggle.visible = false
+		if card_removal_viewer.has_method("hide_and_clear"):
+			card_removal_viewer.hide_and_clear()
+		else:
+			card_removal_viewer.visible = false
 		result_panel.visible = true
 		
 		# Aktualizuj result text
@@ -388,7 +432,12 @@ func _connect_card_removal_viewer_close():
 
 func _on_card_removal_viewer_closed():
 	"""Zavření vieweru bez výběru karty – vrátí na result panel, aby hráč neuvízl na šedé obrazovce."""
-	card_removal_viewer.visible = false
+	if is_instance_valid(_upgrade_preview_toggle):
+		_upgrade_preview_toggle.visible = false
+	if card_removal_viewer.has_method("hide_and_clear"):
+		card_removal_viewer.hide_and_clear()
+	else:
+		card_removal_viewer.visible = false
 	result_panel.visible = true
 	if pending_card_removal:
 		pending_card_removal = false

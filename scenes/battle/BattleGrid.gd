@@ -574,9 +574,25 @@ func get_cells_for_aoe(origin_cell: Vector2i, aoe_type: CardEffectData.AreaOfEff
 	var cells: Array[Vector2i] = []
 	match aoe_type:
 		CardEffectData.AreaOfEffectType.ROW:
-			for x in range(grid_columns): cells.append(Vector2i(x, origin_cell.y))
+			# param_y = row thickness (1 = single row, 3 = center ±1, …)
+			var row_span: int = maxi(1, param_y)
+			var row_radius: int = row_span / 2
+			for dy in range(-row_radius, row_radius + 1):
+				var row_y: int = origin_cell.y + dy
+				if row_y < 0 or row_y >= grid_rows:
+					continue
+				for x in range(grid_columns):
+					cells.append(Vector2i(x, row_y))
 		CardEffectData.AreaOfEffectType.COLUMN:
-			for y in range(grid_rows): cells.append(Vector2i(origin_cell.x, y))
+			# param_x = column thickness (1 = single column, 3 = center ±1, …)
+			var col_span: int = maxi(1, param_x)
+			var col_radius: int = col_span / 2
+			for dx in range(-col_radius, col_radius + 1):
+				var col_x: int = origin_cell.x + dx
+				if col_x < 0 or col_x >= grid_columns:
+					continue
+				for y in range(grid_rows):
+					cells.append(Vector2i(col_x, y))
 		CardEffectData.AreaOfEffectType.SQUARE_X_BY_Y:
 			for y in range(origin_cell.y, origin_cell.y + param_y):
 				for x in range(origin_cell.x, origin_cell.x + param_x):

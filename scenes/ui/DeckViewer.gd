@@ -138,11 +138,11 @@ func _add_upgrade_card_to_grid(base_card: CardData, display_data: CardData, show
 	var card_ui := card_instance as CardUI
 	card_ui.apply_display_mode(CardUI.DisplayMode.DECK)
 	card_ui.set_meta("upgrade_base_card", base_card)
-	# Always emit the BASE card on click (even when face shows upgraded)
+	# Click always emits BASE (deck swap target). Tooltip/hover use the visible face.
 	card_ui.card_clicked.connect(func(_ignored: CardData): _on_card_clicked_in_viewer(base_card))
-	card_ui.card_right_clicked.connect(func(_ignored: CardData): _on_card_right_clicked_in_viewer(base_card))
+	card_ui.card_right_clicked.connect(func(_ignored: CardData): _on_card_right_clicked_in_viewer(display_data))
 	card_ui.gui_input.connect(_on_card_selected_input.bind(base_card))
-	card_ui.mouse_entered.connect(_on_grid_card_hovered.bind(base_card))
+	card_ui.mouse_entered.connect(_on_grid_card_hovered.bind(display_data))
 	card_ui.mouse_exited.connect(_on_grid_card_unhovered)
 	if show_as_upgraded:
 		_apply_upgrade_face_chrome(card_ui)

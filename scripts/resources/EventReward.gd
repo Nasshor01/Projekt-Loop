@@ -14,12 +14,13 @@ const EVENT_ARTIFACT_POOL = preload("res://data/artifacts/pool/event_reward_pool
 @export var add_card: CardData = null
 @export var add_random_card: bool = false
 @export var card_rarity: CardData.CardRarity = CardData.CardRarity.COMMON
-@export var remove_card: bool = false  # Otevře card removal screen
-@export var remove_specific_card: CardData = null  # Odstraní konkrétní kartu
-@export var upgrade_random_card: bool = false
-@export var upgrade_specific_card: CardData = null
-@export var upgrade_all_cards: bool = false
-@export var transform_card: bool = false  # Promění kartu v jinou stejné rarity
+	@export var remove_card: bool = false  # Otevře card removal screen
+	@export var remove_specific_card: CardData = null  # Odstraní konkrétní kartu
+	@export var upgrade_card: bool = false  # Otevře výběr karty k upgradu (jako Rest)
+	@export var upgrade_random_card: bool = false
+	@export var upgrade_specific_card: CardData = null
+	@export var upgrade_all_cards: bool = false
+	@export var transform_card: bool = false  # Promění kartu v jinou stejné rarity
 
 @export_group("Artefakty")
 @export var add_artifact: ArtifactsData = null # Odměna konkrétního artefaktu
@@ -68,6 +69,10 @@ func apply_reward(results_log: Array = []):
 			results_log.append("[color=cyan]" + TranslationHelper.tr_format("event.reward.random_card", {"name": random_card.get_localized_name()}) + "[/color]")
 	
 	# Upgrade karet
+	if upgrade_card:
+		pending_card_upgrade = true
+		results_log.append("[color=gray]" + tr("event.reward.upgrade_card_select") + "[/color]")
+	
 	if upgrade_random_card:
 		_upgrade_random_card(results_log)
 	
@@ -223,6 +228,8 @@ func get_reward_description() -> String:
 		parts.append(TranslationHelper.tr_format("event.reward.desc_card", {"name": add_card.get_localized_name()}))
 	if add_random_card:
 		parts.append(TranslationHelper.tr_format("event.reward.desc_random_card", {"rarity": tr("card.rarity." + CardData.CardRarity.keys()[card_rarity].to_lower())}))
+	if upgrade_card:
+		parts.append(tr("event.reward.desc_upgrade_card"))
 	if upgrade_random_card:
 		parts.append(tr("event.reward.desc_upgrade_random"))
 	if upgrade_all_cards:
