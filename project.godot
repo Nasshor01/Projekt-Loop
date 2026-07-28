@@ -40,6 +40,10 @@ MusicManager="*res://scripts/autoload/MusicManager.gd"
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/arena_painter/plugin.cfg")
+
 [gui]
 
 theme/custom="res://art/ui/game_theme.tres"

@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://drcylmyjefmn0"]
+[gd_scene load_steps=15 format=3 uid="uid://drcylmyjefmn0"]
 
 [ext_resource type="Script" uid="uid://d3ytuwmimqlg4" path="res://scenes/battle/BattleScene.gd" id="1_vd1me"]
 [ext_resource type="Resource" uid="uid://d118t8olbc47a" path="res://data/encounters/first_battle.tres" id="2_q8wks"]
@@ -22,14 +22,6 @@ shader_parameter/albedo_texture = ExtResource("space_tex")
 shader_parameter/scroll_speed_x = 0.015
 shader_parameter/scroll_speed_y = 0.008
 shader_parameter/brightness = 0.85
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nnhtb"]
-albedo_color = Color(0.762404, 0.762404, 0.762404, 1)
-roughness = 0.5
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rpe18"]
-albedo_color = Color(0.230315, 0.230315, 0.230315, 1)
-roughness = 0.5
 
 [node name="BattleScene" type="Node3D" node_paths=PackedStringArray("camera_3d")]
 script = ExtResource("1_vd1me")
@@ -91,8 +83,6 @@ projection = 1
 size = 20.0
 
 [node name="BattleGrid" parent="." instance=ExtResource("2_t3o3d")]
-material_light = SubResource("StandardMaterial3D_nnhtb")
-material_dark = SubResource("StandardMaterial3D_rpe18")
 grid_line_color = Color(0.5, 0.5, 0.5, 0.5)
 highlight_color = Color(1, 1, 0, 0.588235)
 movement_highlight_color = Color(0.2, 0.8, 0.2, 0.588235)

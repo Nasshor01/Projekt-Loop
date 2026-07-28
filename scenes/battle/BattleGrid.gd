@@ -6,10 +6,16 @@ extends Node3D
 @export var floor_mesh: Mesh 
 @export var cursor_mesh: Mesh
 
-# --- VZHLED MŘÍŽKY (ŠACHOVNICE) ---
+# --- VZHLED MŘÍŽKY ---
 @export_group("Grid Appearance")
-@export var material_light: StandardMaterial3D # Světlé políčko
-@export var material_dark: StandardMaterial3D  # Tmavé políčko
+@export var material_light: StandardMaterial3D # Fallback světlé políčko
+@export var material_dark: StandardMaterial3D  # Fallback tmavé políčko
+@export_group("Arena Floor")
+## 3D arena namalovaná v editoru (ArenaDefault). Null = fallback light/dark.
+@export var arena_floor_scene: PackedScene
+@export var floor_atlas: Texture2D
+@export var floor_tile_pixel_size: int = 64
+@export var floor_tint: Color = Color(0.85, 0.82, 0.78, 1.0)
 # ----------------------------------
 
 # --- PŮVODNÍ NASTAVENÍ ---
@@ -43,6 +49,13 @@ var _terrain_visuals: Dictionary = {}
 ## Floor tile meshes for tint highlights (keyed by grid cell).
 var _floor_tiles: Dictionary = {}
 var _floor_tile_is_light: Dictionary = {}
+## Base material per cell — used when resetting / tinting.
+var _floor_base_materials: Dictionary = {}
+## Cache: atlas coord -> StandardMaterial3D
+var _materials_by_atlas_coord: Dictionary = {}
+var _floor_atlas_image: Image = null
+## Namalovaná arena (data); vizuály floor tiles se staví do _terrain_container.
+var _arena_floor: ArenaFloor = null
 ## Flat trap sprites that yaw-follow the camera.
 var _yaw_follow_sprites: Array[Sprite3D] = []
 var _highlight_tweens: Array[Tween] = []
@@ -105,6 +118,9 @@ func build_from_shape(shape_array: Array):
 	terrain_layer.clear()
 	_floor_tiles.clear()
 	_floor_tile_is_light.clear()
+	_floor_base_materials.clear()
+	_materials_by_atlas_coord.clear()
+	_floor_atlas_image = null
 	_yaw_follow_sprites.clear()
 	for spr in _terrain_visuals.values():
 		if is_instance_valid(spr):
@@ -121,6 +137,9 @@ func build_from_shape(shape_array: Array):
 	else:
 		grid_columns = 0
 
+	_ensure_arena_floor()
+	_ensure_floor_atlas_image()
+
 	for y in range(grid_rows):
 		var row_string = shape_array[y]
 		for x in range(row_string.length()):
@@ -135,12 +154,88 @@ func build_from_shape(shape_array: Array):
 					
 					var is_light := (x + y) % 2 == 0
 					_floor_tile_is_light[pos] = is_light
-					if material_light and material_dark:
-						tile.material_override = material_light if is_light else material_dark
+					var base_mat := _make_floor_material_for_cell(pos, is_light)
+					_floor_base_materials[pos] = base_mat
+					if base_mat:
+						tile.material_override = base_mat
 					
 					_terrain_container.add_child(tile)
-					tile.position = Vector3(x * cell_size_3d, -0.1, y * cell_size_3d)
+					tile.position = Vector3(x * cell_size_3d, -0.01, y * cell_size_3d)
 					_floor_tiles[pos] = tile
+
+func _ensure_arena_floor() -> void:
+	if is_instance_valid(_arena_floor):
+		return
+	if arena_floor_scene == null:
+		return
+	var inst := arena_floor_scene.instantiate()
+	if inst is ArenaFloor:
+		_arena_floor = inst
+		# Jen data — nepřidáváme do stromu (vizuál si staví BattleGrid).
+	else:
+		inst.queue_free()
+
+func _ensure_floor_atlas_image() -> void:
+	if _floor_atlas_image != null:
+		return
+	var atlas: Texture2D = floor_atlas
+	if atlas == null and is_instance_valid(_arena_floor):
+		atlas = _arena_floor.floor_atlas
+	if atlas == null:
+		return
+	_floor_atlas_image = atlas.get_image()
+	if _floor_atlas_image == null:
+		push_warning("BattleGrid: floor atlas get_image() selhalo.")
+		return
+	if _floor_atlas_image.is_compressed():
+		_floor_atlas_image.decompress()
+
+func _arena_coord_for_shape_cell(cell: Vector2i) -> Vector2i:
+	if not is_instance_valid(_arena_floor):
+		return Vector2i(0, 0) if (cell.x + cell.y) % 2 == 0 else Vector2i(1, 0)
+	var aw: int = _arena_floor.grid_width
+	var ah: int = _arena_floor.grid_height
+	var ox: int = int(floor(float(aw - grid_columns) * 0.5))
+	var oy: int = int(floor(float(ah - grid_rows) * 0.5))
+	return _arena_floor.get_atlas_coord(Vector2i(cell.x + ox, cell.y + oy))
+
+func _material_for_atlas_coord(coord: Vector2i) -> StandardMaterial3D:
+	if _materials_by_atlas_coord.has(coord):
+		return _materials_by_atlas_coord[coord]
+	if _floor_atlas_image == null:
+		return null
+	var px: int = floor_tile_pixel_size
+	if is_instance_valid(_arena_floor):
+		px = _arena_floor.tile_pixel_size
+	var region := Rect2i(coord.x * px, coord.y * px, px, px)
+	if not Rect2i(Vector2i.ZERO, _floor_atlas_image.get_size()).encloses(region):
+		return null
+	var tile_img: Image = _floor_atlas_image.get_region(region)
+	var tex := ImageTexture.create_from_image(tile_img)
+	var mat := StandardMaterial3D.new()
+	var tint := floor_tint
+	if is_instance_valid(_arena_floor):
+		tint = _arena_floor.floor_tint
+	mat.albedo_color = tint
+	mat.albedo_texture = tex
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	mat.roughness = 0.9
+	_materials_by_atlas_coord[coord] = mat
+	return mat
+
+func _make_floor_material_for_cell(cell: Vector2i, is_light: bool) -> StandardMaterial3D:
+	if is_instance_valid(_arena_floor) or floor_atlas != null:
+		var atlas_coord := _arena_coord_for_shape_cell(cell)
+		var mat := _material_for_atlas_coord(atlas_coord)
+		if mat:
+			return mat
+	return material_light if is_light else material_dark
+
+func _get_base_floor_material(cell: Vector2i) -> StandardMaterial3D:
+	if _floor_base_materials.has(cell):
+		return _floor_base_materials[cell]
+	var is_light: bool = _floor_tile_is_light.get(cell, false)
+	return _make_floor_material_for_cell(cell, is_light)
 
 func is_cell_active(grid_position: Vector2i) -> bool:
 	return _active_cells.has(grid_position)
@@ -269,16 +364,15 @@ func _reset_floor_tile_materials() -> void:
 		var tile: MeshInstance3D = _floor_tiles[cell]
 		if not is_instance_valid(tile):
 			continue
-		var is_light: bool = _floor_tile_is_light.get(cell, false)
-		if material_light and material_dark:
-			tile.material_override = material_light if is_light else material_dark
+		var base: StandardMaterial3D = _get_base_floor_material(cell)
+		if base:
+			tile.material_override = base
 
 func _apply_floor_tint(cell: Vector2i, info: Dictionary) -> void:
 	var tile: MeshInstance3D = _floor_tiles.get(cell)
 	if not is_instance_valid(tile):
 		return
-	var is_light: bool = _floor_tile_is_light.get(cell, false)
-	var base: StandardMaterial3D = material_light if is_light else material_dark
+	var base: StandardMaterial3D = _get_base_floor_material(cell)
 	if not base:
 		return
 	var mat := base.duplicate() as StandardMaterial3D

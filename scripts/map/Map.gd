@@ -8,6 +8,22 @@ const ConnectionLineScene = preload("res://scenes/map/ConnectionLine.tscn")
 const VISITED_PATH_COLOR = Color.GOLD
 const REACHABLE_PATH_COLOR = Color.WHITE
 
+# Target on-screen icon size in world pixels (independent of source texture size).
+const ICON_TARGET_SIZE := {
+	"boss": 300.0,
+	"rest": 48.0,
+	"shop": 44.0,
+	"event": 54.0,
+	"default": 46.0,
+}
+const CAMERA_HORIZONTAL_PADDING := 220.0
+const CAMERA_VERTICAL_PADDING := 180.0
+const CAMERA_SCROLL_STEP := 90.0
+const CAMERA_MAX_WIDTH_ZOOM := 1.05
+# Leave room for legend + seed panel on the left so nodes don't overlap UI.
+const CAMERA_LEFT_UI_MARGIN := 210.0
+const CAMERA_RIGHT_UI_MARGIN := 40.0
+
 # --- Seznamy možných soubojů ---
 var monster_encounters = [
 	"res://data/encounters/first_battle.tres",
@@ -59,6 +75,10 @@ var node_names = {
 @onready var random_seed_button: Button = $CanvasLayer/Panel/VBoxContainer/RandomSeedButton
 @onready var camera: Camera2D = $Camera2D
 @onready var dev_console: CanvasLayer = $DevConsole
+
+var _map_center_x: float = 0.0
+var _camera_y_min: float = 0.0
+var _camera_y_max: float = 0.0
 
 func _ready():
 	# Tato funkce se volá při startu scény
@@ -150,20 +170,7 @@ func _render_map_visuals():
 		if node_textures.has(node_data.type):
 			var sprite = map_node_instance.get_node("Sprite2D")
 			sprite.texture = node_textures[node_data.type]
-			
-			# --- ZMĚNA ZDE ---
-			# Rozšířené nastavení velikosti pro různé typy uzlů
-			match node_data.type:
-				MapNodeResource.NodeType.BOSS:
-					sprite.scale = Vector2(0.17, 0.17)      # Velký boss
-				MapNodeResource.NodeType.REST:
-					sprite.scale = Vector2(0.04, 0.04)      # Campfire je o něco větší
-				MapNodeResource.NodeType.SHOP:
-					sprite.scale = Vector2(0.028, 0.028)    # Obchod je o něco menší
-				_: # Znak _ znamená "pro všechny ostatní případy"
-					# Výchozí velikost pro ostatní ikony (Monster, Elite, Event, atd.)
-					sprite.scale = Vector2(0.03125, 0.03125)
-			# --- KONEC ZMĚNY ---
+			sprite.scale = _icon_scale_for_type(node_data.type, sprite.texture)
 
 		map_node_instance.node_clicked.connect(_on_map_node_clicked)
 		
@@ -172,6 +179,27 @@ func _render_map_visuals():
 		
 		add_child(map_node_instance)
 		map_nodes_visual[node_data] = map_node_instance
+
+func _icon_scale_for_type(node_type: MapNodeResource.NodeType, texture: Texture2D) -> Vector2:
+	if texture == null:
+		return Vector2.ONE
+	var tex_size := float(maxi(texture.get_width(), texture.get_height()))
+	if tex_size <= 0.0:
+		return Vector2.ONE
+	var target := float(ICON_TARGET_SIZE["default"])
+	match node_type:
+		MapNodeResource.NodeType.BOSS:
+			target = float(ICON_TARGET_SIZE["boss"])
+		MapNodeResource.NodeType.REST:
+			target = float(ICON_TARGET_SIZE["rest"])
+		MapNodeResource.NodeType.SHOP:
+			target = float(ICON_TARGET_SIZE["shop"])
+		MapNodeResource.NodeType.EVENT:
+			target = float(ICON_TARGET_SIZE["event"])
+		_:
+			pass
+	var s := target / tex_size
+	return Vector2(s, s)
 
 func _on_map_node_clicked(clicked_node: MapNode):
 	# Coop: výběr uzlu má jen host; klient jen přijímá RPC
@@ -252,16 +280,12 @@ func _trigger_node_action(node_data: MapNodeResource):
 			GameManager.tutorial_step = GameManager.TUTORIAL_STEP_FINAL_BATTLE
 		else:
 			printerr("Tutorial encounter missing.")
-		GameManager.saved_camera_position = camera.position
-		GameManager.saved_camera_zoom = camera.zoom
-		GameManager.has_saved_camera_state = true
+		_save_camera_scroll_y()
 		GameManager.start_battle(encounter_to_start)
 		return
 	elif _is_tutorial_map() and node_data == _tutorial_nodes.get("camp"):
 		GameManager.tutorial_step = GameManager.TUTORIAL_STEP_CAMP_UPGRADE
-		GameManager.saved_camera_position = camera.position
-		GameManager.saved_camera_zoom = camera.zoom
-		GameManager.has_saved_camera_state = true
+		_save_camera_scroll_y()
 		GameManager.go_to_rest_scene()
 		return
 
@@ -270,15 +294,11 @@ func _trigger_node_action(node_data: MapNodeResource):
 			GameManager.show_treasure_node()
 			return
 		MapNodeResource.NodeType.SHOP:
-			GameManager.saved_camera_position = camera.position
-			GameManager.saved_camera_zoom = camera.zoom
-			GameManager.has_saved_camera_state = true
+			_save_camera_scroll_y()
 			GameManager.go_to_shop()
 			return
 		MapNodeResource.NodeType.REST:
-			GameManager.saved_camera_position = camera.position
-			GameManager.saved_camera_zoom = camera.zoom
-			GameManager.has_saved_camera_state = true
+			_save_camera_scroll_y()
 			GameManager.go_to_rest_scene()
 			return
 		MapNodeResource.NodeType.EVENT:
@@ -289,9 +309,7 @@ func _trigger_node_action(node_data: MapNodeResource):
 
 	# Bitva (MONSTER / ELITE / BOSS) nebo neznámý typ
 	if is_instance_valid(encounter_to_start):
-		GameManager.saved_camera_position = camera.position
-		GameManager.saved_camera_zoom = camera.zoom
-		GameManager.has_saved_camera_state = true
+		_save_camera_scroll_y()
 		GameManager.start_battle(encounter_to_start)
 	else:
 		if node_data.type != MapNodeResource.NodeType.MONSTER and node_data.type != MapNodeResource.NodeType.ELITE and node_data.type != MapNodeResource.NodeType.BOSS:
@@ -452,77 +470,96 @@ func _update_highlighting():
 				line.width = 5.0
 
 			connections_container.add_child(line)
-func _setup_camera():
-	if map_nodes_visual.is_empty(): return
-	
-	if _is_tutorial_map():
-		var map_rect = Rect2(map_nodes_visual.values()[0].position, Vector2.ZERO)
-		for node in map_nodes_visual.values():
-			map_rect = map_rect.expand(node.position)
-		map_rect = map_rect.grow(120.0)
-		camera.position = map_rect.get_center()
-		camera.zoom = Vector2(0.8, 0.8)
-	elif GameManager.has_saved_camera_state:
-		# Načteme uloženou pozici a zoom.
-		camera.position = GameManager.saved_camera_position
-		camera.zoom = GameManager.saved_camera_zoom
-	else:
-		# Vypočítáme výchozí (oddálený) pohled.
-		var map_rect = Rect2(map_nodes_visual.values()[0].position, Vector2.ZERO)
-		for node in map_nodes_visual.values():
-			map_rect = map_rect.expand(node.position)
-		
-		var padding = 200.0
-		map_rect = map_rect.grow(padding)
-		camera.position = map_rect.get_center()
-		
-		var screen_size = get_viewport_rect().size
-		var zoom_level = max(map_rect.size.x / screen_size.x, map_rect.size.y / screen_size.y)
-		
-		# Výchozí zoom je o 10 % oddálenější.
-		camera.zoom = Vector2(zoom_level, zoom_level) * 0.25
-
-	# Nastavení limitů kamery, aby nevyjela z mapy.
-	var final_rect = Rect2(map_nodes_visual.values()[0].position, Vector2.ZERO)
+func _get_map_bounds() -> Rect2:
+	var map_rect = Rect2(map_nodes_visual.values()[0].position, Vector2.ZERO)
 	for node in map_nodes_visual.values():
-		final_rect = final_rect.expand(node.position)
-	final_rect = final_rect.grow(250.0)
+		map_rect = map_rect.expand(node.position)
+	return map_rect
 
-	camera.limit_left = int(final_rect.position.x)
-	camera.limit_top = int(final_rect.position.y)
-	camera.limit_right = int(final_rect.end.x)
-	camera.limit_bottom = int(final_rect.end.y)
+func _get_focus_node_y() -> float:
+	var current_node = PlayerData.get_current_node()
+	if current_node != null and map_nodes_visual.has(current_node):
+		return map_nodes_visual[current_node].position.y
+	if map_data != null and not map_data.starting_nodes.is_empty():
+		var start_node = map_data.starting_nodes[0]
+		if map_nodes_visual.has(start_node):
+			return map_nodes_visual[start_node].position.y
+	return _get_map_bounds().get_center().y
+
+func _save_camera_scroll_y() -> void:
+	GameManager.saved_camera_position = Vector2(_map_center_x, camera.position.y)
+	GameManager.saved_camera_zoom = camera.zoom
+	GameManager.has_saved_camera_state = true
+
+func _clamp_camera_y() -> void:
+	camera.position.x = _map_center_x
+	camera.position.y = clampf(camera.position.y, _camera_y_min, _camera_y_max)
+
+func _setup_camera():
+	if map_nodes_visual.is_empty():
+		return
+
+	var map_rect := _get_map_bounds()
+	_map_center_x = map_rect.get_center().x
+
+	var screen_size := get_viewport_rect().size
+	var available_width := maxf(screen_size.x - CAMERA_LEFT_UI_MARGIN - CAMERA_RIGHT_UI_MARGIN, 1.0)
+	var fit_width := maxf(map_rect.size.x + CAMERA_HORIZONTAL_PADDING * 2.0, 1.0)
+	var zoom_x := available_width / fit_width
+	if _is_tutorial_map():
+		zoom_x = minf(zoom_x, 0.8)
+	else:
+		zoom_x = minf(zoom_x, CAMERA_MAX_WIDTH_ZOOM)
+	camera.zoom = Vector2(zoom_x, zoom_x)
+
+	# Shift view so the map is centered in the free area right of the legend.
+	var ui_shift_world := (CAMERA_LEFT_UI_MARGIN - CAMERA_RIGHT_UI_MARGIN) * 0.5 / zoom_x
+	_map_center_x = map_rect.get_center().x - ui_shift_world
+
+	var half_view_h := (screen_size.y * 0.5) / zoom_x
+	_camera_y_min = map_rect.position.y - CAMERA_VERTICAL_PADDING + half_view_h
+	_camera_y_max = map_rect.end.y + CAMERA_VERTICAL_PADDING - half_view_h
+	if _camera_y_min > _camera_y_max:
+		var mid_y := map_rect.get_center().y
+		_camera_y_min = mid_y
+		_camera_y_max = mid_y
+
+	var target_y: float
+	if GameManager.has_saved_camera_state:
+		target_y = GameManager.saved_camera_position.y
+	else:
+		target_y = _get_focus_node_y()
+
+	camera.position = Vector2(_map_center_x, target_y)
+	_clamp_camera_y()
+
+	# Lock horizontal pan; allow vertical travel within map bounds.
+	var half_view_w := (screen_size.x * 0.5) / zoom_x
+	camera.limit_left = int(_map_center_x - half_view_w)
+	camera.limit_right = int(_map_center_x + half_view_w)
+	camera.limit_top = int(map_rect.position.y - CAMERA_VERTICAL_PADDING)
+	camera.limit_bottom = int(map_rect.end.y + CAMERA_VERTICAL_PADDING)
 
 func _unhandled_input(event: InputEvent):
-	# Pokud má fokus nějaký UI element, neděláme nic
-	if get_viewport().gui_get_focus_owner(): 
+	if get_viewport().gui_get_focus_owner():
 		return
-	
-	# Zoom kolečkem myši
+
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			# Přiblížení - zvětšíme zoom
-			camera.zoom = camera.zoom * 1.1
-			camera.zoom = camera.zoom.clamp(Vector2(0.3, 0.3), Vector2(3.0, 3.0))
-			
+			camera.position.y -= CAMERA_SCROLL_STEP / camera.zoom.y
+			_clamp_camera_y()
+			get_viewport().set_input_as_handled()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			# Oddálení - zmenšíme zoom  
-			camera.zoom = camera.zoom * 0.9
-			camera.zoom = camera.zoom.clamp(Vector2(0.3, 0.3), Vector2(3.0, 3.0))
-	
-	# Pohyb kamery pomocí tažení myší
+			camera.position.y += CAMERA_SCROLL_STEP / camera.zoom.y
+			_clamp_camera_y()
+			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion:
-		# Pohyb pomocí STŘEDNÍHO tlačítka myši (kolečko)
-		if event.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
-			camera.position -= event.relative / camera.zoom
-		
-		# ALTERNATIVNĚ: Pohyb pomocí PRAVÉHO tlačítka myši
-		elif event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
-			camera.position -= event.relative / camera.zoom
-
-		# ALTERNATIVNĚ: Pohyb pomocí LEVÉHO tlačítka myši
-		elif event.button_mask & MOUSE_BUTTON_MASK_LEFT:
-			camera.position -= event.relative / camera.zoom
+		var drag_vertical: bool = (event.button_mask & MOUSE_BUTTON_MASK_MIDDLE) != 0 \
+			or (event.button_mask & MOUSE_BUTTON_MASK_RIGHT) != 0
+		if drag_vertical:
+			camera.position.y -= event.relative.y / camera.zoom.y
+			_clamp_camera_y()
+			get_viewport().set_input_as_handled()
 
 func _on_map_node_hovered(map_node: MapNode):
 	# Vytvoříme krátkou animaci, která uzel zvětší. 

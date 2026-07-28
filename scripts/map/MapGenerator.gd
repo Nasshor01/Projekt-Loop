@@ -12,8 +12,8 @@ extends Node
 
 @export_group("Visuals & Spacing", "vis_")
 @export var vis_x_spacing: int = 128
-@export var vis_y_spacing: int = 80
-@export var vis_position_randomness: Vector2 = Vector2(20, 15)
+@export var vis_y_spacing: int = 100
+@export var vis_position_randomness: Vector2 = Vector2(8, 6)
 @export var vis_boss_y_offset: float = -80.0
 
 @export_group("Room Type Weights", "weight_")

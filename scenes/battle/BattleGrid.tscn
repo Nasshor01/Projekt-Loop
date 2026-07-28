@@ -1,16 +1,29 @@
-[gd_scene load_steps=4 format=3 uid="uid://cheykuupki7w3"]
+[gd_scene load_steps=8 format=3 uid="uid://cheykuupki7w3"]
 
 [ext_resource type="Script" uid="uid://cygm0qqpoker4" path="res://scenes/battle/BattleGrid.gd" id="1_lqs4s"]
+[ext_resource type="Texture2D" uid="uid://qxf3mwyqj7in" path="res://art/sprites/map/battlegrid/tileset-spriteSheet.png" id="2_atlas"]
+[ext_resource type="PackedScene" uid="uid://b48gkcq1dqjb3" path="res://scenes/battle/arenas/ArenaDefault.tscn" id="3_arena"]
 
-[sub_resource type="BoxMesh" id="BoxMesh_lqs4s"]
-size = Vector3(2, 0.2, 2)
+[sub_resource type="PlaneMesh" id="PlaneMesh_floor"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_lqs4s"]
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_light"]
+albedo_color = Color(0.55, 0.52, 0.48, 1)
+roughness = 0.85
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dark"]
+albedo_color = Color(0.35, 0.33, 0.3, 1)
+roughness = 0.85
+
 [node name="BattleGrid" type="Node3D"]
 script = ExtResource("1_lqs4s")
-floor_mesh = SubResource("BoxMesh_lqs4s")
+floor_mesh = SubResource("PlaneMesh_floor")
 cursor_mesh = SubResource("PlaneMesh_lqs4s")
+material_light = SubResource("StandardMaterial3D_light")
+material_dark = SubResource("StandardMaterial3D_dark")
+arena_floor_scene = ExtResource("3_arena")
+floor_atlas = ExtResource("2_atlas")
 grid_line_color = Color(0, 0, 0, 1)
 
 [node name="UnitsContainer" type="Node3D" parent="."]

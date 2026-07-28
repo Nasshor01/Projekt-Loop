@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://b48gkcq1dqjb3"]
+
+[ext_resource type="Script" uid="uid://qlu0yxu1vbak" path="res://scripts/battle/ArenaFloor.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://qxf3mwyqj7in" path="res://art/sprites/map/battlegrid/tileset-spriteSheet.png" id="2_atlas"]
+
+[node name="ArenaFloor" type="Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.247007)
+script = ExtResource("1_script")
+floor_atlas = ExtResource("2_atlas")
+atlas_coords = PackedVector2Array(0, 2, 0, 3, 0, 3, 0, 5, 2, 3, 0, 3, 1, 3, 0, 3, 0, 3, 3, 3, 0, 3, 2, 3, 0, 3, 3, 3, 3, 3, 0, 3, 2, 0, 3, 0, 2, 0, 3, 0, 3, 2, 3, 0, 1, 2, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 2, 0, 0, 3, 0, 4, 3, 0, 1, 1, 3, 0, 2, 0, 3, 1, 2, 0, 1, 5, 2, 0, 3, 0, 3, 2, 0, 2, 2, 0, 3, 0, 0, 3, 1, 3, 2, 0, 0, 2, 3, 2, 3, 0, 1, 5, 3, 0, 2, 0, 3, 0, 1, 5, 3, 1, 0, 4, 3, 0, 1, 1, 0, 3, 0, 5, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 1, 5, 1, 5, 1, 5, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 0, 3, 2, 3, 2, 0, 3, 0, 2, 0, 3, 1, 2, 0, 1, 5, 1, 5, 1, 5, 2, 0, 0, 2, 2, 1, 3, 0, 3, 2, 2, 3, 0, 5, 3, 0, 1, 2, 0, 2, 2, 0, 1, 5, 1, 2, 3, 0, 1, 2, 1, 5, 2, 0, 3, 0, 3, 2, 3, 0, 0, 3, 0, 3, 0, 4, 3, 0, 2, 0, 3, 0, 2, 1, 3, 0, 1, 5, 3, 0, 2, 0, 3, 1, 1, 1, 3, 0, 3, 2, 0, 4, 2, 3, 3, 0, 0, 4, 3, 0, 2, 0, 3, 0, 2, 0, 3, 0, 1, 2, 0, 2, 1, 1, 3, 0, 3, 2, 3, 0, 0, 3, 1, 3, 0, 5, 0, 3, 0, 5, 0, 3, 2, 3, 0, 5, 0, 3, 0, 3, 0, 3, 0, 5, 0, 5, 0, 3, 0, 3, 3, 3)
+brush_atlas_coord = Vector2i(2, 1)
