@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://dv0nycuexwumc"]
+
+[ext_resource type="TileSet" uid="uid://d1o8l28ssubwu" path="res://art/sprites/map/battlegrid/battle_floor_tileset.tres" id="2_tileset"]
+
+[node name="BattleFloorLayout" type="Node2D"]
+
+[node name="Floor" type="TileMapLayer" parent="."]
+scale = Vector2(0.015625, 0.015625)
+tile_set = ExtResource("2_tileset")
