@@ -14,13 +14,13 @@ const EVENT_ARTIFACT_POOL = preload("res://data/artifacts/pool/event_reward_pool
 @export var add_card: CardData = null
 @export var add_random_card: bool = false
 @export var card_rarity: CardData.CardRarity = CardData.CardRarity.COMMON
-	@export var remove_card: bool = false  # Otevře card removal screen
-	@export var remove_specific_card: CardData = null  # Odstraní konkrétní kartu
-	@export var upgrade_card: bool = false  # Otevře výběr karty k upgradu (jako Rest)
-	@export var upgrade_random_card: bool = false
-	@export var upgrade_specific_card: CardData = null
-	@export var upgrade_all_cards: bool = false
-	@export var transform_card: bool = false  # Promění kartu v jinou stejné rarity
+@export var remove_card: bool = false  # Otevře card removal screen
+@export var remove_specific_card: CardData = null  # Odstraní konkrétní kartu
+@export var upgrade_card: bool = false  # Otevře výběr karty k upgradu (jako Rest)
+@export var upgrade_random_card: bool = false
+@export var upgrade_specific_card: CardData = null
+@export var upgrade_all_cards: bool = false
+@export var transform_card: bool = false  # Promění kartu v jinou stejné rarity
 
 @export_group("Artefakty")
 @export var add_artifact: ArtifactsData = null # Odměna konkrétního artefaktu

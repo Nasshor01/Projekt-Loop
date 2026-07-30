@@ -31,6 +31,7 @@ max_hp = 0
 add_random_card = false
 card_rarity = 0
 remove_card = false
+upgrade_card = false
 upgrade_random_card = false
 upgrade_all_cards = false
 transform_card = false

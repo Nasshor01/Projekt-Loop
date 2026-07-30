@@ -1,9 +1,9 @@
 [gd_scene load_steps=8 format=3 uid="uid://bo6s0363e2rge"]
 
 [ext_resource type="Script" uid="uid://cyruiah668yvv" path="res://scripts/CardUI.gd" id="1_ob8v0"]
-[ext_resource type="Texture2D" uid="uid://ca88ayvdesmrj" path="res://art/icons/ExampleCard01_(Common).png" id="2_lk56f"]
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="2_pmyly"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="3_yi8ee"]
+[ext_resource type="Texture2D" uid="uid://bpod0r5llw2ky" path="res://art/sprites/cards/warrior/Warrior basic test.png" id="4_pmyly"]
 [ext_resource type="FontFile" uid="uid://c4topxnn115am" path="res://art/fonts/monogram-extended.ttf" id="4_w6ddo"]
 
 [sub_resource type="Resource" id="Resource_fsx4a"]
@@ -55,22 +55,22 @@ layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 mouse_filter = 2
-texture = ExtResource("2_lk56f")
+texture = ExtResource("4_pmyly")
 
 [node name="ArtworkTextureRect" type="TextureRect" parent="."]
 layout_mode = 0
-offset_left = 48.0
-offset_top = 40.0
-offset_right = 147.0
-offset_bottom = 92.0
+offset_left = 39.0
+offset_top = 39.0
+offset_right = 153.0
+offset_bottom = 96.0
 mouse_filter = 2
 
 [node name="NameLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 28.0
-offset_top = 94.0
-offset_right = 164.0
-offset_bottom = 118.0
+offset_left = 29.0
+offset_top = 98.0
+offset_right = 165.0
+offset_bottom = 122.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
@@ -83,10 +83,10 @@ clip_text = true
 
 [node name="CostLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 16.0
-offset_top = 12.0
-offset_right = 52.0
-offset_bottom = 48.0
+offset_left = 80.0
+offset_top = 6.0
+offset_right = 115.0
+offset_bottom = 41.0
 theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
@@ -99,10 +99,10 @@ clip_text = true
 
 [node name="DescriptionLabel" type="RichTextLabel" parent="."]
 layout_mode = 0
-offset_left = 26.0
-offset_top = 118.0
-offset_right = 166.0
-offset_bottom = 206.0
+offset_left = 37.0
+offset_top = 126.0
+offset_right = 154.0
+offset_bottom = 203.0
 theme_override_colors/default_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
