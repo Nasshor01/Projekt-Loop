@@ -1,0 +1,75 @@
+---
+description: Modular card visuals — class colors, rarity, upgrade, layout (no Uncommon)
+alwaysApply: true
+---
+
+# Card visual system (ModularCards RPG)
+
+## Rarity (Uncommon cancelled)
+
+Do **not** use Uncommon going forward. Plan to remove `CardRarity.UNCOMMON` from pools/UI when touching card systems.
+
+| Rarity | Pack color (banner + corner) |
+|--------|------------------------------|
+| Basic | brown |
+| Common | green |
+| Rare | blue |
+| Epic | purple |
+| Legendary | yellow (gold) |
+| Curse | gray frame + red accents (banner/corner/socket) |
+
+## Class → main card color
+
+Class owns `border` + `container` (+ optional BG tint).
+
+| Class / family | Pack color |
+|----------------|------------|
+| Warrior / tank line (Paladin for now) | blue |
+| Trapper (later) | TBD (not blue — avoid clash with Rare) |
+| Curse | gray + red |
+
+If class color equals a rarity color (e.g. Warrior blue vs Rare blue), rarity must stay readable via **banner + corner pair**, not border alone.
+
+## Layer map (Zsprites ModularCards)
+
+```
+BG / border / container  →  Class
+banner + corner          →  Rarity
+energy_*                 →  Energy cost slot only
+socket_* (color)         →  Card type (Attack / Defense / Utility / Power…)
+gem (optional)           →  extra accent, not required for Early Alpha
+```
+
+## Upgrade (STS-style)
+
+- Do **not** bake a separate upgraded frame.
+- Name: `CardName+`
+- Name text turns green (cost number green if cost decreased).
+- Same class/rarity layers as base card.
+
+## Layout (ModularCards — confirmed mockup)
+
+Top → bottom on card face (banner is **between** art and description, not STS2 top title):
+
+1. Energy orb top-left (`energy_*` matching class color + cost label)
+2. **Art** — smaller upper panel (`container` / art slot)
+3. **Name** — middle `banner` (white/light text; upgraded = name+ green)
+4. **Description** — larger lower panel (`description_*`)
+5. Type signal — short type text in description area and/or colored `socket` (not required on every frame bake)
+
+Reference stack (Warrior Basic example from mockup):
+- Class blue: `border_blue` + blue energy orb
+- Rarity brown: `banner_brown` + `corner_brown`
+- Light art/desc panels: `BG_white` / `description_white` (+ optional innercorners)
+
+## Card type socket colors (draft)
+
+| Type | Socket color |
+|------|----------------|
+| Attack | red |
+| Defense / Block | white or aqua |
+| Utility / Skill | green or brown |
+| Power | purple or yellow |
+| Curse | red on gray card |
+
+Exact mapping may be tuned; keep consistent once shipped.
