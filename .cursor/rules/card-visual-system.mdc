@@ -5,18 +5,20 @@ alwaysApply: true
 
 # Card visual system (ModularCards RPG)
 
-## Rarity (Uncommon cancelled)
+## Rarity (Uncommon cancelled — done)
 
-Do **not** use Uncommon going forward. Plan to remove `CardRarity.UNCOMMON` from pools/UI when touching card systems.
+Live card rarities only:
 
-| Rarity | Pack color (banner + corner) |
-|--------|------------------------------|
-| Basic | brown |
-| Common | green |
-| Rare | blue |
-| Epic | purple |
-| Legendary | yellow (gold) |
-| Curse | gray frame + red accents (banner/corner/socket) |
+| Rarity | Pack color (banner + corner) | Warrior frame |
+|--------|------------------------------|---------------|
+| Basic | brown | `Warrior basic.png` |
+| Common | green | `Warrior common.png` |
+| Rare | blue | `Warrior rare.png` |
+| Epic | purple | `Warrior epic.png` |
+| Legendary | yellow (gold) | `Warrior legendary.png` |
+| Curse | gray + red | `curse.png` |
+
+`CardRarity.UNCOMMON` remains in the enum only for `.tres` int compatibility — never assign it; treat as Common in UI/pools.
 
 ## Class → main card color
 
@@ -51,7 +53,7 @@ gem (optional)           →  extra accent, not required for Early Alpha
 
 Top → bottom on card face (banner is **between** art and description, not STS2 top title):
 
-1. Energy orb top-left (`energy_*` matching class color + cost label)
+1. Energy orb top-center (`energy_*` matching class color + cost label)
 2. **Art** — smaller upper panel (`container` / art slot)
 3. **Name** — middle `banner` (white/light text; upgraded = name+ green)
 4. **Description** — larger lower panel (`description_*`)

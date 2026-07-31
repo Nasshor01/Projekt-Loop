@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Projekt LOOP"
-config/version="0.3.2"
+config/version="0.3.3"
 run/main_scene="uid://se10c1yredoi"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://art/icons/game/logo.png"
@@ -48,7 +48,7 @@ enabled=PackedStringArray("res://addons/arena_painter/plugin.cfg")
 [gui]
 
 theme/custom="res://art/ui/game_theme.tres"
-theme/custom_font="uid://c4topxnn115am"
+theme/custom_font="uid://bhj8pjkqc1umb"
 
 [input]
 

@@ -10,10 +10,12 @@ const SHOP_ARTIFACT_POOL = preload("res://data/artifacts/basic_artifact_pool.tre
 
 # --- DYNAMICKÉ CENY PODLE VZÁCNOSTI ---
 const CARD_PRICES = {
+	CardData.CardRarity.BASIC: 30,
 	CardData.CardRarity.COMMON: 50,
-	CardData.CardRarity.UNCOMMON: 80,
-	CardData.CardRarity.RARE: 160,
-	# Můžeš doplnit další vzácnosti, např. EPIC, LEGENDARY
+	CardData.CardRarity.UNCOMMON: 50, ## deprecated → same as Common
+	CardData.CardRarity.RARE: 120,
+	CardData.CardRarity.EPIC: 200,
+	CardData.CardRarity.LEGENDARY: 300,
 }
 const ARTIFACT_PRICE = 200
 const CARD_REMOVAL_BASE_COST = 75
@@ -97,7 +99,8 @@ func _generate_shop_inventory():
 		PlayerData.selected_class,
 		PlayerData.selected_subclass,
 		PlayerData.unlocked_cards,
-		VillageBonuses.get_uncommon_chance()
+		VillageBonuses.get_epic_card_chance(),
+		VillageBonuses.get_legendary_card_chance()
 	)
 	if cards_to_sell.is_empty():
 		print(tr("log.shop.no_cards"))

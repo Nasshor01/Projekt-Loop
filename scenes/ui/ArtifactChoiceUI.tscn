@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://fprvv5guresv"]
 
 [ext_resource type="Script" uid="uid://bo265fhh25djt" path="res://scenes/ui/ArtifactChoiceUI.gd" id="1_5g2id"]
-[ext_resource type="FontFile" uid="uid://c4topxnn115am" path="res://art/fonts/monogram-extended.ttf" id="1_bi15k"]
+[ext_resource type="FontFile" uid="uid://bhj8pjkqc1umb" path="res://art/fonts/Ithaca-LVB75.ttf" id="1_bi15k"]
 
 [node name="ArtifactChoiceUI" type="PanelContainer"]
 offset_right = 40.0
@@ -20,7 +20,7 @@ layout_mode = 2
 [node name="NameLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("1_bi15k")
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 20
 
 [node name="DescriptionLabel" type="RichTextLabel" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 100)

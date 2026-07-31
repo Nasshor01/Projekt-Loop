@@ -1,4 +1,4 @@
-res://scenes/ui/CardUI.tscn
+res://main.tscn
 res://art/ui/game_theme.tres
 res://data/encounters/first_battle.tres
 res://data/skills/paladin_skill_tree_manual.tres
@@ -87,7 +87,6 @@ res://data/cards/trapper/spike_line.tres
 res://data/cards/trapper/ambush_shot.tres
 res://data/cards/shop_card_pool.tres
 res://data/artifacts/basic_artifact_pool.tres
-res://main.tscn
 res://scenes/ui/PopupMenu.tscn
 res://scenes/ui/initiative_bar/InitiativeBar.tscn
 res://scenes/ui/initiative_bar/InitiativeIcon.tscn
@@ -103,6 +102,7 @@ res://scenes/ui/MainMenu.tscn
 res://scenes/battle/UnitInfoPanel.tscn
 res://scenes/ui/IntentIcon.tscn
 res://scenes/ui/FloatingText.tscn
+res://scenes/ui/CardUI.tscn
 res://scenes/ui/PassiveSkillTree.tscn
 res://scenes/ui/PassiveSkillUI.tscn
 res://data/skills/passive_skill_tree_manual.tscn

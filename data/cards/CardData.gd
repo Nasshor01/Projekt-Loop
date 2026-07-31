@@ -16,14 +16,17 @@ enum CardTag {
 	ONE_TIME_USE # Jednorázová karta – po použití se natrvalo odstraní z balíčku
 }
 
-# Enum pro vzácnost karet
+# Enum pro vzácnost karet.
+# Pořadí hodnot NEMĚŇ — .tres ukládají int indexy.
+# Platné rarity ve hře: BASIC, COMMON, RARE, EPIC, LEGENDARY (+ Curse frame přes card_id).
+# UNCOMMON je deprecated (zrušeno) — ponecháno jen kvůli kompatibilitě starých dat.
 enum CardRarity {
 	COMMON,
-	UNCOMMON,
+	UNCOMMON, ## DEPRECATED — nepoužívat; mapuje se na COMMON
 	RARE,
 	EPIC,
 	LEGENDARY,
-	BASIC # Pro startovní karty, které se nemají objevovat jako odměny
+	BASIC # Startovní karty — neobjevují se jako odměny
 }
 
 @export var card_id: String = "unique_card_id" # Unikátní identifikátor karty
@@ -93,8 +96,42 @@ func get_localized_name() -> String:
 	return tr(card_name)
 
 func get_localized_description() -> String:
-	"""Vrátí lokalizovaný dlouhý popis karty"""
-	return tr(card_description)
+	"""Full tooltip description. HOLY deal-damage never reads as plain/normal damage."""
+	var desc := tr(card_description)
+	if _should_force_holy_damage_wording():
+		desc = _ensure_holy_damage_wording(desc)
+	return desc
+
+func _should_force_holy_damage_wording() -> bool:
+	"""True when this card deals HOLY damage and has no non-holy DEAL_DAMAGE effects."""
+	var has_holy := false
+	for effect in effects:
+		if effect.effect_type != CardEffectData.EffectType.DEAL_DAMAGE:
+			continue
+		if effect.damage_type == CardEffectData.DamageType.HOLY:
+			has_holy = true
+		else:
+			return false
+	return has_holy
+
+func _ensure_holy_damage_wording(desc: String) -> String:
+	"""Rewrite generic 'damage'/'poškození' to holy wording without double-prefixing."""
+	if desc.is_empty():
+		return desc
+	var out := desc
+	# Protect phrases that already communicate holy damage
+	out = out.replace("holy damage", "\uE000")
+	out = out.replace("Holy damage", "\uE001")
+	out = out.replace("svatého poškození", "\uE002")
+	out = out.replace("svaté poškození", "\uE003")
+	out = out.replace("damage", "holy damage")
+	out = out.replace("Damage", "Holy damage")
+	out = out.replace("poškození", "svatého poškození")
+	out = out.replace("\uE000", "holy damage")
+	out = out.replace("\uE001", "Holy damage")
+	out = out.replace("\uE002", "svatého poškození")
+	out = out.replace("\uE003", "svaté poškození")
+	return out
 
 ## Vrátí klíče keywordů odvozené z efektů karty (pro tooltip – Holy, Block, Heal, Exhaust, atd.).
 ## Slouží k zobrazení tagů/ikon v tooltipu i když v textu popisu slovo není.
@@ -204,19 +241,32 @@ const SHORTHAND_ICONS: Dictionary = {
 
 const ICON_SIZE: int = 16
 
-func generate_compact_description() -> String:
-	"""Shorthand: one effect per line — [Value] [Icon]. Details live in the tooltip."""
+## Active BBCode [img] size for the current shorthand pass (set by generate_compact_description).
+var _shorthand_icon_px: int = ICON_SIZE
+
+## BBCode accents on white-text + black outline (light cyan/green/peach; soft cream not pure yellow).
+const BB_ENERGY := "#9ad4ff"
+const BB_HEAL := "#8fef9a"
+const BB_EXHAUST := "#ffb070"
+const BB_INITIATIVE := "#f0d9a0"
+
+func generate_compact_description(icon_px: int = ICON_SIZE) -> String:
+	"""Shorthand: one effect per line — [Value] [Icon]. Details live in the tooltip.
+	icon_px should match DescriptionLabel font size so glyphs and icons share one line height."""
+	_shorthand_icon_px = maxi(icon_px, 8)
 	var parts: Array[String] = []
 	for effect in effects:
 		var line := _format_effect_shorthand(effect)
 		if not line.is_empty():
 			parts.append(line)
 	if parts.is_empty():
-		return tr(card_description)
+		return get_localized_description()
 	return "\n".join(parts).strip_edges()
 
-func _img(icon_key: String, size: int = ICON_SIZE) -> String:
-	"""Returns BBCode [img] tag for icon from KeywordManager.ICON_MAP (or SHORTHAND_ICONS in editor). NO icon if path missing."""
+func _img(icon_key: String, size: int = -1) -> String:
+	"""Returns BBCode [img] tag for icon from KeywordManager.ICON_MAP (or SHORTHAND_ICONS in editor). NO icon if path missing.
+	Default size follows the current shorthand pass (_shorthand_icon_px), not a fixed 16px."""
+	var px := size if size > 0 else _shorthand_icon_px
 	var path: String = ""
 	if not Engine.is_editor_hint():
 		path = KeywordManager.get_icon_path(icon_key)
@@ -224,15 +274,15 @@ func _img(icon_key: String, size: int = ICON_SIZE) -> String:
 		path = SHORTHAND_ICONS.get(icon_key, "")
 	if path.is_empty():
 		return ""
-	return "[img=%dx%d]%s[/img]" % [size, size, path]
+	return "[img=%dx%d]%s[/img]" % [px, px, path]
 
 func _num(x: int) -> String:
-	"""Plain bold number — outline comes from RichTextLabel theme override."""
-	return "[b]%d[/b]" % x
+	"""Face shorthand number — plain text (no [b]) so RichTextLabel keeps push_font size."""
+	return str(x)
 
 func _energy(x: int) -> String:
-	"""Energy: [b][color=cyan]X Energy[/color][/b] - NO icon."""
-	return "[b][color=cyan]%d %s[/color][/b]" % [x, tr("card.effect.energy")]
+	"""Energy shorthand — light cyan accent (readable on white text + outline)."""
+	return "[b][color=%s]%d %s[/color][/b]" % [BB_ENERGY, x, tr("card.effect.energy")]
 
 func _turns(x: int) -> String:
 	"""Turns: [b]X turns[/b] - NO icon."""
@@ -249,7 +299,7 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 			return _num(val) + " " + _img("heal")
 		
 		CardEffectData.EffectType.HEAL_TO_FULL:
-			return "[b][color=green]" + tr("card.effect.full_heal") + "[/color][/b]"
+			return "[b][color=%s]" % BB_HEAL + tr("card.effect.full_heal") + "[/color][/b]"
 		
 		CardEffectData.EffectType.GAIN_BLOCK:
 			var block_val := effect.value
@@ -298,14 +348,14 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 			return _format_status_shorthand(effect)
 		
 		CardEffectData.EffectType.EXHAUST:
-			return "[b][color=orange]" + tr("card.effect.exhaust_keyword") + "[/color][/b]"
+			return "[b][color=%s]" % BB_EXHAUST + tr("card.effect.exhaust_keyword") + "[/color][/b]"
 		
 		CardEffectData.EffectType.GAIN_EXTRA_MOVE:
 			return "[b]" + tr("card.effect.gain_extra_move") + "[/b]"
 		
 		CardEffectData.EffectType.MODIFY_INITIATIVE_NEXT_ROUND:
 			var sign_str := "+" if effect.value >= 0 else ""
-			return "[b][color=yellow]%s%d %s[/color][/b]" % [sign_str, effect.value, tr("card.effect.initiative")]
+			return "[b][color=%s]%s%d %s[/color][/b]" % [BB_INITIATIVE, sign_str, effect.value, tr("card.effect.initiative")]
 		
 		CardEffectData.EffectType.SUMMON_UNIT:
 			return "[b]" + tr("card.effect.summon") + "[/b]"
@@ -542,13 +592,12 @@ func _format_conditional_effect(conditional: Dictionary, effect_type: String = "
 		_:
 			return tr("card.condition.default") + ": " + bonus_text
 
-func get_display_description() -> String:
-	"""Vrátí automaticky generovaný stručný popis nebo původní s bonusy"""
-	# Použijeme nový automatický generátor
-	var compact_desc = generate_compact_description()
+func get_display_description(icon_size: int = ICON_SIZE) -> String:
+	"""Card-face shorthand (or localized fallback). icon_size scales BBCode [img] to match DescriptionLabel font."""
+	var compact_desc = generate_compact_description(icon_size)
 	
-	# Pokud je nový popis příliš krátký nebo prázdný, použijeme původní
+	# Pokud je nový popis příliš krátký nebo prázdný, použijeme původní (holy-aware)
 	if compact_desc.length() < 3:
-		compact_desc = tr(card_description)
+		compact_desc = get_localized_description()
 	
 	return compact_desc

@@ -30,24 +30,25 @@ func show_cards(cards: Array, _card_scale: Vector2 = Vector2.ZERO):
 
 	for card_data in cards:
 		var card_ui = CardUIScene.instantiate()
-		card_ui.load_card(card_data)
 		if card_ui is CardUI:
+			var wrapper = Control.new()
+			wrapper.clip_contents = false
+			wrapper.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+			wrapper.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+			# Enter tree before apply_display_mode so @onready + layout cache are valid.
+			wrapper.add_child(card_ui)
+			card_ui.position = Vector2(6, 8)
+			grid_container.add_child(wrapper)
+
+			card_ui.load_card(card_data)
 			card_ui.apply_display_mode(CardUI.DisplayMode.DECK)
 			if not card_ui.is_connected("card_clicked", _on_card_clicked_in_viewer):
 				card_ui.card_clicked.connect(_on_card_clicked_in_viewer)
 			if not card_ui.card_right_clicked.is_connected(_on_card_right_clicked_in_viewer):
 				card_ui.card_right_clicked.connect(_on_card_right_clicked_in_viewer)
-			var scaled_size = card_ui.get_scaled_size()
-			var cell = scaled_size + Vector2(12, 16)
-			var wrapper = Control.new()
+			var cell = card_ui.get_scaled_size() + Vector2(12, 16)
 			wrapper.custom_minimum_size = cell
 			wrapper.size = cell
-			wrapper.clip_contents = false
-			wrapper.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-			wrapper.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-			wrapper.add_child(card_ui)
-			card_ui.position = Vector2(6, 8)
-			grid_container.add_child(wrapper)
 			call_deferred("_sync_pile_card_layout", card_ui)
 	show()
 

@@ -67,13 +67,16 @@ func show_tooltip(card_data: CardData, tooltip_pos: Vector2):
 	var rarity_names = {
 		CardData.CardRarity.BASIC: tr("card.rarity.basic"),
 		CardData.CardRarity.COMMON: tr("card.rarity.common"),
-		CardData.CardRarity.UNCOMMON: tr("card.rarity.uncommon"),
+		CardData.CardRarity.UNCOMMON: tr("card.rarity.common"), ## deprecated
 		CardData.CardRarity.RARE: tr("card.rarity.rare"),
 		CardData.CardRarity.EPIC: tr("card.rarity.epic"),
 		CardData.CardRarity.LEGENDARY: tr("card.rarity.legendary")
 	}
-	if rarity_names.has(card_data.rarity):
-		additional_info.append(TranslationHelper.tr_format("card.tooltip.rarity", {"value": rarity_names[card_data.rarity]}))
+	var display_rarity = card_data.rarity
+	if display_rarity == CardData.CardRarity.UNCOMMON:
+		display_rarity = CardData.CardRarity.COMMON
+	if rarity_names.has(display_rarity):
+		additional_info.append(TranslationHelper.tr_format("card.tooltip.rarity", {"value": rarity_names[display_rarity]}))
 	
 	if card_data.is_upgraded:
 		additional_info.append(tr("card.tooltip.upgraded"))

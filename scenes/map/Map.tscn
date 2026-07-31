@@ -105,6 +105,6 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="CanvasLayer/LegendPanel/LegendContainer/HBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 20
 
 [node name="DevConsole" parent="." instance=ExtResource("3_nuen2")]

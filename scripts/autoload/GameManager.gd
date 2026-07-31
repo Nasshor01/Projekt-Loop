@@ -567,7 +567,8 @@ func _prepare_battle_rewards():
 	last_battle_rewards.clear()
 	var reward_card_count := VillageBonuses.get_reward_card_count()
 	var effective_rare_chance := VillageBonuses.get_rare_card_chance()
-	var uncommon_chance := VillageBonuses.get_uncommon_chance()
+	var epic_chance := VillageBonuses.get_epic_card_chance()
+	var legendary_chance := VillageBonuses.get_legendary_card_chance()
 	if tutorial_active and tutorial_step == TUTORIAL_STEP_FINAL_BATTLE:
 		var available_cards: Array = []
 		if is_instance_valid(CARD_REWARD_POOL):
@@ -577,7 +578,8 @@ func _prepare_battle_rewards():
 				PlayerData.selected_class,
 				PlayerData.selected_subclass,
 				PlayerData.unlocked_cards,
-				uncommon_chance
+				epic_chance,
+				legendary_chance
 			)
 		last_battle_rewards["gold"] = 0
 		last_battle_rewards["cards"] = available_cards
@@ -611,7 +613,8 @@ func _prepare_battle_rewards():
 				PlayerData.selected_class,
 				PlayerData.selected_subclass,
 				PlayerData.unlocked_cards,
-				uncommon_chance
+				epic_chance,
+				legendary_chance
 			)
 			last_battle_rewards["cards"] = reward_cards
 			if reward_cards.is_empty():

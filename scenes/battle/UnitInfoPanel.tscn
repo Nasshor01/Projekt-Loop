@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://bykx7qci4fkvl"]
 
 [ext_resource type="Script" uid="uid://dlf8mjbbts8fx" path="res://scenes/ui/UnitInfoPanel.gd" id="1_balmg"]
-[ext_resource type="FontFile" uid="uid://c4topxnn115am" path="res://art/fonts/monogram-extended.ttf" id="2_font"]
+[ext_resource type="FontFile" uid="uid://bhj8pjkqc1umb" path="res://art/fonts/Ithaca-LVB75.ttf" id="2_font"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_left = 0.0
@@ -77,7 +77,7 @@ layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 17
 text = "Jméno jednotky"
 autowrap_mode = 3
 
@@ -86,7 +86,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.76, 0.84, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 10
 text = "Třída"
 
 [node name="HpBriefLabel" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/HeaderRow"]
@@ -95,7 +95,7 @@ layout_mode = 2
 size_flags_vertical = 0
 theme_override_colors/font_color = Color(1, 0.55, 0.55, 0.85)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 10
 text = "0/0"
 horizontal_alignment = 2
 
@@ -116,7 +116,7 @@ theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "HP: 0/0"
 
 [node name="AttackSlot" type="HBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/VitalsRow"]
@@ -131,7 +131,7 @@ theme_override_colors/font_color = Color(1, 0.78, 0.45, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "ATK 0"
 
 [node name="BlockSlot" type="HBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/VitalsRow"]
@@ -145,7 +145,7 @@ theme_override_colors/font_color = Color(0.55, 0.85, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "Blok: 0"
 
 [node name="EnergySlot" type="HBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/VitalsRow"]
@@ -160,7 +160,7 @@ theme_override_colors/font_color = Color(0.55, 0.9, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 12
 text = "Energie: 0"
 
 [node name="EnemySection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot"]
@@ -182,7 +182,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.72, 0.45, 0.9)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "NEXT"
 
 [node name="IntentTitleLabel" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/IntentBox/IntentVBox"]
@@ -192,7 +192,7 @@ theme_override_colors/font_color = Color(1, 0.92, 0.55, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 13
 text = "ATTACK"
 autowrap_mode = 3
 
@@ -201,7 +201,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.82, 0.84, 0.9, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 10
 text = "Detail"
 autowrap_mode = 3
 
@@ -215,7 +215,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.76, 0.84, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "PASSIVES"
 
 [node name="PassivesFlow" type="HFlowContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/PassivesSection"]
@@ -235,7 +235,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.72, 0.55, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "ALERTS"
 
 [node name="AlertsFlow" type="HFlowContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/AlertsSection"]
@@ -255,7 +255,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.76, 0.84, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "STATUS"
 
 [node name="StatusEffectsList" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/StatusSection"]

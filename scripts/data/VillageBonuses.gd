@@ -20,7 +20,8 @@ const DEFS := {
 const BASE_REWARD_CARDS := 3
 const BASE_SHOP_CARDS := 3
 const BASE_RARE_CHANCE := 0.1
-const BASE_UNCOMMON_CHANCE := 0.35
+const BASE_EPIC_CHANCE := 0.05
+const BASE_LEGENDARY_CHANCE := 0.02
 
 static func get_def(building_id: String) -> Dictionary:
 	return DEFS.get(building_id, {})
@@ -90,10 +91,21 @@ static func get_rare_card_chance() -> float:
 		chance += 0.05
 	return chance
 
-static func get_uncommon_chance() -> float:
+static func get_epic_card_chance() -> float:
+	var chance := BASE_EPIC_CHANCE
 	if get_level(LIBRARY) >= 4:
-		return 0.42
-	return BASE_UNCOMMON_CHANCE
+		chance += 0.03
+	return chance
+
+static func get_legendary_card_chance() -> float:
+	var chance := BASE_LEGENDARY_CHANCE
+	if get_level(LIBRARY) >= 5:
+		chance += 0.02
+	return chance
+
+## DEPRECATED alias — Uncommon rarity cancelled; maps to epic chance for old call sites.
+static func get_uncommon_chance() -> float:
+	return get_epic_card_chance()
 
 static func shards_for_encounter(encounter_type: int) -> int:
 	match encounter_type:
@@ -150,7 +162,7 @@ static func _library_current_text(level: int) -> String:
 	if level >= 3:
 		parts.append(TranslationHelper.tr_format("village.effect.library_shop", {"value": get_shop_card_count()}))
 	if level >= 4:
-		parts.append(TranslationHelper.tr_format("village.effect.library_uncommon", {"value": int(round(get_uncommon_chance() * 100))}))
+		parts.append(TranslationHelper.tr_format("village.effect.library_epic", {"value": int(round(get_epic_card_chance() * 100))}))
 	return ", ".join(parts)
 
 static func _library_next_text(next_level: int) -> String:

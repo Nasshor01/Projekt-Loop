@@ -56,7 +56,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 22
 text = "HP: 50/50"
 
 [node name="CenterSection" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout"]
@@ -79,7 +79,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.35, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 18
 text = "Zlato: 100"
 
 [node name="FloorDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
@@ -91,7 +91,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 18
 text = "Patro: 1"
 
 [node name="NGPlusDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
@@ -103,7 +103,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 18
 text = "NG+: 0"
 
 [node name="RightSection" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout"]
@@ -158,7 +158,7 @@ offset_top = -28.0
 offset_right = -8.0
 offset_bottom = -8.0
 theme_override_colors/font_color = Color(1, 1, 1, 0.35)
-theme_override_font_sizes/font_size = 11
+theme_override_font_sizes/font_size = 10
 text = "Pre-Alpha 0.3.2"
 horizontal_alignment = 2
 vertical_alignment = 2

@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://bgb51y0tg7yo5"]
 
 [ext_resource type="Script" uid="uid://d1cjtjsb7ouoc" path="res://scenes/ui/FloatingText.gd" id="1_8t2y6"]
-[ext_resource type="FontFile" uid="uid://c4topxnn115am" path="res://art/fonts/monogram-extended.ttf" id="2_0wmo3"]
+[ext_resource type="FontFile" uid="uid://bhj8pjkqc1umb" path="res://art/fonts/Ithaca-LVB75.ttf" id="2_0wmo3"]
 
 [node name="FloatingText" type="Label"]
 offset_right = 100.0
@@ -12,7 +12,7 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
 theme_override_fonts/font = ExtResource("2_0wmo3")
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 30
 horizontal_alignment = 1
 vertical_alignment = 1
 script = ExtResource("1_8t2y6")

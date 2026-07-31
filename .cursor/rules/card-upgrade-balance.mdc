@@ -1,0 +1,42 @@
+# Card upgrade balance (anti-turret)
+
+Source of truth for Rest / smith / event card upgrades. Pair with `card-visual-system.mdc` (visual only: `Name+`, green text — no extra frame).
+
+Design matrix: `docs/CARD_UPGRADE_MATRIX.md`. Issue: GitHub #27.
+
+## One benefit
+
+Each upgrade applies **one** primary benefit (tiny secondary flavor only if needed):
+
+| Archetype | Preferred upgrade | Forbidden / caps |
+|-----------|-------------------|------------------|
+| Melee single damage | `+1`–`+3` dmg **or** cost −1 **or** short debuff (Vulnerable/Weak 1) | Do not double damage; **never raise cost** |
+| Block | `+1`–`+3` block **or** cost −1 | No flat `×2` block without Exhaust |
+| Heal | `+1`–`+2` HP **or** cost −1 | No full-heal without Exhaust / usage limit |
+| Player-centered AOE (row / column / square around you) | Same footprint: `+2` dmg @ same cost **or** light utility | **Max footprint 3×3** around player. **No 5×5.** 4×4 only as rare exception with sharply lower damage |
+| Utility (draw / energy / move / initiative) | Small bump (e.g. +1 energy **or** +1 draw — not both aggressive) | No “turret engine” (energy + draw stack) |
+| Conditional / scaling | Slightly better condition or small bonus | Do not unlock full-board clear |
+
+## Anti-turret (position is power)
+
+- AOE stays tied to **player position** (`PLAYER_CENTERED_AOE`, row, column, ≤3×3 around you).
+- Upgrade must **not** expand a local card into global “all enemies on board” clear.
+- Prefer **setup** (e.g. Vulnerable 1 like Heavy Strike+) over raw nuke.
+- Exhaust / usage limits on strong heal / full-block stay; upgrades must **not** raise cost “for power” (anti-pattern: Smite+ 1→2, Lay on Hands+ 3→5).
+- Prefer **lowering** cost or keeping cost; never increase cost on upgrade.
+
+## Reference upgrades (keep / match this feel)
+
+- **Heavy Strike+**: same damage, +Vulnerable 1
+- **Holy Wave+ / Light Pillar+**: 8→10 @ 2E, same row/column
+- **Quick Strike+**: 5→6 @ 1E (modest melee bump)
+- **Consecration+** (locked): **10 damage @ 3×3**, same cost — **not** 5×5
+
+## Checklist before shipping an upgrade `.tres`
+
+1. One primary benefit only?
+2. Cost same or lower (never higher)?
+3. If AOE: footprint ≤3×3 (no 5×5)?
+4. Still requires positioning (not stand-still full clear)?
+5. Translations + `editor_description` match numbers?
+6. Base card `upgraded_version` linked; `is_upgraded = true` on + variant?

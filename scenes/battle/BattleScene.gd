@@ -740,7 +740,7 @@ func _add_coop_unit_label(unit: Unit, is_mine: bool):
 	var label = Label3D.new()
 	label.text = "Ty" if is_mine else "Spoluhráč"
 	label.position = Vector3(0, 1.6, 0)
-	label.font_size = 48
+	label.font_size = 38
 	label.outline_size = 12
 	if is_mine:
 		label.modulate = Color(1.0, 0.85, 0.3)  # zlatá
@@ -1380,7 +1380,7 @@ func _show_floating_notification(text: String, color: Color):
 	var label = Label.new()
 	label.text = text
 	label.add_theme_color_override("font_color", color)
-	label.add_theme_font_size_override("font_size", 24)
+	label.add_theme_font_size_override("font_size", 19)
 	label.add_theme_color_override("font_shadow_color", Color.BLACK)
 	label.add_theme_constant_override("shadow_offset_x", 2)
 	label.add_theme_constant_override("shadow_offset_y", 2)

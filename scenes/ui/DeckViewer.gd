@@ -65,7 +65,7 @@ func set_upgrade_preview_faces(show_as_upgraded: bool) -> void:
 		return
 	show_upgrade_selection(_upgrade_base_cards, show_as_upgraded)
 
-## Deck overview with counts — compact tiles stay legible.
+## Deck overview with counts — same full face as draw-pile viewer (not COMPACT).
 func display_deck(deck: Array[CardData]):
 	_upgrade_preview_mode = false
 	_upgrade_base_cards.clear()
@@ -80,7 +80,7 @@ func display_deck(deck: Array[CardData]):
 
 	for card_name in card_counts:
 		var card_info = card_counts[card_name]
-		var card_instance = _add_card_to_grid(card_info["data"], CardUI.DisplayMode.COMPACT)
+		var card_instance = _add_card_to_grid(card_info["data"], CardUI.DisplayMode.DECK)
 		if card_instance:
 			var count_label = Label.new()
 			count_label.text = TranslationHelper.tr_format("ui.deck_viewer.count", {"value": card_info["count"]})
@@ -102,10 +102,20 @@ func display_deck(deck: Array[CardData]):
 
 func _add_card_to_grid(card_data: CardData, mode: CardUI.DisplayMode) -> CardUI:
 	var card_instance = card_scene.instantiate()
-	card_instance.load_card(card_data)
 	if not (card_instance is CardUI):
 		return null
 	var card_ui := card_instance as CardUI
+
+	# Wrapper first so card enters tree before apply_display_mode (@onready + layout cache).
+	var wrapper = Control.new()
+	wrapper.clip_contents = false
+	wrapper.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	wrapper.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	wrapper.add_child(card_ui)
+	card_ui.position = Vector2(6, 8)
+	grid_container.add_child(wrapper)
+
+	card_ui.load_card(card_data)
 	card_ui.apply_display_mode(mode)
 	if not card_ui.is_connected("card_clicked", _on_card_clicked_in_viewer):
 		card_ui.card_clicked.connect(_on_card_clicked_in_viewer)
@@ -115,27 +125,27 @@ func _add_card_to_grid(card_data: CardData, mode: CardUI.DisplayMode) -> CardUI:
 	card_ui.mouse_entered.connect(_on_grid_card_hovered.bind(card_data))
 	card_ui.mouse_exited.connect(_on_grid_card_unhovered)
 
-	var scaled_size = card_ui.get_scaled_size()
-	# Small padding between grid cells
-	var cell = scaled_size + Vector2(12, 16)
-	var wrapper = Control.new()
+	var cell = card_ui.get_scaled_size() + Vector2(12, 16)
 	wrapper.custom_minimum_size = cell
 	wrapper.size = cell
+	call_deferred("_sync_deck_card_layout", card_ui)
+	return card_ui
+
+func _add_upgrade_card_to_grid(base_card: CardData, display_data: CardData, show_as_upgraded: bool) -> CardUI:
+	var card_instance = card_scene.instantiate()
+	if not (card_instance is CardUI):
+		return null
+	var card_ui := card_instance as CardUI
+
+	var wrapper = Control.new()
 	wrapper.clip_contents = false
 	wrapper.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	wrapper.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	wrapper.add_child(card_ui)
 	card_ui.position = Vector2(6, 8)
 	grid_container.add_child(wrapper)
-	call_deferred("_sync_deck_card_layout", card_ui)
-	return card_ui
 
-func _add_upgrade_card_to_grid(base_card: CardData, display_data: CardData, show_as_upgraded: bool) -> CardUI:
-	var card_instance = card_scene.instantiate()
-	card_instance.load_card(display_data)
-	if not (card_instance is CardUI):
-		return null
-	var card_ui := card_instance as CardUI
+	card_ui.load_card(display_data)
 	card_ui.apply_display_mode(CardUI.DisplayMode.DECK)
 	card_ui.set_meta("upgrade_base_card", base_card)
 	# Click always emits BASE (deck swap target). Tooltip/hover use the visible face.
@@ -147,17 +157,9 @@ func _add_upgrade_card_to_grid(base_card: CardData, display_data: CardData, show
 	if show_as_upgraded:
 		_apply_upgrade_face_chrome(card_ui)
 
-	var scaled_size = card_ui.get_scaled_size()
-	var cell = scaled_size + Vector2(12, 16)
-	var wrapper = Control.new()
+	var cell = card_ui.get_scaled_size() + Vector2(12, 16)
 	wrapper.custom_minimum_size = cell
 	wrapper.size = cell
-	wrapper.clip_contents = false
-	wrapper.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	wrapper.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	wrapper.add_child(card_ui)
-	card_ui.position = Vector2(6, 8)
-	grid_container.add_child(wrapper)
 	call_deferred("_sync_deck_card_layout", card_ui)
 	return card_ui
 
@@ -166,7 +168,7 @@ func _apply_upgrade_face_chrome(card_ui: CardUI) -> void:
 	card_ui.modulate = Color(0.88, 1.12, 0.95, 1.0)
 	var badge := Label.new()
 	badge.text = "↑"
-	badge.add_theme_font_size_override("font_size", 28)
+	badge.add_theme_font_size_override("font_size", 22)
 	badge.add_theme_color_override("font_color", Color(0.45, 1.0, 0.55, 1.0))
 	badge.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	badge.add_theme_constant_override("outline_size", 6)
