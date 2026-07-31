@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://cjqi8cnra23a"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_vx7ho"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_i7eq0"]
+
+[sub_resource type="Resource" id="Resource_vx7ho"]
+script = ExtResource("1_vx7ho")
+effect_type = 12
+value = 8
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_i7eq0")
+card_id = "quick_step+"
+card_name = "card.quick_step+"
+card_description = "card.quick_step+.desc"
+editor_description = "Increase your initiative by 8 for the next round."
+cost = 1
+range_type = 1
+range_value = 0
+tags = Array[int]([8])
+rarity = 0
+effects = Array[ExtResource("1_vx7ho")]([SubResource("Resource_vx7ho")])
+is_upgraded = true
+max_uses_per_turn = -1
+debuff_on_overuse = {}
+max_uses_before_removal = -1
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

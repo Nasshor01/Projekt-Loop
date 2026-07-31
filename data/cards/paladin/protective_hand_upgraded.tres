@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://c87ert1fyjp33"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_phand"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_phand"]
+[ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_phand"]
+
+[sub_resource type="Resource" id="Resource_phand1"]
+script = ExtResource("1_phand")
+effect_type = 2
+value = 10
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[sub_resource type="Resource" id="Resource_phand2"]
+script = ExtResource("1_phand")
+effect_type = 7
+value = 5
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_phand")
+card_id = "protective_hand+"
+card_name = "card.protective_hand+"
+card_description = "card.protective_hand+.desc"
+editor_description = "Gain 10 block. Heal 5 HP."
+cost = 2
+range_type = 1
+range_value = 1
+tags = Array[int]([6, 8])
+rarity = 0
+required_subclass = ExtResource("3_phand")
+effects = Array[ExtResource("1_phand")]([SubResource("Resource_phand1"), SubResource("Resource_phand2")])
+is_upgraded = true
+max_uses_per_turn = -1
+debuff_on_overuse = {}
+max_uses_before_removal = -1
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

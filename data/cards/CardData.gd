@@ -251,16 +251,43 @@ const BB_EXHAUST := "#ffb070"
 const BB_INITIATIVE := "#f0d9a0"
 
 func generate_compact_description(icon_px: int = ICON_SIZE) -> String:
-	"""Shorthand: one effect per line — [Value] [Icon]. Details live in the tooltip.
-	icon_px should match DescriptionLabel font size so glyphs and icons share one line height."""
+	"""Shorthand: [Value] [Icon] per effect. Multi-effect cards pack simple lines.
+	Details live in the tooltip. icon_px matches DescriptionLabel font size."""
 	_shorthand_icon_px = maxi(icon_px, 8)
-	var parts: Array[String] = []
+	var packable: Array[String] = []
+	var standalone: Array[String] = []
 	for effect in effects:
 		var line := _format_effect_shorthand(effect)
-		if not line.is_empty():
-			parts.append(line)
-	if parts.is_empty():
+		if line.is_empty():
+			continue
+		if _is_packable_effect(effect):
+			packable.append(line)
+		else:
+			standalone.append(line)
+	if packable.is_empty() and standalone.is_empty():
 		return get_localized_description()
+	return _pack_shorthand_lines(packable, standalone)
+
+func _is_packable_effect(effect: CardEffectData) -> bool:
+	"""True for pure N+icon (or short energy) lines without conditions."""
+	if effect == null or effect.has_condition:
+		return false
+	match effect.effect_type:
+		CardEffectData.EffectType.GAIN_BLOCK, CardEffectData.EffectType.HEAL_UNIT, CardEffectData.EffectType.DEAL_DAMAGE, CardEffectData.EffectType.GAIN_ENERGY:
+			return true
+		_:
+			return false
+
+func _pack_shorthand_lines(packable: Array[String], standalone: Array[String]) -> String:
+	"""Merge packable N+icon lines with · when the card would otherwise be tall."""
+	var parts: Array[String] = []
+	var total := packable.size() + standalone.size()
+	if packable.size() >= 2 and total > 2:
+		parts.append(" · ".join(packable))
+		parts.append_array(standalone)
+	else:
+		parts.append_array(packable)
+		parts.append_array(standalone)
 	return "\n".join(parts).strip_edges()
 
 func _img(icon_key: String, size: int = -1) -> String:

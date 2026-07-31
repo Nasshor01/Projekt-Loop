@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://dfrujvfpm4vyu"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_sheal"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_sheal"]
+[ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_sheal"]
+
+[sub_resource type="Resource" id="Resource_sheal1"]
+script = ExtResource("1_sheal")
+effect_type = 7
+value = 14
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[sub_resource type="Resource" id="Resource_sheal2"]
+script = ExtResource("1_sheal")
+effect_type = 5
+value = 0
+string_value = "remove_all_debuffs"
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_sheal")
+card_id = "sacred_healing+"
+card_name = "card.sacred_healing+"
+card_description = "card.sacred_healing+.desc"
+editor_description = "Heal 14 HP. Remove all debuffs."
+cost = 2
+range_type = 1
+range_value = 1
+tags = Array[int]([6])
+rarity = 2
+required_subclass = ExtResource("3_sheal")
+effects = Array[ExtResource("1_sheal")]([SubResource("Resource_sheal1"), SubResource("Resource_sheal2")])
+is_upgraded = true
+max_uses_per_turn = -1
+debuff_on_overuse = {}
+max_uses_before_removal = -1
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

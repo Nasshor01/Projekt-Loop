@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://dqkuyyy37t84o"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_dstance"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_dstance"]
+[ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_dstance"]
+
+[sub_resource type="Resource" id="Resource_dstance1"]
+script = ExtResource("1_dstance")
+effect_type = 2
+value = 6
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[sub_resource type="Resource" id="Resource_dstance2"]
+script = ExtResource("1_dstance")
+effect_type = 5
+value = 0
+string_value = "defensive_stance"
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_dstance")
+card_id = "defensive_stance+"
+card_name = "card.defensive_stance+"
+card_description = "card.defensive_stance+.desc"
+editor_description = "Gain 6 block. The next attack against you deals 50% less damage."
+cost = 1
+range_type = 1
+range_value = 1
+tags = Array[int]([8])
+rarity = 0
+required_subclass = ExtResource("3_dstance")
+effects = Array[ExtResource("1_dstance")]([SubResource("Resource_dstance1"), SubResource("Resource_dstance2")])
+is_upgraded = true
+max_uses_per_turn = -1
+debuff_on_overuse = {}
+max_uses_before_removal = -1
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

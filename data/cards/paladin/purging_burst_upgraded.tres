@@ -7,12 +7,12 @@
 [sub_resource type="Resource" id="Resource_2e356"]
 script = ExtResource("1_oexgg")
 effect_type = 0
-value = 1
+value = 7
 string_value = ""
 target_type = 6
 area_of_effect_type = 3
-aoe_param_x = 4
-aoe_param_y = 4
+aoe_param_x = 2
+aoe_param_y = 2
 damage_type = 1
 has_condition = false
 condition_type = ""
@@ -25,7 +25,7 @@ script = ExtResource("2_6fj57")
 card_id = "purging_burst+"
 card_name = "card.purging_burst+"
 card_description = "card.purging_burst+.desc"
-editor_description = "Deal 1 damage to enemies in a 4x4 area around you."
+editor_description = "Deal 7 damage to enemies in a 2x2 area around you."
 cost = 1
 range_type = 7
 range_value = 1

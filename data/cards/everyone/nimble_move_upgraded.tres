@@ -22,7 +22,7 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 [sub_resource type="Resource" id="Resource_3uoxi"]
 script = ExtResource("1_smsti")
 effect_type = 3
-value = 2
+value = 1
 string_value = ""
 target_type = 0
 area_of_effect_type = 0
@@ -37,11 +37,11 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_icxbo")
-card_id = "nimble_move"
+card_id = "nimble_move+"
 card_name = "card.nimble_move+"
 card_description = "card.nimble_move+.desc"
-editor_description = "You can move 2. Draw 2 cards."
-cost = 1
+editor_description = "You can move 2. Draw 1 card."
+cost = 0
 range_type = 2
 range_value = 1
 tags = Array[int]([7, 5])

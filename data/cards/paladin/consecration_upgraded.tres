@@ -7,12 +7,12 @@
 [sub_resource type="Resource" id="Resource_mmxbr"]
 script = ExtResource("1_ipsbq")
 effect_type = 0
-value = 8
+value = 10
 string_value = ""
 target_type = 3
 area_of_effect_type = 3
-aoe_param_x = 5
-aoe_param_y = 5
+aoe_param_x = 3
+aoe_param_y = 3
 damage_type = 1
 has_condition = false
 condition_type = ""
@@ -25,7 +25,7 @@ script = ExtResource("2_fs3rr")
 card_id = "consecration+"
 card_name = "card.consecration+"
 card_description = "card.consecration+.desc"
-editor_description = "Deal 8 damage to enemies in a 5x5 area around you."
+editor_description = "Deal 10 damage to enemies in a 3x3 area around you."
 cost = 2
 range_type = 7
 range_value = 1

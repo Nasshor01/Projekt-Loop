@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=8 format=3 uid="uid://b753xss6vwd2"]
+[gd_resource type="Resource" script_class="CardData" load_steps=9 format=3 uid="uid://b753xss6vwd2"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_dprot"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_dprot"]
 [ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_dprot"]
+[ext_resource type="Resource" uid="uid://boip02mnhwa78" path="res://data/cards/paladin/divine_protection_upgraded.tres" id="3_upglink"]
 
 [sub_resource type="Resource" id="Resource_dprot1"]
 script = ExtResource("1_dprot")
@@ -82,6 +83,7 @@ rarity = 3
 required_subclass = ExtResource("3_dprot")
 effects = Array[ExtResource("1_dprot")]([SubResource("Resource_dprot1"), SubResource("Resource_dprot2"), SubResource("Resource_dprot3"), SubResource("Resource_dprot4")])
 is_upgraded = false
+upgraded_version = ExtResource("3_upglink")
 max_uses_per_turn = -1
 debuff_on_overuse = {}
 max_uses_before_removal = -1

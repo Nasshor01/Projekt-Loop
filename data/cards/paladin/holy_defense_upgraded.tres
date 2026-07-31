@@ -1,0 +1,56 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://dxd4uc5mhs4um"]
+
+[ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_hdef"]
+[ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_hdef"]
+[ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_hdef"]
+
+[sub_resource type="Resource" id="Resource_hdef1"]
+script = ExtResource("1_hdef")
+effect_type = 2
+value = 10
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[sub_resource type="Resource" id="Resource_hdef2"]
+script = ExtResource("1_hdef")
+effect_type = 0
+value = 7
+string_value = ""
+target_type = 1
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 1
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
+[resource]
+script = ExtResource("2_hdef")
+card_id = "holy_defense+"
+card_name = "card.holy_defense+"
+card_description = "card.holy_defense+.desc"
+editor_description = "Gain 10 block. Deal 7 damage."
+cost = 2
+range_type = 2
+range_value = 1
+tags = Array[int]([0, 8])
+rarity = 2
+required_subclass = ExtResource("3_hdef")
+effects = Array[ExtResource("1_hdef")]([SubResource("Resource_hdef1"), SubResource("Resource_hdef2")])
+is_upgraded = true
+max_uses_per_turn = -1
+debuff_on_overuse = {}
+max_uses_before_removal = -1
+metadata/_custom_type_script = "uid://uk53klqs1ti4"

@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_s10ii"]
 script = ExtResource("1_rbi6i")
 effect_type = 0
-value = 10
+value = 9
 string_value = ""
 target_type = 1
 area_of_effect_type = 0
@@ -22,11 +22,11 @@ metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
 [resource]
 script = ExtResource("2_f2alu")
-card_id = "smite"
+card_id = "smite+"
 card_name = "card.smite+"
 card_description = "card.smite+.desc"
-editor_description = "Deal 10 damage."
-cost = 2
+editor_description = "Deal 9 damage."
+cost = 1
 range_type = 2
 range_value = 1
 tags = Array[int]([0])

@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://nnh5v7ebkev0"]
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://nnh5v7ebkev0"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_mheal"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_mheal"]
 [ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_mheal"]
+[ext_resource type="Resource" uid="uid://cm3cgvlheh3k4" path="res://data/cards/paladin/massive_healing_upgraded.tres" id="3_upglink"]
 
 [sub_resource type="Resource" id="Resource_mheal"]
 script = ExtResource("1_mheal")
@@ -34,6 +35,7 @@ rarity = 2
 required_subclass = ExtResource("3_mheal")
 effects = Array[ExtResource("1_mheal")]([SubResource("Resource_mheal")])
 is_upgraded = false
+upgraded_version = ExtResource("3_upglink")
 max_uses_per_turn = -1
 debuff_on_overuse = {}
 max_uses_before_removal = 1

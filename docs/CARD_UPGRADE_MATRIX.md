@@ -127,8 +127,8 @@ One primary benefit each. Numbers are the **upgraded** card.
 
 ## Done when (#27)
 
-- [ ] Rule + this matrix committed  
-- [ ] All REBALANCE applied in `.tres`  
-- [ ] All NEW created + linked  
-- [ ] Rest / smith: no upgradeable card without target  
-- [ ] Visual: green `Name+` only (existing CardUI)
+- [x] Rule + this matrix committed  
+- [x] All REBALANCE applied in `.tres`  
+- [x] All NEW created + linked  
+- [x] Rest / smith: no upgradeable card without target (49/49 Paladin+everyone run cards linked)  
+- [x] Visual: green `Name+` only (existing CardUI)

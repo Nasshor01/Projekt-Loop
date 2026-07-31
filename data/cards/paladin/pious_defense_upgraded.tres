@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_2hlmt"]
 script = ExtResource("1_b25g3")
 effect_type = 2
-value = 6
+value = 8
 string_value = ""
 target_type = 0
 area_of_effect_type = 0
@@ -25,7 +25,7 @@ script = ExtResource("2_pii7y")
 card_id = "pious_defense+"
 card_name = "card.pious_defense+"
 card_description = "card.pious_defense+.desc"
-editor_description = "Gain 6 block."
+editor_description = "Gain 8 block."
 cost = 1
 range_type = 1
 range_value = 1

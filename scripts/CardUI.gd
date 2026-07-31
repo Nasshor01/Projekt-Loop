@@ -28,10 +28,12 @@ const COMPACT_SIZE := Vector2(168, 210)
 ## Name + description sizes: edit @export on CardUI root (not child Theme Overrides).
 const DESC_MAX_LINES_FULL := 4
 const DESC_MAX_LINES_COMPACT := 3
-## Dense cards only: shrink export size by 1 (never below 10). Comfortable = exact export size.
+## After packing, shrink only if still very tall (never below 10). Prefer spacing over font.
 const DESC_DENSE_LINE_THRESHOLD := 3
 const DESC_DENSE_SHRINK := 1
 const DESC_FONT_MIN := 10
+const DESC_LINE_SEP_NORMAL := 2
+const DESC_LINE_SEP_DENSE := 0
 const COST_FONT_SIZE := 22
 ## Compact face only — full face uses name_font_size export.
 const NAME_FONT_COMPACT := 14
@@ -342,7 +344,7 @@ func _description_icon_px(font_size: int) -> int:
 
 func _set_description_text(desc: String, font_size: int) -> void:
 	"""Render face description via push_font + add_text/add_image.
-	Outline / colors / line_separation stay whatever DescriptionLabel has in CardUI.tscn."""
+	Outline / colors from DescriptionLabel in CardUI.tscn; dense cards tighten line_separation."""
 	if not description_label:
 		return
 	description_label.bbcode_enabled = true
@@ -356,6 +358,11 @@ func _set_description_text(desc: String, font_size: int) -> void:
 	description_label.add_theme_font_size_override("bold_italics_font_size", font_size)
 	description_label.add_theme_font_size_override("mono_font_size", font_size)
 
+	var lines: PackedStringArray = [] if desc.is_empty() else desc.split("\n")
+	var line_count := lines.size()
+	var sep := DESC_LINE_SEP_DENSE if line_count >= DESC_DENSE_LINE_THRESHOLD else DESC_LINE_SEP_NORMAL
+	description_label.add_theme_constant_override("line_separation", sep)
+
 	var font: Font = description_label.get_theme_font("normal_font")
 	description_label.clear()
 	if font:
@@ -366,7 +373,6 @@ func _set_description_text(desc: String, font_size: int) -> void:
 	if desc.is_empty():
 		return
 
-	var lines := desc.split("\n")
 	for i in range(lines.size()):
 		if i > 0:
 			description_label.newline()
