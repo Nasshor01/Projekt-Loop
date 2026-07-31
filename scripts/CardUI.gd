@@ -26,14 +26,18 @@ const COMPACT_SIZE := Vector2(168, 210)
 
 ## StS-style face: fixed text slot, clamp lines.
 ## Name + description sizes: edit @export on CardUI root (not child Theme Overrides).
-const DESC_MAX_LINES_FULL := 4
-const DESC_MAX_LINES_COMPACT := 3
-## After packing, shrink only if still very tall (never below 10). Prefer spacing over font.
+## Dense cards pack trailing keyword lines (Holy · Exhaust) before clamping.
+const DESC_MAX_LINES_FULL := 5
+const DESC_MAX_LINES_COMPACT := 4
+## Shrink font when tall; pack keywords first so 5-line cards still fit the slot.
 const DESC_DENSE_LINE_THRESHOLD := 3
+const DESC_VERY_DENSE_LINE_THRESHOLD := 5
 const DESC_DENSE_SHRINK := 1
+const DESC_VERY_DENSE_SHRINK := 2
 const DESC_FONT_MIN := 10
 const DESC_LINE_SEP_NORMAL := 2
 const DESC_LINE_SEP_DENSE := 0
+const DESC_LINE_SEP_VERY_DENSE := -2
 const COST_FONT_SIZE := 22
 ## Compact face only — full face uses name_font_size export.
 const NAME_FONT_COMPACT := 14
@@ -190,7 +194,8 @@ func _apply_readability_theme() -> void:
 		description_label.fit_content = false
 		description_label.scroll_active = false
 		description_label.clip_contents = true
-		description_label.bbcode_enabled = true
+		# Manual push_color / add_image — BBCode engine must stay OFF or it eats [/img] tags.
+		description_label.bbcode_enabled = false
 		description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		# Do NOT override outline_size / font_outline_color — use DescriptionLabel from CardUI.tscn.
 		var desc_font := description_label.get_theme_font("normal_font")
@@ -319,6 +324,41 @@ func _clamp_description_lines(desc: String, max_lines: int) -> String:
 		kept.append(lines[i])
 	return "\n".join(kept)
 
+func _is_verbal_keyword_face_line(line: String) -> bool:
+	"""True for keyword-only lines (Holy / Exhaust), not N+icon effect lines."""
+	var s := line.strip_edges()
+	if s.is_empty() or s.contains("[img"):
+		return false
+	# Strip face BBCode wrappers for matching.
+	s = s.replace("[b]", "").replace("[/b]", "")
+	var color_re := RegEx.new()
+	color_re.compile("\\[/?color(?:=[^\\]]*)?\\]")
+	s = color_re.sub(s, "", true).strip_edges()
+	return s in ["Holy", "Svaté", "Exhaust", "Vyčerpání", "Vulnerable", "Zranitelnost", "Poison", "Jed", "Block", "Blok"]
+
+func _pack_face_description(desc: String, max_lines: int) -> String:
+	"""Pack trailing verbal keywords onto one line (Holy · Exhaust) so 5-effect cards fit."""
+	if desc.is_empty():
+		return desc
+	var lines: PackedStringArray = desc.split("\n")
+	if lines.size() <= max_lines:
+		return desc
+	# Collect trailing keyword-only lines.
+	var verbal_start := lines.size()
+	while verbal_start > 0 and _is_verbal_keyword_face_line(lines[verbal_start - 1]):
+		verbal_start -= 1
+	if verbal_start >= lines.size() or verbal_start == 0:
+		return _clamp_description_lines(desc, max_lines)
+	var head: PackedStringArray = lines.slice(0, verbal_start)
+	var verbal: PackedStringArray = lines.slice(verbal_start, lines.size())
+	var packed_verbal := " · ".join(verbal)
+	var packed: PackedStringArray = []
+	packed.append_array(head)
+	packed.append(packed_verbal)
+	if packed.size() <= max_lines:
+		return "\n".join(packed)
+	return _clamp_description_lines("\n".join(packed), max_lines)
+
 func _fit_name_font() -> void:
 	if not name_label:
 		return
@@ -332,9 +372,11 @@ func _fit_name_font() -> void:
 	name_label.add_theme_font_size_override("font_size", size)
 
 func _apply_description_font(line_count: int) -> int:
-	"""Effective face font size from description_font_size export (dense: −1)."""
+	"""Effective face font size from description_font_size export (dense cards shrink more)."""
 	var font_size := description_font_size
-	if line_count > DESC_DENSE_LINE_THRESHOLD:
+	if line_count >= DESC_VERY_DENSE_LINE_THRESHOLD:
+		font_size = maxi(description_font_size - DESC_VERY_DENSE_SHRINK, DESC_FONT_MIN)
+	elif line_count > DESC_DENSE_LINE_THRESHOLD:
 		font_size = maxi(description_font_size - DESC_DENSE_SHRINK, DESC_FONT_MIN)
 	return font_size
 
@@ -347,7 +389,8 @@ func _set_description_text(desc: String, font_size: int) -> void:
 	Outline / colors from DescriptionLabel in CardUI.tscn; dense cards tighten line_separation."""
 	if not description_label:
 		return
-	description_label.bbcode_enabled = true
+	# Manual push_color / add_image — keep BBCode engine off (it mangles [/img] into [/]).
+	description_label.bbcode_enabled = false
 	description_label.fit_content = false
 	description_label.scroll_active = false
 	description_label.clip_contents = true
@@ -360,7 +403,11 @@ func _set_description_text(desc: String, font_size: int) -> void:
 
 	var lines: PackedStringArray = [] if desc.is_empty() else desc.split("\n")
 	var line_count := lines.size()
-	var sep := DESC_LINE_SEP_DENSE if line_count >= DESC_DENSE_LINE_THRESHOLD else DESC_LINE_SEP_NORMAL
+	var sep := DESC_LINE_SEP_NORMAL
+	if line_count >= DESC_VERY_DENSE_LINE_THRESHOLD:
+		sep = DESC_LINE_SEP_VERY_DENSE
+	elif line_count >= DESC_DENSE_LINE_THRESHOLD:
+		sep = DESC_LINE_SEP_DENSE
 	description_label.add_theme_constant_override("line_separation", sep)
 
 	var font: Font = description_label.get_theme_font("normal_font")
@@ -378,12 +425,18 @@ func _set_description_text(desc: String, font_size: int) -> void:
 			description_label.newline()
 		_append_description_line(lines[i], font_size)
 
+func _strip_face_bold_tags(line: String) -> String:
+	"""Remove [b][/b] without touching [/img] (plain replace of [/b] is fine; keep explicit)."""
+	var re := RegEx.new()
+	re.compile("\\[/?b\\]")
+	return re.sub(line, "", true)
+
 func _append_description_line(line: String, font_size: int) -> void:
 	"""Split plain text / [color] / [img] into add_text / add_image calls (no size tags)."""
-	# Strip [b][/b] — bold was fighting font size; outline carries weight.
-	var s := line.replace("[b]", "").replace("[/b]", "")
+	var s := _strip_face_bold_tags(line)
 	var img_re := RegEx.new()
-	img_re.compile("\\[img=(\\d+)x(\\d+)\\]([^\\[]+)\\[/img\\]")
+	# Accept normal [/img] and broken [/] left by BBCode engine in older sessions.
+	img_re.compile("\\[img=(\\d+)x(\\d+)\\]([^\\[]+)\\[/(?:img)?\\]")
 	var color_open_re := RegEx.new()
 	color_open_re.compile("\\[color=([^\\]]+)\\]")
 	var color_close_re := RegEx.new()
@@ -423,12 +476,13 @@ func _append_description_line(line: String, font_size: int) -> void:
 
 		match kind:
 			"img":
-				var path := match_m.get_string(3)
+				var path := match_m.get_string(3).strip_edges()
 				var tex: Texture2D = null
 				if ResourceLoader.exists(path):
 					tex = load(path) as Texture2D
 				if tex:
 					description_label.add_image(tex, font_size, font_size)
+				# Never dump raw [img] paths onto the face if load fails.
 				pos = match_m.get_end()
 			"color_open":
 				var hex := match_m.get_string(1).strip_edges()
@@ -456,13 +510,13 @@ func update_display():
 	_apply_upgrade_name_style()
 	cost_label.text = str(card_data.cost)
 
-	# Line count is independent of icon px — generate once for density, then again with scaled icons.
+	# Pack keyword lines first, then scale icons to the dense font size.
 	var max_lines := DESC_MAX_LINES_COMPACT if display_mode == DisplayMode.COMPACT else DESC_MAX_LINES_FULL
-	var desc_for_lines := _clamp_description_lines(card_data.get_display_description(), max_lines)
+	var desc_for_lines := _pack_face_description(card_data.get_display_description(), max_lines)
 	var line_count := 0 if desc_for_lines.is_empty() else desc_for_lines.split("\n").size()
 	var font_size := _apply_description_font(line_count)
 	var icon_px := _description_icon_px(font_size)
-	var desc := _clamp_description_lines(card_data.get_display_description(icon_px), max_lines)
+	var desc := _pack_face_description(card_data.get_display_description(icon_px), max_lines)
 	_set_description_text(desc, font_size)
 
 	if artwork_texture_rect and artwork_texture_rect.visible and card_data.artwork:

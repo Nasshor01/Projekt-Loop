@@ -139,8 +139,8 @@
 "keyword.vulnerable.title","Vulnerable","Zranitelnost"
 "keyword.vulnerable.description","Target takes 50% more damage.","Cíl dostává o 50 % vyšší poškození."
 "keyword.holy.title","Holy","Svaté"
-"keyword.holy.description","Holy damage deals [color=yellow]+5[/color] extra damage to Undead and Demons.","Svaté poškození působí [color=yellow]+5[/color] vyšší poškození Nemrtvým a Démonům."
-"keyword.holy.description_with_bonus","Holy damage deals [color=yellow]+{value}[/color] damage to Undead and Demons.","Svaté poškození působí [color=yellow]+{value}[/color] poškození Nemrtvým a Démonům."
+"keyword.holy.description","Damage with Holy: [color=yellow]+5[/color] vs Undead and Demons.","Poškození se Svatým: [color=yellow]+5[/color] proti Nemrtvým a Démonům."
+"keyword.holy.description_with_bonus","Damage with Holy: [color=yellow]+{value}[/color] vs Undead and Demons.","Poškození se Svatým: [color=yellow]+{value}[/color] proti Nemrtvým a Démonům."
 "keyword.heal.title","Heal","Léčení"
 "keyword.heal.description","Restores HP to the target.","Obnoví HP cíli."
 "keyword.regeneration.title","Regeneration","Regenerace"
@@ -558,13 +558,17 @@
 "artifact.zahadna_kostka","Mysterious Dice","Záhadná kostka"
 "artifact.zahadna_kostka.desc","At the start of each turn: 50% chance to gain 2 energy or lose 1 energy.","Na začátku každého tahu: 50% šance na získání 2 energie nebo ztrátu 1 energie."
 "card.adrenaline","Adrenaline","Adrenalin"
-"card.adrenaline.desc","Gain 1 Energy. At the end of your turn, draw 1 extra card.","Získej 1 Energii. Na konci tahu si lízněte o 1 kartu navíc."
+"card.adrenaline.desc","Gain 1 Energy.
+At the end of your turn, draw 1 extra card.","Získej 1 Energii.
+Na konci tahu si lízněte o 1 kartu navíc."
 "card.adrenaline+","Adrenaline+","Adrenalin+"
-"card.adrenaline+.desc","Gain 2 Energy. At the end of your turn, draw 1 extra card.","Získej 2 Energie. Na konci tahu si lízněte o 1 kartu navíc."
+"card.adrenaline+.desc","Gain 2 Energy.
+At the end of your turn, draw 1 extra card.","Získej 2 Energie.
+Na konci tahu si lízněte o 1 kartu navíc."
 "card.defend","Defend","Obrana"
-"card.defend.desc","Gain 5 block.","Získej 5 bloku."
+"card.defend.desc","Gain 5 Block.","Získej 5 Blok."
 "card.defend+","Defend+","Obrana+"
-"card.defend+.desc","Gain 5 block.","Získej 5 bloku."
+"card.defend+.desc","Gain 5 Block.","Získej 5 Blok."
 "card.quick_strike","Quick Strike","Rychlý úder"
 "card.quick_strike.desc","Deal 5 damage.","Způsob 5 poškození."
 "card.quick_strike+","Quick Strike+","Rychlý úder+"
@@ -572,125 +576,253 @@
 "card.quick_step","Quick Step","Rychlý krok"
 "card.quick_step.desc","Increase your initiative by 5 for the next round.","Zvyš svou iniciativu o 5 pro příští kolo."
 "card.fortify","Fortify","Opevnění"
-"card.fortify.desc","Gain 10 block.","Získej 10 bloku."
+"card.fortify.desc","Gain 10 Block.","Získej 10 Blok."
 "card.fortify+","Fortify+","Opevnění+"
-"card.fortify+.desc","Gain 14 block.","Získej 14 bloku."
+"card.fortify+.desc","Gain 14 Block.","Získej 14 Blok."
 "card.heavy_strike","Heavy Strike","Silný úder"
 "card.heavy_strike.desc","Deal 10 damage.","Způsob 10 poškození."
 "card.heavy_strike+","Heavy Strike+","Silný úder+"
-"card.heavy_strike+.desc","Deal 10 damage. Apply Vulnerable for 1 turn.","Způsob 10 poškození. Aplikuj Zranitelnost na 1 tah."
+"card.heavy_strike+.desc","Deal 10 damage.
+Apply Vulnerable for 1 turn.","Způsob 10 poškození.
+Aplikuj Zranitelnost na 1 tah."
 "card.nimble_move","Nimble Move","Hbitý pohyb"
-"card.nimble_move.desc","You can move 1. Draw 1 card.","Můžeš se pohnout 1. Lízni si 1 kartu."
+"card.nimble_move.desc","You can move 1.
+Draw 1 card.","Můžeš se pohnout 1.
+Lízni si 1 kartu."
 "card.nimble_move+","Nimble Move+","Hbitý pohyb+"
-"card.nimble_move+.desc","You can move 2. Draw 1 card.","Můžeš se pohnout 2. Lízni si 1 kartu."
+"card.nimble_move+.desc","You can move 2.
+Draw 1 card.","Můžeš se pohnout 2.
+Lízni si 1 kartu."
 "card.regroup","Regroup","Přeskupení"
 "card.regroup.desc","Draw 1 card.","Lízni si 1 kartu."
 "card.regroup+","Regroup+","Přeskupení+"
 "card.regroup+.desc","Draw 2 cards.","Lízni si 2 karty."
 "card.aura_of_devotion","Aura of Devotion","Aura oddanosti"
-"card.aura_of_devotion.desc","At the start of each of your turns, gain 1 block.","Na začátku každého tvého tahu získej 1 blok."
+"card.aura_of_devotion.desc","At the start of each of your turns, gain 1 Block.","Na začátku každého tvého tahu získej 1 Blok."
 "card.aura_of_devotion+","Aura of Devotion+","Aura oddanosti+"
-"card.aura_of_devotion+.desc","At the start of each of your turns, gain 2 block.","Na začátku každého tvého tahu získej 2 bloku."
+"card.aura_of_devotion+.desc","At the start of each of your turns, gain 2 Block.","Na začátku každého tvého tahu získej 2 Blok."
 "card.consecration","Consecration","Svěcení"
-"card.consecration.desc","Deal 8 holy damage to enemies in a 3×3 area around you.","Způsob 8 svatého poškození nepřátelům v oblasti 3×3 kolem tebe."
+"card.consecration.desc","Deal 8 damage to enemies in a 3×3 area around you.
+Holy","Způsob 8 poškození nepřátelům v oblasti 3×3 kolem tebe.
+Svaté"
 "card.consecration+","Consecration+","Svěcení+"
-"card.consecration+.desc","Deal 10 holy damage to enemies in a 3×3 area around you.","Způsob 10 svatého poškození nepřátelům v oblasti 3×3 kolem tebe."
+"card.consecration+.desc","Deal 10 damage to enemies in a 3×3 area around you.
+Holy","Způsob 10 poškození nepřátelům v oblasti 3×3 kolem tebe.
+Svaté"
 "card.divine_wrath","Divine Wrath","Boží hněv"
-"card.divine_wrath.desc","Deal 8 holy damage to enemies in a 3×3 area around you. Exhaust.","Způsob 8 svatého poškození nepřátelům v oblasti 3×3 kolem tebe. Tato karta se vyčerpá."
+"card.divine_wrath.desc","Deal 8 damage to enemies in a 3×3 area around you.
+Holy
+Exhaust","Způsob 8 poškození nepřátelům v oblasti 3×3 kolem tebe.
+Svaté
+Vyčerpání"
 "card.divine_wrath+","Divine Wrath+","Boží hněv+"
-"card.divine_wrath+.desc","Deal 10 holy damage to enemies in a 3×3 area around you. Exhaust.","Způsob 10 svatého poškození nepřátelům v oblasti 3×3 kolem tebe. Tato karta se vyčerpá."
+"card.divine_wrath+.desc","Deal 10 damage to enemies in a 3×3 area around you.
+Holy
+Exhaust","Způsob 10 poškození nepřátelům v oblasti 3×3 kolem tebe.
+Svaté
+Vyčerpání"
 "card.divine_grace","Divine Grace","Božská Milost"
-"card.divine_grace.desc","Heal to full health. Exhaust.","Vyléč se na plné zdraví. Tato karta se vyčerpá."
+"card.divine_grace.desc","Heal to full health.
+Exhaust","Vyléč se na plné zdraví.
+Vyčerpání"
 "card.divine_judgment","Divine Judgment","Božský Soud"
-"card.divine_judgment.desc","Deal 15 holy damage to all enemies. Exhaust.","Způsob 15 svatého poškození všem nepřátelům. Tato karta se vyčerpá."
+"card.divine_judgment.desc","Deal 15 damage to all enemies.
+Holy
+Exhaust","Způsob 15 poškození všem nepřátelům.
+Svaté
+Vyčerpání"
 "card.divine_justice","Divine Justice","Božská Spravedlnost"
-"card.divine_justice.desc","Deal 14 holy damage. If the enemy has more than 50% health, deal +8 holy damage. Exhaust.","Způsob 14 svatého poškození. Pokud má nepřítel více než 50% zdraví, způsob +8 svatého poškození. Tato karta se vyčerpá."
+"card.divine_justice.desc","Deal 14 damage.
+If the enemy has more than 50% health, deal +8 damage.
+Holy
+Exhaust","Způsob 14 poškození.
+Pokud má nepřítel více než 50% zdraví, způsob +8 poškození.
+Svaté
+Vyčerpání"
 "card.divine_protection","Divine Protection","Božská Ochrana"
-"card.divine_protection.desc","Gain 12 block. Heal 8 HP. Deal 8 holy damage to all enemies. Exhaust.","Získej 12 bloku. Vyléč se za 8 HP. Způsob 8 svatého poškození všem nepřátelům. Tato karta se vyčerpá."
+"card.divine_protection.desc","Gain 12 Block.
+Heal 8 HP.
+Deal 8 damage to all enemies.
+Holy
+Exhaust","Získej 12 Blok.
+Vyléč se za 8 HP.
+Způsob 8 poškození všem nepřátelům.
+Svaté
+Vyčerpání"
 "card.excommunication","Excommunication","Exkomunikace"
-"card.excommunication.desc","Deal 6 holy damage. The enemy gains Vulnerable for 2 turns.","Způsob 6 svatého poškození. Nepřítel získá debuff 'Zranitelný' na 2 kola."
+"card.excommunication.desc","Deal 6 damage.
+The enemy gains Vulnerable for 2 turns.
+Holy","Způsob 6 poškození.
+Nepřítel získá Zranitelnost na 2 kola.
+Svaté"
 "card.gods_lightning","God's Lightning","Boží Blesk"
-"card.gods_lightning.desc","Deal 10 holy damage. If you kill an enemy, gain 1 energy.","Způsob 10 svatého poškození. Pokud zabiješ nepřítele, získej 1 energii."
+"card.gods_lightning.desc","Deal 10 damage.
+If you kill an enemy, gain 1 energy.
+Holy","Způsob 10 poškození.
+Pokud zabiješ nepřítele, získej 1 energii.
+Svaté"
 "card.gods_wrath","God's Wrath","Boží Hněv"
-"card.gods_wrath.desc","Deal 10 holy damage. If the enemy has a debuff, deal +4 holy damage.","Způsob 10 svatého poškození. Pokud má nepřítel debuff, způsob +4 svatého poškození."
+"card.gods_wrath.desc","Deal 10 damage.
+If the enemy has a debuff, deal +4 damage.
+Holy","Způsob 10 poškození.
+Pokud má nepřítel debuff, způsob +4 poškození.
+Svaté"
 "card.holy_armor","Holy Armor","Svatá Zbroj"
-"card.holy_armor.desc","Gain 5 block. If you have more than 20 block, gain +2 block.","Získej 5 bloku. Pokud máš více než 20 bloku, získej +2 bloku navíc."
+"card.holy_armor.desc","Gain 5 Block.
+If you have more than 20 Block, gain +2 Block.","Získej 5 Blok.
+Pokud máš více než 20 Blok, získej +2 Blok navíc."
 "card.holy_blessing","Holy Blessing","Svaté Požehnání"
-"card.holy_blessing.desc","Heal 8 HP. Gain 3 block.","Vyléč se za 8 HP. Získej 3 bloku."
+"card.holy_blessing.desc","Heal 8 HP.
+Gain 3 Block.","Vyléč se za 8 HP.
+Získej 3 Blok."
 "card.holy_defense","Holy Defense","Svatá Obrana"
-"card.holy_defense.desc","Gain 10 block. Deal 5 holy damage.","Získej 10 bloku. Způsob 5 svatého poškození."
+"card.holy_defense.desc","Gain 10 Block.
+Deal 5 damage.
+Holy","Získej 10 Blok.
+Způsob 5 poškození.
+Svaté"
 "card.holy_knight","Holy Knight","Svatý Rytíř"
-"card.holy_knight.desc","Gain 6 block. Deal 6 holy damage. Heal 4 HP.","Získej 6 bloku. Způsob 6 svatého poškození. Vyléč se za 4 HP."
+"card.holy_knight.desc","Gain 6 Block.
+Deal 6 damage.
+Heal 4 HP.
+Holy","Získej 6 Blok.
+Způsob 6 poškození.
+Vyléč se za 4 HP.
+Svaté"
 "card.holy_shield","Holy Shield","Svatý Štít"
-"card.holy_shield.desc","Gain 10 block. If you have less than 50% health, gain +5 block.","Získej 10 bloku. Pokud máš méně než 50% zdraví, získej +5 bloku."
+"card.holy_shield.desc","Gain 10 Block.
+If you have less than 50% health, gain +5 Block.","Získej 10 Blok.
+Pokud máš méně než 50% zdraví, získej +5 Blok."
 "card.holy_strike","Holy Strike","Svatý Úder"
-"card.holy_strike.desc","Deal 6 holy damage.","Způsob 6 svatého poškození."
+"card.holy_strike.desc","Deal 6 damage.
+Holy","Způsob 6 poškození.
+Svaté"
 "card.holy_vengeance","Holy Vengeance","Svatá Pomsta"
-"card.holy_vengeance.desc","Deal 5 holy damage. For each block you have, deal +1 holy damage.","Způsob 5 svatého poškození. Za každý blok, který máš, způsob +1 svatého poškození."
+"card.holy_vengeance.desc","Deal 5 damage.
+For each Block you have, deal +1 damage.
+Holy","Způsob 5 poškození.
+Za každý Blok, který máš, způsob +1 poškození.
+Svaté"
 "card.holy_wave","Holy Wave","Svatá Vlna"
-"card.holy_wave.desc","Deal 8 holy damage to all enemies in your row.","Způsob 8 svatého poškození všem nepřátelům na tvém řádku."
+"card.holy_wave.desc","Deal 8 damage to all enemies in your row.
+Holy","Způsob 8 poškození všem nepřátelům na tvém řádku.
+Svaté"
 "card.holy_wave+","Holy Wave+","Svatá Vlna+"
-"card.holy_wave+.desc","Deal 10 holy damage to all enemies in your row.","Způsob 10 svatého poškození všem nepřátelům na tvém řádku."
+"card.holy_wave+.desc","Deal 10 damage to all enemies in your row.
+Holy","Způsob 10 poškození všem nepřátelům na tvém řádku.
+Svaté"
 "card.holy_wrath","Holy Wrath","Svatý Hněv"
-"card.holy_wrath.desc","Deal 8 holy damage. If you have more than 15 block, deal +4 holy damage.","Způsob 8 svatého poškození. Pokud máš více než 15 bloku, způsob +4 svatého poškození."
+"card.holy_wrath.desc","Deal 8 damage.
+If you have more than 15 Block, deal +4 damage.
+Holy","Způsob 8 poškození.
+Pokud máš více než 15 Blok, způsob +4 poškození.
+Svaté"
 "card.healing_aura","Healing Aura","Léčivá Aura"
-"card.healing_aura.desc","Heal 8 HP. All allies heal 3 HP.","Vyléč se za 8 HP. Všichni spojenci se vyléčí za 3 HP."
+"card.healing_aura.desc","Heal 8 HP.
+All allies heal 3 HP.","Vyléč se za 8 HP.
+Všichni spojenci se vyléčí za 3 HP."
 "card.healing_light","Healing Light","Léčivé Světlo"
 "card.healing_light.desc","Heal 8 HP.","Vyléč se za 8 HP."
 "card.massive_healing","Massive Healing","Masivní Léčení"
-"card.massive_healing.desc","Heal 15 HP. If you have less than 30% health, heal 20 HP. Single use per run – then removed from deck.","Vyléč se za 15 HP. Pokud máš méně než 30% zdraví, vyléč se za 20 HP. Jednorázová za run – poté se odstraní z balíčku."
+"card.massive_healing.desc","Heal 15 HP.
+If you have less than 30% health, heal 20 HP.
+Single use per run – then removed from deck.","Vyléč se za 15 HP.
+Pokud máš méně než 30% zdraví, vyléč se za 20 HP.
+Jednorázová za run – poté se odstraní z balíčku."
 "card.consecrated_barrier","Consecrated Barrier","Posvěcená Bariéra"
-"card.consecrated_barrier.desc","Gain 5 block. If you took damage last turn, gain +3 block.","Získej 5 bloku. Pokud jsi v posledním tahu utrpěl poškození, získej +3 bloku."
+"card.consecrated_barrier.desc","Gain 5 Block.
+If you took damage last turn, gain +3 Block.","Získej 5 Blok.
+Pokud jsi v posledním tahu utrpěl poškození, získej +3 Blok."
 "card.consecrated_weapon","Consecrated Weapon","Posvěcená Zbraň"
-"card.consecrated_weapon.desc","Deal 4 holy damage. Your next Holy attack deals +5 holy damage.","Způsob 4 svatého poškození. Příští svatý útok způsobí +5 svatého poškození."
+"card.consecrated_weapon.desc","Deal 4 damage.
+Your next Holy attack deals +5 damage.
+Holy","Způsob 4 poškození.
+Příští svatý útok způsobí +5 poškození.
+Svaté"
 "card.defensive_stance","Defensive Stance","Obranný Postoj"
-"card.defensive_stance.desc","Gain 4 block. The next attack against you deals 50% less damage.","Získej 4 bloku. Příští útok proti tobě způsobí o 50% méně poškození."
+"card.defensive_stance.desc","Gain 4 Block.
+The next attack against you deals 50% less damage.","Získej 4 Blok.
+Příští útok proti tobě způsobí o 50% méně poškození."
 "card.fortification","Fortification","Opevnění"
-"card.fortification.desc","Gain 10 block. This block doesn't disappear at end of turn.","Získej 10 bloku. Tento blok nezmizí na konci tahu."
+"card.fortification.desc","Gain 10 Block.
+This Block doesn't disappear at end of turn.","Získej 10 Blok.
+Tento Blok nezmizí na konci tahu."
 "card.impregnable_shield","Impenetrable Shield","Neprůstřelný Štít"
-"card.impregnable_shield.desc","Gain 10 block. Remove all debuffs.","Získej 10 bloku. Odstraň všechny debuffy."
+"card.impregnable_shield.desc","Gain 10 Block.
+Remove all debuffs.","Získej 10 Blok.
+Odstraň všechny debuffy."
 "card.protective_aura","Protective Aura","Ochranná Aura"
-"card.protective_aura.desc","Gain 3 block. All allies gain 1 block.","Získej 3 bloku. Všichni spojenci získají 1 blok."
+"card.protective_aura.desc","Gain 3 Block.
+All allies gain 1 Block.","Získej 3 Blok.
+Všichni spojenci získají 1 Blok."
 "card.protective_hand","Protective Hand","Ochranná Ruka"
-"card.protective_hand.desc","Gain 8 block. Heal 5 HP.","Získej 8 bloku. Vyléč se za 5 HP."
+"card.protective_hand.desc","Gain 8 Block.
+Heal 5 HP.","Získej 8 Blok.
+Vyléč se za 5 HP."
 "card.purification","Purification","Očista"
-"card.purification.desc","Remove all debuffs and gain 4 block.","Odstraň všechny debuffy a získej 4 bloku."
+"card.purification.desc","Remove all debuffs and gain 4 Block.","Odstraň všechny debuffy a získej 4 Blok."
 "card.regeneration","Regeneration","Regenerace"
 "card.regeneration.desc","Gain Regeneration (heals 2 HP at the end of each turn) for 3 turns.","Získej status 'Regenerace' (léčí 2 HP na konci každého tahu) na 3 kola."
 "card.sacred_healing","Sacred Healing","Posvátné Vyléčení"
-"card.sacred_healing.desc","Heal 12 HP. Remove all debuffs.","Vyléč se za 12 HP. Odstraň všechny debuffy."
+"card.sacred_healing.desc","Heal 12 HP.
+Remove all debuffs.","Vyléč se za 12 HP.
+Odstraň všechny debuffy."
 "card.shield_bash","Shield Bash","Úder štítem"
-"card.shield_bash.desc","Deal damage equal to your current block (max 15).","Způsob poškození rovné tvému aktuálnímu bloku (max 15)."
+"card.shield_bash.desc","Deal damage equal to your current Block (max 15).","Způsob poškození rovné tvému aktuálnímu Blok (max 15)."
 "card.shield_bash+","Shield Bash+","Úder štítem+"
-"card.shield_bash+.desc","Deal double damage equal to your current block (max 20).","Způsob dvojnásobné poškození rovné tvému aktuálnímu bloku (max 20)."
+"card.shield_bash+.desc","Deal double damage equal to your current Block (max 20).","Způsob dvojnásobné poškození rovné tvému aktuálnímu Blok (max 20)."
 "card.shield_strike","Shield Strike","Štítový Úder"
-"card.shield_strike.desc","Gain 4 block. Deal 5 damage.","Získej 4 bloku. Způsob 5 poškození."
+"card.shield_strike.desc","Gain 4 Block.
+Deal 5 damage.","Získej 4 Blok.
+Způsob 5 poškození."
 "card.smite","Smite","Svatý úder"
-"card.smite.desc","Deal 6 holy damage.","Způsob 6 svatého poškození."
+"card.smite.desc","Deal 6 damage.
+Holy","Způsob 6 poškození.
+Svaté"
 "card.smite+","Smite+","Svatý úder"
-"card.smite+.desc","Deal 9 holy damage.","Způsob 9 svatého poškození."
+"card.smite+.desc","Deal 9 damage.
+Holy","Způsob 9 poškození.
+Svaté"
 "card.lay_on_hands","Lay on Hands","Vkládání rukou"
-"card.lay_on_hands.desc","Heal to full health. Exhaust. Can be used 2 times per run – then removed from deck.","Vyléč se do plných životů. Vyčerpá se. Lze použít 2× za run – poté se odstraní z balíčku."
+"card.lay_on_hands.desc","Heal to full health.
+Can be used 2 times per run – then removed from deck.
+Exhaust","Vyléč se do plných životů.
+Lze použít 2× za run – poté se odstraní z balíčku.
+Vyčerpání"
 "card.lay_on_hands+","Lay on Hands+","Vkládání rukou+"
-"card.lay_on_hands+.desc","Heal to full health. Exhaust. Usage: 3/3 – after 3 uses, removed from deck permanently.","Vyléč se do plných životů. Vyčerpá se. Použití: 3/3 – po 3 použitích trvale pryč z balíčku."
+"card.lay_on_hands+.desc","Heal to full health.
+Usage: 3/3 – after 3 uses, removed from deck permanently.
+Exhaust","Vyléč se do plných životů.
+Použití: 3/3 – po 3 použitích trvale pryč z balíčku.
+Vyčerpání"
 "card.lesser_heal","Lesser Heal","Menší léčení"
 "card.lesser_heal.desc","Heal 4 HP.","Vyléč si 4 životy."
 "card.lesser_heal+","Lesser Heal+","Menší léčení+"
 "card.lesser_heal+.desc","Heal 6 HP.","Vyléč si 6 životy."
 "card.light_pillar","Pillar of Light","Sloup Světla"
-"card.light_pillar.desc","Deal 8 holy damage to all enemies in your column.","Způsob 8 svatého poškození všem nepřátelům ve tvém sloupci."
+"card.light_pillar.desc","Deal 8 damage to all enemies in your column.
+Holy","Způsob 8 poškození všem nepřátelům ve tvém sloupci.
+Svaté"
 "card.light_pillar+","Pillar of Light+","Sloup Světla+"
-"card.light_pillar+.desc","Deal 10 holy damage to all enemies in your column.","Způsob 10 svatého poškození všem nepřátelům ve tvém sloupci."
+"card.light_pillar+.desc","Deal 10 damage to all enemies in your column.
+Holy","Způsob 10 poškození všem nepřátelům ve tvém sloupci.
+Svaté"
 "card.pious_defense","Pious Defense","Zbožná obrana"
-"card.pious_defense.desc","Gain 5 block.","Získej 5 bloku."
+"card.pious_defense.desc","Gain 5 Block.","Získej 5 Blok."
 "card.pious_defense+","Pious Defense+","Zbožná obrana+"
-"card.pious_defense+.desc","Gain 8 block.","Získej 8 bloku."
+"card.pious_defense+.desc","Gain 8 Block.","Získej 8 Blok."
 "card.purging_burst","Purging Burst","Očistný Výbuch"
-"card.purging_burst.desc","Deal 5 holy damage to enemies in a 2×2 area around you.","Způsob 5 svatého poškození nepřátelům v oblasti 2×2 kolem tebe."
+"card.purging_burst.desc","Deal 5 damage to enemies in a 2×2 area around you.
+Holy","Způsob 5 poškození nepřátelům v oblasti 2×2 kolem tebe.
+Svaté"
 "card.purging_burst+","Purging Burst+","Očistný Výbuch+"
-"card.purging_burst+.desc","Deal 7 holy damage to enemies in a 2×2 area around you.","Způsob 7 svatého poškození nepřátelům v oblasti 2×2 kolem tebe."
+"card.purging_burst+.desc","Deal 7 damage to enemies in a 2×2 area around you.
+Holy","Způsob 7 poškození nepřátelům v oblasti 2×2 kolem tebe.
+Svaté"
 "card.unbreakable_faith","Unbreakable Faith","Neprůstřelná Víra"
-"card.unbreakable_faith.desc","Gain block equal to your current HP. Exhaust.","Získej blok rovný tvému aktuálnímu HP. Tato karta se vyčerpá."
+"card.unbreakable_faith.desc","Gain Block equal to your current HP.
+Exhaust","Získej Blok rovný tvému aktuálnímu HP.
+Vyčerpání"
 "card.curse_basic","Curse","Prokletí"
 "card.curse_basic.desc","A useless card that only takes space in your hand.","Zbytečná karta, která ti jen zabírá místo na ruce."
 "card.curse_pain","Curse: Pain","Prokletí: Bolest"
@@ -799,62 +931,148 @@
 "card.quick_step+","Quick Step+","Rychlý krok+"
 "card.quick_step+.desc","Increase your initiative by 8 for the next round.","Zvyš svou iniciativu o 8 pro další kolo."
 "card.holy_strike+","Holy Strike+","Svatý Úder+"
-"card.holy_strike+.desc","Deal 8 holy damage.","Způsob 8 svatého poškození."
+"card.holy_strike+.desc","Deal 8 damage.
+Holy","Způsob 8 poškození.
+Svaté"
 "card.excommunication+","Excommunication+","Exkomunikace+"
-"card.excommunication+.desc","Deal 8 holy damage. The enemy gains Vulnerable for 2 turns.","Způsob 8 svatého poškození. Nepřítel získá Zranitelnost na 2 kola."
+"card.excommunication+.desc","Deal 8 damage.
+The enemy gains Vulnerable for 2 turns.
+Holy","Způsob 8 poškození.
+Nepřítel získá Zranitelnost na 2 kola.
+Svaté"
 "card.gods_wrath+","God's Wrath+","Boží Hněv+"
-"card.gods_wrath+.desc","Deal 12 holy damage. If the enemy has a debuff, deal +4 damage.","Způsob 12 svatého poškození. Pokud má nepřítel debuff, způsob +4 poškození."
+"card.gods_wrath+.desc","Deal 12 damage.
+If the enemy has a debuff, deal +4 damage.
+Holy","Způsob 12 poškození.
+Pokud má nepřítel debuff, způsob +4 poškození.
+Svaté"
 "card.gods_lightning+","God's Lightning+","Boží Blesk+"
-"card.gods_lightning+.desc","Deal 12 holy damage. If you kill an enemy, gain 1 energy.","Způsob 12 svatého poškození. Pokud zabiješ nepřítele, získej 1 energii."
+"card.gods_lightning+.desc","Deal 12 damage.
+If you kill an enemy, gain 1 energy.
+Holy","Způsob 12 poškození.
+Pokud zabiješ nepřítele, získej 1 energii.
+Svaté"
 "card.holy_wrath+","Holy Wrath+","Svatý Hněv+"
-"card.holy_wrath+.desc","Deal 10 holy damage. If you have more than 15 block, deal +4 damage.","Způsob 10 svatého poškození. Pokud máš více než 15 bloku, způsob +4 poškození."
+"card.holy_wrath+.desc","Deal 10 damage.
+If you have more than 15 Block, deal +4 damage.
+Holy","Způsob 10 poškození.
+Pokud máš více než 15 Blok, způsob +4 poškození.
+Svaté"
 "card.holy_vengeance+","Holy Vengeance+","Svatá Pomsta+"
-"card.holy_vengeance+.desc","Deal 6 holy damage. For each block you have, deal +1 damage.","Způsob 6 svatého poškození. Za každý blok způsob +1 poškození."
+"card.holy_vengeance+.desc","Deal 6 damage.
+For each Block you have, deal +1 damage.
+Holy","Způsob 6 poškození.
+Za každý Blok způsob +1 poškození.
+Svaté"
 "card.consecrated_weapon+","Consecrated Weapon+","Posvěcená Zbraň+"
-"card.consecrated_weapon+.desc","Deal 4 holy damage. Your next Holy attack deals +7 damage.","Způsob 4 svatého poškození. Tvůj další svatý útok způsobí +7 poškození."
+"card.consecrated_weapon+.desc","Deal 4 damage.
+Your next Holy attack deals +7 damage.
+Holy","Způsob 4 poškození.
+Tvůj další svatý útok způsobí +7 poškození.
+Svaté"
 "card.shield_strike+","Shield Strike+","Štítový Úder+"
-"card.shield_strike+.desc","Gain 4 block. Deal 7 damage.","Získej 4 bloku. Způsob 7 poškození."
+"card.shield_strike+.desc","Gain 4 Block.
+Deal 7 damage.","Získej 4 Blok.
+Způsob 7 poškození."
 "card.holy_defense+","Holy Defense+","Svatá Obrana+"
-"card.holy_defense+.desc","Gain 10 block. Deal 7 holy damage.","Získej 10 bloku. Způsob 7 svatého poškození."
+"card.holy_defense+.desc","Gain 10 Block.
+Deal 7 damage.
+Holy","Získej 10 Blok.
+Způsob 7 poškození.
+Svaté"
 "card.holy_knight+","Holy Knight+","Svatý Rytíř+"
-"card.holy_knight+.desc","Gain 6 block. Deal 8 holy damage. Heal 4 HP.","Získej 6 bloku. Způsob 8 svatého poškození. Vyléč 4 HP."
+"card.holy_knight+.desc","Gain 6 Block.
+Deal 8 damage.
+Heal 4 HP.
+Holy","Získej 6 Blok.
+Způsob 8 poškození.
+Vyléč 4 HP.
+Svaté"
 "card.divine_justice+","Divine Justice+","Božská Spravedlnost+"
-"card.divine_justice+.desc","Deal 16 holy damage. If the enemy has more than 50% health, deal +8 damage. Exhaust.","Způsob 16 svatého poškození. Pokud má nepřítel více než 50 % života, způsob +8 poškození. Vyčerpá se."
+"card.divine_justice+.desc","Deal 16 damage.
+If the enemy has more than 50% health, deal +8 damage.
+Holy
+Exhaust","Způsob 16 poškození.
+Pokud má nepřítel více než 50 % života, způsob +8 poškození.
+Svaté
+Vyčerpání"
 "card.consecrated_barrier+","Consecrated Barrier+","Posvěcená Bariéra+"
-"card.consecrated_barrier+.desc","Gain 7 block. If you took damage last turn, gain +3 block.","Získej 7 bloku. Pokud jsi minulé kolo utrpěl poškození, získej +3 bloku."
+"card.consecrated_barrier+.desc","Gain 7 Block.
+If you took damage last turn, gain +3 Block.","Získej 7 Blok.
+Pokud jsi minulé kolo utrpěl poškození, získej +3 Blok."
 "card.defensive_stance+","Defensive Stance+","Obranný Postoj+"
-"card.defensive_stance+.desc","Gain 6 block. The next attack against you deals 50% less damage.","Získej 6 bloku. Další útok proti tobě způsobí o 50 % méně poškození."
+"card.defensive_stance+.desc","Gain 6 Block.
+The next attack against you deals 50% less damage.","Získej 6 Blok.
+Další útok proti tobě způsobí o 50 % méně poškození."
 "card.holy_armor+","Holy Armor+","Svatá Zbroj+"
-"card.holy_armor+.desc","Gain 7 block. If you have more than 20 block, gain +2 block.","Získej 7 bloku. Pokud máš více než 20 bloku, získej +2 bloku."
+"card.holy_armor+.desc","Gain 7 Block.
+If you have more than 20 Block, gain +2 Block.","Získej 7 Blok.
+Pokud máš více než 20 Blok, získej +2 Blok."
 "card.holy_shield+","Holy Shield+","Svatý Štít+"
-"card.holy_shield+.desc","Gain 12 block. If you have less than 50% health, gain +5 block.","Získej 12 bloku. Pokud máš méně než 50 % života, získej +5 bloku."
+"card.holy_shield+.desc","Gain 12 Block.
+If you have less than 50% health, gain +5 Block.","Získej 12 Blok.
+Pokud máš méně než 50 % života, získej +5 Blok."
 "card.fortification+","Fortification+","Opevnění+"
-"card.fortification+.desc","Gain 13 block. This block doesn't disappear at end of turn.","Získej 13 bloku. Tento blok nezmizí na konci tahu."
+"card.fortification+.desc","Gain 13 Block.
+This Block doesn't disappear at end of turn.","Získej 13 Blok.
+Tento Blok nezmizí na konci tahu."
 "card.protective_aura+","Protective Aura+","Ochranná Aura+"
-"card.protective_aura+.desc","Gain 5 block. All allies gain 1 block.","Získej 5 bloku. Všichni spojenci získají 1 blok."
+"card.protective_aura+.desc","Gain 5 Block.
+All allies gain 1 Block.","Získej 5 Blok.
+Všichni spojenci získají 1 Blok."
 "card.protective_hand+","Protective Hand+","Ochranná Ruka+"
-"card.protective_hand+.desc","Gain 10 block. Heal 5 HP.","Získej 10 bloku. Vyléč 5 HP."
+"card.protective_hand+.desc","Gain 10 Block.
+Heal 5 HP.","Získej 10 Blok.
+Vyléč 5 HP."
 "card.impregnable_shield+","Impenetrable Shield+","Neprůstřelný Štít+"
-"card.impregnable_shield+.desc","Gain 12 block. Remove all debuffs.","Získej 12 bloku. Odstraň všechny debuffy."
+"card.impregnable_shield+.desc","Gain 12 Block.
+Remove all debuffs.","Získej 12 Blok.
+Odstraň všechny debuffy."
 "card.purification+","Purification+","Očista+"
-"card.purification+.desc","Remove all debuffs and gain 6 block.","Odstraň všechny debuffy a získej 6 bloku."
+"card.purification+.desc","Remove all debuffs and gain 6 Block.","Odstraň všechny debuffy a získej 6 Blok."
 "card.unbreakable_faith+","Unbreakable Faith+","Neprůstřelná Víra+"
-"card.unbreakable_faith+.desc","Gain block equal to your current HP. Exhaust.","Získej blok rovný aktuálnímu HP. Vyčerpá se."
+"card.unbreakable_faith+.desc","Gain Block equal to your current HP.
+Exhaust","Získej Blok rovný aktuálnímu HP.
+Vyčerpání"
 "card.healing_light+","Healing Light+","Léčivé Světlo+"
 "card.healing_light+.desc","Heal 10 HP.","Vyléč 10 HP."
 "card.healing_aura+","Healing Aura+","Léčivá Aura+"
-"card.healing_aura+.desc","Heal 10 HP. All allies heal 3 HP.","Vyléč 10 HP. Všichni spojenci se vyléčí o 3 HP."
+"card.healing_aura+.desc","Heal 10 HP.
+All allies heal 3 HP.","Vyléč 10 HP.
+Všichni spojenci se vyléčí o 3 HP."
 "card.holy_blessing+","Holy Blessing+","Svaté Požehnání+"
-"card.holy_blessing+.desc","Heal 10 HP. Gain 3 block.","Vyléč 10 HP. Získej 3 bloku."
+"card.holy_blessing+.desc","Heal 10 HP.
+Gain 3 Block.","Vyléč 10 HP.
+Získej 3 Blok."
 "card.sacred_healing+","Sacred Healing+","Posvátné Vyléčení+"
-"card.sacred_healing+.desc","Heal 14 HP. Remove all debuffs.","Vyléč 14 HP. Odstraň všechny debuffy."
+"card.sacred_healing+.desc","Heal 14 HP.
+Remove all debuffs.","Vyléč 14 HP.
+Odstraň všechny debuffy."
 "card.regeneration+","Regeneration+","Regenerace+"
 "card.regeneration+.desc","Gain Regeneration (heals 3 HP at the end of each turn) for 3 turns.","Získej Regeneraci (léčí 3 HP na konci každého tahu) na 3 kola."
 "card.massive_healing+","Massive Healing+","Masivní Léčení+"
-"card.massive_healing+.desc","Heal 18 HP. If you have less than 30% health, heal 20 HP. Usage: 1/1 – after use, removed from deck permanently.","Vyléč 18 HP. Pokud máš méně než 30 % života, vyléč 20 HP. Použití: 1/1 – po použití trvale pryč z balíčku."
+"card.massive_healing+.desc","Heal 18 HP.
+If you have less than 30% health, heal 20 HP.
+Usage: 1/1 – after use, removed from deck permanently.","Vyléč 18 HP.
+Pokud máš méně než 30 % života, vyléč 20 HP.
+Použití: 1/1 – po použití trvale pryč z balíčku."
 "card.divine_grace+","Divine Grace+","Božská Milost+"
-"card.divine_grace+.desc","Heal to full health. Exhaust.","Vyléč se do plných životů. Vyčerpá se."
+"card.divine_grace+.desc","Heal to full health.
+Exhaust","Vyléč se do plných životů.
+Vyčerpání"
 "card.divine_judgment+","Divine Judgment+","Božský Soud+"
-"card.divine_judgment+.desc","Deal 18 holy damage to all enemies. Exhaust.","Způsob 18 svatého poškození všem nepřátelům. Vyčerpá se."
+"card.divine_judgment+.desc","Deal 18 damage to all enemies.
+Holy
+Exhaust","Způsob 18 poškození všem nepřátelům.
+Svaté
+Vyčerpání"
 "card.divine_protection+","Divine Protection+","Božská Ochrana+"
-"card.divine_protection+.desc","Gain 12 block. Heal 8 HP. Deal 10 holy damage to all enemies. Exhaust.","Získej 12 bloku. Vyléč 8 HP. Způsob 10 svatého poškození všem nepřátelům. Vyčerpá se."
+"card.divine_protection+.desc","Gain 12 Block.
+Heal 8 HP.
+Deal 10 damage to all enemies.
+Holy
+Exhaust","Získej 12 Blok.
+Vyléč 8 HP.
+Způsob 10 poškození všem nepřátelům.
+Svaté
+Vyčerpání"

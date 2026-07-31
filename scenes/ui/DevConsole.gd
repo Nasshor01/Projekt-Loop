@@ -99,6 +99,15 @@ func _on_text_submitted(command_text: String):
 		"add_card":
 			_cmd_add_card(args)
 		
+		"add_cards":
+			_cmd_add_cards(args)
+		
+		"add_card_all_paladin":
+			_cmd_add_cards(["paladin"])
+		
+		"add_card_all_everyone":
+			_cmd_add_cards(["everyone"])
+		
 		"list_cards":
 			_cmd_list_cards()
 		
@@ -271,6 +280,55 @@ func _cmd_add_card(args: Array):
 	else:
 		log_error("Tento příkaz lze použít pouze v bitvě!")
 
+func _cmd_add_cards(args: Array):
+	"""add_cards paladin | add_card_all_paladin — dump folder cards into hand (battle only)."""
+	if args.is_empty():
+		log_error("Použití: add_cards <paladin|everyone|trapper>")
+		log_message("Alias: add_card_all_paladin / add_card_all_everyone")
+		return
+	var folder := str(args[0]).to_lower().strip_edges()
+	if folder.begins_with("all_"):
+		folder = folder.substr(4)
+	var path := "res://data/cards/%s/" % folder
+	if not DirAccess.dir_exists_absolute(path):
+		log_error("Složka neexistuje: %s" % path)
+		return
+	var battle_scene = _find_battle_scene()
+	if battle_scene == null or not battle_scene.has_method("add_card_resource_to_hand"):
+		log_error("Tento příkaz lze použít pouze v bitvě!")
+		return
+	var cards := _load_cards_from_folder(path)
+	if cards.is_empty():
+		log_error("Žádné karty ve složce %s" % path)
+		return
+	var added := 0
+	for card in cards:
+		if battle_scene.add_card_resource_to_hand(card):
+			added += 1
+	log_success("✅ Přidáno %d / %d karet z '%s' do ruky." % [added, cards.size(), folder])
+
+func _load_cards_from_folder(path: String) -> Array[CardData]:
+	var out: Array[CardData] = []
+	var seen: Dictionary = {}
+	var dir := DirAccess.open(path)
+	if dir == null:
+		return out
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.ends_with(".tres"):
+			var res = load(path.path_join(file_name))
+			if res is CardData:
+				var card: CardData = res
+				var key := card.card_id if not card.card_id.is_empty() else file_name
+				if not seen.has(key):
+					seen[key] = true
+					out.append(card)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	out.sort_custom(func(a: CardData, b: CardData): return a.card_id < b.card_id)
+	return out
+
 func _find_battle_scene():
 	return get_tree().get_first_node_in_group("battle_scene")
 
@@ -303,6 +361,9 @@ func _cmd_help():
 	log_message("  reload_artifacts - Znovu načte artefakty")
 	log_message("  reset_skill_points - Resetuje skill points podle levelu")
 	log_message("  add_card <card_id> - Přidá kartu do ruky (pouze v bitvě)")
+	log_message("  add_cards <paladin|everyone|trapper> - Přidá všechny karty ze složky do ruky")
+	log_message("  add_card_all_paladin - Alias pro add_cards paladin")
+	log_message("  add_card_all_everyone - Alias pro add_cards everyone")
 	log_message("  list_cards - Zobrazí dostupné card_id z reward poolu")
 	log_message("  help - Zobrazí tento seznam")
 

@@ -96,42 +96,8 @@ func get_localized_name() -> String:
 	return tr(card_name)
 
 func get_localized_description() -> String:
-	"""Full tooltip description. HOLY deal-damage never reads as plain/normal damage."""
-	var desc := tr(card_description)
-	if _should_force_holy_damage_wording():
-		desc = _ensure_holy_damage_wording(desc)
-	return desc
-
-func _should_force_holy_damage_wording() -> bool:
-	"""True when this card deals HOLY damage and has no non-holy DEAL_DAMAGE effects."""
-	var has_holy := false
-	for effect in effects:
-		if effect.effect_type != CardEffectData.EffectType.DEAL_DAMAGE:
-			continue
-		if effect.damage_type == CardEffectData.DamageType.HOLY:
-			has_holy = true
-		else:
-			return false
-	return has_holy
-
-func _ensure_holy_damage_wording(desc: String) -> String:
-	"""Rewrite generic 'damage'/'poškození' to holy wording without double-prefixing."""
-	if desc.is_empty():
-		return desc
-	var out := desc
-	# Protect phrases that already communicate holy damage
-	out = out.replace("holy damage", "\uE000")
-	out = out.replace("Holy damage", "\uE001")
-	out = out.replace("svatého poškození", "\uE002")
-	out = out.replace("svaté poškození", "\uE003")
-	out = out.replace("damage", "holy damage")
-	out = out.replace("Damage", "Holy damage")
-	out = out.replace("poškození", "svatého poškození")
-	out = out.replace("\uE000", "holy damage")
-	out = out.replace("\uE001", "Holy damage")
-	out = out.replace("\uE002", "svatého poškození")
-	out = out.replace("\uE003", "svaté poškození")
-	return out
+	"""Full tooltip description from translations. Holy is a keyword, not rewritten prose."""
+	return tr(card_description)
 
 ## Vrátí klíče keywordů odvozené z efektů karty (pro tooltip – Holy, Block, Heal, Exhaust, atd.).
 ## Slouží k zobrazení tagů/ikon v tooltipu i když v textu popisu slovo není.
@@ -244,51 +210,99 @@ const ICON_SIZE: int = 16
 ## Active BBCode [img] size for the current shorthand pass (set by generate_compact_description).
 var _shorthand_icon_px: int = ICON_SIZE
 
-## BBCode accents on white-text + black outline (light cyan/green/peach; soft cream not pure yellow).
+## BBCode accents on white-text + black outline.
 const BB_ENERGY := "#9ad4ff"
 const BB_HEAL := "#8fef9a"
 const BB_EXHAUST := "#ffb070"
 const BB_INITIATIVE := "#f0d9a0"
 
+## Face keyword colors for verbal keywords (Exhaust etc.). EN+CS titles.
+const FACE_KEYWORD_COLORS := {
+	"holy": {"color": "#f0d060", "words": ["Holy", "Svaté"]},
+	"exhaust": {"color": "#ffb070", "words": ["Exhaust", "Vyčerpání"]},
+	"block": {"color": "#9ad4ff", "words": ["Block", "Blok"]},
+	"vulnerable": {"color": "#d4a0ff", "words": ["Vulnerable", "Zranitelnost"]},
+	"poison": {"color": "#8fef9a", "words": ["Poison", "Jed"]},
+}
+
+## Face line order when a card has multiple effects.
+const FACE_PRIO_DAMAGE := 0
+const FACE_PRIO_BLOCK := 1
+const FACE_PRIO_HEAL := 2
+const FACE_PRIO_KEYWORD_ICON := 3
+const FACE_PRIO_VERBAL := 4
+
 func generate_compact_description(icon_px: int = ICON_SIZE) -> String:
-	"""Shorthand: [Value] [Icon] per effect. Multi-effect cards pack simple lines.
-	Details live in the tooltip. icon_px matches DescriptionLabel font size."""
+	"""Shorthand face: N+icon lines in fixed order. Full STS text stays in tooltip."""
 	_shorthand_icon_px = maxi(icon_px, 8)
-	var packable: Array[String] = []
-	var standalone: Array[String] = []
-	for effect in effects:
+	var entries: Array = [] # {prio, index, line}
+	var has_holy_damage := false
+	for i in range(effects.size()):
+		var effect: CardEffectData = effects[i]
+		if effect != null and effect.effect_type == CardEffectData.EffectType.DEAL_DAMAGE \
+				and effect.damage_type == CardEffectData.DamageType.HOLY:
+			has_holy_damage = true
 		var line := _format_effect_shorthand(effect)
 		if line.is_empty():
 			continue
-		if _is_packable_effect(effect):
-			packable.append(line)
-		else:
-			standalone.append(line)
-	if packable.is_empty() and standalone.is_empty():
+		entries.append({
+			"prio": _face_line_priority(effect),
+			"index": i,
+			"line": line,
+		})
+	# Holy = verbal keyword under damage (not a special holy-damage icon).
+	if has_holy_damage:
+		entries.append({
+			"prio": FACE_PRIO_VERBAL,
+			"index": -1, # before Exhaust / other verbal lines
+			"line": _format_holy_keyword_line(),
+		})
+	if entries.is_empty():
 		return get_localized_description()
-	return _pack_shorthand_lines(packable, standalone)
+	entries.sort_custom(func(a, b):
+		if a["prio"] != b["prio"]:
+			return a["prio"] < b["prio"]
+		return a["index"] < b["index"]
+	)
+	var lines: Array[String] = []
+	for e in entries:
+		lines.append(str(e["line"]))
+	return "\n".join(lines).strip_edges()
 
-func _is_packable_effect(effect: CardEffectData) -> bool:
-	"""True for pure N+icon (or short energy) lines without conditions."""
-	if effect == null or effect.has_condition:
-		return false
+func _format_holy_keyword_line() -> String:
+	"""Localized Holy / Svaté keyword title for the face."""
+	return "[b][color=%s]%s[/color][/b]" % [FACE_KEYWORD_COLORS["holy"]["color"], tr("keyword.holy.title")]
+
+func _face_line_priority(effect: CardEffectData) -> int:
+	"""damage → block → heal/regen → keyword icons → verbal (Exhaust…)."""
+	if effect == null:
+		return FACE_PRIO_VERBAL
 	match effect.effect_type:
-		CardEffectData.EffectType.GAIN_BLOCK, CardEffectData.EffectType.HEAL_UNIT, CardEffectData.EffectType.DEAL_DAMAGE, CardEffectData.EffectType.GAIN_ENERGY:
-			return true
+		CardEffectData.EffectType.DEAL_DAMAGE, \
+		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK, \
+		CardEffectData.EffectType.DEAL_DOUBLE_DAMAGE_FROM_BLOCK:
+			return FACE_PRIO_DAMAGE
+		CardEffectData.EffectType.GAIN_BLOCK:
+			return FACE_PRIO_BLOCK
+		CardEffectData.EffectType.HEAL_UNIT, \
+		CardEffectData.EffectType.HEAL_TO_FULL:
+			return FACE_PRIO_HEAL
+		CardEffectData.EffectType.APPLY_STATUS:
+			match effect.string_value:
+				"regeneration":
+					return FACE_PRIO_HEAL
+				"vulnerable", "poison", "consecrated_weapon", "burning", "chilled", "aiming", \
+				"aura_devotion", "aura_devotion_plus":
+					return FACE_PRIO_KEYWORD_ICON
+				_:
+					return FACE_PRIO_VERBAL
+		CardEffectData.EffectType.PLACE_TERRAIN:
+			# Damage-on-enter terrains render as N+damage icon.
+			return FACE_PRIO_DAMAGE
+		CardEffectData.EffectType.EXHAUST:
+			return FACE_PRIO_VERBAL
 		_:
-			return false
-
-func _pack_shorthand_lines(packable: Array[String], standalone: Array[String]) -> String:
-	"""Merge packable N+icon lines with · when the card would otherwise be tall."""
-	var parts: Array[String] = []
-	var total := packable.size() + standalone.size()
-	if packable.size() >= 2 and total > 2:
-		parts.append(" · ".join(packable))
-		parts.append_array(standalone)
-	else:
-		parts.append_array(packable)
-		parts.append_array(standalone)
-	return "\n".join(parts).strip_edges()
+			return FACE_PRIO_VERBAL
 
 func _img(icon_key: String, size: int = -1) -> String:
 	"""Returns BBCode [img] tag for icon from KeywordManager.ICON_MAP (or SHORTHAND_ICONS in editor). NO icon if path missing.
@@ -340,7 +354,8 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 			return _num(block_val) + " " + _img("block")
 		
 		CardEffectData.EffectType.DEAL_DAMAGE:
-			# HOLY: show base value only (effect.value), so display matches .tres; +5/+3 vs Undead/Demon/Spirit in tooltip
+			# HOLY: base value + normal damage icon; keyword "Holy" is a separate face line.
+			# +5 vs Undead/Demon stays in tooltip / combat math.
 			var dmg_val: int
 			if effect.damage_type == CardEffectData.DamageType.HOLY:
 				dmg_val = effect.value
@@ -349,13 +364,10 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 			var prefix := ""
 			if effect.area_of_effect_type == CardEffectData.AreaOfEffectType.ALL_ON_GRID:
 				prefix = tr("card.effect.to_all") + " "
-			if effect.damage_type == CardEffectData.DamageType.HOLY:
-				return prefix + _num(dmg_val) + " " + _img("holy_damage")
-			var icon_key := "damage"
 			var cond := _get_condition_shorthand(effect, "dmg")
 			if cond != "":
-				return prefix + _num(dmg_val) + " " + _img(icon_key) + " " + cond
-			return prefix + _num(dmg_val) + " " + _img(icon_key)
+				return prefix + _num(dmg_val) + " " + _img("damage") + " " + cond
+			return prefix + _num(dmg_val) + " " + _img("damage")
 		
 		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK:
 			return "[b]" + tr("card.effect.deal_damage_from_block") + "[/b]"
@@ -620,11 +632,80 @@ func _format_conditional_effect(conditional: Dictionary, effect_type: String = "
 			return tr("card.condition.default") + ": " + bonus_text
 
 func get_display_description(icon_size: int = ICON_SIZE) -> String:
-	"""Card-face shorthand (or localized fallback). icon_size scales BBCode [img] to match DescriptionLabel font."""
-	var compact_desc = generate_compact_description(icon_size)
-	
-	# Pokud je nový popis příliš krátký nebo prázdný, použijeme původní (holy-aware)
-	if compact_desc.length() < 3:
-		compact_desc = get_localized_description()
-	
-	return compact_desc
+	"""Card face = icon shorthand (ordered). Tooltip keeps full localized text."""
+	var compact := generate_compact_description(icon_size)
+	if compact.length() < 3:
+		compact = get_localized_description()
+	return _colorize_face_keywords(compact)
+
+func _is_face_keyword_word_char(ch: String) -> bool:
+	if ch.is_empty():
+		return false
+	var c := ch.unicode_at(0)
+	# ASCII letter/digit/_ or non-ASCII letter (CS accents).
+	return (c >= 65 and c <= 90) or (c >= 97 and c <= 122) or (c >= 48 and c <= 57) or c == 95 or c > 127
+
+func _is_whole_face_keyword(text: String, idx: int, word: String) -> bool:
+	if idx > 0 and _is_face_keyword_word_char(text.substr(idx - 1, 1)):
+		return false
+	var end := idx + word.length()
+	if end < text.length():
+		var next := text.substr(end, 1)
+		# Don't colorize filenames (Vulnerable.png) or other identifiers.
+		if _is_face_keyword_word_char(next) or next == ".":
+			return false
+	return true
+
+func _is_inside_face_img_tag(text: String, idx: int) -> bool:
+	"""True when idx lies inside an [img=…]…[/img] span (never colorize paths)."""
+	var open_idx := text.rfind("[img=", idx)
+	if open_idx < 0:
+		return false
+	var close_idx := text.find("[/img]", open_idx)
+	if close_idx < 0:
+		close_idx = text.find("[/]", open_idx)
+	if close_idx < 0:
+		return false
+	return idx < close_idx
+
+func _colorize_face_keywords(text: String) -> String:
+	"""Wrap Holy / Exhaust / Block / Vulnerable / Poison (EN+CS titles) in [color]."""
+	if text.is_empty():
+		return text
+	var result := text
+	# Longer words first (Zranitelnost before shorter collisions).
+	var entries: Array = []
+	for key in FACE_KEYWORD_COLORS.keys():
+		var data: Dictionary = FACE_KEYWORD_COLORS[key]
+		var color: String = data["color"]
+		for word in data["words"]:
+			entries.append({"word": str(word), "color": color})
+	entries.sort_custom(func(a, b): return str(a["word"]).length() > str(b["word"]).length())
+	for entry in entries:
+		var word: String = entry["word"]
+		var color: String = entry["color"]
+		if word.is_empty() or not result.contains(word):
+			continue
+		var colored := "[color=%s]%s[/color]" % [color, word]
+		var out := ""
+		var i := 0
+		while i < result.length():
+			var idx := result.find(word, i)
+			if idx < 0:
+				out += result.substr(i)
+				break
+			if _is_inside_face_img_tag(result, idx) or not _is_whole_face_keyword(result, idx, word):
+				out += result.substr(i, idx + word.length() - i)
+				i = idx + word.length()
+				continue
+			# Already inside a color tag for this span?
+			var before := result.substr(0, idx)
+			if before.ends_with("[color=%s]" % color):
+				out += result.substr(i, idx + word.length() - i)
+				i = idx + word.length()
+				continue
+			out += result.substr(i, idx - i)
+			out += colored
+			i = idx + word.length()
+		result = out
+	return result

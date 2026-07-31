@@ -1328,14 +1328,22 @@ func add_card_to_hand(card_id: String) -> bool:
 		return false
 	for c in pool.cards:
 		if is_instance_valid(c) and c.card_id == card_id:
-			PlayerData.current_hand.append(c)
-			player_hand_ui_instance.add_card_to_hand(c)
-			player_hand_ui_instance._request_arrange()
-			_update_pile_counts()
-			DebugLogger.log_debug("add_card_to_hand: added '%s'" % card_id)
-			return true
+			return add_card_resource_to_hand(c)
 	DebugLogger.log_warning("add_card_to_hand: card_id '%s' not found" % card_id)
 	return false
+
+## Debug/cheat: add an already-loaded CardData into the hand.
+func add_card_resource_to_hand(card: CardData) -> bool:
+	if not is_instance_valid(card):
+		return false
+	if not is_instance_valid(_player_unit_node) or not is_instance_valid(player_hand_ui_instance):
+		return false
+	PlayerData.current_hand.append(card)
+	player_hand_ui_instance.add_card_to_hand(card)
+	player_hand_ui_instance._request_arrange()
+	_update_pile_counts()
+	DebugLogger.log_debug("add_card_resource_to_hand: added '%s'" % card.card_id)
+	return true
 
 func _apply_overuse_debuff(card: CardData):
 	"""Aplikuje debuff při překročení limitu použití karty"""
