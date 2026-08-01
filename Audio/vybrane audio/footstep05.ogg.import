@@ -1,0 +1,19 @@
+[remap]
+
+importer="oggvorbisstr"
+type="AudioStreamOggVorbis"
+uid="uid://bxr1nid64op62"
+path="res://.godot/imported/footstep05.ogg-cdabf9c5df7f2118c9b4ba7711bdcbbd.oggvorbisstr"
+
+[deps]
+
+source_file="res://Audio/vybrane audio/footstep05.ogg"
+dest_files=["res://.godot/imported/footstep05.ogg-cdabf9c5df7f2118c9b4ba7711bdcbbd.oggvorbisstr"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

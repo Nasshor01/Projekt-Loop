@@ -55,7 +55,7 @@ func show_upgrade_selection(cards: Array[CardData], show_as_upgraded: bool = tru
 		if not is_instance_valid(base_card) or not is_instance_valid(base_card.upgraded_version):
 			continue
 		var display_data: CardData = base_card.upgraded_version if show_as_upgraded else base_card
-		_add_upgrade_card_to_grid(base_card, display_data, show_as_upgraded)
+		_add_upgrade_card_to_grid(base_card, display_data)
 	show()
 	_set_world_hud_dimmed(true)
 
@@ -131,7 +131,7 @@ func _add_card_to_grid(card_data: CardData, mode: CardUI.DisplayMode) -> CardUI:
 	call_deferred("_sync_deck_card_layout", card_ui)
 	return card_ui
 
-func _add_upgrade_card_to_grid(base_card: CardData, display_data: CardData, show_as_upgraded: bool) -> CardUI:
+func _add_upgrade_card_to_grid(base_card: CardData, display_data: CardData) -> CardUI:
 	var card_instance = card_scene.instantiate()
 	if not (card_instance is CardUI):
 		return null
@@ -154,31 +154,13 @@ func _add_upgrade_card_to_grid(base_card: CardData, display_data: CardData, show
 	card_ui.gui_input.connect(_on_card_selected_input.bind(base_card))
 	card_ui.mouse_entered.connect(_on_grid_card_hovered.bind(display_data))
 	card_ui.mouse_exited.connect(_on_grid_card_unhovered)
-	if show_as_upgraded:
-		_apply_upgrade_face_chrome(card_ui)
+	# Preview uses the real upgraded CardData face (green Name+ only) — no extra tint/badge.
 
 	var cell = card_ui.get_scaled_size() + Vector2(12, 16)
 	wrapper.custom_minimum_size = cell
 	wrapper.size = cell
 	call_deferred("_sync_deck_card_layout", card_ui)
 	return card_ui
-
-func _apply_upgrade_face_chrome(card_ui: CardUI) -> void:
-	"""Green upgrade tint + ↑ badge — STS2-style upgraded face."""
-	card_ui.modulate = Color(0.88, 1.12, 0.95, 1.0)
-	var badge := Label.new()
-	badge.text = "↑"
-	badge.add_theme_font_size_override("font_size", 22)
-	badge.add_theme_color_override("font_color", Color(0.45, 1.0, 0.55, 1.0))
-	badge.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-	badge.add_theme_constant_override("outline_size", 6)
-	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	badge.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	badge.offset_left = 6
-	badge.offset_top = 4
-	badge.offset_right = 36
-	badge.offset_bottom = 36
-	card_ui.add_child(badge)
 
 func _on_grid_card_hovered(card_data: CardData) -> void:
 	card_hovered.emit(card_data)

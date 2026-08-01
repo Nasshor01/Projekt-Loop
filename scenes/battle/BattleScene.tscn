@@ -78,7 +78,7 @@ surface_material_override/0 = SubResource("ShaderMaterial_space")
 
 [node name="Camera3D" type="Camera3D" parent="."]
 unique_name_in_owner = true
-transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 15, 15, 15)
+transform = Transform3D(1, 0, 0, 0, 0.781194, 0.624289, 0, -0.624289, 0.781194, 10.4619, 15, 23.6666)
 projection = 1
 size = 20.0
 

@@ -223,7 +223,7 @@ func save_run(player_data: PlayerData):
 		"max_hp": player_data.max_hp,
 		"gold": player_data.gold,
 		"master_deck": player_data.master_deck.map(func(card): return card.resource_path),
-		"artifacts": player_data.artifacts.map(func(artifact): return artifact.resource_path),
+		"artifacts": _serialize_artifacts(player_data.artifacts),
 		"floors_cleared": player_data.floors_cleared,
 		"loop_level": player_data.loop_level,  # Ukládáme jako loop_level, ale načítáme i staré "ng_plus_level" pro kompatibilitu
 		"current_run_xp": player_data.current_run_xp,
@@ -272,6 +272,91 @@ func delete_saved_run():
 		DebugLogger.log_error("Failed to delete saved run file! Error: %d" % error, "SAVE")
 	else:
 		DebugLogger.log_save_load("delete_saved_run", true, "Saved run deleted.")
+
+#==============================================================================
+# Artifact save helpers (duplicates lose resource_path)
+#==============================================================================
+
+func _serialize_artifacts(artifacts: Array) -> Array:
+	var out: Array = []
+	for artifact in artifacts:
+		if not is_instance_valid(artifact):
+			continue
+		var path: String = get_artifact_source_path(artifact)
+		if path.is_empty():
+			DebugLogger.log_warning("Save: artifact '%s' has no source path — skipped" % str(artifact.artifact_name), "SAVE")
+			continue
+		out.append({
+			"path": path,
+			"stacks": int(artifact.current_stacks),
+		})
+	return out
+
+func get_artifact_source_path(artifact: ArtifactsData) -> String:
+	if not is_instance_valid(artifact):
+		return ""
+	var path: String = artifact.resource_path
+	if _is_valid_res_path(path):
+		return path
+	if artifact.has_meta("source_path"):
+		path = str(artifact.get_meta("source_path"))
+		if _is_valid_res_path(path):
+			return path
+	return _find_artifact_path_by_name(str(artifact.artifact_name))
+
+func _is_valid_res_path(path: String) -> bool:
+	return not path.is_empty() and path != "res://" and ResourceLoader.exists(path)
+
+func _find_artifact_path_by_name(artifact_name: String) -> String:
+	if artifact_name.is_empty():
+		return ""
+	var roots: Array[String] = [
+		"res://data/artifacts/common",
+		"res://data/artifacts/uncommon",
+		"res://data/artifacts/rare",
+		"res://data/artifacts/legendary",
+		"res://data/artifacts/boss",
+		"res://data/artifacts/event",
+	]
+	for root in roots:
+		var dir := DirAccess.open(root)
+		if dir == null:
+			continue
+		dir.list_dir_begin()
+		var file_name: String = dir.get_next()
+		while file_name != "":
+			if not dir.current_is_dir() and file_name.ends_with(".tres"):
+				var full: String = root.path_join(file_name)
+				var res = load(full)
+				if res is ArtifactsData and res.artifact_name == artifact_name:
+					return full
+			file_name = dir.get_next()
+		dir.list_dir_end()
+	return ""
+
+func load_artifact_instances(raw_list: Array) -> Array[ArtifactsData]:
+	"""Supports legacy [path, ...] and new [{path, stacks}, ...]."""
+	var out: Array[ArtifactsData] = []
+	for entry in raw_list:
+		var path: String = ""
+		var stacks: int = 1
+		if entry is String:
+			path = entry
+		elif entry is Dictionary:
+			path = str(entry.get("path", ""))
+			stacks = int(entry.get("stacks", 1))
+		if not _is_valid_res_path(path):
+			DebugLogger.log_warning("Load: skipping invalid artifact path '%s'" % path, "SAVE")
+			continue
+		var base = load(path) as ArtifactsData
+		if not is_instance_valid(base):
+			DebugLogger.log_warning("Load: failed to load artifact '%s'" % path, "SAVE")
+			continue
+		var inst: ArtifactsData = base.duplicate()
+		inst.set_meta("source_path", path)
+		inst.current_stacks = maxi(1, stacks)
+		out.append(inst)
+	return out
 
 #==============================================================================
 # Tutorial Progress

@@ -30,6 +30,7 @@
 "ui.settings.fullscreen","Fullscreen","Celá obrazovka"
 "ui.settings.fullscreen_tooltip","Play in fullscreen","Hrát v celé obrazovce"
 "ui.settings.music_volume","Music Volume","Hlasitost hudby"
+"ui.settings.sfx_volume","SFX Volume","Hlasitost efektů"
 "ui.map.node.monster","Common battle","Běžný souboj"
 "ui.map.node.elite","Elite battle","Elitní souboj"
 "ui.map.node.event","Event","Událost"

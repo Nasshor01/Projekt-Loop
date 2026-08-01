@@ -437,6 +437,8 @@ func reshuffle_discard_into_draw_pile():
 		draw_pile.assign(discard_pile)
 		discard_pile.clear()
 		draw_pile.shuffle()
+		if has_node("/root/AudioManager"):
+			AudioManager.play_card_shuffle()
 
 func draw_new_hand(hand_size: int = 5):
 	current_hand.clear()
@@ -479,7 +481,13 @@ func add_artifact(new_artifact_resource: ArtifactsData) -> bool:
 		return false
 	
 	# Vytvoříme si kopii, abychom neupravovali původní soubor .tres
-	var new_artifact = new_artifact_resource.duplicate()
+	var source_path: String = new_artifact_resource.resource_path
+	if source_path.is_empty() or source_path == "res://":
+		if new_artifact_resource.has_meta("source_path"):
+			source_path = str(new_artifact_resource.get_meta("source_path"))
+	var new_artifact: ArtifactsData = new_artifact_resource.duplicate()
+	if not source_path.is_empty() and source_path != "res://":
+		new_artifact.set_meta("source_path", source_path)
 
 	var existing_artifact = find_artifact_by_name(new_artifact.artifact_name)
 
@@ -572,6 +580,8 @@ func remove_artifact(artifact_data: ArtifactsData):
 
 func add_gold(amount: int):
 	self.gold += amount
+	if amount > 0 and has_node("/root/AudioManager"):
+		AudioManager.play_coins()
 
 func spend_gold(amount: int) -> bool:
 	if self.gold >= amount:

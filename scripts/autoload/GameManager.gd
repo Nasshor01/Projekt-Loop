@@ -259,8 +259,6 @@ func go_to_main_menu():
 	is_coop_run = false
 	coop_client_class_path = ""
 	coop_client_subclass_path = ""
-	if has_node("/root/MusicManager"):
-		MusicManager.stop_run()
 	# Zavři případné staré spojení
 	if has_node("/root/MultiplayerManager") and MultiplayerManager.has_active_connection():
 		MultiplayerManager.close_connection()
@@ -759,12 +757,15 @@ func load_and_start_saved_run():
 		if card:
 			PlayerData.master_deck.append(card)
 
-	# Obnovíme artefakty
-	PlayerData.artifacts = []
-	for artifact_path in loaded_data.get("artifacts", []):
-		var artifact = load(artifact_path)
-		if artifact:
-			PlayerData.artifacts.append(artifact)
+	# Obnovíme artefakty (duplicates lose resource_path — SaveManager resolves source_path)
+	PlayerData.artifacts.clear()
+	var loaded_artifacts: Array[ArtifactsData] = SaveManager.load_artifact_instances(loaded_data.get("artifacts", []))
+	for artifact in loaded_artifacts:
+		PlayerData.artifacts.append(artifact)
+	PlayerData.emit_signal("artifacts_changed")
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager._refresh_artifact_cache()
+	DebugLogger.log_info("Artifacts restored: %d" % PlayerData.artifacts.size(), "GAME_FLOW")
 
 	# Regenerujeme mapu se stejným seedem, aby se uzly shodovaly
 	# Vytvoříme dočasnou instanci MapGeneratoru pro regeneraci

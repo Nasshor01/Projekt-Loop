@@ -49,6 +49,8 @@ func _ready():
 	_update_ui_texts()
 	_update_tutorial_gate()
 	_update_version_label()
+	if has_node("/root/MusicManager"):
+		MusicManager.play()
 
 func _update_ui_texts():
 	if play_button:

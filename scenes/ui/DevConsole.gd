@@ -111,6 +111,9 @@ func _on_text_submitted(command_text: String):
 		"list_cards":
 			_cmd_list_cards()
 		
+		"sfx":
+			_cmd_sfx(args)
+		
 		"help":
 			_cmd_help()
 		
@@ -365,7 +368,45 @@ func _cmd_help():
 	log_message("  add_card_all_paladin - Alias pro add_cards paladin")
 	log_message("  add_card_all_everyone - Alias pro add_cards everyone")
 	log_message("  list_cards - Zobrazí dostupné card_id z reward poolu")
+	log_message("  sfx [ui_click|card_play|hit_deal|hit_take|coins|shuffle|all] - Test SFX")
 	log_message("  help - Zobrazí tento seznam")
+
+func _cmd_sfx(args: Array):
+	if not has_node("/root/AudioManager"):
+		log_error("AudioManager není dostupný")
+		return
+	var which := "all"
+	if args.size() > 0:
+		which = str(args[0]).to_lower()
+	match which:
+		"ui_click", "click":
+			AudioManager.play_ui_click()
+		"card_play", "card":
+			AudioManager.play_card_play()
+		"hit_deal", "deal", "hit":
+			AudioManager.play_hit_deal()
+		"hit_take", "take", "hurt":
+			AudioManager.play_hit_take()
+		"coins", "gold":
+			AudioManager.play_coins()
+		"shuffle":
+			AudioManager.play_card_shuffle()
+		"all":
+			AudioManager.play_ui_click()
+			await get_tree().create_timer(0.25).timeout
+			AudioManager.play_card_play()
+			await get_tree().create_timer(0.25).timeout
+			AudioManager.play_hit_deal()
+			await get_tree().create_timer(0.25).timeout
+			AudioManager.play_hit_take()
+			await get_tree().create_timer(0.25).timeout
+			AudioManager.play_coins()
+			await get_tree().create_timer(0.35).timeout
+			AudioManager.play_card_shuffle()
+		_:
+			log_error("Neznámý SFX. Použití: sfx [ui_click|card_play|hit_deal|hit_take|coins|shuffle|all]")
+			return
+	log_success("SFX: %s" % which)
 
 func _show_artifact_examples():
 	log_message("💡 Příklady názvů souborů:")

@@ -375,7 +375,9 @@ func _get_status_display_info(status_id: String, status_data: Dictionary) -> Dic
 		"vulnerable":
 			return {"text": "+50%% DMG (%d t)" % dur, "color": Color.INDIAN_RED}
 		"defensive_stance":
-			return {"text": "-50%% DMG (%d t)" % dur, "color": Color.STEEL_BLUE}
+			return {"text": tr("status.defensive_stance.short"), "color": Color.STEEL_BLUE}
+		"consecrated_weapon":
+			return {"text": TranslationHelper.tr_format("status.consecrated_weapon", {"value": val}), "color": Color.GOLD}
 		"weakness":
 			return {"text": "-%d DMG (%d t)" % [val, dur], "color": Color.DIM_GRAY}
 		"thorns":

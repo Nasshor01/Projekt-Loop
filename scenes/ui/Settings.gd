@@ -11,6 +11,7 @@ var _overlay_mode: bool = false
 @onready var reports_checkbox: CheckBox = %ReportsCheckBox
 @onready var fullscreen_checkbox: CheckBox = %FullscreenCheckBox
 @onready var music_volume_slider: HSlider = %MusicVolumeSlider
+@onready var sfx_volume_slider: HSlider = %SfxVolumeSlider
 @onready var close_button: Button = $Panel/VBoxContainer/CloseButton
 
 var current_locale: String = "en"
@@ -21,12 +22,15 @@ func _ready():
 	reports_checkbox.toggled.connect(_on_reports_toggled)
 	fullscreen_checkbox.toggled.connect(_on_fullscreen_toggled)
 	music_volume_slider.value_changed.connect(_on_music_volume_changed)
+	if sfx_volume_slider:
+		sfx_volume_slider.value_changed.connect(_on_sfx_volume_changed)
 	
 	_setup_language_options()
 	_load_current_language()
 	_load_report_preference()
 	_load_fullscreen_preference()
 	_load_music_volume()
+	_load_sfx_volume()
 	_update_ui_texts()
 
 func _setup_language_options():
@@ -99,6 +103,8 @@ func _update_ui_texts():
 	# Music volume label - optional, slider shows value
 	if $Panel/VBoxContainer/MusicSection.has_node("MusicVolumeLabel"):
 		$Panel/VBoxContainer/MusicSection/MusicVolumeLabel.text = tr("ui.settings.music_volume")
+	if $Panel/VBoxContainer.has_node("SfxSection") and $Panel/VBoxContainer/SfxSection.has_node("SfxVolumeLabel"):
+		$Panel/VBoxContainer/SfxSection/SfxVolumeLabel.text = tr("ui.settings.sfx_volume")
 
 func _load_music_volume():
 	var cfg = ConfigFile.new()
@@ -114,6 +120,23 @@ func _on_music_volume_changed(value: float):
 	var cfg = ConfigFile.new()
 	var _err = cfg.load("user://settings.cfg")
 	cfg.set_value("settings", "music_volume", int(value))
+	cfg.save("user://settings.cfg")
+
+func _load_sfx_volume():
+	if not sfx_volume_slider:
+		return
+	var cfg = ConfigFile.new()
+	if cfg.load("user://settings.cfg") == OK and cfg.has_section_key("settings", "sfx_volume"):
+		sfx_volume_slider.value = cfg.get_value("settings", "sfx_volume", 100)
+	elif has_node("/root/AudioManager"):
+		sfx_volume_slider.value = int(AudioManager.get_volume_linear() * 100)
+
+func _on_sfx_volume_changed(value: float):
+	if has_node("/root/AudioManager"):
+		AudioManager.set_volume_linear(value / 100.0)
+	var cfg = ConfigFile.new()
+	var _err = cfg.load("user://settings.cfg")
+	cfg.set_value("settings", "sfx_volume", int(value))
 	cfg.save("user://settings.cfg")
 
 func _update_main_menu_if_visible():
@@ -140,6 +163,7 @@ func show_settings():
 	_load_report_preference()
 	_load_fullscreen_preference()
 	_load_music_volume()
+	_load_sfx_volume()
 
 func _on_reports_toggled(value: bool):
 	if has_node("/root/DebugLogger"):

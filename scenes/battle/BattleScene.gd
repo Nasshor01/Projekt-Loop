@@ -1262,6 +1262,8 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 	
 	# Označ akci pouze pokud byla karta úspěšně použita
 	if card_played_successfully:
+		if has_node("/root/AudioManager"):
+			AudioManager.play_card_play()
 		if is_instance_valid(_player_unit_node):
 			_player_unit_node.use_action()
 					
@@ -1475,6 +1477,9 @@ func _move_unit_along_path(unit: Unit, path: Array[Vector2i], step_duration: flo
 		if not battle_grid_instance.place_object_on_cell(unit, cell, true, step_duration):
 			break
 
+		if has_node("/root/AudioManager"):
+			AudioManager.play_footstep()
+
 		await get_tree().create_timer(step_duration).timeout
 
 		if not is_instance_valid(unit) or unit.current_health <= 0:
@@ -1520,6 +1525,10 @@ func _rush_unit_along_path(unit: Unit, path: Array[Vector2i]) -> Vector2i:
 	tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	for i in range(1, path.size()):
 		var world_pos := battle_grid_instance.get_world_position_for_cell(path[i])
+		tween.tween_callback(func():
+			if has_node("/root/AudioManager"):
+				AudioManager.play_footstep()
+		)
 		tween.tween_property(unit, "position", world_pos, per_cell)
 
 	await tween.finished
@@ -1808,11 +1817,19 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 				# Speciální případ: remove_all_debuffs
 				if effect.string_value == "remove_all_debuffs":
 					if target is Unit and target.has("active_statuses"):
-						# Odstraň všechny debuff statusy (zachovej buffy jako regeneration, aura_devotion)
+						# Odstraň debuffy; zachovej buffy (regeneration, aury, until-consumed)
 						var statuses_to_remove = []
+						var keep_buffs := [
+							"regeneration",
+							"aura_devotion",
+							"aura_devotion_plus",
+							"defensive_stance",
+							"consecrated_weapon",
+							"aiming",
+							"monk_blessing",
+						]
 						for status_id in target.active_statuses.keys():
-							# Zachovej buffy (regeneration, aura_devotion, aura_devotion_plus)
-							if status_id != "regeneration" and status_id != "aura_devotion" and status_id != "aura_devotion_plus":
+							if status_id not in keep_buffs:
 								statuses_to_remove.append(status_id)
 						
 						for status_id in statuses_to_remove:
@@ -1824,6 +1841,7 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 				else:
 					# poison: value = DMG/turn; aoe_param_x = počet kol (povinně > 0)
 					# regeneration: duration = value (heal/turn i počet kol)
+					# until-consumed (defensive_stance, consecrated_weapon): no turn tick
 					var duration = 1
 					var status_value = effect.value
 					if effect.string_value == "regeneration":
@@ -1832,6 +1850,8 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 						duration = effect.aoe_param_x if effect.aoe_param_x > 0 else 3
 						if has_node("/root/PlayerData"):
 							status_value += PlayerData.poison_damage_bonus
+					elif effect.string_value == "defensive_stance" or effect.string_value == "consecrated_weapon":
+						duration = 999
 					elif effect.aoe_param_x > 0:
 						duration = effect.aoe_param_x
 					target.apply_status(effect.string_value, status_value, duration)

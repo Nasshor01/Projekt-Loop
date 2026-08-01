@@ -119,7 +119,6 @@ layer = 101
 
 [node name="CardTooltip" parent="CanvasLayer" instance=ExtResource("2_tooltip")]
 unique_name_in_owner = true
-visible = true
 offset_left = 400.0
 offset_top = 368.0
 offset_right = 750.0

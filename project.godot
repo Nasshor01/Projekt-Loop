@@ -11,21 +11,19 @@ config_version=5
 [application]
 
 config/name="Projekt LOOP"
-config/version="0.3.5"
+config/version="0.3.6"
 run/main_scene="uid://se10c1yredoi"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://art/icons/game/logo.png"
 config/windows_native_icon="res://art/icons/game/logo.ico"
-
-[audio]
-
-buses/default_bus_layout=""
 
 [autoload]
 
 SaveManager="*res://scripts/autoload/SaveManager.gd"
 DebugLogger="*res://scripts/autoload/DebugLogger.gd"
 PlayerData="*res://scripts/autoload/PlayerData.gd"
+MusicManager="*res://scripts/autoload/MusicManager.tscn"
+AudioManager="*res://scripts/autoload/AudioManager.gd"
 GameManager="*res://scripts/autoload/GameManager.gd"
 MultiplayerManager="*res://scripts/autoload/MultiplayerManager.gd"
 SystemDebug="*res://scripts/debug/SystemDebug.gd"
@@ -34,7 +32,6 @@ ArtifactManager="*res://scripts/autoload/ArtifactManager.gd"
 TurnManager="*res://scripts/autoload/TurnManager.gd"
 DamageCalculator="*res://scripts/autoload/DamageCalculator.gd"
 KeywordManager="*res://scripts/autoload/KeywordManager.gd"
-MusicManager="*res://scripts/autoload/MusicManager.gd"
 
 [display]
 

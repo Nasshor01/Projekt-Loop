@@ -24,6 +24,8 @@ const MAGE_METEOR_DAMAGE_PERCENT = int(MAGE_METEOR_DAMAGE_MULTIPLIER * 100) # 20
 const INITIATIVE_HOVER_MODULATE := Color(2.25, 1.9, 0.35, 1.0)
 const SELECTED_MODULATE := Color(1.5, 1.5, 1.5)
 const INITIATIVE_HOVER_SCALE := 1.12
+## Statusy, které netikají na konci tahu — drží se, dokud je nespotřebuje trigger (zásah / holy útok).
+const UNTIL_CONSUMED_STATUSES := ["defensive_stance", "consecrated_weapon", "aiming"]
 
 signal died(unit_node)
 signal stats_changed(unit_node)
@@ -253,6 +255,14 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 	if absorbed_by_block > 0:
 		_show_floating_text(absorbed_by_block, "block_loss")
 
+	# SFX: hit landed (block and/or HP). Local player = take; enemies = deal.
+	if (absorbed_by_block > 0 or damage_to_deal > 0) and has_node("/root/AudioManager"):
+		if unit_data.faction == UnitData.Faction.PLAYER:
+			if _is_local_player():
+				AudioManager.play_hit_take()
+		else:
+			AudioManager.play_hit_deal()
+
 	current_block -= absorbed_by_block
 	damage_to_deal -= absorbed_by_block
 	
@@ -435,6 +445,9 @@ func process_turn_end_statuses():
 			continue
 		# Poison ticks at start of turn — skip here so duration isn't double-decremented
 		if status_id == "poison":
+			continue
+		# "Next hit / next attack" buffs must survive end-of-turn into enemy turns
+		if status_id in UNTIL_CONSUMED_STATUSES:
 			continue
 		# Regeneration heals at start of turn (see process_turn_start_statuses), only tick duration here
 		
