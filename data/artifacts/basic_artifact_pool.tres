@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ArtifactPool" load_steps=12 format=3 uid="uid://bxfpuy4faq7sq"]
+[gd_resource type="Resource" script_class="ArtifactPool" load_steps=16 format=3 uid="uid://bxfpuy4faq7sq"]
 
 [ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_ixhu3"]
 [ext_resource type="Resource" uid="uid://bnqlphfjrx6un" path="res://data/artifacts/uncommon/ManaKrystal.tres" id="2_8afg2"]
@@ -11,8 +11,12 @@
 [ext_resource type="Resource" uid="uid://c0t3gp0m2f34q" path="res://data/artifacts/legendary/OkoPravdy.tres" id="8_vb5ki"]
 [ext_resource type="Resource" uid="uid://dleb020dpkyxt" path="res://data/artifacts/legendary/SrdceDraka.tres" id="9_n5yvg"]
 [ext_resource type="Resource" uid="uid://coeg0sqxlo6uq" path="res://data/artifacts/legendary/ČasovýKrystal.tres" id="10_6c16b"]
+[ext_resource type="Resource" uid="uid://do36qbbmtq0pg" path="res://data/artifacts/uncommon/DračíŠupina.tres" id="11_supina"]
+[ext_resource type="Resource" uid="uid://caepfdcy2econ" path="res://data/artifacts/rare/KrvavýGrál.tres" id="12_gral"]
+[ext_resource type="Resource" uid="uid://c0vaxrbqbldu5" path="res://data/artifacts/rare/MágovaKniha.tres" id="13_kniha"]
+[ext_resource type="Resource" uid="uid://n8822ob4aoyl" path="res://data/artifacts/rare/ProkletýPrsten.tres" id="14_prsten"]
 
 [resource]
 script = ExtResource("2_fvhm7")
-artifacts = Array[ExtResource("1_ixhu3")]([ExtResource("4_wa1ei"), ExtResource("3_k5j4k"), ExtResource("4_m64m1"), ExtResource("5_y5xlw"), ExtResource("6_vb5ki"), ExtResource("2_8afg2"), ExtResource("8_vb5ki"), ExtResource("9_n5yvg"), ExtResource("10_6c16b")])
+artifacts = Array[ExtResource("1_ixhu3")]([ExtResource("4_wa1ei"), ExtResource("3_k5j4k"), ExtResource("4_m64m1"), ExtResource("5_y5xlw"), ExtResource("6_vb5ki"), ExtResource("2_8afg2"), ExtResource("8_vb5ki"), ExtResource("9_n5yvg"), ExtResource("10_6c16b"), ExtResource("11_supina"), ExtResource("12_gral"), ExtResource("13_kniha"), ExtResource("14_prsten")])
 metadata/_custom_type_script = "uid://o3lg5niqen4s"

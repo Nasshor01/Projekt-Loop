@@ -121,12 +121,15 @@ func _ready():
 	player_hand_ui_instance.hand_card_drag_released.connect(_on_player_hand_card_drag_released)
 	player_hand_ui_instance.hand_card_drag_cancelled.connect(_on_player_hand_card_drag_cancelled)
 	player_hand_ui_instance.card_right_clicked.connect(_on_card_right_clicked)
+	player_hand_ui_instance.card_hover_exited.connect(_on_card_hover_exited_dismiss_tooltip)
 	
 	# Tooltip se nyní zobrazuje/schovává pomocí pravého kliknutí - žádné timery nejsou potřeba
 	draw_pile_button.pile_clicked.connect(_on_draw_pile_clicked)
 	discard_pile_button.pile_clicked.connect(_on_discard_pile_clicked)
 	if card_pile_viewer.has_signal("card_right_clicked"):
 		card_pile_viewer.card_right_clicked.connect(_on_card_right_clicked)
+	if card_pile_viewer.has_signal("card_unhovered"):
+		card_pile_viewer.card_unhovered.connect(_on_deck_viewer_card_unhovered)
 	if not win_button.pressed.is_connected(_on_win_button_pressed):
 		win_button.pressed.connect(_on_win_button_pressed)
 	if is_instance_valid(win_button):
@@ -2181,6 +2184,25 @@ func _on_card_right_clicked(card_data: CardData):
 		# Jinak zobrazíme tooltip pro tuto kartu
 		_current_tooltip_card_data = card_data
 		_show_card_tooltip()
+
+func _on_card_hover_exited_dismiss_tooltip(card_data: CardData) -> void:
+	_dismiss_tooltip_if_matches(card_data)
+
+func _on_deck_viewer_card_unhovered() -> void:
+	# DeckViewer neposílá kartu — zavři jakýkoli otevřený tooltip z vieweru/ruky.
+	if card_tooltip and card_tooltip.visible:
+		card_tooltip.hide_tooltip()
+		_current_tooltip_card_data = null
+
+func _dismiss_tooltip_if_matches(card_data: CardData) -> void:
+	if not card_tooltip or not card_tooltip.visible or _current_tooltip_card_data == null or card_data == null:
+		return
+	var same := card_data == _current_tooltip_card_data
+	if not same and not card_data.resource_path.is_empty() and not _current_tooltip_card_data.resource_path.is_empty():
+		same = card_data.resource_path == _current_tooltip_card_data.resource_path
+	if same:
+		card_tooltip.hide_tooltip()
+		_current_tooltip_card_data = null
 
 func _show_card_tooltip():
 	"""Zobrazí tooltip pro aktuálně vybranou kartu"""

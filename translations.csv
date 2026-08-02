@@ -558,6 +558,14 @@
 "artifact.mec_nekonecna.desc","For each enemy you kill, gain +1 card damage (this combat).","Za každého zabitého nepřítele získáš +1 poškození karet (tento souboj)."
 "artifact.zahadna_kostka","Mysterious Dice","Záhadná kostka"
 "artifact.zahadna_kostka.desc","At the start of each turn: 50% chance to gain 2 energy or lose 1 energy.","Na začátku každého tahu: 50% šance na získání 2 energie nebo ztrátu 1 energie."
+"artifact.draci_supina","Dragon Scale","Dračí šupina"
+"artifact.draci_supina.desc","At the start of each turn, gain {value} Block for each living enemy.","Na začátku každého tahu získáš {value} bloku za každého živého nepřítele."
+"artifact.krvavy_gral","Blood Chalice","Krvavý grál"
+"artifact.krvavy_gral.desc","At the start of each turn, take {value2} damage, then heal {value} HP.","Na začátku každého tahu utrpíš {value2} poškození a pak se vyléčíš o {value} HP."
+"artifact.magova_kniha","Mage's Tome","Mágova kniha"
+"artifact.magova_kniha.desc","Whenever you play a card, draw {value} card(s) (max {value2} times per turn).","Kdykoli zahraješ kartu, dobereš {value} kartu (max {value2}× za tah)."
+"artifact.proklety_prsten","Cursed Ring","Prokletý prsten"
+"artifact.proklety_prsten.desc","Gain {value2} max HP. At the start of each turn, lose {value} energy.","Získáš {value2} maximálního HP. Na začátku každého tahu ztratíš {value} energie."
 "card.adrenaline","Adrenaline","Adrenalin"
 "card.adrenaline.desc","Gain 1 Energy.
 At the end of your turn, draw 1 extra card.","Získej 1 Energii.

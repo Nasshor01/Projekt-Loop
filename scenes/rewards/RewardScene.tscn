@@ -6,25 +6,11 @@
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_b06mc"]
 
-[node name="RewardScene" type="PanelContainer"]
-custom_minimum_size = Vector2(800, 550)
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -400.0
-offset_top = -234.0
-offset_right = 400.0
-offset_bottom = 316.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="RewardScene" type="CanvasLayer"]
+layer = 5
 script = ExtResource("1_4cy2o")
 
-[node name="BgLayer" type="CanvasLayer" parent="."]
-layer = -10
-
-[node name="Background" type="TextureRect" parent="BgLayer"]
+[node name="Background" type="TextureRect" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -35,89 +21,152 @@ texture = ExtResource("3_bg")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="DimOverlay" type="ColorRect" parent="BgLayer"]
+[node name="DimOverlay" type="ColorRect" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.04, 0.05, 0.08, 0.35)
+color = Color(0, 0, 0, 0.55)
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="HeaderBand" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 96.0
+offset_bottom = 180.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="HeaderCenter" type="CenterContainer" parent="HeaderBand"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HeaderVBox" type="VBoxContainer" parent="HeaderBand/HeaderCenter"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 6
 
-[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
-custom_minimum_size = Vector2(0, 300)
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="ScrollContent" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/separation = 15
-
-[node name="CenterContainer" type="CenterContainer" parent="VBoxContainer/ScrollContainer/ScrollContent"]
-layout_mode = 2
-
-[node name="TitleLabel" type="Label" parent="VBoxContainer/ScrollContainer/ScrollContent/CenterContainer"]
+[node name="TitleLabel" type="Label" parent="HeaderBand/HeaderCenter/HeaderVBox"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 30
-text = "Odměny"
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 28
+text = "Choose a card"
 horizontal_alignment = 1
-vertical_alignment = 1
 
-[node name="TutorialHintLabel" type="Label" parent="VBoxContainer/ScrollContainer/ScrollContent"]
+[node name="GoldRewardDisplay" type="HBoxContainer" parent="HeaderBand/HeaderCenter/HeaderVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="GoldIcon" type="TextureRect" parent="HeaderBand/HeaderCenter/HeaderVBox/GoldRewardDisplay"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+texture = SubResource("CompressedTexture2D_b06mc")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GoldLabel" type="Label" parent="HeaderBand/HeaderCenter/HeaderVBox/GoldRewardDisplay"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.45, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+
+[node name="TutorialHintLabel" type="Label" parent="HeaderBand/HeaderCenter/HeaderVBox"]
+unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 15
 text = "Tutorial hint"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="TutorialCardAddedLabel" type="Label" parent="VBoxContainer/ScrollContainer/ScrollContent"]
+[node name="TutorialCardAddedLabel" type="Label" parent="HeaderBand/HeaderCenter/HeaderVBox"]
+unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 15
 text = "Tuto kartu jsi právě přidal do svého balíčku!"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="GoldRewardDisplay" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/ScrollContent"]
+[node name="CenterStage" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 188.0
+offset_right = -24.0
+offset_bottom = -88.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="CenterStage"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="ChoicesColumn" type="VBoxContainer" parent="CenterStage/CenterContainer"]
 layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="CardContainer" type="GridContainer" parent="CenterStage/CenterContainer/ChoicesColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 48
+theme_override_constants/v_separation = 24
+columns = 3
+
+[node name="ArtifactContainer" type="HBoxContainer" parent="CenterStage/CenterContainer/ChoicesColumn"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 36
 alignment = 1
 
-[node name="GoldIcon" type="TextureRect" parent="VBoxContainer/ScrollContainer/ScrollContent/GoldRewardDisplay"]
-layout_mode = 2
-texture = SubResource("CompressedTexture2D_b06mc")
+[node name="SkipButton" type="Button" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 52)
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -240.0
+offset_top = -72.0
+offset_right = -28.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 20
+text = "Skip"
 
-[node name="GoldLabel" type="Label" parent="VBoxContainer/ScrollContainer/ScrollContent/GoldRewardDisplay"]
-layout_mode = 2
-
-[node name="CardContainer" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/ScrollContent"]
-layout_mode = 2
-alignment = 1
-
-[node name="ArtifactContainer" type="HBoxContainer" parent="VBoxContainer/ScrollContainer/ScrollContent"]
-layout_mode = 2
-
-[node name="SkipButton" type="Button" parent="VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 8
-text = "přeskočit"
-
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
+[node name="TooltipLayer" type="CanvasLayer" parent="."]
 layer = 101
 
-[node name="CardTooltip" parent="CanvasLayer" instance=ExtResource("2_tooltip")]
+[node name="CardTooltip" parent="TooltipLayer" instance=ExtResource("2_tooltip")]
 unique_name_in_owner = true
 offset_left = 400.0
 offset_top = 368.0

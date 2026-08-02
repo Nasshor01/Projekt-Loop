@@ -124,6 +124,11 @@ func on_combat_start():
 func on_turn_start():
 	DebugLogger.log_info("ArtifactManager: Spouštím START_OF_TURN artefakty...")
 	
+	# Per-turn counters (např. Mágova kniha)
+	for artifact in PlayerData.artifacts:
+		if artifact and artifact.custom_effect_id == "mage_book_limit":
+			artifact.set_meta("cards_drawn_this_turn", 0)
+	
 	var player_unit = _get_player_unit()
 	DebugLogger.log_debug("Nalezený player unit: %s" % str(player_unit))
 	
@@ -385,29 +390,33 @@ func handle_custom_effect(artifact: ArtifactsData, context: Dictionary = {}) -> 
 				return false
 			
 		"cursed_ring_combo":
-			# Prokletý prsten: +15 max HP (jednorázově), -1 energie každý tah
-			if not artifact.has_meta("hp_bonus_applied"):
-				PlayerData.change_max_hp(artifact.secondary_value)  # +15 HP
-				artifact.set_meta("hp_bonus_applied", true)
-			# -1 energie se aplikuje normálně přes ENERGY_LOSS
+			# Prokletý prsten: -1 energie každý tah (HP bonus se aplikuje při získání)
+			var energy_to_lose = mini(artifact.get_effective_value(), PlayerData.current_energy)
+			if energy_to_lose > 0:
+				PlayerData.current_energy -= energy_to_lose
+				PlayerData.emit_signal("energy_changed", PlayerData.current_energy)
+				DebugLogger.log_info("Prokletý prsten: -%d energie" % energy_to_lose)
 			return true
 			
 		"blood_chalice_combo":
-			# Krvavý grál: -2 HP, +4 heal
+			# Krvavý grál: self-dmg {value2}, pak heal {value}
 			var player = _get_player_unit()
 			if player:
-				if player.has_method("take_damage"):
-					player.take_damage(abs(artifact.secondary_value))  # 2 damage
+				var self_dmg = abs(artifact.get_effective_secondary_value())
+				if self_dmg > 0 and player.has_method("take_damage"):
+					player.take_damage(self_dmg)
 				if player.has_method("heal"):
-					player.heal(artifact.primary_value)  # 4 heal
+					player.heal(artifact.get_effective_value())
 			return true
 			
 		"mage_book_limit":
-			# Mágova kniha s limitem 5 karet za tah
-			var cards_drawn_this_turn = context.get("cards_drawn_this_turn", 0)
-			if cards_drawn_this_turn < artifact.secondary_value:
-				PlayerData.draw_cards(artifact.get_effective_value())
-				context["cards_drawn_this_turn"] = cards_drawn_this_turn + 1
+			# Mágova kniha: při zahrání karty dobere {value}, max {value2}× za tah
+			var drawn_this_turn = int(artifact.get_meta("cards_drawn_this_turn", 0))
+			var limit = artifact.get_effective_secondary_value()
+			if drawn_this_turn >= limit:
+				return false
+			PlayerData.draw_cards(artifact.get_effective_value())
+			artifact.set_meta("cards_drawn_this_turn", drawn_this_turn + 1)
 			return true
 			
 		"scaling_damage":

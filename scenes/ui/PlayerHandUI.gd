@@ -3,6 +3,7 @@ extends Control
 
 signal hand_card_was_clicked(card_ui_instance: Control, card_data_resource: CardData)
 signal card_right_clicked(card_data_resource: CardData)
+signal card_hover_exited(card_data_resource: CardData)
 signal card_draw_animation_finished() # Nový signál, který oznámí dokončení animace dobrání
 signal hand_discard_animation_finished() # Nový signál pro dokončení odhození
 signal hand_card_drag_started(card_ui_instance: Control, card_data_resource: CardData)
@@ -242,6 +243,8 @@ func _on_card_mouse_exited(card: Control):
 	if _hovered_card == card:
 		_hovered_card = null
 		_request_arrange()
+	if card is CardUI and is_instance_valid((card as CardUI).card_data):
+		emit_signal("card_hover_exited", (card as CardUI).card_data)
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:

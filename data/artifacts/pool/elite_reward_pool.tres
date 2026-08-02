@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ArtifactPool" load_steps=9 format=3 uid="uid://c8nx6ewkyi5u8"]
+[gd_resource type="Resource" script_class="ArtifactPool" load_steps=13 format=3 uid="uid://c8nx6ewkyi5u8"]
 
 [ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_bu6c6"]
 [ext_resource type="Resource" uid="uid://glnnfop1v5ll" path="res://data/artifacts/rare/BerserkerovaZuřivost.tres" id="2_l0wkw"]
@@ -8,8 +8,12 @@
 [ext_resource type="Resource" uid="uid://s7its2p1eh0f" path="res://data/artifacts/uncommon/BojovníkůvNáramek.tres" id="5_pws6p"]
 [ext_resource type="Resource" uid="uid://bnqlphfjrx6un" path="res://data/artifacts/uncommon/ManaKrystal.tres" id="6_l5n6d"]
 [ext_resource type="Resource" uid="uid://b2mjbuhqkgfby" path="res://data/artifacts/common/ZdravéJablko.tres" id="7_n0kqm"]
+[ext_resource type="Resource" uid="uid://bdracisupinax01" path="res://data/artifacts/uncommon/DračíŠupina.tres" id="8_supina"]
+[ext_resource type="Resource" uid="uid://bkrvavygralx02" path="res://data/artifacts/rare/KrvavýGrál.tres" id="9_gral"]
+[ext_resource type="Resource" uid="uid://bmagovaknihax03" path="res://data/artifacts/rare/MágovaKniha.tres" id="10_kniha"]
+[ext_resource type="Resource" uid="uid://bprokletyprstx04" path="res://data/artifacts/rare/ProkletýPrsten.tres" id="11_prsten"]
 
 [resource]
 script = ExtResource("2_w4msy")
-artifacts = Array[ExtResource("1_bu6c6")]([ExtResource("2_l0wkw"), ExtResource("3_12qhp"), ExtResource("4_cw8ij"), ExtResource("5_pws6p"), ExtResource("6_l5n6d"), ExtResource("7_n0kqm")])
+artifacts = Array[ExtResource("1_bu6c6")]([ExtResource("2_l0wkw"), ExtResource("3_12qhp"), ExtResource("4_cw8ij"), ExtResource("5_pws6p"), ExtResource("6_l5n6d"), ExtResource("7_n0kqm"), ExtResource("8_supina"), ExtResource("9_gral"), ExtResource("10_kniha"), ExtResource("11_prsten")])
 metadata/_custom_type_script = "uid://o3lg5niqen4s"

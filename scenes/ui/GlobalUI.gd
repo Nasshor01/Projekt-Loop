@@ -42,6 +42,8 @@ func _ready():
 
 	if deck_viewer.has_signal("card_right_clicked"):
 		deck_viewer.card_right_clicked.connect(_on_deck_viewer_card_right_clicked)
+	if deck_viewer.has_signal("card_unhovered"):
+		deck_viewer.card_unhovered.connect(_on_deck_viewer_card_unhovered)
 
 	# Prvotní nastavení všech hodnot v UI
 	_update_ui_texts()
@@ -103,6 +105,11 @@ func _on_deck_viewer_card_right_clicked(card_data: CardData):
 		tooltip_pos.x = clampf(tooltip_pos.x, 10, screen_size.x - tooltip_size.x - 10)
 		tooltip_pos.y = clampf(tooltip_pos.y, 10, screen_size.y - tooltip_size.y - 10)
 		card_tooltip.show_tooltip(card_data, tooltip_pos)
+
+func _on_deck_viewer_card_unhovered() -> void:
+	if card_tooltip and card_tooltip.visible:
+		card_tooltip.hide_tooltip()
+		_deck_tooltip_card_data = null
 
 func _on_menu_button_pressed():
 	# Pokud je otevřený prohlížeč balíčku, zavřeme ho

@@ -49,6 +49,8 @@ func _ready():
 		card_removal_viewer.visible = false
 	if card_removal_viewer.has_signal("card_right_clicked"):
 		card_removal_viewer.card_right_clicked.connect(_on_card_right_clicked_tooltip)
+	if card_removal_viewer.has_signal("card_unhovered"):
+		card_removal_viewer.card_unhovered.connect(_on_card_unhovered_dismiss_tooltip)
 	_ensure_upgrade_preview_toggle()
 	
 	continue_button.pressed.connect(_on_continue_pressed)
@@ -305,6 +307,8 @@ func _open_card_removal_screen():
 		$UI.add_child(card_removal_viewer)
 		if card_removal_viewer.has_signal("card_right_clicked"):
 			card_removal_viewer.card_right_clicked.connect(_on_card_right_clicked_tooltip)
+		if card_removal_viewer.has_signal("card_unhovered"):
+			card_removal_viewer.card_unhovered.connect(_on_card_unhovered_dismiss_tooltip)
 	
 	# Skryj result panel
 	result_panel.visible = false
@@ -374,6 +378,8 @@ func _open_card_upgrade_screen():
 		$UI.add_child(card_removal_viewer)
 		if card_removal_viewer.has_signal("card_right_clicked"):
 			card_removal_viewer.card_right_clicked.connect(_on_card_right_clicked_tooltip)
+		if card_removal_viewer.has_signal("card_unhovered"):
+			card_removal_viewer.card_unhovered.connect(_on_card_unhovered_dismiss_tooltip)
 	
 	var upgradeable_cards: Array[CardData] = []
 	for card in PlayerData.master_deck:
@@ -462,6 +468,11 @@ func _on_card_right_clicked_tooltip(card_data: CardData):
 	else:
 		_current_tooltip_card_data = card_data
 		_show_card_tooltip()
+
+func _on_card_unhovered_dismiss_tooltip() -> void:
+	if card_tooltip and card_tooltip.visible:
+		card_tooltip.hide_tooltip()
+		_current_tooltip_card_data = null
 
 func _show_card_tooltip():
 	if not _current_tooltip_card_data or not card_tooltip:

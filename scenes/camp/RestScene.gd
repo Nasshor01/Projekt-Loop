@@ -22,6 +22,8 @@ func _ready():
 	leave_button.pressed.connect(_on_leave_pressed)
 	if card_pile_viewer.has_signal("card_right_clicked"):
 		card_pile_viewer.card_right_clicked.connect(_on_card_right_clicked)
+	if card_pile_viewer.has_signal("card_unhovered"):
+		card_pile_viewer.card_unhovered.connect(_on_card_unhovered_dismiss_tooltip)
 	_update_ui_texts()
 	_ensure_preview_toggle()
 	_apply_tutorial_lock()
@@ -117,6 +119,11 @@ func _on_card_right_clicked(card_data: CardData):
 	else:
 		_current_tooltip_card_data = card_data
 		_show_card_tooltip()
+
+func _on_card_unhovered_dismiss_tooltip() -> void:
+	if card_tooltip and card_tooltip.visible:
+		card_tooltip.hide_tooltip()
+		_current_tooltip_card_data = null
 
 func _show_card_tooltip():
 	if not _current_tooltip_card_data or not card_tooltip:

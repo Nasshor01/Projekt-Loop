@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3 uid="uid://caepfdcy2econ"]
+
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://dge3wjx1ms0qo" path="res://art/icons/Artifacts/krvavý grál-1.png.png" id="2_tex"]
+
+[resource]
+script = ExtResource("1_script")
+artifact_name = "artifact.krvavy_gral"
+description = "artifact.krvavy_gral.desc"
+texture = ExtResource("2_tex")
+artifact_type = 2
+trigger_type = 2
+effect_type = 27
+primary_value = 4
+secondary_value = 2
+percentage_based = false
+uses_per_combat = -1
+current_uses = 0
+is_stackable = false
+max_stacks = 1
+current_stacks = 1
+synergy_set_id = ""
+condition_type = ""
+condition_value = 0
+custom_effect_id = "blood_chalice_combo"
+effect_description = ""
+metadata/_custom_type_script = "uid://cojmro6kj47du"

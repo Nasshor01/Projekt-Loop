@@ -7,6 +7,10 @@ const META_SAVE_PATH = "user://meta_progress.res"
 const RUN_SAVE_PATH = "user://current_run.sav"
 const VERSION_FILE_PATH = "user://last_version.cfg"
 
+## Bump JEN když se mění formát / pravidla levelů nebo village (střepy, budovy).
+## Bumpnutí game version (0.3.x) meta NEmaže.
+const META_SCHEMA_VERSION: int = 1
+
 var meta_progress: MetaProgress
 
 func _ready():
@@ -14,68 +18,55 @@ func _ready():
 	load_meta_progress()
 
 #==============================================================================
-# Version Migration - automatický clean při nové verzi
+# Version / schema migration
 #==============================================================================
 
 func _check_version_migration():
-	"""Zkontroluje verzi hry a pokud se změnila, provede clean reset save dat."""
+	"""Sleduje game version (bez wipe) a meta schema (wipe jen při záměrném bumpnutí)."""
 	var current_version = str(ProjectSettings.get_setting("application/config/version", "0.0.0"))
-	var saved_version = _get_saved_version()
-	
-	if saved_version == "" or saved_version != current_version:
-		# Nová verze nebo první spuštění
-		if saved_version != "":
-			print("=== VERSION MIGRATION ===")
-			print("Old version: %s -> New version: %s" % [saved_version, current_version])
-			print("Performing clean reset of save data...")
-			_perform_clean_reset()
-		else:
-			print("First launch detected (version %s). No migration needed." % current_version)
-		
-		_save_current_version(current_version)
-
-func _get_saved_version() -> String:
-	"""Přečte uloženou verzi z konfiguračního souboru."""
 	var config = ConfigFile.new()
-	var err = config.load(VERSION_FILE_PATH)
-	if err != OK:
-		return ""
-	return config.get_value("version", "game_version", "")
+	var had_config := config.load(VERSION_FILE_PATH) == OK
+	var saved_version: String = config.get_value("version", "game_version", "") if had_config else ""
+	# Chybějící klíč = starý save z éry „wipe při každé verzi“ → ber jako aktuální schema (nemazat).
+	var saved_meta_schema: int = int(config.get_value("version", "meta_schema", META_SCHEMA_VERSION)) if had_config else META_SCHEMA_VERSION
 
-func _save_current_version(version: String):
-	"""Uloží aktuální verzi do konfiguračního souboru."""
+	if saved_version != "" and saved_version != current_version:
+		print("=== VERSION UPDATE ===")
+		print("Old version: %s -> New version: %s (meta kept)" % [saved_version, current_version])
+	elif saved_version == "":
+		print("First launch detected (version %s)." % current_version)
+
+	if saved_meta_schema != META_SCHEMA_VERSION:
+		print("=== META SCHEMA MIGRATION ===")
+		print("Old meta schema: %d -> New: %d" % [saved_meta_schema, META_SCHEMA_VERSION])
+		print("Wiping meta progress (levels / village) only...")
+		_wipe_meta_progress()
+
+	_save_version_config(current_version)
+
+func _save_version_config(version: String):
+	"""Uloží game version + meta schema (settings / run save se nemění)."""
 	var config = ConfigFile.new()
+	config.load(VERSION_FILE_PATH)  # merge if exists
 	config.set_value("version", "game_version", version)
+	config.set_value("version", "meta_schema", META_SCHEMA_VERSION)
 	config.set_value("version", "migration_date", Time.get_datetime_string_from_system())
 	config.save(VERSION_FILE_PATH)
 
-func _perform_clean_reset():
-	"""Vymaže všechna save data (meta progress, run save, session lock)."""
+func _wipe_meta_progress():
+	"""Smaže jen meta (levely, XP, střepy, village). Run save a settings nechá."""
+	if not FileAccess.file_exists(META_SAVE_PATH):
+		print("  No meta_progress.res to delete.")
+		return
 	var dir = DirAccess.open("user://")
 	if dir == null:
-		printerr("SaveManager: Cannot open user:// directory for clean reset!")
+		printerr("SaveManager: Cannot open user:// to wipe meta!")
 		return
-	
-	# Seznam souborů k vymazání
-	var files_to_delete = [
-		"meta_progress.res",
-		"current_run.sav",
-		"session.lock",
-	]
-	
-	for file_name in files_to_delete:
-		if FileAccess.file_exists("user://" + file_name):
-			var err = dir.remove(file_name)
-			if err == OK:
-				print("  Deleted: %s" % file_name)
-			else:
-				printerr("  Failed to delete: %s (error: %d)" % [file_name, err])
-	
-	# Zachováme settings.cfg (jazyk, report consent) - to nemažeme
-	# Zachováme last_version.cfg - to právě zapisujeme
-	# Zachováme debug logy - ty nejsou problém
-	
-	print("Clean reset complete. All save data has been cleared.")
+	var err = dir.remove("meta_progress.res")
+	if err == OK:
+		print("  Deleted: meta_progress.res")
+	else:
+		printerr("  Failed to delete meta_progress.res (error: %d)" % err)
 
 #==============================================================================
 # Meta Progress

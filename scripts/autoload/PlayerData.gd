@@ -520,12 +520,16 @@ func add_artifact(new_artifact_resource: ArtifactsData) -> bool:
 	if new_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:
 		apply_passive_skills()
 	
-	# Srdce draka: secondary_value = -10 Max HP (aplikuje se jednorázově při získání)
+	# Jednorázové HP změny při získání (ne každý tah)
 	var added_artifact = existing_artifact if existing_artifact else new_artifact
 	if added_artifact.custom_effect_id == "dragon_heart_combo" and added_artifact.secondary_value != 0:
 		if not added_artifact.has_meta("max_hp_penalty_applied"):
 			change_max_hp(added_artifact.secondary_value)
 			added_artifact.set_meta("max_hp_penalty_applied", true)
+	if added_artifact.custom_effect_id == "cursed_ring_combo" and added_artifact.secondary_value != 0:
+		if not added_artifact.has_meta("hp_bonus_applied"):
+			change_max_hp(added_artifact.secondary_value)
+			added_artifact.set_meta("hp_bonus_applied", true)
 
 	emit_signal("health_changed", current_hp, max_hp) # Pro jistotu, kdyby pasivka měnila HP
 	return true
