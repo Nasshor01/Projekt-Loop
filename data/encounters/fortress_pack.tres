@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=7 format=3]
+
+[ext_resource type="Script" uid="uid://tp0lo3xqiiqb" path="res://data/encounters/EncounterEntry.gd" id="1_entry"]
+[ext_resource type="Script" uid="uid://dq86v2djx6q1m" path="res://data/encounters/EncounterData.gd" id="2_data"]
+[ext_resource type="Resource" path="res://data/units/goblin_berserker.tres" id="3_ber"]
+[ext_resource type="Resource" path="res://data/units/goblin_scout_f.tres" id="4_scout"]
+[ext_resource type="Resource" path="res://data/units/goblin_unit.tres" id="5_gob"]
+
+[sub_resource type="Resource" id="Resource_c"]
+script = ExtResource("1_entry")
+unit_data = ExtResource("3_ber")
+grid_position = Vector2i(7, 3)
+
+[sub_resource type="Resource" id="Resource_n"]
+script = ExtResource("1_entry")
+unit_data = ExtResource("4_scout")
+grid_position = Vector2i(7, 1)
+
+[sub_resource type="Resource" id="Resource_s"]
+script = ExtResource("1_entry")
+unit_data = ExtResource("5_gob")
+grid_position = Vector2i(7, 5)
+
+[resource]
+script = ExtResource("2_data")
+encounter_type = 0
+xp_reward = 40
+enemies = Array[ExtResource("1_entry")]([SubResource("Resource_c"), SubResource("Resource_n"), SubResource("Resource_s")])

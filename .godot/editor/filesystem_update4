@@ -141,3 +141,4 @@ res://scenes/ui/PassiveSkillNodeUI.tscn
 res://scenes/battle/arenas/ArenaDefault.tscn
 res://scenes/camp/RestScene.tscn
 res://scenes/ui/DeckViewer.tscn
+res://scenes/rewards/RewardScene.gd

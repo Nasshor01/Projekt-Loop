@@ -41,6 +41,9 @@ var _coop_my_choice_path: String = ""      # cesta ke kartě, kterou jsem vybral
 var _coop_other_choice_path: String = ""   # cesta ke kartě druhého hráče
 var _coop_my_skipped: bool = false         # skipnul jsem?
 var _coop_other_done: bool = false         # druhý hráč vybral/skipnul?
+var _reward_hover_ready: bool = false
+var _reward_hovered_card: CardUI = null
+var _reward_hover_tweens: Dictionary = {}  # CardUI -> Tween
 
 func _ready():
 	# Jen inicializace, ŽÁDNÁ logika pro UI
@@ -85,10 +88,11 @@ func setup_ui():
 				card_ui.target_scale = face_scale
 				card_ui.scale = face_scale
 				card_ui.set_process(false)
-				_wire_reward_card_hover(card_ui)
 				call_deferred("_sync_reward_card_layout", card_ui)
 			card_ui.card_clicked.connect(_on_card_clicked)
 			card_ui.card_right_clicked.connect(_on_card_right_clicked)
+		# Hover až po layoutu — jinak spawn pod kurzorem spustí falešný mouse_entered.
+		call_deferred("_enable_reward_card_hover")
 	else:
 		card_container.visible = false
 
@@ -376,25 +380,62 @@ func _sync_reward_card_layout(card_ui: CardUI):
 		return
 	card_ui.set_target_position(card_ui.position)
 
+func _enable_reward_card_hover() -> void:
+	"""Počkej na layout GridContaineru, reset scale, teprve pak zapni hover."""
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_reward_hover_ready = true
+	_reward_hovered_card = null
+	for child in card_container.get_children():
+		if not child is CardUI:
+			continue
+		var card_ui: CardUI = child
+		_kill_reward_hover_tween(card_ui)
+		var base: Vector2 = card_ui.original_scale if card_ui.original_scale != Vector2.ZERO else REWARD_CARD_SCALE
+		card_ui.scale = base
+		card_ui.target_scale = base
+		_wire_reward_card_hover(card_ui)
+
 func _wire_reward_card_hover(card_ui: CardUI) -> void:
 	if not is_instance_valid(card_ui):
 		return
+	# Jednou na kartu (volá se až z _enable_reward_card_hover).
 	card_ui.mouse_entered.connect(_on_reward_card_hover_enter.bind(card_ui))
 	card_ui.mouse_exited.connect(_on_reward_card_hover_exit.bind(card_ui))
 
-func _on_reward_card_hover_enter(card_ui: CardUI) -> void:
-	if not is_instance_valid(card_ui):
-		return
-	var base: Vector2 = card_ui.original_scale if card_ui.original_scale != Vector2.ZERO else REWARD_CARD_SCALE
+func _reward_card_base_scale(card_ui: CardUI) -> Vector2:
+	return card_ui.original_scale if card_ui.original_scale != Vector2.ZERO else REWARD_CARD_SCALE
+
+func _kill_reward_hover_tween(card_ui: CardUI) -> void:
+	if _reward_hover_tweens.has(card_ui):
+		var old: Tween = _reward_hover_tweens[card_ui]
+		if old and old.is_valid():
+			old.kill()
+		_reward_hover_tweens.erase(card_ui)
+
+func _tween_reward_card_scale(card_ui: CardUI, to_scale: Vector2) -> void:
+	_kill_reward_hover_tween(card_ui)
 	var tween := create_tween()
-	tween.tween_property(card_ui, "scale", base * REWARD_HOVER_SCALE, 0.12)
+	_reward_hover_tweens[card_ui] = tween
+	tween.tween_property(card_ui, "scale", to_scale, 0.12)
+
+func _on_reward_card_hover_enter(card_ui: CardUI) -> void:
+	if not _reward_hover_ready or not is_instance_valid(card_ui):
+		return
+	if _reward_hovered_card == card_ui:
+		return
+	# Jen jedna hover-karta — reset ostatních (layout přesuny někdy ztratí mouse_exited).
+	if is_instance_valid(_reward_hovered_card) and _reward_hovered_card != card_ui:
+		_tween_reward_card_scale(_reward_hovered_card, _reward_card_base_scale(_reward_hovered_card))
+	_reward_hovered_card = card_ui
+	_tween_reward_card_scale(card_ui, _reward_card_base_scale(card_ui) * REWARD_HOVER_SCALE)
 
 func _on_reward_card_hover_exit(card_ui: CardUI) -> void:
 	if not is_instance_valid(card_ui):
 		return
-	var base: Vector2 = card_ui.original_scale if card_ui.original_scale != Vector2.ZERO else REWARD_CARD_SCALE
-	var tween := create_tween()
-	tween.tween_property(card_ui, "scale", base, 0.12)
+	if _reward_hovered_card == card_ui:
+		_reward_hovered_card = null
+	_tween_reward_card_scale(card_ui, _reward_card_base_scale(card_ui))
 	_dismiss_tooltip_if_card(card_ui.card_data)
 
 func _dismiss_tooltip_if_card(card_data: CardData) -> void:

@@ -100,9 +100,9 @@ layer = 2
 
 [node name="InitiativeBar" parent="CanvasLayer" instance=ExtResource("9_abcde")]
 offset_left = -287.0
-offset_top = 81.0
+offset_top = 89.0
 offset_right = 289.0
-offset_bottom = 137.0
+offset_bottom = 145.0
 
 [node name="PlayerHandUI" parent="CanvasLayer" instance=ExtResource("3_rjp4h")]
 offset_left = 188.0
@@ -119,9 +119,12 @@ text = "Ukončit tah"
 
 [node name="VictoryLabel" type="Label" parent="CanvasLayer"]
 visible = false
-offset_top = 90.0
-offset_right = 1152.0
-offset_bottom = 738.0
+z_index = 50
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 150.0
+offset_bottom = 230.0
+grow_horizontal = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
 theme_override_font_sizes/font_size = 54

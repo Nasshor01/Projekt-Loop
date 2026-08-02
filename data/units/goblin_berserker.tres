@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=4 format=3]
+
+[ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_unit"]
+[ext_resource type="Script" uid="uid://crrxu7pf0ykgy" path="res://scripts/ai/BerserkerAI.gd" id="1_ai"]
+[ext_resource type="Texture2D" path="res://art/sprites/units/goblin_berserker.png" id="2_tex"]
+
+[resource]
+script = ExtResource("1_unit")
+unit_id = "goblin_berserker"
+unit_name = "unit.goblin_berserker"
+description = "unit.goblin_berserker.desc"
+faction = 1
+unit_type = 8
+max_health = 28
+attack_damage = 9
+movement_range = 2
+attack_range = 1
+initiative = 9
+sprite_texture = ExtResource("2_tex")
+ai_script = ExtResource("1_ai")
+metadata/_custom_type_script = "uid://celcfyrl033bg"

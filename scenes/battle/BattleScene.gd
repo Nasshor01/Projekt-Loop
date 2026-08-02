@@ -1087,12 +1087,16 @@ func spawn_enemy_units():
 		if available_spawn_cells.is_empty():
 			printerr("Nedostatek spawn pozic!")
 			break
-			
-		var random_pos = available_spawn_cells.pick_random()
-		available_spawn_cells.erase(random_pos)
-		DebugLogger.log_debug("  - spawn pozice: %s" % str(random_pos))
 
-		var enemy_node = _spawn_unit(enemy_entry.unit_data, random_pos)
+		# Prefer EncounterEntry.grid_position when it's a valid enemy-side cell.
+		var spawn_pos: Vector2i = enemy_entry.grid_position
+		var use_scripted := spawn_pos != Vector2i.ZERO and available_spawn_cells.has(spawn_pos)
+		if not use_scripted:
+			spawn_pos = available_spawn_cells.pick_random()
+		available_spawn_cells.erase(spawn_pos)
+		DebugLogger.log_debug("  - spawn pozice: %s (scripted=%s)" % [str(spawn_pos), str(use_scripted)])
+
+		var enemy_node = _spawn_unit(enemy_entry.unit_data, spawn_pos)
 		if is_instance_valid(enemy_node):
 			DebugLogger.log_debug("  ✅ Enemy spawnován!")
 			_enemy_units.append(enemy_node)

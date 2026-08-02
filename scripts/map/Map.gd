@@ -25,19 +25,30 @@ const CAMERA_LEFT_UI_MARGIN := 210.0
 const CAMERA_RIGHT_UI_MARGIN := 40.0
 
 # --- Seznamy možných soubojů ---
-var monster_encounters = [
+# STS-style: první N normal fightů (a raná patra) berou easy pool.
+const EASY_MONSTER_FIGHT_LIMIT := 3
+const EASY_MONSTER_MAX_ROW := 2  # row 0..2 = první 3 patra
+
+var easy_monster_encounters = [
 	"res://data/encounters/first_battle.tres",
 	"res://data/encounters/goblin_duo.tres",
+	"res://data/encounters/fortress_scouts.tres",
+	"res://data/encounters/fortress_bowline.tres",
+	"res://data/encounters/fortress_bruiser.tres",
+]
+var hard_monster_encounters = [
 	"res://data/encounters/one_orc.tres",
 	"res://data/encounters/Skeleton.tres",
 	"res://data/encounters/demon_assassin.tres",
-	"res://data/encounters/assassin_squad.tres"
+	"res://data/encounters/assassin_squad.tres",
+	"res://data/encounters/fortress_pack.tres",
 ]
 var elite_encounters = [
 	"res://data/encounters/elite_battle.tres",
 	"res://data/encounters/Skeleton_army.tres",
 	"res://data/encounters/support_team.tres",
-	"res://data/encounters/elite_mix.tres"
+	"res://data/encounters/elite_mix.tres",
+	"res://data/encounters/fortress_warband.tres",
 ]
 var boss_encounters = ["res://data/encounters/boss_battle.tres"]
 
@@ -245,8 +256,7 @@ func _get_node_action_payload(node_data: MapNodeResource) -> Dictionary:
 	match node_data.type:
 		MapNodeResource.NodeType.MONSTER:
 			result.action_type = "battle"
-			if not monster_encounters.is_empty():
-				result.encounter = load(monster_encounters.pick_random()) as EncounterData
+			result.encounter = _pick_monster_encounter(node_data)
 		MapNodeResource.NodeType.ELITE:
 			result.action_type = "battle"
 			if not elite_encounters.is_empty():
@@ -264,6 +274,24 @@ func _get_node_action_payload(node_data: MapNodeResource) -> Dictionary:
 		MapNodeResource.NodeType.EVENT:
 			result.action_type = "event"
 	return result
+
+func _count_path_nodes_of_type(node_type: MapNodeResource.NodeType) -> int:
+	var count := 0
+	for node in PlayerData.path_taken:
+		if node is MapNodeResource and node.type == node_type:
+			count += 1
+	return count
+
+func _pick_monster_encounter(node_data: MapNodeResource) -> EncounterData:
+	"""První 3 normal fighty + první 3 patra = easy pool. Jinak hard."""
+	var monster_fight_index := _count_path_nodes_of_type(MapNodeResource.NodeType.MONSTER)
+	var use_easy := monster_fight_index <= EASY_MONSTER_FIGHT_LIMIT or node_data.row <= EASY_MONSTER_MAX_ROW
+	var pool: Array = easy_monster_encounters if use_easy else hard_monster_encounters
+	if pool.is_empty():
+		pool = hard_monster_encounters if not hard_monster_encounters.is_empty() else easy_monster_encounters
+	if pool.is_empty():
+		return null
+	return load(pool.pick_random()) as EncounterData
 
 func _trigger_node_action(node_data: MapNodeResource):
 	var payload = _get_node_action_payload(node_data)
