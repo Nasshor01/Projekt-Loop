@@ -2,13 +2,13 @@ extends ArtifactBehavior
 
 
 func on_turn_end(ctx: Dictionary = {}) -> void:
-	var player := _get_player_unit()
-	var grid := _find_battle_grid()
-	if not player or not grid:
+	var player: Node = _get_player_unit()
+	var grid: Node = _find_battle_grid()
+	if player == null or grid == null:
 		return
-	if _is_grid_edge(grid, player.grid_position):
+	if _is_grid_edge(grid, _unit_grid_pos(player)):
 		if player.has_method("add_block"):
-			player.add_block(2)
+			player.call("add_block", 2)
 	else:
 		runtime["draw_next_turn"] = true
 

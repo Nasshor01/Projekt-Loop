@@ -14,25 +14,25 @@ func on_card_played(ctx: Dictionary = {}) -> void:
 
 
 func on_turn_end(ctx: Dictionary = {}) -> void:
-	var player := _get_player_unit()
-	if not player:
+	var player: Node = _get_player_unit()
+	if player == null:
 		return
-	if _is_on_throne(player.grid_position) and PlayerData:
+	if _is_on_throne(_unit_grid_pos(player)) and PlayerData:
 		PlayerData.draw_cards(1)
 
 
 func modify_card_cost(ctx: Dictionary, cost: int) -> int:
-	var player := _get_player_unit()
-	if player and _is_on_throne(player.grid_position):
+	var player: Node = _get_player_unit()
+	if player != null and _is_on_throne(_unit_grid_pos(player)):
 		return maxi(0, cost - COST_REDUCTION)
 	return cost
 
 
 func _spawn_thrones() -> void:
-	var grid := _find_battle_grid()
+	var grid: Node = _find_battle_grid()
 	if grid == null:
 		return
-	var cells := _player_half_cells(grid)
+	var cells: Array[Vector2i] = _player_half_cells(grid)
 	cells.shuffle()
 	var thrones: Array = []
 	for i in mini(THRONE_COUNT, cells.size()):
@@ -41,27 +41,29 @@ func _spawn_thrones() -> void:
 
 
 func _is_on_throne(cell: Vector2i) -> bool:
-	for entry in runtime.get("thrones", []):
+	for entry_v in runtime.get("thrones", []):
+		var entry: Dictionary = entry_v as Dictionary
 		if entry.get("cell") == cell:
 			return true
 	return false
 
 
 func _consume_throne_charge_if_standing() -> void:
-	var player := _get_player_unit()
-	if not player:
+	var player: Node = _get_player_unit()
+	if player == null:
 		return
-	var thrones: Array = runtime.get("thrones", [])
+	var player_pos: Vector2i = _unit_grid_pos(player)
+	var thrones: Array = runtime.get("thrones", []) as Array
 	for i in thrones.size():
-		var entry: Dictionary = thrones[i]
-		if entry.get("cell") != player.grid_position:
+		var entry: Dictionary = thrones[i] as Dictionary
+		if entry.get("cell") != player_pos:
 			continue
-		var charges := int(entry.get("charges", 0)) - 1
+		var charges: int = int(entry.get("charges", 0)) - 1
 		entry["charges"] = charges
 		thrones[i] = entry
 		if charges <= 0:
-			var grid := _find_battle_grid()
-			var new_cell := _random_player_half_cell(grid) if grid else Vector2i(-1, -1)
+			var grid: Node = _find_battle_grid()
+			var new_cell: Vector2i = _random_player_half_cell(grid) if grid != null else Vector2i(-1, -1)
 			entry["cell"] = new_cell
 			entry["charges"] = ZONE_CHARGES
 			thrones[i] = entry

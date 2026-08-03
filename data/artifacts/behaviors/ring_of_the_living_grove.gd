@@ -15,13 +15,14 @@ func on_turn_start(ctx: Dictionary = {}) -> void:
 
 
 func on_turn_end(ctx: Dictionary = {}) -> void:
-	var player := _get_player_unit()
+	var player: Node = _get_player_unit()
 	if not is_instance_valid(player):
 		return
-	var pos: Vector2i = player.grid_position
-	var roots: Array = runtime.get("roots", [])
-	var on_root := false
-	for cell in roots:
+	var pos: Vector2i = player.get("grid_position") as Vector2i
+	var roots: Array = runtime.get("roots", []) as Array
+	var on_root: bool = false
+	for cell_v in roots:
+		var cell: Vector2i = cell_v as Vector2i
 		if cell == pos:
 			on_root = true
 			break
@@ -38,33 +39,33 @@ func on_combat_end(ctx: Dictionary = {}) -> void:
 
 
 func _spawn_root() -> void:
-	var grid := _find_battle_grid()
+	var grid: Node = _find_battle_grid()
 	if grid == null:
 		return
-	var cells := _player_half_cells(grid)
+	var cells: Array[Vector2i] = _player_half_cells(grid)
 	if cells.is_empty():
 		return
 	cells.shuffle()
 	var cell: Vector2i = cells[0]
-	var roots: Array = runtime.get("roots", [])
+	var roots: Array = runtime.get("roots", []) as Array
 	if roots.size() >= MAX_ROOTS:
-		var oldest: Vector2i = roots[0]
+		var oldest: Vector2i = roots[0] as Vector2i
 		_remove_root_at(oldest)
 		roots.remove_at(0)
 	roots.append(cell)
 	runtime["roots"] = roots
-	if grid.has_method("place_terrain") and ROOT_TERRAIN:
-		grid.place_terrain(cell, ROOT_TERRAIN.duplicate())
+	if grid.has_method("place_terrain") and ROOT_TERRAIN != null:
+		grid.call("place_terrain", cell, ROOT_TERRAIN.duplicate())
 
 
 func _remove_root_at(cell: Vector2i) -> void:
-	var grid := _find_battle_grid()
-	if grid and grid.has_method("remove_terrain"):
-		grid.remove_terrain(cell)
+	var grid: Node = _find_battle_grid()
+	if grid != null and grid.has_method("remove_terrain"):
+		grid.call("remove_terrain", cell)
 
 
 func _clear_roots() -> void:
-	var roots: Array = runtime.get("roots", [])
-	for cell in roots:
-		_remove_root_at(cell)
+	var roots: Array = runtime.get("roots", []) as Array
+	for cell_v in roots:
+		_remove_root_at(cell_v as Vector2i)
 	runtime["roots"] = []
