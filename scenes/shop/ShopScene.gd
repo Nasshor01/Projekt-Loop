@@ -113,18 +113,23 @@ func _generate_shop_inventory():
 
 	var sale_card = cards_to_sell.pick_random()
 	if is_instance_valid(sale_card):
-		var original_price = CARD_PRICES.get(sale_card.rarity, 50)
-		items_on_sale[sale_card] = int(original_price * 0.5)
+		var sale_base = CARD_PRICES.get(sale_card.rarity, 50)
+		var sale_price = int(sale_base * 0.5)
+		if has_node("/root/ArtifactManager"):
+			sale_price = ArtifactManager.modify_shop_price(sale_price, sale_card)
+		items_on_sale[sale_card] = sale_price
 
 	for card_data in cards_to_sell:
 		if not is_instance_valid(card_data):
 			continue
 		var shop_item_ui = ShopItemUIScene.instantiate()
-		var original_price = CARD_PRICES.get(card_data.rarity, 50)
+		var list_price = CARD_PRICES.get(card_data.rarity, 50)
+		if has_node("/root/ArtifactManager"):
+			list_price = ArtifactManager.modify_shop_price(list_price, card_data)
 		if items_on_sale.has(card_data):
-			shop_item_ui.setup_item(card_data, items_on_sale[card_data], true, original_price)
+			shop_item_ui.setup_item(card_data, items_on_sale[card_data], true, list_price)
 		else:
-			shop_item_ui.setup_item(card_data, original_price)
+			shop_item_ui.setup_item(card_data, list_price)
 		_attach_shop_item(shop_item_ui, cards_row)
 
 	var available_artifacts = get_available_artifacts(SHOP_ARTIFACT_POOL.artifacts.duplicate())
@@ -133,7 +138,10 @@ func _generate_shop_inventory():
 		if is_instance_valid(artifact_to_sell):
 			var shop_item_ui = ShopItemUIScene.instantiate()
 			var stack_info = PlayerData.get_artifact_stack_info(artifact_to_sell.artifact_name)
-			shop_item_ui.setup_item(artifact_to_sell, ARTIFACT_PRICE, false, 0, stack_info)
+			var art_price: int = ARTIFACT_PRICE
+			if has_node("/root/ArtifactManager"):
+				art_price = ArtifactManager.modify_shop_price(ARTIFACT_PRICE, artifact_to_sell)
+			shop_item_ui.setup_item(artifact_to_sell, art_price, false, 0, stack_info)
 			_attach_shop_item(shop_item_ui, relic_slot)
 
 	_refresh_all_affordability()
@@ -197,16 +205,17 @@ func _refresh_all_affordability() -> void:
 			child.refresh_affordability()
 
 func _on_item_purchased(item_data: Resource, shop_item: ShopItemUI):
-	var cost: int
-	if item_data is CardData:
-		if items_on_sale.has(item_data):
-			cost = items_on_sale[item_data]
-		else:
-			cost = CARD_PRICES.get(item_data.rarity, 50)
-	elif item_data is ArtifactsData:
-		cost = ARTIFACT_PRICE
-	else:
+	if not (item_data is CardData or item_data is ArtifactsData):
 		return
+	# Always prefer the price shown on the shelf (includes Charm of Fortune, sales, free rolls).
+	var cost: int = shop_item.purchase_cost if is_instance_valid(shop_item) else -1
+	if cost < 0:
+		if item_data is CardData:
+			cost = items_on_sale[item_data] if items_on_sale.has(item_data) else CARD_PRICES.get(item_data.rarity, 50)
+		else:
+			cost = ARTIFACT_PRICE
+		if has_node("/root/ArtifactManager"):
+			cost = ArtifactManager.modify_shop_price(cost, item_data)
 
 	if PlayerData.spend_gold(cost):
 		var item_name = ""
@@ -232,6 +241,10 @@ func _on_item_purchased(item_data: Resource, shop_item: ShopItemUI):
 func get_available_artifacts(artifact_pool: Array) -> Array:
 	var available = []
 	for artifact in artifact_pool:
+		if not is_instance_valid(artifact):
+			continue
+		if artifact is ArtifactsData and not artifact.in_live_pool:
+			continue
 		if PlayerData.can_gain_artifact(artifact):
 			available.append(artifact)
 	return available

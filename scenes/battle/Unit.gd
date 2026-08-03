@@ -236,10 +236,7 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 				print("💨 Assassin se vyhnul útoku!")
 			return false
 	
-	# Artefakty on_damage_taken jen pro LOKÁLNÍHO hráče (ne spoluhráče)
-	if _is_local_player() and has_node("/root/ArtifactManager"):
-		var attacker = get_last_attacker()
-		ArtifactManager.on_damage_taken(amount, attacker)
+	var attacker = get_last_attacker() if has_method("get_last_attacker") else null
 
 	var damage_to_deal = amount
 	if not already_calculated and active_statuses.has("defensive_stance"):
@@ -250,7 +247,7 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 		active_statuses.erase("defensive_stance")
 		_update_stats_and_emit_signal()
 	
-	var absorbed_by_block = min(damage_to_deal, current_block)
+	var absorbed_by_block = mini(damage_to_deal, current_block)
 	
 	if absorbed_by_block > 0:
 		_show_floating_text(absorbed_by_block, "block_loss")
@@ -266,29 +263,38 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 	current_block -= absorbed_by_block
 	damage_to_deal -= absorbed_by_block
 	
-	retained_block = min(retained_block, current_block)
+	retained_block = mini(retained_block, current_block)
 	
 	if absorbed_by_block > 0 and damage_to_deal > 0:
 		await get_tree().create_timer(0.3).timeout
 
+	# Thorns reflect
+	if absorbed_by_block + damage_to_deal > 0 and active_statuses.has("thorns") and is_instance_valid(attacker):
+		var thorns_amt := int(active_statuses["thorns"].get("value", 0))
+		if thorns_amt > 0 and attacker.has_method("take_damage"):
+			attacker.take_damage(thorns_amt, true, false, false)
+			if _is_local_player() and has_node("/root/ArtifactManager"):
+				ArtifactManager.on_thorns_damage(thorns_amt, attacker)
+
 	if damage_to_deal > 0:
+		if _is_local_player() and has_node("/root/ArtifactManager"):
+			ArtifactManager.on_unblocked_damage(damage_to_deal, attacker)
+
 		current_health -= damage_to_deal
 		_show_floating_text(damage_to_deal, "damage")
 		
 		if current_health < 0:
 			current_health = 0
 		
-		# PlayerData.take_damage jen pro LOKÁLNÍHO hráče
 		if _is_local_player():
 			PlayerData.take_damage(damage_to_deal)
 	
 	_update_stats_and_emit_signal()
 	
-	# Conditional artefakty jen pro LOKÁLNÍHO hráče
-	if _is_local_player() and has_node("/root/ArtifactManager"):
-		ArtifactManager.check_conditional_artifacts()
-	
 	if current_health <= 0:
+		if _is_local_player() and has_node("/root/ArtifactManager"):
+			if ArtifactManager.before_death(self):
+				return true
 		_die()
 	return true
 func reset_for_new_turn():
@@ -360,6 +366,8 @@ func apply_status(status_id: String, value: int, duration: int = 1):
 		var unit_label = unit_data.unit_id if unit_data else name
 		DebugLogger.log_info("Status '%s' applied to %s (value=%d, duration=%d)" % [status_id, unit_label, value, duration])
 	_update_stats_and_emit_signal()
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager.on_status_applied(self, status_id, value, duration)
 
 func process_turn_start_statuses() -> int:
 	var extra_draw = 0
@@ -593,6 +601,8 @@ func add_block(amount: int):
 		if has_node("/root/ArtifactManager"):
 			total_block += ArtifactManager.get_block_bonus()
 		total_block += PlayerData.process_block_on_card_play()
+		if active_statuses.has("dexterity"):
+			total_block += int(active_statuses["dexterity"].get("value", 0))
 	
 	current_block += total_block
 	_show_floating_text(total_block, "block_gain")

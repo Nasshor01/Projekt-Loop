@@ -599,6 +599,8 @@ func _prepare_battle_rewards():
 			gold = randi_range(40, 60)
 		EncounterData.EncounterType.BOSS:
 			gold = randi_range(90, 110)
+	if has_node("/root/ArtifactManager"):
+		gold = ArtifactManager.modify_gold_reward(gold)
 	last_battle_rewards["gold"] = gold
 	last_battle_rewards["encounter_type"] = encounter_type
 

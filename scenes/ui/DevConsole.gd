@@ -92,6 +92,12 @@ func _on_text_submitted(command_text: String):
 		
 		"reload_artifacts":
 			_cmd_reload_artifacts()
+
+		"test_artifact":
+			_cmd_test_artifact(args)
+
+		"test_all_artifacts":
+			_cmd_test_all_artifacts()
 		
 		"reset_skill_points":
 			_cmd_reset_skill_points()
@@ -242,7 +248,40 @@ func _cmd_add_energy(args: Array):
 func _cmd_reload_artifacts():
 	all_artifacts.clear()
 	_load_all_artifacts()
-	log_success("🔄 Artefakty znovu načteny!")
+	log_success("Artefakty znovu načteny!")
+
+func _cmd_test_artifact(args: Array):
+	if args.is_empty():
+		log_error("Použití: test_artifact <artifact_id>")
+		return
+	var aid: String = str(args[0])
+	if not has_node("/root/ArtifactManager"):
+		log_error("ArtifactManager missing")
+		return
+	var report: Dictionary = ArtifactManager.smoke_test(aid)
+	for msg in report.get("messages", []):
+		log_message(str(msg))
+	if report.get("ok", false):
+		log_success("PASS %s" % aid)
+	else:
+		log_error("FAIL %s" % aid)
+
+func _cmd_test_all_artifacts():
+	if not has_node("/root/ArtifactManager"):
+		log_error("ArtifactManager missing")
+		return
+	var passed := 0
+	var failed := 0
+	for key in all_artifacts.keys():
+		var art: ArtifactsData = all_artifacts[key]
+		var aid: String = art.artifact_id if art.artifact_id != "" else key
+		var report: Dictionary = ArtifactManager.smoke_test(aid)
+		if report.get("ok", false):
+			passed += 1
+		else:
+			failed += 1
+			log_error("FAIL %s: %s" % [aid, str(report.get("messages", []))])
+	log_success("Smoke: %d passed, %d failed" % [passed, failed])
 
 func _cmd_reset_skill_points():
 	if not has_node("/root/SaveManager"):
@@ -362,6 +401,8 @@ func _cmd_help():
 	log_message("  set_hp <číslo> - Nastaví HP")
 	log_message("  add_energy <číslo> - Přidá energii")
 	log_message("  reload_artifacts - Znovu načte artefakty")
+	log_message("  test_artifact <id> - Smoke test jednoho artefaktu")
+	log_message("  test_all_artifacts - Smoke test všech artefaktů")
 	log_message("  reset_skill_points - Resetuje skill points podle levelu")
 	log_message("  add_card <card_id> - Přidá kartu do ruky (pouze v bitvě)")
 	log_message("  add_cards <paladin|everyone|trapper> - Přidá všechny karty ze složky do ruky")

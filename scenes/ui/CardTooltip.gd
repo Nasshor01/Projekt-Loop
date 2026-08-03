@@ -41,7 +41,10 @@ func show_tooltip(card_data: CardData, tooltip_pos: Vector2):
 	if name_label:
 		name_label.text = card_data.get_localized_name()
 	if cost_label:
-		cost_label.text = TranslationHelper.tr_format("card.tooltip.cost", {"value": card_data.cost})
+		var display_cost: int = card_data.cost
+		if has_node("/root/ArtifactManager"):
+			display_cost = ArtifactManager.get_card_cost(card_data)
+		cost_label.text = TranslationHelper.tr_format("card.tooltip.cost", {"value": display_cost})
 	
 	if description_label:
 		description_label.text = card_data.get_localized_description()

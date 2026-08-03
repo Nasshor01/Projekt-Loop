@@ -508,7 +508,7 @@ func update_display():
 	name_label.text = card_data.get_localized_name()
 	_fit_name_font()
 	_apply_upgrade_name_style()
-	cost_label.text = str(card_data.cost)
+	cost_label.text = str(_display_energy_cost())
 
 	# Pack keyword lines first, then scale icons to the dense font size.
 	var max_lines := DESC_MAX_LINES_COMPACT if display_mode == DisplayMode.COMPACT else DESC_MAX_LINES_FULL
@@ -533,6 +533,15 @@ func update_display():
 			_usage_label.visible = false
 
 	_update_card_frame()
+
+func _display_energy_cost() -> int:
+	if not card_data:
+		return 0
+	if Engine.is_editor_hint():
+		return card_data.cost
+	if has_node("/root/ArtifactManager"):
+		return ArtifactManager.get_card_cost(card_data)
+	return card_data.cost
 
 func _is_curse_card() -> bool:
 	if not card_data:

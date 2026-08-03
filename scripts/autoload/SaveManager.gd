@@ -302,12 +302,12 @@ func _find_artifact_path_by_name(artifact_name: String) -> String:
 	if artifact_name.is_empty():
 		return ""
 	var roots: Array[String] = [
-		"res://data/artifacts/common",
-		"res://data/artifacts/uncommon",
-		"res://data/artifacts/rare",
-		"res://data/artifacts/legendary",
-		"res://data/artifacts/boss",
-		"res://data/artifacts/event",
+		"res://data/artifacts/catalog/common",
+		"res://data/artifacts/catalog/uncommon",
+		"res://data/artifacts/catalog/rare",
+		"res://data/artifacts/catalog/cursed",
+		"res://data/artifacts/catalog/legendary",
+		"res://data/artifacts/catalog/boss",
 	]
 	for root in roots:
 		var dir := DirAccess.open(root)

@@ -48,9 +48,16 @@ func get_final_damage(
 			var context = {
 				"current_hp": PlayerData.current_hp,
 				"max_hp": PlayerData.max_hp,
-				"current_energy": PlayerData.current_energy
+				"current_energy": PlayerData.current_energy,
+				"target": target,
+				"attacker": attacker
 			}
 			total += ArtifactManager.get_card_damage_bonus(context)
+			total = ArtifactManager.modify_outgoing_damage(total, context)
+
+	# Strength (STS-style flat bonus)
+	if attacker is Unit and attacker.active_statuses.has("strength"):
+		total += int(attacker.active_statuses["strength"].get("value", 0))
 
 	# Monk blessing: +damage bonus pro enemy jednotky s buffem
 	if attacker is Unit and attacker.active_statuses.has("monk_blessing"):
@@ -66,6 +73,10 @@ func get_final_damage(
 			if ut in [UnitData.UnitType.UNDEAD, UnitData.UnitType.DEMON]:
 				var holy_bonus = UnitData.get_holy_damage_bonus(damage_type, ut)
 				total += holy_bonus
+
+	# Weakness: -25% outgoing damage
+	if attacker is Unit and attacker.active_statuses.has("weakness"):
+		total = int(total * 0.75)
 
 	# Vulnerable: +50% incoming damage (Excommunication etc.)
 	if target is Unit and target.active_statuses.has("vulnerable"):

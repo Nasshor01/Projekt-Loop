@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://data/artifacts/ArtifactsData.gd" id="1"]
+[ext_resource type="Texture2D" path="res://art/icons/Artifacts NEW/Tome of Echoes.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+artifact_id = "tome_of_echoes"
+artifact_name = "Tome of Echoes"
+description = "Cards costing 2+ go to bottom of draw pile. 1x/combat: draw 2 discard 1."
+texture = ExtResource("2")
+behavior_script = "res://data/artifacts/behaviors/tome_of_echoes.gd"
+artifact_type = 2
+trigger_type = 14
+effect_type = 28
+primary_value = 0
+secondary_value = 0
+percentage_based = false
+uses_per_combat = -1
+current_uses = 0
+is_stackable = false
+max_stacks = 1
+current_stacks = 1
+synergy_set_id = ""
+condition_type = ""
+condition_value = 0
+custom_effect_id = ""
+effect_description = ""
+in_live_pool = true

@@ -414,6 +414,8 @@ func add_card_to_discard_pile(card: CardData):
 func add_card_to_exhaust_pile(card: CardData):
 	if card is CardData:
 		exhaust_pile.append(card)
+		if has_node("/root/ArtifactManager"):
+			ArtifactManager.on_exhaust(card)
 
 ## Vrátí počet použití karty (card_id) v tomto runu. Pro karty s max_uses_before_removal.
 func get_card_usage_count(card_id: String) -> int:
@@ -490,6 +492,8 @@ func add_artifact(new_artifact_resource: ArtifactsData) -> bool:
 		new_artifact.set_meta("source_path", source_path)
 
 	var existing_artifact = find_artifact_by_name(new_artifact.artifact_name)
+	if existing_artifact == null and not new_artifact.artifact_id.is_empty():
+		existing_artifact = find_artifact_by_name(new_artifact.artifact_id)
 
 	if existing_artifact:
 		# Artefakt již existuje, zkusíme přidat stack
@@ -510,34 +514,27 @@ func add_artifact(new_artifact_resource: ArtifactsData) -> bool:
 		artifacts.append(new_artifact)
 		print("✅ Získán nový artefakt: %s" % new_artifact.artifact_name)
 
+	var added_artifact = existing_artifact if existing_artifact else new_artifact
+
 	# Společná logika po úspěšném přidání/stackování
 	emit_signal("artifacts_changed")
 	
 	if has_node("/root/ArtifactManager"):
 		ArtifactManager._refresh_artifact_cache()
 
-	# Pokud je artefakt pasivní, musíme přepočítat staty
-	if new_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:
-		apply_passive_skills()
-	
-	# Jednorázové HP změny při získání (ne každý tah)
-	var added_artifact = existing_artifact if existing_artifact else new_artifact
-	if added_artifact.custom_effect_id == "dragon_heart_combo" and added_artifact.secondary_value != 0:
-		if not added_artifact.has_meta("max_hp_penalty_applied"):
-			change_max_hp(added_artifact.secondary_value)
-			added_artifact.set_meta("max_hp_penalty_applied", true)
-	if added_artifact.custom_effect_id == "cursed_ring_combo" and added_artifact.secondary_value != 0:
-		if not added_artifact.has_meta("hp_bonus_applied"):
-			change_max_hp(added_artifact.secondary_value)
-			added_artifact.set_meta("hp_bonus_applied", true)
+	# Pokud je artefakt pasivní / behavior, přepočítat staty
+	apply_passive_skills()
+
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager.on_artifact_acquired(added_artifact)
 
 	emit_signal("health_changed", current_hp, max_hp) # Pro jistotu, kdyby pasivka měnila HP
 	return true
 
 func find_artifact_by_name(artifact_name: String) -> ArtifactsData:
-	"""Najde artefakt podle jména"""
+	"""Najde artefakt podle jména nebo artifact_id"""
 	for artifact in artifacts:
-		if artifact.artifact_name == artifact_name:
+		if artifact.artifact_name == artifact_name or artifact.artifact_id == artifact_name:
 			return artifact
 	return null
 
@@ -581,6 +578,7 @@ func remove_artifact(artifact_data: ArtifactsData):
 	if artifacts.has(artifact_data):
 		artifacts.erase(artifact_data)
 		emit_signal("artifacts_changed")
+		apply_passive_skills()
 
 func add_gold(amount: int):
 	self.gold += amount

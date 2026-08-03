@@ -409,6 +409,8 @@ func _start_player_initiative_turn(_player_unit: Unit, extra_draw: int = 0):
 	
 	# START_OF_TURN artefakty
 	if has_node("/root/ArtifactManager"):
+		if ArtifactManager.get_run_flag("skip_enemy_round", false):
+			ArtifactManager.set_run_flag("skip_enemy_round", false)
 		ArtifactManager.on_turn_start()
 	
 	# Coop: po artefaktech pošli stav své jednotky druhému peerovi,
@@ -434,6 +436,12 @@ func _start_enemy_initiative_turn(enemy_unit: Unit):
 	_set_enemy_intents_visible(false)
 	if is_instance_valid(enemy_unit):
 		enemy_unit.hide_intent()
+
+	# Heart of the Loop / similar: skip entire enemy round
+	if has_node("/root/ArtifactManager") and ArtifactManager.get_run_flag("skip_enemy_round", false):
+		await get_tree().create_timer(0.2).timeout
+		TurnManager.next_turn()
+		return
 	
 	await get_tree().create_timer(0.4).timeout
 	if is_instance_valid(enemy_unit) and enemy_unit.current_health > 0:
@@ -896,6 +904,8 @@ func _finish_drawing_hand():
 	player_hand_ui_instance._request_arrange()
 	_current_battle_state = BattleState.PLAYER_TURN
 	end_turn_button.disabled = false
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager.on_hand_ready()
 
 
 func _on_artifact_extra_turn_requested():
@@ -1119,7 +1129,7 @@ func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: Car
 	if _selected_card_ui == card_ui_node:
 		_reset_player_selection()
 		return
-	if PlayerData.current_energy < card_data_resource.cost:
+	if PlayerData.current_energy < _play_cost(card_data_resource):
 		DebugLogger.log_warning("Nedostatek energie!")
 		return
 
@@ -1138,14 +1148,22 @@ func _on_player_hand_card_drag_started(card_ui_node: Control, card_data_resource
 	if _is_action_processing or _card_play_in_progress:
 		player_hand_ui_instance.cancel_drag_ui()
 		return
-	if PlayerData.current_energy < card_data_resource.cost:
+	if PlayerData.current_energy < _play_cost(card_data_resource):
 		player_hand_ui_instance.cancel_drag_ui()
+		DebugLogger.log_warning("Nedostatek energie!")
 		return
 	_reset_player_selection()
 	_player_action_state = PlayerActionState.CARD_SELECTED
 	_selected_card_ui = card_ui_node
 	_selected_card_data = card_data_resource
 	_show_valid_targets_for_card(card_data_resource)
+
+func _play_cost(card: CardData) -> int:
+	if card == null:
+		return 0
+	if has_node("/root/ArtifactManager"):
+		return ArtifactManager.get_card_cost(card)
+	return card.cost
 
 func _on_player_hand_card_drag_released(card_ui_node: Control, _card_data_resource: CardData):
 	if _current_battle_state != BattleState.PLAYER_TURN:
@@ -1195,7 +1213,10 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 		_reset_player_selection()
 		return
 
-	if not PlayerData.spend_energy(card.cost):
+	var play_cost: int = card.cost
+	if has_node("/root/ArtifactManager"):
+		play_cost = ArtifactManager.get_card_cost(card)
+	if not PlayerData.spend_energy(play_cost):
 		DebugLogger.log_warning(TranslationHelper.tr_format("ui.battle.not_enough_energy", {"name": card.get_localized_name()}))
 		_card_play_in_progress = false
 		_reset_player_selection()
@@ -1207,7 +1228,7 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 		if current_count >= card.max_uses_per_turn:
 			# Překročen limit - aplikuj debuff
 			_apply_overuse_debuff(card)
-			PlayerData.gain_energy(card.cost)  # Vrať energii
+			PlayerData.gain_energy(play_cost)  # Vrať energii
 			_card_play_in_progress = false
 			_reset_player_selection()
 			return
@@ -1304,7 +1325,11 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 			elif has_exhaust_effect:
 				PlayerData.add_card_to_exhaust_pile(card)
 			else:
-				PlayerData.add_card_to_discard_pile(card)
+				if card.get_meta("tome_to_bottom", false):
+					card.set_meta("tome_to_bottom", false)
+					PlayerData.draw_pile.append(card)
+				else:
+					PlayerData.add_card_to_discard_pile(card)
 		PlayerData.current_hand.erase(card)
 		
 		player_hand_ui_instance.force_finish_drag()
@@ -1511,6 +1536,8 @@ func _move_unit_along_path(unit: Unit, path: Array[Vector2i], step_duration: flo
 			if should_stop:
 				break
 
+	if has_node("/root/ArtifactManager") and is_instance_valid(unit) and path.size() > 1:
+		ArtifactManager.on_unit_moved(unit, path[0], final_pos, path.size() - 1)
 	return final_pos
 
 func _rush_unit_along_path(unit: Unit, path: Array[Vector2i]) -> Vector2i:
@@ -2031,6 +2058,9 @@ func _on_end_turn_button_pressed():
 	# END_OF_TURN artefakty
 	if has_node("/root/ArtifactManager"):
 		ArtifactManager.on_turn_end()
+		# Time Crystal etc. may request an extra turn during on_turn_end
+		if _current_battle_state == BattleState.PLAYER_TURN:
+			return
 	
 	# Coop: sync stavu jednotky po end-of-turn artefaktech
 	if _is_coop_run() and is_instance_valid(_player_unit_node):
