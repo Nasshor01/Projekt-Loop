@@ -4,9 +4,13 @@ class_name ArtifactsData
 extends Resource
 
 ## Základní informace
+@export var artifact_id: String = ""
 @export var artifact_name: String = "Neznámý artefakt"
 @export_multiline var description: String = "Dělá něco tajemného."
 @export var texture: Texture2D
+## Remake: GDScript behavior (RefCounted). When set, ArtifactManager dispatches hooks here.
+@export var behavior_script: Script
+@export var in_live_pool: bool = true
 
 ## NOVÉ: Typ artefaktu pro organizaci
 enum ArtifactType {
@@ -79,7 +83,8 @@ enum EffectType {
 	# Meta efekty
 	ARTIFACT_SYNERGY,        # Interakce s jinými artefakty
 	SCALING_EFFECT,          # Efekt se zvyšuje s časem
-	CONDITIONAL_TRIGGER      # Podmíněný efekt
+	CONDITIONAL_TRIGGER,     # Podmíněný efekt
+	BEHAVIOR                 # Remake: logic lives in behavior_script
 }
 @export var effect_type: EffectType = EffectType.MODIFY_MAX_HP
 

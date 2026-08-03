@@ -62,6 +62,12 @@ func _on_text_submitted(command_text: String):
 	match command:
 		"add_artifact":
 			_cmd_add_artifact(args)
+
+		"add_apple":
+			_cmd_add_artifact(["forbidden_apple"])
+
+		"test_artifacts":
+			_cmd_test_artifacts()
 		
 		"remove_artifact":
 			_cmd_remove_artifact(args)
@@ -242,6 +248,38 @@ func _cmd_add_energy(args: Array):
 func _cmd_reload_artifacts():
 	all_artifacts.clear()
 	_load_all_artifacts()
+
+
+func _cmd_test_artifacts() -> void:
+	"""Načte všechny behavior skripty a vypíše parse/load chyby."""
+	if not has_node("/root/ArtifactManager"):
+		log_error("ArtifactManager není dostupný")
+		return
+	var report: Dictionary = ArtifactManager.validate_all_behavior_scripts()
+	var ok: Array = report.get("ok", [])
+	var failed: Array = report.get("failed", [])
+	log_message("🧪 Behavior scripts OK: %d" % ok.size())
+	for name in ok:
+		log_message("  ✅ %s" % name)
+	if failed.is_empty():
+		log_success("Všechny behavior skripty se načetly.")
+	else:
+		log_error("Behavior scripts FAILED: %d" % failed.size())
+		for name in failed:
+			log_error("  ❌ %s" % name)
+	# Also verify catalog .tres resolve
+	var catalog_ok := 0
+	var catalog_fail := 0
+	for key in all_artifacts.keys():
+		var art: ArtifactsData = all_artifacts[key]
+		if art and art.behavior_script:
+			var inst = art.behavior_script.new()
+			if inst is ArtifactBehavior:
+				catalog_ok += 1
+			else:
+				catalog_fail += 1
+				log_error("  ❌ catalog %s behavior invalid" % key)
+	log_message("📦 Catalog with behavior: %d ok, %d fail" % [catalog_ok, catalog_fail])
 	log_success("🔄 Artefakty znovu načteny!")
 
 func _cmd_reset_skill_points():
@@ -352,6 +390,8 @@ func _cmd_list_cards():
 func _cmd_help():
 	log_message("📖 Dostupné příkazy:")
 	log_message("  add_artifact <název> - Přidá artefakt")
+	log_message("  add_apple - Přidá Forbidden Apple")
+	log_message("  test_artifacts - Načte všechny behavior skripty (parse check)")
 	log_message("  remove_artifact <název> - Odebere artefakt")
 	log_message("  list_artifacts [owned] - Zobrazí všechny/vlastněné artefakty")
 	log_message("  add_all_artifacts - Přidá všechny artefakty jednou")

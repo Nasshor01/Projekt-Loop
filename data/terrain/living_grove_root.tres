@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="TerrainData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://data/terrain/TerrainData.gd" id="1_root"]
+[ext_resource type="Texture2D" path="res://art/sprites/map/battlegrid/bahno.png" id="2_root"]
+
+[resource]
+script = ExtResource("1_root")
+terrain_id = "living_grove_root"
+terrain_name = "terrain.living_grove_root"
+description = "terrain.living_grove_root.desc"
+sprite = ExtResource("2_root")
+is_flat_on_ground = true
+is_walkable = true
+blocks_line_of_sight = false
+movement_cost = 1
+effect_type = 0
+consume_on_trigger = false
+stops_movement_on_enter = false

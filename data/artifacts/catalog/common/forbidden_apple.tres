@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://data/artifacts/ArtifactsData.gd" id="1_data"]
+[ext_resource type="Texture2D" path="res://art/icons/Artifacts NEW/Forbidden Apple.png" id="2_tex"]
+[ext_resource type="Script" path="res://data/artifacts/behaviors/forbidden_apple.gd" id="3_beh"]
+
+[resource]
+script = ExtResource("1_data")
+artifact_id = "forbidden_apple"
+artifact_name = "Forbidden Apple"
+description = "+{value} Max HP. Stacks."
+texture = ExtResource("2_tex")
+behavior_script = ExtResource("3_beh")
+in_live_pool = true
+artifact_type = 0
+trigger_type = 0
+effect_type = 28
+primary_value = 7
+secondary_value = 0
+percentage_based = false
+uses_per_combat = -1
+current_uses = 0
+is_stackable = true
+max_stacks = 10
+current_stacks = 1
+synergy_set_id = ""
+condition_type = ""
+condition_value = 0
+custom_effect_id = ""
+effect_description = ""

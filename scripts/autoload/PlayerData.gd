@@ -515,6 +515,8 @@ func add_artifact(new_artifact_resource: ArtifactsData) -> bool:
 	
 	if has_node("/root/ArtifactManager"):
 		ArtifactManager._refresh_artifact_cache()
+		var added_for_behavior = existing_artifact if existing_artifact else new_artifact
+		ArtifactManager.on_artifact_acquired(added_for_behavior)
 
 	# Pokud je artefakt pasivní, musíme přepočítat staty
 	if new_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:

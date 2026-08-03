@@ -598,6 +598,9 @@ func _on_combat_ended(player_won: bool):
 	if is_instance_valid(end_turn_button):
 		end_turn_button.disabled = true
 
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager.on_combat_end()
+
 	# Dej hráči čas vidět poslední pohyb / past / smrt, než skok na odměny
 	if player_won:
 		if is_instance_valid(victory_label):

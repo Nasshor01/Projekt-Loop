@@ -144,6 +144,9 @@ func _apply_effect() -> bool:
 				PlayerData.emit_signal("energy_changed", PlayerData.current_energy)
 				print("⚡ Artefakt způsobil ztrátu %d energie" % energy_to_lose)
 				return true
+
+		ArtifactsData.EffectType.BEHAVIOR:
+			return false
 			
 		_:
 			return _apply_custom_effect()
