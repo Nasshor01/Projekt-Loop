@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="ArtifactPool" load_steps=30 format=3]
+[gd_resource type="Resource" script_class="ArtifactPool" load_steps=31 format=3 uid="uid://5028fah35a2k"]
 
-[ext_resource type="Script" path="res://data/artifacts/ArtifactsData.gd" id="1_data"]
-[ext_resource type="Script" path="res://data/artifacts/ArtifactPool.gd" id="2_pool"]
+[ext_resource type="Script" uid="uid://cojmro6kj47du" path="res://data/artifacts/ArtifactsData.gd" id="1_data"]
+[ext_resource type="Script" uid="uid://o3lg5niqen4s" path="res://data/artifacts/ArtifactPool.gd" id="2_pool"]
 [ext_resource type="Resource" path="res://data/artifacts/catalog/common/forbidden_apple.tres" id="a0"]
 [ext_resource type="Resource" path="res://data/artifacts/catalog/legendary/blade_of_infinity.tres" id="a1"]
 [ext_resource type="Resource" path="res://data/artifacts/catalog/legendary/gilded_dragonheart.tres" id="a2"]

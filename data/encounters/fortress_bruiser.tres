@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EncounterData" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="EncounterData" load_steps=5 format=3 uid="uid://bkx888nifd4a"]
 
 [ext_resource type="Script" uid="uid://tp0lo3xqiiqb" path="res://data/encounters/EncounterEntry.gd" id="1_entry"]
 [ext_resource type="Script" uid="uid://dq86v2djx6q1m" path="res://data/encounters/EncounterData.gd" id="2_data"]
