@@ -46,6 +46,7 @@ enabled=PackedStringArray("res://addons/arena_painter/plugin.cfg")
 
 theme/custom="res://art/ui/game_theme.tres"
 theme/custom_font="uid://bhj8pjkqc1umb"
+timers/tooltip_delay_sec=0.35
 
 [input]
 

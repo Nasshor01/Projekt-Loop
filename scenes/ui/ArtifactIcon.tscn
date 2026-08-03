@@ -4,8 +4,9 @@
 
 [node name="ArtefactIcon" type="TextureRect"]
 custom_minimum_size = Vector2(64, 64)
-offset_right = 40.0
-offset_bottom = 40.0
+offset_right = 64.0
+offset_bottom = 64.0
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 0
 script = ExtResource("1_6f0wl")
