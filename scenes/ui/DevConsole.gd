@@ -24,28 +24,13 @@ func _unhandled_input(event: InputEvent):
 				input_line.release_focus()
 
 func _load_all_artifacts():
-	# Remake catalog (36) is the live set. Legacy CZ .tres under common/rare/... still exist
-	# on disk and inflate the count if we scan the whole tree.
+	# Remake only — catalog under data/artifacts/catalog/
 	all_artifacts.clear()
 	var remake_list = _recursive_load("res://data/artifacts/catalog/")
 	for artifact in remake_list:
 		var key = artifact.resource_path.get_file().get_basename()
 		all_artifacts[key] = artifact
-	var remake_count: int = all_artifacts.size()
-
-	var legacy_list = _recursive_load("res://data/artifacts/")
-	var legacy_only: int = 0
-	for artifact in legacy_list:
-		var key = artifact.resource_path.get_file().get_basename()
-		if all_artifacts.has(key):
-			continue
-		# Keep legacy discoverable under list_artifacts, but remake keys win.
-		all_artifacts[key] = artifact
-		legacy_only += 1
-
-	log_message("Načteno %d artefaktů (remake catalog: %d, legacy: %d)" % [
-		all_artifacts.size(), remake_count, legacy_only
-	])
+	log_message("Načteno %d remake artefaktů (catalog)" % all_artifacts.size())
 
 func _recursive_load(path: String) -> Array:
 	var resources = []
@@ -59,7 +44,6 @@ func _recursive_load(path: String) -> Array:
 		for dir_name in dir.get_directories():
 			if dir_name == "." or dir_name == "..":
 				continue
-			# Skip behaviors/ (scripts only) and nested re-scan of catalog when scanning root
 			if dir_name == "behaviors":
 				continue
 			resources.append_array(_recursive_load(path.path_join(dir_name)))

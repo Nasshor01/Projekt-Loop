@@ -130,10 +130,6 @@ func use_artifact():
 func reset_for_new_combat():
 	"""Resetuje artefakt pro nový souboj"""
 	current_uses = 0
-	
-	# OPRAVA: Srdce draka (START_OF_TURN) se neresetuje každý tah!
-	# Counter se resetuje jen při skutečně novém souboji
-	# Necháme prázdné - Srdce draka si drží counter po celý souboj
 
 func add_stack():
 	"""Přidá stack artefaktu, pokud je to možné"""

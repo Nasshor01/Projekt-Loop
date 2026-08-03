@@ -214,18 +214,13 @@ func get_conditional_bonus(effect_type: ArtifactsData.EffectType, context: Dicti
 func on_combat_start():
 	DebugLogger.log_info("ArtifactManager: Spouštím START_OF_COMBAT artefakty...")
 
-	for artifact in PlayerData.artifacts:
-		if artifact.custom_effect_id == "dragon_heart_combo":
-			artifact.set_meta("uses_this_combat", 0)
-
 	_refresh_artifact_cache()
 	_dispatch_behaviors("on_combat_start", _base_ctx())
 
 	var results = trigger_artifacts(ArtifactsData.TriggerType.START_OF_COMBAT)
 
 	for artifact in PlayerData.artifacts:
-		if artifact.custom_effect_id != "dragon_heart_combo":
-			artifact.reset_for_new_combat()
+		artifact.reset_for_new_combat()
 
 	return results
 
@@ -236,10 +231,6 @@ func on_combat_end():
 
 func on_turn_start():
 	DebugLogger.log_info("ArtifactManager: Spouštím START_OF_TURN artefakty...")
-
-	for artifact in PlayerData.artifacts:
-		if artifact and artifact.custom_effect_id == "mage_book_limit":
-			artifact.set_meta("cards_drawn_this_turn", 0)
 
 	var context = _base_ctx()
 	_dispatch_behaviors("on_turn_start", context)
@@ -491,79 +482,10 @@ func get_artifact_count() -> int:
 
 
 func handle_custom_effect(artifact: ArtifactsData, context: Dictionary = {}) -> bool:
-	match artifact.custom_effect_id:
-		"block_per_enemy":
-			var block_amount = _get_enemy_count() * artifact.get_effective_value()
-			var player = _get_player_unit()
-			if player and player.has_method("add_block"):
-				player.add_block(block_amount)
-			return true
-
-		"dragon_heart_combo":
-			var uses_this_combat = artifact.get_meta("uses_this_combat", 0)
-			var max_uses_per_combat = 2
-			if uses_this_combat >= max_uses_per_combat:
-				return false
-			var player = _get_player_unit()
-			if not player:
-				return false
-			var block_amount = PlayerData.max_hp
-			if player.has_method("add_block"):
-				player.add_block(block_amount)
-				artifact.set_meta("uses_this_combat", uses_this_combat + 1)
-				return true
-			return false
-
-		"cursed_ring_combo":
-			var energy_to_lose = mini(artifact.get_effective_value(), PlayerData.current_energy)
-			if energy_to_lose > 0:
-				PlayerData.current_energy -= energy_to_lose
-				PlayerData.emit_signal("energy_changed", PlayerData.current_energy)
-			return true
-
-		"blood_chalice_combo":
-			var player = _get_player_unit()
-			if player:
-				var self_dmg = abs(artifact.get_effective_secondary_value())
-				if self_dmg > 0 and player.has_method("take_damage"):
-					player.take_damage(self_dmg)
-				if player.has_method("heal"):
-					player.heal(artifact.get_effective_value())
-			return true
-
-		"mage_book_limit":
-			var drawn_this_turn = int(artifact.get_meta("cards_drawn_this_turn", 0))
-			var limit = artifact.get_effective_secondary_value()
-			if drawn_this_turn >= limit:
-				return false
-			PlayerData.draw_cards(artifact.get_effective_value())
-			artifact.set_meta("cards_drawn_this_turn", drawn_this_turn + 1)
-			return true
-
-		"scaling_damage":
-			var bonus = artifact.get_effective_value()
-			PlayerData.global_card_damage_bonus += bonus
-			var accumulated = artifact.get_meta("scaling_damage_accumulated", 0)
-			artifact.set_meta("scaling_damage_accumulated", accumulated + bonus)
-			return true
-
-		"extra_turn":
-			emit_signal("extra_turn_requested")
-			return true
-
-		"random_energy":
-			var roll = randf()
-			if roll < 0.5:
-				PlayerData.gain_energy(2)
-			else:
-				var energy_to_lose = min(1, PlayerData.current_energy)
-				PlayerData.current_energy -= energy_to_lose
-				PlayerData.emit_signal("energy_changed", PlayerData.current_energy)
-			return true
-
-		_:
-			DebugLogger.log_warning("Neznámý custom efekt: %s" % artifact.custom_effect_id)
-			return false
+	# Legacy CZ custom_effect_id handlers removed — remake uses ArtifactBehavior scripts.
+	if artifact and not artifact.custom_effect_id.is_empty():
+		DebugLogger.log_warning("Unsupported custom_effect_id (legacy wiped): %s" % artifact.custom_effect_id)
+	return false
 
 
 func on_energy_spent(amount: int):
@@ -588,24 +510,16 @@ func on_draw_cards(cards_drawn: int, total_requested: int):
 
 func check_conditional_artifacts():
 	var context = _base_ctx()
-	var results = trigger_artifacts(ArtifactsData.TriggerType.CONDITIONAL, context)
-	# Time Crystal / similar remake hooks also check turn via combat start path
-	return results
+	return trigger_artifacts(ArtifactsData.TriggerType.CONDITIONAL, context)
 
 
 func check_conditional_artifacts_with_context(context: Dictionary = {}) -> Array:
 	var full_context = _base_ctx()
 	for key in context:
 		full_context[key] = context[key]
-	var results = trigger_artifacts(ArtifactsData.TriggerType.CONDITIONAL, full_context)
-	# Remake time crystal listens via turn hooks; keep old conditional path for CZ artifacts
-	return results
+	return trigger_artifacts(ArtifactsData.TriggerType.CONDITIONAL, full_context)
 
 
 func reset_scaling_damage_after_boss():
-	for artifact in PlayerData.artifacts:
-		if artifact.custom_effect_id == "scaling_damage":
-			var accumulated = artifact.get_meta("scaling_damage_accumulated", 0)
-			if accumulated > 0:
-				PlayerData.global_card_damage_bonus = max(0, PlayerData.global_card_damage_bonus - accumulated)
-				artifact.set_meta("scaling_damage_accumulated", 0)
+	# Legacy infinity_sword scaling removed with CZ wipe.
+	pass
