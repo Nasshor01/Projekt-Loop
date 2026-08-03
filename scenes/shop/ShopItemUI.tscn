@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://c2y1v7bbphs46"]
+[gd_scene load_steps=3 format=3 uid="uid://c2y1v7bbphs46"]
 
 [ext_resource type="Script" uid="uid://cxjm6qrlkogyv" path="res://scenes/shop/ShopItemUI.gd" id="1_b06mc"]
+[ext_resource type="FontFile" uid="uid://t08shflw41tf" path="res://art/fonts/blrrpixs016.ttf" id="2_cardfont"]
 
 [node name="ShopItemUI" type="VBoxContainer"]
 custom_minimum_size = Vector2(200, 300)
@@ -18,8 +19,10 @@ mouse_filter = 2
 [node name="PriceLabel" type="Label" parent="."]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_cardfont")
 theme_override_font_sizes/font_size = 16
 text = "100"
 horizontal_alignment = 1
@@ -32,6 +35,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.35, 0.3, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("2_cardfont")
 theme_override_font_sizes/font_size = 14
 text = "SALE!"
 horizontal_alignment = 1

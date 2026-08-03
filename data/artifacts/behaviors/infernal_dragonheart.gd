@@ -1,34 +1,43 @@
 extends ArtifactBehavior
 
-func on_status_applied(ctx: Dictionary) -> void:
-	if ctx.get("status_id") != "burning":
+const BURN_VALUE := 1
+const BURN_DURATION := 3
+
+
+func on_damage_dealt(ctx: Dictionary = {}) -> void:
+	var card: CardData = ctx.get("card") as CardData
+	if not _card_is_attack(card):
 		return
-	var enemy = ctx.get("unit")
-	var u := player_unit()
-	if u == null or enemy == null or enemy == u:
+	var target: Node = ctx.get("target") as Node
+	if not is_instance_valid(target):
 		return
-	if not ("grid_position" in u and "grid_position" in enemy):
+	_apply_status(target, "burning", BURN_VALUE, BURN_DURATION)
+	_try_step_toward(target)
+
+
+func _try_step_toward(target: Node) -> void:
+	var player: Node = _get_player_unit()
+	var grid: Node = _find_battle_grid()
+	if player == null or grid == null:
 		return
-	var from: Vector2i = u.grid_position
-	var to: Vector2i = enemy.grid_position
-	var step := Vector2i(
-		clampi(to.x - from.x, -1, 1),
-		clampi(to.y - from.y, -1, 1)
-	)
-	if step == Vector2i.ZERO:
-		return
-	var dest := from + step
-	var scene = ArtifactManager.get_tree().current_scene if ArtifactManager.get_tree() else null
-	if scene != null and "battle_grid_instance" in scene:
-		var grid = scene.battle_grid_instance
-		if grid and grid.has_method("remove_object_by_instance") and grid.has_method("place_object_on_cell"):
-			grid.remove_object_by_instance(u)
-			grid.place_object_on_cell(u, dest, false, 0.0)
-		else:
-			u.grid_position = dest
-	else:
-		u.grid_position = dest
-	ArtifactManager.on_unit_moved(u, from, dest, 1)
-	var d: Vector2i = dest - to
-	if absi(d.x) + absi(d.y) == 1:
-		enemy.apply_status("burning", 1, 3)
+	var from: Vector2i = player.get("grid_position") as Vector2i
+	var to: Vector2i = target.get("grid_position") as Vector2i
+	var best_cell: Vector2i = from
+	var best_dist: int = _grid_distance(grid, from, to)
+	var offsets: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
+	for offset in offsets:
+		var cell: Vector2i = from + offset
+		if grid.has_method("is_cell_active") and not bool(grid.is_cell_active(cell)):
+			continue
+		if _grid_object_on_cell(grid, cell) != null:
+			continue
+		var dist: int = _grid_distance(grid, cell, to)
+		if dist < best_dist:
+			best_dist = dist
+			best_cell = cell
+	if best_cell != from and grid.has_method("place_object_on_cell"):
+		if grid.has_method("remove_object_by_instance"):
+			grid.call("remove_object_by_instance", player)
+		grid.call("place_object_on_cell", player, best_cell, true, 0.15)
+		if best_dist <= 1:
+			_apply_status(target, "burning", BURN_VALUE, BURN_DURATION)

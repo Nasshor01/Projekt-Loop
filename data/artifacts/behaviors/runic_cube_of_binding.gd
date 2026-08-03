@@ -1,21 +1,19 @@
 extends ArtifactBehavior
 
-func on_card_played(ctx: Dictionary) -> void:
-	var card: CardData = ctx.get("card")
-	if card == null:
+
+func on_card_played(ctx: Dictionary = {}) -> void:
+	var card: CardData = ctx.get("card") as CardData
+	if not _card_moves_unit(card):
 		return
-	var is_move := card.has_method("has_tag") and card.has_tag(CardData.CardTag.MOVE)
-	if not is_move:
-		return
-	var block := 1
-	var weak := 1
-	var u := player_unit()
-	if u and "grid_position" in u and ArtifactManager.is_edge_cell(u.grid_position):
-		block *= 2
-		weak *= 2
-	if u:
-		u.add_block(block)
-	var enemies := ArtifactManager.get_enemies()
-	if enemies.size() > 0:
-		var t = enemies[randi() % enemies.size()]
-		ArtifactManager.apply_status_to_unit(t, "weakness", weak, 2)
+	var player: Node = _get_player_unit()
+	if player != null and player.has_method("add_block"):
+		player.call("add_block", 1)
+	var enemy: Node = _random_living_enemy()
+	if enemy != null:
+		_apply_status(enemy, "weakness", 1, 1)
+	var grid: Node = _find_battle_grid()
+	if grid != null and player != null and _is_grid_edge(grid, _unit_grid_pos(player)):
+		if player.has_method("add_block"):
+			player.call("add_block", 1)
+		if enemy != null:
+			_apply_status(enemy, "weakness", 1, 1)

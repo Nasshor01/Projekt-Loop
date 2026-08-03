@@ -1,28 +1,25 @@
 extends ArtifactBehavior
 
-func on_combat_start(_ctx: Dictionary) -> void:
-	runtime["pending_draw"] = false
-	if PlayerData.has_meta("aether_retained_energy"):
-		PlayerData.remove_meta("aether_retained_energy")
+const MAX_STORED_ENERGY := 2
 
-func on_turn_end(_ctx: Dictionary) -> void:
-	var energy := int(PlayerData.current_energy)
-	var retain := mini(2, energy)
-	if retain > 0:
-		PlayerData.set_meta("aether_retained_energy", retain)
-		PlayerData.current_energy = 0
-		PlayerData.emit_signal("energy_changed", PlayerData.current_energy)
-	# Spent all energy this turn → +1 card next turn (after discard)
-	if energy == 0:
-		runtime["pending_draw"] = true
 
-func on_turn_start(_ctx: Dictionary) -> void:
-	if runtime.get("pending_draw", false):
-		runtime["pending_draw"] = false
+func on_turn_end(ctx: Dictionary = {}) -> void:
+	if not PlayerData:
+		return
+	var leftover := PlayerData.current_energy
+	if leftover > 0:
+		var stored := mini(leftover, MAX_STORED_ENERGY)
+		runtime["stored_energy"] = int(runtime.get("stored_energy", 0)) + stored
+		runtime["stored_energy"] = mini(runtime["stored_energy"], MAX_STORED_ENERGY)
+	if leftover == 0 and PlayerData.max_energy > 0:
 		PlayerData.draw_cards(1)
-		notify_triggered("Aether Crystal: +1 card")
-	if PlayerData.has_meta("aether_retained_energy"):
-		var r := int(PlayerData.get_meta("aether_retained_energy"))
-		PlayerData.remove_meta("aether_retained_energy")
-		if r > 0:
-			PlayerData.gain_energy(r)
+
+
+func on_turn_start(ctx: Dictionary = {}) -> void:
+	super.on_turn_start(ctx)
+	if not PlayerData:
+		return
+	var stored := int(runtime.get("stored_energy", 0))
+	if stored > 0:
+		PlayerData.gain_energy(stored)
+		runtime["stored_energy"] = 0

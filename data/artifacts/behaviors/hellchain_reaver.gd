@@ -1,16 +1,30 @@
 extends ArtifactBehavior
 
-func on_turn_start(_ctx: Dictionary) -> void:
-	runtime["gave_str"] = false
+const STRENGTH_BONUS := 2
+const COST_REDUCTION := 1
 
-func on_card_played(ctx: Dictionary) -> void:
-	if not ctx.get("is_attack", false):
+
+func on_damage_dealt(ctx: Dictionary = {}) -> void:
+	var card: CardData = ctx.get("card") as CardData
+	if not _card_is_melee_attack(card):
 		return
-	var u := player_unit()
-	ArtifactManager.apply_status_to_unit(u, "strength", 2, 1)
-	runtime["discount_next"] = int(ctx.get("attacks_this_turn", 1)) >= 1
+	var player := _get_player_unit()
+	if player:
+		_apply_status(player, "monk_blessing", STRENGTH_BONUS, 1)
+	if runtime.get("attacked_this_turn", false) and PlayerData:
+		runtime["next_attack_discount"] = COST_REDUCTION
+	runtime["attacked_this_turn"] = true
 
-func modify_card_cost(card: CardData, cost: int, ctx: Dictionary = {}) -> int:
-	if runtime.get("discount_next", false) and ArtifactManager._card_is_attack(card) and ArtifactManager.attacks_this_turn >= 1:
-		return maxi(0, cost - 1)
+
+func on_turn_start(ctx: Dictionary = {}) -> void:
+	super.on_turn_start(ctx)
+	runtime["attacked_this_turn"] = false
+	runtime["next_attack_discount"] = 0
+
+
+func modify_card_cost(ctx: Dictionary, cost: int) -> int:
+	var card: CardData = ctx.get("card") as CardData
+	if card and _card_is_attack(card) and int(runtime.get("next_attack_discount", 0)) > 0:
+		runtime["next_attack_discount"] = 0
+		return maxi(0, cost - COST_REDUCTION)
 	return cost

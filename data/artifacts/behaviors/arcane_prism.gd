@@ -1,16 +1,31 @@
 extends ArtifactBehavior
 
-func on_turn_start(_ctx: Dictionary) -> void:
-	var u := player_unit()
-	if u == null:
+const STATUS_POOL: Array[String] = ["monk_blessing", "aura_devotion", "draw_plus_one"]
+const ENERGY_THRESHOLD_STATUSES := 2
+
+
+func on_turn_start(ctx: Dictionary = {}) -> void:
+	super.on_turn_start(ctx)
+	var player: Node = _get_player_unit()
+	if player == null:
 		return
-	var opts := ["strength", "dexterity", "focus"]
-	var pick: String = opts[randi() % opts.size()]
-	ArtifactManager.apply_status_to_unit(u, pick, 1, 99)
-	var distinct := 0
-	for s in opts:
-		if u.active_statuses.has(s):
-			distinct += 1
-	if distinct >= 2:
+	var pick: String = STATUS_POOL[randi_range(0, STATUS_POOL.size() - 1)]
+	match pick:
+		"monk_blessing":
+			_apply_status(player, "monk_blessing", 1, 1)
+		"aura_devotion":
+			_apply_status(player, "aura_devotion", 1, 1)
+		"draw_plus_one":
+			_apply_status(player, "draw_plus_one", 1, 1)
+	var distinct: int = _count_distinct_statuses(player)
+	if distinct >= ENERGY_THRESHOLD_STATUSES and PlayerData:
 		PlayerData.gain_energy(1)
-		notify_triggered("Arcane Prism: +1 Energy")
+
+
+func _count_distinct_statuses(unit: Node) -> int:
+	if unit == null:
+		return 0
+	var statuses: Variant = unit.get("active_statuses")
+	if statuses == null or not (statuses is Dictionary):
+		return 0
+	return (statuses as Dictionary).size()

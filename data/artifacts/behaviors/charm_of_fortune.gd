@@ -1,14 +1,19 @@
 extends ArtifactBehavior
 
-func modify_shop_price(price: int, _item = null) -> int:
-	var p := int(round(float(price) * 0.88))
-	if randf() < 0.08:
-		notify_triggered("Charm of Fortune: free!")
-		return 0
-	return p
+const SHOP_DISCOUNT_PERCENT := 12
+const FREE_CHANCE := 0.08
+const GOLD_BONUS_CHANCE := 0.15
+const GOLD_BONUS_PERCENT := 25
 
-func modify_gold_reward(gold: int) -> int:
-	if randf() < 0.15:
-		notify_triggered("Charm of Fortune: +25% gold")
-		return int(round(float(gold) * 1.25))
+
+func modify_shop_price(ctx: Dictionary, price: int) -> int:
+	var discounted := int(float(price) * (100.0 - SHOP_DISCOUNT_PERCENT) / 100.0)
+	if randf() < FREE_CHANCE:
+		return 0
+	return discounted
+
+
+func modify_gold_reward(ctx: Dictionary, gold: int) -> int:
+	if randf() < GOLD_BONUS_CHANCE:
+		return gold + int(float(gold) * GOLD_BONUS_PERCENT / 100.0)
 	return gold

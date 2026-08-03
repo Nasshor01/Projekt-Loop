@@ -1,29 +1,39 @@
 extends ArtifactBehavior
 
-func on_combat_start(_ctx: Dictionary) -> void:
-	_relocate()
+const ZONE_CHARGES := 3
+const COST_REDUCTION := 1
 
-func _relocate() -> void:
-	var cell := ArtifactManager.pick_random_player_half_cell()
-	runtime["cell"] = cell
-	runtime["charges"] = 3
-	ArtifactManager.grid_zones["crown_of_dominion"] = {"cells": [cell], "charges": 3}
-	notify_triggered("Crown cell %s" % str(cell))
 
-func modify_card_cost(_card: CardData, cost: int, _ctx: Dictionary = {}) -> int:
-	var u := player_unit()
-	if u == null or not ("grid_position" in u):
-		return cost
-	if u.grid_position != runtime.get("cell", Vector2i(-99, -99)):
-		return cost
-	if int(runtime.get("charges", 0)) <= 0:
-		return cost
-	return maxi(0, cost - 1)
+func on_combat_start(ctx: Dictionary = {}) -> void:
+	_relocate_zone()
 
-func on_card_played(_ctx: Dictionary) -> void:
-	var u := player_unit()
-	if u == null or u.grid_position != runtime.get("cell", Vector2i(-99, -99)):
+
+func on_card_played(ctx: Dictionary = {}) -> void:
+	var player: Node = _get_player_unit()
+	if player == null:
 		return
-	runtime["charges"] = int(runtime.get("charges", 0)) - 1
-	if int(runtime["charges"]) <= 0:
-		_relocate()
+	if _unit_grid_pos(player) != runtime.get("zone_cell", Vector2i(-1, -1)):
+		return
+	var charges: int = int(runtime.get("zone_charges", 0))
+	if charges > 0:
+		runtime["zone_charges"] = charges - 1
+		if int(runtime.get("zone_charges", 0)) <= 0:
+			_relocate_zone()
+
+
+func modify_card_cost(ctx: Dictionary, cost: int) -> int:
+	var player: Node = _get_player_unit()
+	if player != null and _unit_grid_pos(player) == runtime.get("zone_cell", Vector2i(-1, -1)):
+		return maxi(0, cost - COST_REDUCTION)
+	return cost
+
+
+func _relocate_zone() -> void:
+	var grid: Node = _find_battle_grid()
+	if grid == null:
+		return
+	var cell: Vector2i = _random_player_half_cell(grid)
+	if cell.x < 0:
+		return
+	runtime["zone_cell"] = cell
+	runtime["zone_charges"] = ZONE_CHARGES

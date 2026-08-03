@@ -1,17 +1,23 @@
 extends ArtifactBehavior
 
-func on_combat_start(_ctx: Dictionary) -> void:
-	var u := player_unit()
-	ArtifactManager.apply_status_to_unit(u, "thorns", 2, 99)
+const START_THORNS := 2
+const MAX_BLOCK_PER_TURN := 3
 
-func on_turn_start(_ctx: Dictionary) -> void:
-	runtime["thorns_block_count"] = 0
 
-func on_thorns_damage(_ctx: Dictionary) -> void:
-	var n := int(runtime.get("thorns_block_count", 0))
-	if n >= 3:
+func on_combat_start(ctx: Dictionary = {}) -> void:
+	_add_combat_thorns(START_THORNS)
+	runtime["block_this_turn"] = 0
+
+
+func on_turn_start(ctx: Dictionary = {}) -> void:
+	super.on_turn_start(ctx)
+	runtime["block_this_turn"] = 0
+
+
+func on_thorns_damage(ctx: Dictionary = {}) -> void:
+	if int(runtime.get("block_this_turn", 0)) >= MAX_BLOCK_PER_TURN:
 		return
-	runtime["thorns_block_count"] = n + 1
-	var u := player_unit()
-	if u:
-		u.add_block(1)
+	var player := _get_player_unit()
+	if player and player.has_method("add_block"):
+		player.add_block(1)
+		runtime["block_this_turn"] = int(runtime.get("block_this_turn", 0)) + 1

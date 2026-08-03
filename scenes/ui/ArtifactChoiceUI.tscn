@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://fprvv5guresv"]
 
 [ext_resource type="Script" uid="uid://bo265fhh25djt" path="res://scenes/ui/ArtifactChoiceUI.gd" id="1_5g2id"]
-[ext_resource type="FontFile" uid="uid://bhj8pjkqc1umb" path="res://art/fonts/Ithaca-LVB75.ttf" id="1_bi15k"]
+[ext_resource type="FontFile" uid="uid://t08shflw41tf" path="res://art/fonts/blrrpixs016.ttf" id="2_cardfont"]
 
 [node name="ArtifactChoiceUI" type="PanelContainer"]
 offset_right = 40.0
@@ -19,10 +19,23 @@ layout_mode = 2
 
 [node name="NameLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("1_bi15k")
-theme_override_font_sizes/font_size = 20
+theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_cardfont")
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="DescriptionLabel" type="RichTextLabel" parent="VBoxContainer"]
 custom_minimum_size = Vector2(0, 100)
 layout_mode = 2
-autowrap_mode = 2
+theme_override_colors/default_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/normal_font = ExtResource("2_cardfont")
+theme_override_font_sizes/normal_font_size = 15
+bbcode_enabled = false
+fit_content = true
+scroll_active = false
+autowrap_mode = 3

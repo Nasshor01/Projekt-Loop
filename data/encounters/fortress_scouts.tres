@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="EncounterData" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="EncounterData" load_steps=7 format=3 uid="uid://cabipc8d844eb"]
 
 [ext_resource type="Script" uid="uid://tp0lo3xqiiqb" path="res://data/encounters/EncounterEntry.gd" id="1_entry"]
 [ext_resource type="Script" uid="uid://dq86v2djx6q1m" path="res://data/encounters/EncounterData.gd" id="2_data"]
 [ext_resource type="Resource" path="res://data/units/goblin_scout_f.tres" id="3_scout"]
-[ext_resource type="Resource" path="res://data/units/goblin_unit.tres" id="4_gob"]
+[ext_resource type="Resource" uid="uid://bg8u7pptesl13" path="res://data/units/goblin_unit.tres" id="4_gob"]
 
 [sub_resource type="Resource" id="Resource_a"]
 script = ExtResource("1_entry")

@@ -1,11 +1,13 @@
 extends ArtifactBehavior
 
-func on_combat_start(_ctx: Dictionary) -> void:
-	runtime["last_fired_turn"] = -1
+const TURN_INTERVAL := 3
 
-func on_turn_end(ctx: Dictionary) -> void:
-	var turn := int(ctx.get("combat_turn", ArtifactManager.combat_turn))
-	if turn > 0 and turn % 3 == 0 and int(runtime.get("last_fired_turn", -1)) != turn:
-		runtime["last_fired_turn"] = turn
-		ArtifactManager.request_extra_turn()
-		notify_triggered("Time Crystal: extra turn")
+
+func on_turn_start(ctx: Dictionary = {}) -> void:
+	super.on_turn_start(ctx)
+	var turn := _get_turn_number(ctx)
+	if turn > 0 and turn % TURN_INTERVAL == 0:
+		ctx["extra_turn"] = true
+		var am := _root_get_node_or_null("/root/ArtifactManager")
+		if am:
+			am.extra_turn_requested.emit()

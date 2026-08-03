@@ -1,23 +1,43 @@
 extends ArtifactBehavior
 
-func on_combat_start(_ctx: Dictionary) -> void:
-	runtime["drew_this_turn"] = false
-	runtime["delay_used"] = false
-	runtime["pending_draw"] = false
+const MAX_DRAW_PER_TURN := 1
+const DELAY_USES_PER_COMBAT := 1
 
-func on_turn_start(_ctx: Dictionary) -> void:
+
+func on_turn_start(ctx: Dictionary = {}) -> void:
+	super.on_turn_start(ctx)
 	runtime["drew_this_turn"] = false
-	if runtime.get("pending_draw", false):
-		runtime["pending_draw"] = false
-		PlayerData.draw_cards(1)
-	if runtime.get("delayed_damage", 0) > 0:
-		var dmg := int(runtime["delayed_damage"])
+	runtime["delay_pending"] = false
+
+
+func on_turn_end(ctx: Dictionary = {}) -> void:
+	if runtime.get("delay_pending", false):
+		var amount := int(runtime.get("delayed_damage", 0))
+		if amount > 0:
+			var player := _get_player_unit()
+			if player and player.has_method("take_damage"):
+				player.take_damage(amount, false, false, true)
+		runtime["delay_pending"] = false
 		runtime["delayed_damage"] = 0
-		var u := player_unit()
-		if u:
-			u.take_damage(dmg, true, false, false)
 
-func on_unblocked_damage(_ctx: Dictionary) -> void:
-	if not runtime.get("drew_this_turn", false):
+
+func on_damage_taken(ctx: Dictionary = {}) -> void:
+	super.on_damage_taken(ctx)
+	var unblocked := int(ctx.get("unblocked_amount", 0))
+	if unblocked <= 0:
+		return
+	if not runtime.get("drew_this_turn", false) and PlayerData:
+		PlayerData.draw_cards(1)
 		runtime["drew_this_turn"] = true
-		runtime["pending_draw"] = true
+	if runtime.get("delay_used", false):
+		return
+	if int(runtime.get("delay_uses", 0)) >= DELAY_USES_PER_COMBAT:
+		return
+	var amount := int(ctx.get("damage_amount", 0))
+	if amount <= 0:
+		return
+	runtime["delayed_damage"] = amount
+	runtime["delay_pending"] = true
+	runtime["delay_used"] = true
+	runtime["delay_uses"] = int(runtime.get("delay_uses", 0)) + 1
+	ctx["damage_deferred"] = true

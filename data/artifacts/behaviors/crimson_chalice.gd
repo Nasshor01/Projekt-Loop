@@ -1,14 +1,18 @@
 extends ArtifactBehavior
 
-func on_hand_ready(_ctx: Dictionary) -> void:
-	if PlayerData.current_hp <= 3:
+const SELF_DAMAGE := 3
+const DRAW_AMOUNT := 2
+
+
+func on_turn_start(ctx: Dictionary = {}) -> void:
+	super.on_turn_start(ctx)
+	if not PlayerData or PlayerData.current_hp <= SELF_DAMAGE:
 		return
-	var u := player_unit()
-	if u and u.has_method("take_damage"):
-		u.take_damage(3, true, false, false)
+	var player := _get_player_unit()
+	if player and player.has_method("take_damage"):
+		player.take_damage(SELF_DAMAGE, false, false, true)
 	if not PlayerData.current_hand.is_empty():
-		var c = PlayerData.current_hand.pick_random()
-		PlayerData.current_hand.erase(c)
-		PlayerData.add_card_to_discard_pile(c)
-	PlayerData.draw_cards(2)
-	notify_triggered("Crimson Chalice")
+		var discard: CardData = PlayerData.current_hand.pick_random()
+		PlayerData.current_hand.erase(discard)
+		PlayerData.add_card_to_discard_pile(discard)
+	PlayerData.draw_cards(DRAW_AMOUNT)

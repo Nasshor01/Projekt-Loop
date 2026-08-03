@@ -1,14 +1,19 @@
 extends ArtifactBehavior
 
-func on_damage_dealt(ctx: Dictionary) -> void:
-	var target = ctx.get("target")
-	if target:
-		target.apply_status("poison", 2, 99)
+const POISON_VALUE := 2
+const POISON_THRESHOLD := 8
+const BONUS_DAMAGE := 3
 
-func modify_outgoing_damage(damage: int, ctx: Dictionary = {}) -> int:
-	var target = ctx.get("target")
-	if target and status_value(target, "poison") >= 8:
-		# Ignore block is handled via flag for BattleScene; add damage here
-		ctx["ignore_block"] = true
-		return damage + 3
-	return damage
+
+func on_damage_dealt(ctx: Dictionary = {}) -> void:
+	var card: CardData = ctx.get("card") as CardData
+	if not _card_is_attack(card):
+		return
+	var target: Node = ctx.get("target") as Node
+	if is_instance_valid(target):
+		_apply_status(target, "poison", POISON_VALUE, 99)
+		if _has_status(target, "poison"):
+			var val: int = _status_value(target, "poison")
+			if val >= POISON_THRESHOLD:
+				ctx["ignore_block"] = true
+				ctx["flat_damage_bonus"] = int(ctx.get("flat_damage_bonus", 0)) + BONUS_DAMAGE

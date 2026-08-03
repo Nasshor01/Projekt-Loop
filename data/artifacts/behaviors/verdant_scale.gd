@@ -1,27 +1,29 @@
 extends ArtifactBehavior
 
-func on_unit_moved(ctx: Dictionary) -> void:
-	if not ctx.get("is_player", false):
-		return
-	var steps := int(ctx.get("steps", 1))
-	var u := player_unit()
-	if u:
-		u.add_block(maxi(1, steps))
 
-func on_turn_end(ctx: Dictionary) -> void:
-	var u := player_unit()
-	if u == null or not ("grid_position" in u):
+func on_move(ctx: Dictionary = {}) -> void:
+	var steps: int = int(ctx.get("steps", ctx.get("distance", 1)))
+	var player: Node = _get_player_unit()
+	if player != null and player.has_method("add_block"):
+		player.call("add_block", steps)
+	var grid: Node = _find_battle_grid()
+	if player == null or grid == null:
 		return
-	var cell: Vector2i = u.grid_position
-	var adj := 0
-	var near: Array = []
-	for e in ArtifactManager.get_enemies():
-		if not ("grid_position" in e):
-			continue
-		var d: Vector2i = e.grid_position - cell
-		if absi(d.x) + absi(d.y) == 1:
-			adj += 1
-			near.append(e)
-	if adj >= 2:
-		for e in near:
-			ArtifactManager.apply_status_to_unit(e, "weakness", 1, 2)
+	var adjacent_enemies: int = 0
+	var player_pos: Vector2i = player.get("grid_position") as Vector2i
+	var offsets: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
+	for offset in offsets:
+		var cell: Vector2i = player_pos + offset
+		var unit: Node = _grid_object_on_cell(grid, cell)
+		if unit != null:
+			var ud: Variant = unit.get("unit_data")
+			if ud != null and ud.faction == UnitData.Faction.ENEMY:
+				adjacent_enemies += 1
+	if adjacent_enemies >= 2:
+		for offset in offsets:
+			var cell: Vector2i = player_pos + offset
+			var unit: Node = _grid_object_on_cell(grid, cell)
+			if unit != null:
+				var ud: Variant = unit.get("unit_data")
+				if ud != null and ud.faction == UnitData.Faction.ENEMY:
+					_apply_status(unit, "weakness", 1, 1)

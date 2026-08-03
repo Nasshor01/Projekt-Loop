@@ -1,16 +1,20 @@
 extends ArtifactBehavior
 
-func on_unblocked_damage(_ctx: Dictionary) -> void:
-	var u := player_unit()
-	ArtifactManager.apply_status_to_unit(u, "strength", 1, 99)
-	ArtifactManager.apply_status_to_unit(u, "thorns", 1, 99)
 
-func on_enemy_death(_ctx: Dictionary) -> void:
-	var heal_amt := int(ArtifactManager.hp_lost_this_combat * 0.5)
-	if heal_amt <= 0:
+func on_damage_taken(ctx: Dictionary = {}) -> void:
+	super.on_damage_taken(ctx)
+	var amount := int(ctx.get("damage_amount", 0))
+	if amount <= 0:
 		return
-	var u := player_unit()
-	if u:
-		# Temporary max HP style heal — heal up to heal_amt even above current max visually via heal
-		u.heal(heal_amt)
-	notify_triggered("Bloodbound heal %d" % heal_amt)
+	_add_combat_damage_bonus(1)
+	_add_combat_thorns(1)
+
+
+func on_enemy_death(ctx: Dictionary = {}) -> void:
+	var lost := int(runtime.get("hp_lost_this_combat", 0))
+	if lost <= 0:
+		return
+	var heal_amount := int(float(lost) * 0.5)
+	var player := _get_player_unit()
+	if player and player.has_method("heal"):
+		player.heal(heal_amount)

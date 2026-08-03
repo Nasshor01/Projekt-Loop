@@ -1,17 +1,19 @@
-[gd_resource type="Resource" script_class="ArtifactsData" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="ArtifactsData" load_steps=4 format=3]
 
-[ext_resource type="Script" path="res://data/artifacts/ArtifactsData.gd" id="1"]
-[ext_resource type="Texture2D" path="res://art/icons/Artifacts NEW/Alchemist’s Tools.png" id="2"]
+[ext_resource type="Script" path="res://data/artifacts/ArtifactsData.gd" id="1_data"]
+[ext_resource type="Texture2D" path="res://art/icons/Artifacts NEW/Alchemist’s Tools.png" id="2_tex"]
+[ext_resource type="Script" path="res://data/artifacts/behaviors/alchemists_tools.gd" id="3_beh"]
 
 [resource]
-script = ExtResource("1")
+script = ExtResource("1_data")
 artifact_id = "alchemists_tools"
 artifact_name = "Alchemist's Tools"
-description = "Start of turn: may discard 1 for a random temp alchemist effect."
-texture = ExtResource("2")
-behavior_script = "res://data/artifacts/behaviors/alchemists_tools.gd"
+description = "Start of turn: may discard 1 for a temporary alchemy card."
+texture = ExtResource("2_tex")
+behavior_script = ExtResource("3_beh")
+in_live_pool = true
 artifact_type = 2
-trigger_type = 14
+trigger_type = 0
 effect_type = 28
 primary_value = 0
 secondary_value = 0
@@ -26,4 +28,3 @@ condition_type = ""
 condition_value = 0
 custom_effect_id = ""
 effect_description = ""
-in_live_pool = true

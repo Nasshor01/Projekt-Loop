@@ -1,23 +1,35 @@
 extends ArtifactBehavior
 
-func on_damage_dealt(_ctx: Dictionary) -> void:
-	var target = _ctx.get("target")
-	if target and target.has_method("apply_status"):
-		target.apply_status("burning", 1, 3)
+const BURN_VALUE := 1
+const BURN_DURATION := 3
+const DEATH_BURST_DAMAGE := 4
 
-func on_enemy_death(ctx: Dictionary) -> void:
-	var enemy = ctx.get("dead_enemy")
-	if enemy == null or not ("active_statuses" in enemy):
+
+func on_damage_dealt(ctx: Dictionary = {}) -> void:
+	var card: CardData = ctx.get("card") as CardData
+	if card != null and not _card_is_attack(card):
 		return
-	if not enemy.active_statuses.has("burning"):
+	var target: Node = ctx.get("target") as Node
+	if is_instance_valid(target):
+		_apply_status(target, "burning", BURN_VALUE, BURN_DURATION)
+
+
+func on_enemy_death(ctx: Dictionary = {}) -> void:
+	var dead: Node = ctx.get("dead_enemy") as Node
+	if not is_instance_valid(dead):
 		return
-	var cell: Vector2i = enemy.grid_position if "grid_position" in enemy else Vector2i.ZERO
-	for e in ArtifactManager.get_enemies():
-		if e == enemy:
-			continue
-		if not ("grid_position" in e):
-			continue
-		var d: Vector2i = e.grid_position - cell
-		if absi(d.x) + absi(d.y) == 1:
-			e.take_damage(4, true, false, false)
-	notify_triggered("Embercleaver explosion")
+	var statuses: Variant = dead.get("active_statuses")
+	if statuses == null or not (statuses is Dictionary) or not (statuses as Dictionary).has("burning"):
+		return
+	var grid: Node = _find_battle_grid()
+	if grid == null:
+		return
+	var dead_pos: Vector2i = dead.get("grid_position") as Vector2i
+	var offsets: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
+	for offset in offsets:
+		var cell: Vector2i = dead_pos + offset
+		var unit: Node = _grid_object_on_cell(grid, cell)
+		if unit != null and unit != dead:
+			var ud: Variant = unit.get("unit_data")
+			if ud != null and ud.faction == UnitData.Faction.ENEMY and unit.has_method("take_damage"):
+				unit.call("take_damage", DEATH_BURST_DAMAGE, true, false, false)

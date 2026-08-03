@@ -1,29 +1,37 @@
 extends ArtifactBehavior
 
-func on_combat_start(_ctx: Dictionary) -> void:
-	if PlayerData.master_deck.is_empty() and PlayerData.draw_pile.is_empty():
-		return
-	var pool: Array = []
-	pool.append_array(PlayerData.draw_pile)
-	pool.append_array(PlayerData.discard_pile)
-	pool.append_array(PlayerData.current_hand)
-	if pool.is_empty():
-		pool.append_array(PlayerData.master_deck)
-	if pool.is_empty():
-		return
-	var card: CardData = pool.pick_random()
-	runtime["sealed_card_id"] = card.card_id
-	card.set_meta("tablet_sealed", true)
-	notify_triggered("Sealed: %s" % card.card_name)
+const SEALED_COST_REDUCTION := 1
+const SEAL_BLOCK_BONUS := 2
 
-func modify_card_cost(card: CardData, cost: int, _ctx: Dictionary = {}) -> int:
-	if card and card.get_meta("tablet_sealed", false):
-		return maxi(0, cost - 1)
+
+func on_combat_start(ctx: Dictionary = {}) -> void:
+	runtime["sealed_card_id"] = ""
+	runtime["seal_pick_pending"] = true
+
+
+func on_hand_ready(ctx: Dictionary = {}) -> void:
+	if not runtime.get("seal_pick_pending", false):
+		return
+	runtime["seal_pick_pending"] = false
+	# UI seal pick not wired — seal first master_deck card as best-effort fallback.
+	if PlayerData and not PlayerData.master_deck.is_empty():
+		var card: CardData = PlayerData.master_deck[0]
+		if card:
+			runtime["sealed_card_id"] = card.card_id
+
+
+func on_card_played(ctx: Dictionary = {}) -> void:
+	var card: CardData = ctx.get("card") as CardData
+	if card == null:
+		return
+	if runtime.get("sealed_card_id", "") == card.card_id:
+		var player := _get_player_unit()
+		if player and player.has_method("add_block"):
+			player.add_block(SEAL_BLOCK_BONUS)
+
+
+func modify_card_cost(ctx: Dictionary, cost: int) -> int:
+	var card: CardData = ctx.get("card") as CardData
+	if card and runtime.get("sealed_card_id", "") == card.card_id:
+		return maxi(0, cost - SEALED_COST_REDUCTION)
 	return cost
-
-func on_card_played(ctx: Dictionary) -> void:
-	var card: CardData = ctx.get("card")
-	if card and card.get_meta("tablet_sealed", false):
-		var u := player_unit()
-		if u and u.has_method("add_block"):
-			u.add_block(2)

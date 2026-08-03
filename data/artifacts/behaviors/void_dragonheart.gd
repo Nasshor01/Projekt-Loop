@@ -1,22 +1,23 @@
 extends ArtifactBehavior
 
-func on_turn_start(_ctx: Dictionary) -> void:
-	var u := player_unit()
-	if u == null or not ("grid_position" in u):
+const FAR_DISTANCE := 3
+const NEAR_DISTANCE := 1
+
+
+func on_turn_start(ctx: Dictionary = {}) -> void:
+	super.on_turn_start(ctx)
+	var player: Node = _get_player_unit()
+	var grid: Node = _find_battle_grid()
+	if player == null or grid == null:
 		return
-	var cell: Vector2i = u.grid_position
-	var far := 0
-	var near := 0
-	for e in ArtifactManager.get_enemies():
-		if not ("grid_position" in e):
+	var player_pos: Vector2i = player.get("grid_position") as Vector2i
+	for enemy_v in _get_enemies():
+		var enemy: Node = enemy_v as Node
+		if not is_instance_valid(enemy):
 			continue
-		var d: Vector2i = e.grid_position - cell
-		var dist: int = absi(d.x) + absi(d.y)
-		if dist >= 3:
-			far += 1
-		if dist == 1:
-			near += 1
-	if far > 0:
-		ArtifactManager.apply_status_to_unit(u, "strength", far, 1)
-	if near > 0:
-		u.take_damage(near, true, false, false)
+		var enemy_pos: Vector2i = enemy.get("grid_position") as Vector2i
+		var dist: int = _grid_distance(grid, player_pos, enemy_pos)
+		if dist >= FAR_DISTANCE:
+			_apply_status(player, "monk_blessing", 1, 1)
+		if dist <= NEAR_DISTANCE and player.has_method("take_damage"):
+			player.call("take_damage", 1, false, false, true)

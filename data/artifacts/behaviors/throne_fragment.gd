@@ -1,43 +1,71 @@
 extends ArtifactBehavior
 
-func on_combat_start(_ctx: Dictionary) -> void:
-	runtime["draw_next"] = false
-	_place()
+const THRONE_COUNT := 2
+const ZONE_CHARGES := 3
+const COST_REDUCTION := 1
 
-func _place() -> void:
-	var a := ArtifactManager.pick_random_player_half_cell()
-	var b := ArtifactManager.pick_random_player_half_cell([a])
-	runtime["cells"] = [a, b]
-	runtime["charges"] = {str(a): 3, str(b): 3}
-	ArtifactManager.grid_zones["throne_fragment"] = {"cells": [a, b]}
 
-func modify_card_cost(_card: CardData, cost: int, _ctx: Dictionary = {}) -> int:
-	var u := player_unit()
-	if u == null:
-		return cost
-	var cells: Array = runtime.get("cells", [])
-	if cells.has(u.grid_position):
-		return maxi(0, cost - 1)
+func on_combat_start(ctx: Dictionary = {}) -> void:
+	_spawn_thrones()
+
+
+func on_card_played(ctx: Dictionary = {}) -> void:
+	_consume_throne_charge_if_standing()
+
+
+func on_turn_end(ctx: Dictionary = {}) -> void:
+	var player: Node = _get_player_unit()
+	if player == null:
+		return
+	if _is_on_throne(_unit_grid_pos(player)) and PlayerData:
+		PlayerData.draw_cards(1)
+
+
+func modify_card_cost(ctx: Dictionary, cost: int) -> int:
+	var player: Node = _get_player_unit()
+	if player != null and _is_on_throne(_unit_grid_pos(player)):
+		return maxi(0, cost - COST_REDUCTION)
 	return cost
 
-func on_card_played(_ctx: Dictionary) -> void:
-	var u := player_unit()
-	if u == null:
-		return
-	var key := str(u.grid_position)
-	var charges: Dictionary = runtime.get("charges", {})
-	if not charges.has(key):
-		return
-	charges[key] = int(charges[key]) - 1
-	if int(charges[key]) <= 0:
-		_place()
 
-func on_turn_end(_ctx: Dictionary) -> void:
-	var u := player_unit()
-	if u and runtime.get("cells", []).has(u.grid_position):
-		runtime["draw_next"] = true
+func _spawn_thrones() -> void:
+	var grid: Node = _find_battle_grid()
+	if grid == null:
+		return
+	var cells: Array[Vector2i] = _player_half_cells(grid)
+	cells.shuffle()
+	var thrones: Array = []
+	for i in mini(THRONE_COUNT, cells.size()):
+		thrones.append({"cell": cells[i], "charges": ZONE_CHARGES})
+	runtime["thrones"] = thrones
 
-func on_turn_start(_ctx: Dictionary) -> void:
-	if runtime.get("draw_next", false):
-		runtime["draw_next"] = false
-		PlayerData.draw_cards(1)
+
+func _is_on_throne(cell: Vector2i) -> bool:
+	for entry_v in runtime.get("thrones", []):
+		var entry: Dictionary = entry_v as Dictionary
+		if entry.get("cell") == cell:
+			return true
+	return false
+
+
+func _consume_throne_charge_if_standing() -> void:
+	var player: Node = _get_player_unit()
+	if player == null:
+		return
+	var player_pos: Vector2i = _unit_grid_pos(player)
+	var thrones: Array = runtime.get("thrones", []) as Array
+	for i in thrones.size():
+		var entry: Dictionary = thrones[i] as Dictionary
+		if entry.get("cell") != player_pos:
+			continue
+		var charges: int = int(entry.get("charges", 0)) - 1
+		entry["charges"] = charges
+		thrones[i] = entry
+		if charges <= 0:
+			var grid: Node = _find_battle_grid()
+			var new_cell: Vector2i = _random_player_half_cell(grid) if grid != null else Vector2i(-1, -1)
+			entry["cell"] = new_cell
+			entry["charges"] = ZONE_CHARGES
+			thrones[i] = entry
+		runtime["thrones"] = thrones
+		break

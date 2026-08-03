@@ -1,15 +1,11 @@
-[gd_resource type="Resource" script_class="ArtifactPool" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="ArtifactPool" load_steps=5 format=3]
 
-[ext_resource type="Script" path="res://data/artifacts/ArtifactsData.gd" id="ad"]
-[ext_resource type="Script" path="res://data/artifacts/ArtifactPool.gd" id="1"]
-[ext_resource type="Resource" path="res://data/artifacts/catalog/legendary/plaguebone_axe.tres" id="a0"]
-[ext_resource type="Resource" path="res://data/artifacts/catalog/legendary/time_crystal.tres" id="a1"]
-[ext_resource type="Resource" path="res://data/artifacts/catalog/legendary/gilded_dragonheart.tres" id="a2"]
-[ext_resource type="Resource" path="res://data/artifacts/catalog/legendary/blade_of_infinity.tres" id="a3"]
-[ext_resource type="Resource" path="res://data/artifacts/catalog/boss/throne_fragment.tres" id="a4"]
-[ext_resource type="Resource" path="res://data/artifacts/catalog/boss/oathbreaker_seal.tres" id="a5"]
-[ext_resource type="Resource" path="res://data/artifacts/catalog/boss/heart_of_the_loop.tres" id="a6"]
+[ext_resource type="Script" path="res://data/artifacts/ArtifactsData.gd" id="1_data"]
+[ext_resource type="Script" path="res://data/artifacts/ArtifactPool.gd" id="2_pool"]
+[ext_resource type="Resource" path="res://data/artifacts/catalog/boss/heart_of_the_loop.tres" id="a0"]
+[ext_resource type="Resource" path="res://data/artifacts/catalog/boss/oathbreaker_seal.tres" id="a1"]
+[ext_resource type="Resource" path="res://data/artifacts/catalog/boss/throne_fragment.tres" id="a2"]
 
 [resource]
-script = ExtResource("1")
-artifacts = Array[ExtResource("ad")]([ExtResource("a0"), ExtResource("a1"), ExtResource("a2"), ExtResource("a3"), ExtResource("a4"), ExtResource("a5"), ExtResource("a6")])
+script = ExtResource("2_pool")
+artifacts = Array[ExtResource("1_data")]([ExtResource("a0"), ExtResource("a1"), ExtResource("a2")])

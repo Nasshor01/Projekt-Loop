@@ -1,32 +1,57 @@
 extends ArtifactBehavior
 
-func on_combat_start(_ctx: Dictionary) -> void:
-	PlayerData.gain_energy(1)
-	runtime["panic_used"] = false
-	runtime["attacks"] = []
+const LOOP_INTERVAL := 4
+const LOW_HP_THRESHOLD_PERCENT := 25
+const SKIP_ENEMY_USES := 1
 
-func on_card_played(ctx: Dictionary) -> void:
-	if ctx.get("is_attack", false):
-		var arr: Array = runtime.get("attacks", [])
-		arr.append(ctx.get("card"))
-		runtime["attacks"] = arr
 
-func on_turn_end(ctx: Dictionary) -> void:
-	var turn := int(ctx.get("combat_turn", ArtifactManager.combat_turn))
-	if turn > 0 and turn % 4 == 0:
-		var arr: Array = runtime.get("attacks", [])
-		if arr.size() > 0:
-			notify_triggered("Heart of the Loop: echo attack")
-			# Echo is visual/log for now; full replay needs BattleScene support
-	runtime["attacks"] = []
+func on_combat_start(ctx: Dictionary = {}) -> void:
+	if PlayerData:
+		PlayerData.gain_energy(1)
+	runtime["skip_enemy_uses"] = 0
 
-func on_unblocked_damage(_ctx: Dictionary) -> void:
-	if runtime.get("panic_used", false):
+
+func on_turn_start(ctx: Dictionary = {}) -> void:
+	super.on_turn_start(ctx)
+	var turn := _get_turn_number(ctx)
+	if turn > 0 and turn % LOOP_INTERVAL == 0:
+		_repeat_last_attack(ctx)
+	_check_low_hp_skip(ctx)
+
+
+func on_card_played(ctx: Dictionary = {}) -> void:
+	var card: CardData = ctx.get("card") as CardData
+	if card and _card_is_attack(card):
+		runtime["last_attack_card_id"] = card.card_id
+		runtime["last_attack_base_damage"] = _estimate_card_damage(card)
+
+
+func _repeat_last_attack(ctx: Dictionary) -> void:
+	var card_id := String(runtime.get("last_attack_card_id", ""))
+	if card_id.is_empty():
 		return
-	if PlayerData.max_hp <= 0:
+	var damage := int(runtime.get("last_attack_base_damage", 0))
+	if damage <= 0:
 		return
-	var pct := float(PlayerData.current_hp) / float(PlayerData.max_hp)
-	if pct <= 0.25:
-		runtime["panic_used"] = true
-		ArtifactManager.set_run_flag("skip_enemy_round", true)
-		notify_triggered("Heart of the Loop: skip enemy turn")
+	var enemy := _random_living_enemy()
+	if enemy and enemy.has_method("take_damage"):
+		enemy.take_damage(damage, true, false, false)
+	ctx["repeated_attack"] = card_id
+
+
+func _estimate_card_damage(card: CardData) -> int:
+	for effect in card.effects:
+		if effect.effect_type == CardEffectData.EffectType.DEAL_DAMAGE:
+			return effect.value
+	return 0
+
+
+func _check_low_hp_skip(ctx: Dictionary) -> void:
+	if not PlayerData:
+		return
+	if int(runtime.get("skip_enemy_uses", 0)) >= SKIP_ENEMY_USES:
+		return
+	var pct := PlayerData.current_hp * 100 / maxi(1, PlayerData.max_hp)
+	if pct <= LOW_HP_THRESHOLD_PERCENT:
+		ctx["skip_enemy_turn"] = true
+		runtime["skip_enemy_uses"] = int(runtime.get("skip_enemy_uses", 0)) + 1
