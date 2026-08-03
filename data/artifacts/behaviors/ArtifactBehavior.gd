@@ -355,3 +355,12 @@ func modify_shop_price(ctx: Dictionary, price: int) -> int:
 
 func modify_gold_reward(ctx: Dictionary, gold: int) -> int:
 	return gold
+
+
+## Passive bonuses re-applied by PlayerData.apply_passive_skills() (which resets base max_hp).
+func get_passive_max_hp_bonus() -> int:
+	return 0
+
+
+func get_passive_max_energy_bonus() -> int:
+	return 0

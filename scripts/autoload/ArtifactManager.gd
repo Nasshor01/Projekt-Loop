@@ -432,11 +432,29 @@ func _get_enemy_count() -> int:
 
 
 func get_max_hp_bonus() -> int:
-	return get_passive_bonus(ArtifactsData.EffectType.MODIFY_MAX_HP)
+	var total: int = get_passive_bonus(ArtifactsData.EffectType.MODIFY_MAX_HP)
+	if not PlayerData:
+		return total
+	for artifact in PlayerData.artifacts:
+		if not _has_behavior(artifact):
+			continue
+		var behavior: ArtifactBehavior = _ensure_behavior(artifact)
+		if behavior != null:
+			total += behavior.get_passive_max_hp_bonus()
+	return total
 
 
 func get_max_energy_bonus() -> int:
-	return get_passive_bonus(ArtifactsData.EffectType.MODIFY_MAX_ENERGY)
+	var total: int = get_passive_bonus(ArtifactsData.EffectType.MODIFY_MAX_ENERGY)
+	if not PlayerData:
+		return total
+	for artifact in PlayerData.artifacts:
+		if not _has_behavior(artifact):
+			continue
+		var behavior: ArtifactBehavior = _ensure_behavior(artifact)
+		if behavior != null:
+			total += behavior.get_passive_max_energy_bonus()
+	return total
 
 
 func get_card_damage_bonus(context: Dictionary = {}) -> int:

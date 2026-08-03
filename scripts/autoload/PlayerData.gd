@@ -518,12 +518,15 @@ func add_artifact(new_artifact_resource: ArtifactsData) -> bool:
 		var added_for_behavior = existing_artifact if existing_artifact else new_artifact
 		ArtifactManager.on_artifact_acquired(added_for_behavior)
 
-	# Pokud je artefakt pasivní, musíme přepočítat staty
-	if new_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE:
+	# Pokud je artefakt pasivní NEBO remake behavior, přepočítat staty
+	# (BEHAVIOR Max HP žije v get_passive_max_hp_bonus — apply_passive resetuje base max_hp)
+	var added_artifact = existing_artifact if existing_artifact else new_artifact
+	if new_artifact.trigger_type == ArtifactsData.TriggerType.PASSIVE \
+			or new_artifact.effect_type == ArtifactsData.EffectType.BEHAVIOR \
+			or (added_artifact and added_artifact.behavior_script != null):
 		apply_passive_skills()
 	
 	# Jednorázové HP změny při získání (ne každý tah)
-	var added_artifact = existing_artifact if existing_artifact else new_artifact
 	if added_artifact.custom_effect_id == "dragon_heart_combo" and added_artifact.secondary_value != 0:
 		if not added_artifact.has_meta("max_hp_penalty_applied"):
 			change_max_hp(added_artifact.secondary_value)

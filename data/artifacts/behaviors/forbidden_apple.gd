@@ -3,6 +3,8 @@ extends ArtifactBehavior
 const MAX_HP_BONUS := 7
 
 
-func on_acquired(ctx: Dictionary = {}) -> void:
-	if PlayerData:
-		PlayerData.change_max_hp(MAX_HP_BONUS)
+func get_passive_max_hp_bonus() -> int:
+	var stacks: int = 1
+	if artifact != null:
+		stacks = maxi(1, artifact.current_stacks)
+	return MAX_HP_BONUS * stacks
