@@ -10,13 +10,13 @@ func on_turn_start(ctx: Dictionary = {}) -> void:
 	runtime["delay_pending"] = false
 
 
-func on_turn_end(ctx: Dictionary = {}) -> void:
+func on_turn_end(_ctx: Dictionary = {}) -> void:
 	if runtime.get("delay_pending", false):
 		var amount := int(runtime.get("delayed_damage", 0))
 		if amount > 0:
 			var player := _get_player_unit()
 			if player and player.has_method("take_damage"):
-				player.take_damage(amount, false, false, true)
+				player.take_damage(amount, false, false, true, true)
 		runtime["delay_pending"] = false
 		runtime["delayed_damage"] = 0
 

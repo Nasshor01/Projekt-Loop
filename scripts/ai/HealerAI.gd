@@ -20,7 +20,7 @@ func get_actions(enemy_unit: Unit, all_player_units: Array, battle_grid: BattleG
 		return [create_pass_action()]
 	
 	var distance_to_player = battle_grid.get_distance(enemy_unit.grid_position, player_unit.grid_position)
-	var allies = get_all_enemies(enemy_unit, battle_grid)
+	var _allies = get_all_enemies(enemy_unit, battle_grid)
 	
 	# Najdi nejzraněnějšího spojence
 	var most_injured = _find_most_injured_ally(enemy_unit, battle_grid)

@@ -1,7 +1,7 @@
 extends ArtifactBehavior
 
 
-func on_turn_end(ctx: Dictionary = {}) -> void:
+func on_turn_end(_ctx: Dictionary = {}) -> void:
 	var player: Node = _get_player_unit()
 	var grid: Node = _find_battle_grid()
 	if player == null or grid == null:

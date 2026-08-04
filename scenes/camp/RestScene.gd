@@ -105,8 +105,11 @@ func _on_preview_toggle_pressed() -> void:
 func _on_card_selected_for_upgrade(card_to_upgrade: CardData):
 	var card_index = PlayerData.master_deck.find(card_to_upgrade)
 	if card_index != -1 and is_instance_valid(card_to_upgrade.upgraded_version):
-		PlayerData.master_deck[card_index] = card_to_upgrade.upgraded_version
-		print(TranslationHelper.tr_format("log.rest.card_upgraded", {"from": card_to_upgrade.get_localized_name(), "to": card_to_upgrade.upgraded_version.get_localized_name()}))
+		# Duplicate upgraded template so Seal/meta stays on this one deck slot only.
+		var upgraded: CardData = card_to_upgrade.upgraded_version.duplicate(true)
+		PlayerData.transfer_seal_on_upgrade(card_to_upgrade, upgraded)
+		PlayerData.master_deck[card_index] = upgraded
+		print(TranslationHelper.tr_format("log.rest.card_upgraded", {"from": card_to_upgrade.get_localized_name(), "to": upgraded.get_localized_name()}))
 	
 	_on_leave_pressed()
 

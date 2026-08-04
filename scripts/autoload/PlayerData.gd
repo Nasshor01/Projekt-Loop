@@ -47,6 +47,9 @@ var has_revive: bool = false
 var global_card_damage_bonus: int = 0
 var holy_damage_bonus: int = 0  ## Bonus pouze k Svatému (Holy) poškození ze skill tree
 var starting_retained_block: int = 0
+## Permanent seal from Tablet of Forgotten Oaths (survives combat + upgrades; Tablet is consumed).
+var sealed_card_id: String = ""
+var sealed_card_source_path: String = ""
 
 # --- NOVÉ PROMĚNNÉ PRO PASIVNÍ EFEKTY ---
 var critical_chance: int = 0
@@ -135,6 +138,8 @@ func start_new_run_state():
 	card_usage_count.clear()
 	shop_card_removals_count = 0
 	current_run_shards = 0
+	sealed_card_id = ""
+	sealed_card_source_path = ""
 	if is_instance_valid(selected_subclass):
 		var subclass_name = "Unknown"
 		if "subclass_name" in selected_subclass and selected_subclass.subclass_name != "":
@@ -147,7 +152,8 @@ func start_new_run_state():
 			for entry in selected_subclass.starting_deck:
 				if entry is DeckEntry and is_instance_valid(entry.card):
 					for i in range(entry.count):
-						master_deck.append(entry.card)
+						# Unique instance per slot — shared .tres refs would make Seal/meta apply to all copies.
+						master_deck.append(entry.card.duplicate(true))
 		
 		global_shield = 0
 	# 2. Nejdřív vyčisti artefakty z minulého runu, pak přepočítej startovní staty
@@ -363,7 +369,25 @@ func should_heal_enhanced(amount: int) -> int:
 	return amount
 
 # Zbytek funkcí zůstává stejný...
+func ensure_unique_master_deck_instances() -> void:
+	"""Split shared CardData refs so Seal/meta/upgrades apply to one physical card only."""
+	var seen_ids: Dictionary = {}
+	for i in master_deck.size():
+		var card: CardData = master_deck[i]
+		if card == null:
+			continue
+		var iid: int = card.get_instance_id()
+		if seen_ids.has(iid):
+			var copy: CardData = card.duplicate(true)
+			if copy.has_meta("artifact_sealed"):
+				copy.remove_meta("artifact_sealed")
+			master_deck[i] = copy
+		else:
+			seen_ids[iid] = true
+
+
 func reset_battle_stats():
+	ensure_unique_master_deck_instances()
 	draw_pile.clear()
 	discard_pile.clear()
 	current_hand.clear()
@@ -390,13 +414,7 @@ func spend_energy(amount: int) -> bool:
 		
 		# NOVÉ: Trigger energy spent artefakty
 		if has_node("/root/ArtifactManager"):
-			var context = {
-				"energy_spent": amount,
-				"current_energy": current_energy,
-				"max_energy": max_energy,
-				"target": null  # Bude nastaveno v ArtifactManager
-			}
-			ArtifactManager.trigger_artifacts(ArtifactsData.TriggerType.ON_ENERGY_SPENT, context)
+			ArtifactManager.on_energy_spent(amount)
 		
 		emit_signal("energy_changed", current_energy)
 		return true
@@ -428,9 +446,15 @@ func increment_card_usage(card_id: String) -> int:
 func discard_hand():
 	if current_hand.is_empty():
 		return
+	var retained: Array[CardData] = []
 	for card in current_hand:
-		add_card_to_discard_pile(card)
+		if card != null and card.has_meta("artifact_retain") and bool(card.get_meta("artifact_retain")):
+			retained.append(card)
+		else:
+			add_card_to_discard_pile(card)
 	current_hand.clear()
+	for card in retained:
+		current_hand.append(card)
 
 func reshuffle_discard_into_draw_pile():
 	if not discard_pile.is_empty():
@@ -461,13 +485,7 @@ func draw_cards(amount: int) -> int:
 	
 	# NOVÉ: Trigger draw cards artefakty pokud jsme něco dobrali
 	if cards_drawn_count > 0 and has_node("/root/ArtifactManager"):
-		var context = {
-			"cards_drawn": cards_drawn_count,
-			"total_cards_requested": amount,
-			"hand_size": current_hand.size(),
-			"target": null  # Bude nastaveno v ArtifactManager
-		}
-		ArtifactManager.trigger_artifacts(ArtifactsData.TriggerType.ON_DRAW_CARDS, context)
+		ArtifactManager.on_draw_cards(cards_drawn_count, amount)
 	
 	DebugLogger.log_debug("Cards drawn: %d, Hand size: %d" % [cards_drawn_count, current_hand.size()], "CARDS")
 	return cards_drawn_count
@@ -575,7 +593,30 @@ func _find_stackable_artifact(new_artifact: ArtifactsData) -> ArtifactsData:
 func remove_artifact(artifact_data: ArtifactsData):
 	if artifacts.has(artifact_data):
 		artifacts.erase(artifact_data)
+		if has_node("/root/ArtifactManager"):
+			ArtifactManager.on_artifact_removed(artifact_data)
+			ArtifactManager._refresh_artifact_cache()
 		emit_signal("artifacts_changed")
+
+
+func is_card_instance_sealed(card: CardData) -> bool:
+	return card != null and card.has_meta("artifact_sealed") and bool(card.get_meta("artifact_sealed"))
+
+
+func transfer_seal_on_upgrade(old_card: CardData, new_card: CardData) -> void:
+	"""Keep permanent seal across Rest/event upgrades (instance meta only — not card_id)."""
+	if old_card == null or new_card == null:
+		return
+	if not is_card_instance_sealed(old_card):
+		return
+	if old_card.has_meta("artifact_sealed"):
+		old_card.remove_meta("artifact_sealed")
+	new_card.set_meta("artifact_sealed", true)
+	sealed_card_id = new_card.card_id
+	var src := new_card.resource_path
+	if src.is_empty() and new_card.has_meta("source_path"):
+		src = str(new_card.get_meta("source_path"))
+	sealed_card_source_path = src
 
 func add_gold(amount: int):
 	self.gold += amount

@@ -1,9 +1,9 @@
 res://main.tscn
 res://art/ui/game_theme.tres
-res://data/encounters/first_battle.tres
 res://data/skills/paladin_skill_tree_manual.tres
 res://data/cards/everyone/heavy_strike_upgraded.tres
 res://data/cards/everyone/heavy_strike.tres
+res://data/encounters/first_battle.tres
 res://data/events/cursed_well.tres
 res://data/events/event_mysterious_merchant.tres
 res://data/events/golden_idol.tres
@@ -121,9 +121,8 @@ res://data/artifacts/basic_artifact_pool.tres
 res://scenes/ui/PopupMenu.tscn
 res://scenes/ui/initiative_bar/InitiativeBar.tscn
 res://scenes/ui/initiative_bar/InitiativeIcon.tscn
-res://scenes/ui/initiative_bar/InitiativeTooltip.tscn
-res://scenes/battle/BattleScene.tscn
 res://scenes/ui/GlobalUI.tscn
+res://scenes/ui/initiative_bar/InitiativeTooltip.tscn
 res://scenes/battle/Unit.tscn
 res://scenes/battle/BattleGrid.tscn
 res://scenes/ui/Settings.tscn
@@ -141,7 +140,4 @@ res://scenes/ui/PassiveSkillNodeUI.tscn
 res://scenes/battle/arenas/ArenaDefault.tscn
 res://scenes/camp/RestScene.tscn
 res://scenes/ui/DeckViewer.tscn
-res://scenes/shop/ShopItemUI.tscn
-res://scenes/ui/ArtifactChoiceUI.tscn
-res://data/encounters/fortress_scouts.tres
-res://data/encounters/fortress_bruiser.tres
+res://scenes/battle/BattleScene.tscn

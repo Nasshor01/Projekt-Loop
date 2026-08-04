@@ -18,19 +18,20 @@ func get_actions(enemy_unit: Unit, all_player_units: Array, battle_grid: BattleG
 	# 2. Pokud nejsme v dosahu - pohni se a pak zaútoč
 	# Najdi pozici, ze které můžeme zaútočit
 	var attack_pos = find_attack_move_position(enemy_unit, player_unit, battle_grid)
+	var move_path: Array = []
 	
 	if attack_pos != Vector2i(-1, -1):
 		# Můžeme se přesunout na pozici, odkud dosáhneme na hráče
-		var path = find_path(enemy_unit, attack_pos, battle_grid)
-		if not path.is_empty():
-			actions.append(create_move_action(path))
+		move_path = find_path(enemy_unit, attack_pos, battle_grid)
+		if not move_path.is_empty():
+			actions.append(create_move_action(move_path))
 			actions.append(create_attack_action(player_unit))
 			return actions
 	
 	# 3. Nemůžeme dosáhnout na hráče tento tah - přibliž se co nejvíc
-	var path = find_path_to_adjacent(enemy_unit, player_unit, battle_grid)
-	if not path.is_empty():
-		actions.append(create_move_action(path))
+	move_path = find_path_to_adjacent(enemy_unit, player_unit, battle_grid)
+	if not move_path.is_empty():
+		actions.append(create_move_action(move_path))
 		return actions
 	
 	# 4. Nemůžeme se pohnout ani zaútočit

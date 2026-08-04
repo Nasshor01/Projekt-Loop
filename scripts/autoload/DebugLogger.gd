@@ -253,7 +253,8 @@ func log_skill_tree_state():
 	log_info("=== SKILL TREE STATE ===", "SKILLS")
 
 	if not PlayerData or not is_instance_valid(PlayerData.active_skill_tree):
-		log_warning("Žádný aktivní skill tree!", "SKILLS")
+		# Skill tree is intentionally disabled in Early Alpha — info, not a yellow debugger warning.
+		log_info("Žádný aktivní skill tree (disabled).", "SKILLS")
 		return
 
 	var tree = PlayerData.active_skill_tree
@@ -890,9 +891,9 @@ func _get_card_names(cards: Array) -> Array:
 	var names: Array = []
 	for card in cards:
 		if is_instance_valid(card):
-			var name = card.get("card_name")
-			if name != null:
-				names.append(String(name))
+			var card_name = card.get("card_name")
+			if card_name != null:
+				names.append(String(card_name))
 	return names
 
 func _extract_column_index(node) -> Variant:

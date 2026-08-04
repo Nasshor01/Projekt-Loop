@@ -52,17 +52,17 @@ func get_actions(enemy_unit: Unit, all_player_units: Array, battle_grid: BattleG
 	# === NORMÁLNÍ PŘIBLÍŽENÍ + ÚTOK ===
 	var attack_pos = find_attack_move_position(enemy_unit, player_unit, battle_grid)
 	if attack_pos != Vector2i(-1, -1):
-		var path = find_path(enemy_unit, attack_pos, battle_grid)
-		if not path.is_empty():
+		var move_path = find_path(enemy_unit, attack_pos, battle_grid)
+		if not move_path.is_empty():
 			var attack = _create_assassin_attack(enemy_unit, player_unit, distance_to_player)
-			actions.append(create_move_action(path))
+			actions.append(create_move_action(move_path))
 			actions.append(attack)
 			return actions
 	
 	# === POKUD NEMŮŽEME DOSÁHNOUT - PŘIBLIŽ SE ===
-	var path = find_path_to_adjacent(enemy_unit, player_unit, battle_grid)
-	if not path.is_empty():
-		actions.append(create_move_action(path))
+	var approach_path = find_path_to_adjacent(enemy_unit, player_unit, battle_grid)
+	if not approach_path.is_empty():
+		actions.append(create_move_action(approach_path))
 		return actions
 	
 	return [create_pass_action()]

@@ -5,7 +5,7 @@ const START_DEX := 3
 const MAX_HP_LOSS_PER_TURN := 1
 
 
-func on_combat_start(ctx: Dictionary = {}) -> void:
+func on_combat_start(_ctx: Dictionary = {}) -> void:
 	var player: Node = _get_player_unit()
 	if player != null:
 		_apply_status(player, "monk_blessing", START_STRENGTH, 99)

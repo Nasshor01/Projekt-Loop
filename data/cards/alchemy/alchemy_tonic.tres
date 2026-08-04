@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://data/cards/CardEffectData.gd" id="1_fx"]
+[ext_resource type="Script" path="res://data/cards/CardData.gd" id="2_cd"]
+[ext_resource type="Texture2D" path="res://art/icons/artifact_fx/alchemy_tonic.png" id="3_art"]
+
+[sub_resource type="Resource" id="Resource_main"]
+script = ExtResource("1_fx")
+effect_type = 2
+value = 5
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+
+[sub_resource type="Resource" id="Resource_exhaust"]
+script = ExtResource("1_fx")
+effect_type = 9
+value = 0
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+
+[resource]
+script = ExtResource("2_cd")
+card_id = "alchemy_tonic"
+card_name = "card.alchemy_tonic"
+card_description = "card.alchemy_tonic.desc"
+editor_description = "Alchemy temp: Gain 5 Block. Exhaust."
+cost = 0
+range_type = 1
+range_value = 0
+tags = Array[int]([8])
+rarity = 5
+artwork = ExtResource("3_art")
+effects = Array[ExtResource("1_fx")]([SubResource("Resource_main"), SubResource("Resource_exhaust")])
+is_upgraded = false
+max_uses_per_turn = -1
+debuff_on_overuse = {}
+max_uses_before_removal = -1

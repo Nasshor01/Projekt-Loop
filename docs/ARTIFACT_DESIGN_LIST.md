@@ -31,8 +31,9 @@ Změny oproti draftu:
 - Pokud je jednotka na **okraji gridu** → efekt se **zdvojnásobí**.
 
 ### Tablet of Forgotten Oaths
-- Na začátku boje si vyber jednu kartu a **zapečeť** ji.
+- Při získání artefaktu si **jednou** vyber kartu z decku a **zapečeť** ji **napořád**.
 - Zapečetěná karta stojí o **1 Energy méně** a při zahrání dá **+2 Block**.
+- Seal **přežije upgrade** karty; Tableta **zůstává** (výběr jen jednou za run).
 - Max **1** zapečetěná karta najednou.
 
 ### Embercleaver

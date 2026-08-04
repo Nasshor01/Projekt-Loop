@@ -152,7 +152,7 @@ anchor_bottom = 1.0
 offset_left = 12.0
 offset_top = -360.0
 offset_right = 272.0
-offset_bottom = -96.0
+offset_bottom = -136.0
 grow_vertical = 0
 
 [node name="EnemyInfoPanel" parent="CanvasLayer" instance=ExtResource("4_t3o3d")]
@@ -164,7 +164,7 @@ anchor_bottom = 1.0
 offset_left = -348.0
 offset_top = -360.0
 offset_right = -88.0
-offset_bottom = -96.0
+offset_bottom = -184.0
 grow_horizontal = 0
 grow_vertical = 0
 
@@ -221,6 +221,114 @@ offset_left = 384.0
 offset_top = 168.0
 offset_right = 734.0
 offset_bottom = 418.0
+
+[node name="ArtifactInteractUI" type="Control" parent="CanvasLayer"]
+unique_name_in_owner = true
+visible = false
+z_index = 40
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HandPrompt" type="VBoxContainer" parent="CanvasLayer/ArtifactInteractUI"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 360.0
+offset_top = 296.0
+offset_right = 860.0
+offset_bottom = 416.0
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="CanvasLayer/ArtifactInteractUI/HandPrompt"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 26
+text = "Alchemists Tools"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="BodyLabel" type="Label" parent="CanvasLayer/ArtifactInteractUI/HandPrompt"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.92, 0.85, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 18
+text = "Discard 1 card from your hand to gain a temporary alchemy card."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="ButtonsRow" type="HBoxContainer" parent="CanvasLayer/ArtifactInteractUI/HandPrompt"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="DrinkButton" type="Button" parent="CanvasLayer/ArtifactInteractUI/HandPrompt/ButtonsRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(140, 40)
+layout_mode = 2
+text = "Drink"
+
+[node name="SkipButton" type="Button" parent="CanvasLayer/ArtifactInteractUI/HandPrompt/ButtonsRow"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(140, 40)
+layout_mode = 2
+text = "Skip"
+
+[node name="SidePrompt" type="VBoxContainer" parent="CanvasLayer/ArtifactInteractUI"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 1128.0
+offset_top = 488.0
+offset_right = 1268.0
+offset_bottom = 628.0
+theme_override_constants/separation = 8
+
+[node name="SideTitleLabel" type="Label" parent="CanvasLayer/ArtifactInteractUI/SidePrompt"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 18
+text = "All-Seeing Eye"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="SideBodyLabel" type="Label" parent="CanvasLayer/ArtifactInteractUI/SidePrompt"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.92, 0.85, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 14
+text = "Click an enemy to deny their next move."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="SideSkipButton" type="Button" parent="CanvasLayer/ArtifactInteractUI/SidePrompt"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(120, 36)
+layout_mode = 2
+text = "Skip"
 
 [node name="DevConsole" parent="." instance=ExtResource("8_5282s")]
 visible = false

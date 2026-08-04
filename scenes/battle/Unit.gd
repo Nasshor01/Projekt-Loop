@@ -196,7 +196,7 @@ func get_last_attacker() -> Unit:
 	last_attacker = null  # clear stale reference (attacker may have been freed)
 	return null
 
-func attack(target: Node, extra_additive: int = 0, damage_type: int = 0, is_holy: bool = false) -> void:
+func attack(target: Node, extra_additive: int = 0, damage_type: int = 0, _is_holy: bool = false) -> void:
 	if not is_instance_valid(target) or not target.has_method("take_damage"): return
 	
 	if target.has_method("set_last_attacker"):
@@ -223,7 +223,8 @@ func attack(target: Node, extra_additive: int = 0, damage_type: int = 0, is_holy
 
 ## Returns false if the hit was dodged (no HP/block change). Dodge only applies to attack hits
 ## (allow_dodge=true); DoT / terrain / forced damage should pass allow_dodge=false.
-func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: bool = false, allow_dodge: bool = true) -> bool:
+## skip_artifacts: used by deferred artifact damage so hooks don't double-fire.
+func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: bool = false, allow_dodge: bool = true, skip_artifacts: bool = false) -> bool:
 	# Dodge: Assassin má 35% šanci na dodge útoku (ne DoT/pastí).
 	# Přeskočit při RPC sync (výsledek už byl rozhodnut na odesílající straně).
 	if allow_dodge and not is_rpc_sync and unit_data.ai_script and unit_data.ai_script.resource_path.contains("AssassinAI"):
@@ -277,23 +278,29 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 				ArtifactManager.on_thorns_damage(thorns_amt, attacker)
 
 	if damage_to_deal > 0:
-		if _is_local_player() and has_node("/root/ArtifactManager"):
-			ArtifactManager.on_unblocked_damage(damage_to_deal, attacker)
+		var deferred := false
+		if not skip_artifacts and _is_local_player() and has_node("/root/ArtifactManager"):
+			var art_ctx: Dictionary = ArtifactManager.on_unblocked_damage(damage_to_deal, attacker)
+			deferred = bool(art_ctx.get("damage_deferred", false))
 
-		current_health -= damage_to_deal
-		_show_floating_text(damage_to_deal, "damage")
-		
-		if current_health < 0:
-			current_health = 0
-		
-		if _is_local_player():
-			PlayerData.take_damage(damage_to_deal)
+		if not deferred:
+			current_health -= damage_to_deal
+			_show_floating_text(damage_to_deal, "damage")
+			
+			if current_health < 0:
+				current_health = 0
+			
+			if _is_local_player():
+				PlayerData.take_damage(damage_to_deal)
+		else:
+			_show_floating_text(damage_to_deal, "block_loss")
 	
 	_update_stats_and_emit_signal()
 	
 	if current_health <= 0:
 		if _is_local_player() and has_node("/root/ArtifactManager"):
 			if ArtifactManager.before_death(self):
+				_update_stats_and_emit_signal()
 				return true
 		_die()
 	return true
@@ -363,7 +370,7 @@ func apply_status(status_id: String, value: int, duration: int = 1):
 		if status_id == "frozen":
 			is_frozen = true
 	if has_node("/root/DebugLogger"):
-		var unit_label = unit_data.unit_id if unit_data else name
+		var unit_label = String(unit_data.unit_id) if unit_data else String(name)
 		DebugLogger.log_info("Status '%s' applied to %s (value=%d, duration=%d)" % [status_id, unit_label, value, duration])
 	_update_stats_and_emit_signal()
 	if has_node("/root/ArtifactManager"):
@@ -434,12 +441,12 @@ func _tick_poison_status() -> void:
 	if remaining <= 0:
 		active_statuses.erase("poison")
 		if has_node("/root/DebugLogger"):
-			var unit_label = unit_data.unit_id if unit_data else name
+			var unit_label = String(unit_data.unit_id) if unit_data else String(name)
 			DebugLogger.log_info("Poison expired on %s" % unit_label)
 	else:
 		active_statuses["poison"].duration = remaining
 		if has_node("/root/DebugLogger"):
-			var unit_label = unit_data.unit_id if unit_data else name
+			var unit_label = String(unit_data.unit_id) if unit_data else String(name)
 			DebugLogger.log_info("Poison on %s: %d dmg, %d turns left" % [unit_label, poison_dmg, remaining])
 	_update_stats_and_emit_signal()
 

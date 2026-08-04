@@ -74,40 +74,44 @@ func add_card_animated(card_data: CardData, from_pos: Vector2):
 
 func discard_hand_animated(to_pos: Vector2):
 	var cards = get_children().filter(func(c): return c is CardUI)
-	if cards.is_empty():
+	var to_discard: Array = []
+	for c in cards:
+		var data: CardData = c.card_data if "card_data" in c else null
+		if data != null and data.has_meta("artifact_retain") and bool(data.get_meta("artifact_retain")):
+			continue
+		to_discard.append(c)
+	if to_discard.is_empty():
 		emit_signal("hand_discard_animation_finished")
 		return
 
-	var card_count = cards.size()
+	var card_count = to_discard.size()
 
-	# Projdeme všechny karty v ruce
 	for i in range(card_count):
-		var card = cards[i]
+		var card = to_discard[i]
 		if not is_instance_valid(card): continue
 		if card is CardUI:
 			card.set_target_position(to_pos)
 			card.set_target_scale(Vector2.ZERO)
 		
-		# Vypneme možnost na kartu klikat
 		card.set_mouse_filter(MOUSE_FILTER_IGNORE)
 		
-		# Vytvoříme si timer, který spustí animaci každé karty s malým zpožděním
-		# První karta (i=0) se spustí hned, druhá za 0.1s, třetí za 0.2s atd.
 		var delay_timer = get_tree().create_timer(i * 0.1)
 		
-		# Po uplynutí zpoždění se spustí tato anonymní funkce
 		delay_timer.timeout.connect(func():
-			# Vytvoříme animaci pro tuto jednu kartu
 			var card_tween = create_tween()
 			card_tween.set_parallel(true)
 			card_tween.tween_property(card, "global_position", to_pos, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 			card_tween.tween_property(card, "scale", Vector2.ZERO, 0.25)
 			
-			# Důležitý krok: Pouze u POSLEDNÍ karty v ruce sledujeme, kdy její animace skončí.
-			# Až když skončí poslední animace, vyčistíme ruku a dáme vědět BattleScene.
 			if i == card_count - 1:
 				card_tween.finished.connect(func():
-					clear_hand()
+					# Free discarded cards only; keep retained CardUI nodes.
+					for child in to_discard:
+						if is_instance_valid(child):
+							child.queue_free()
+					_hovered_card = null
+					_selected_card = null
+					_request_arrange()
 					emit_signal("hand_discard_animation_finished")
 				)
 		)

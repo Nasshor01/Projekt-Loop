@@ -29,7 +29,7 @@
 [ext_resource type="Resource" path="res://data/artifacts/catalog/uncommon/charm_of_fortune.tres" id="a24"]
 [ext_resource type="Resource" path="res://data/artifacts/catalog/uncommon/runic_cube_of_binding.tres" id="a25"]
 [ext_resource type="Resource" path="res://data/artifacts/catalog/uncommon/spiral_bulwark.tres" id="a26"]
-[ext_resource type="Resource" path="res://data/artifacts/catalog/uncommon/tablet_of_forgotten_oaths.tres" id="a27"]
+[ext_resource type="Resource" uid="uid://cegpl68hubcqh" path="res://data/artifacts/catalog/uncommon/tablet_of_forgotten_oaths.tres" id="a27"]
 
 [resource]
 script = ExtResource("2_pool")

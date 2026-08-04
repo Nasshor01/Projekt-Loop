@@ -42,6 +42,24 @@ func show_cards(cards: Array[CardData], _card_scale: Vector2 = Vector2.ZERO):
 	self.show()
 	_set_world_hud_dimmed(true)
 
+
+## Permanent Tablet seal: must pick a card (Close hidden).
+func show_seal_selection(cards: Array[CardData]) -> void:
+	_upgrade_preview_mode = false
+	_upgrade_base_cards.clear()
+	_clear_grid()
+	grid_container.columns = 3
+	if title_label:
+		title_label.text = tr("ui.artifact.tablet.seal_title")
+	if close_button:
+		close_button.visible = false
+	for card_data in cards:
+		if not is_instance_valid(card_data):
+			continue
+		_add_card_to_grid(card_data, CardUI.DisplayMode.DECK)
+	show()
+	_set_world_hud_dimmed(true)
+
 ## Rest-site smith / STS2: only upgradeable cards; optionally show upgraded faces.
 func show_upgrade_selection(cards: Array[CardData], show_as_upgraded: bool = true) -> void:
 	_upgrade_preview_mode = true
@@ -66,14 +84,29 @@ func set_upgrade_preview_faces(show_as_upgraded: bool) -> void:
 	show_upgrade_selection(_upgrade_base_cards, show_as_upgraded)
 
 ## Deck overview with counts — same full face as draw-pile viewer (not COMPACT).
+## Sealed cards are never stacked (one physical sealed instance must stay visible alone).
 func display_deck(deck: Array[CardData]):
 	_upgrade_preview_mode = false
 	_upgrade_base_cards.clear()
 	_clear_grid()
 	grid_container.columns = 4
 
-	var card_counts = {}
+	# Permanent modifiers (Tablet seal / Oathbreaker) must stay unstacked per instance.
+	var marked_cards: Array[CardData] = []
+	var card_counts: Dictionary = {}
 	for card_data in deck:
+		if not is_instance_valid(card_data):
+			continue
+		var marked := false
+		if card_data.has_meta("artifact_sealed") and bool(card_data.get_meta("artifact_sealed")):
+			marked = true
+		elif card_data.has_meta("artifact_oathbroken") and bool(card_data.get_meta("artifact_oathbroken")):
+			marked = true
+		elif card_data.has_meta("artifact_retain") and bool(card_data.get_meta("artifact_retain")):
+			marked = true
+		if marked:
+			marked_cards.append(card_data)
+			continue
 		if not card_counts.has(card_data.card_name):
 			card_counts[card_data.card_name] = {"data": card_data, "count": 0}
 		card_counts[card_data.card_name]["count"] += 1
@@ -82,23 +115,33 @@ func display_deck(deck: Array[CardData]):
 		var card_info = card_counts[card_name]
 		var card_instance = _add_card_to_grid(card_info["data"], CardUI.DisplayMode.DECK)
 		if card_instance:
-			var count_label = Label.new()
-			count_label.text = TranslationHelper.tr_format("ui.deck_viewer.count", {"value": card_info["count"]})
-			count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-			count_label.add_theme_font_size_override("font_size", 22)
-			count_label.add_theme_color_override("font_color", Color(1, 0.95, 0.4, 1))
-			count_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-			count_label.add_theme_constant_override("outline_size", 4)
-			count_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-			count_label.offset_left = -56
-			count_label.offset_top = 4
-			count_label.offset_right = -6
-			count_label.offset_bottom = 28
-			count_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			card_instance.add_child(count_label)
+			_add_deck_count_label(card_instance, int(card_info["count"]))
 			card_instance.gui_input.connect(_on_card_gui_input.bind(card_info["data"]))
+
+	for marked in marked_cards:
+		var marked_ui = _add_card_to_grid(marked, CardUI.DisplayMode.DECK)
+		if marked_ui:
+			_add_deck_count_label(marked_ui, 1)
+			marked_ui.gui_input.connect(_on_card_gui_input.bind(marked))
 	show()
 	_set_world_hud_dimmed(true)
+
+
+func _add_deck_count_label(card_instance: CardUI, count: int) -> void:
+	var count_label = Label.new()
+	count_label.text = TranslationHelper.tr_format("ui.deck_viewer.count", {"value": count})
+	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	count_label.add_theme_font_size_override("font_size", 22)
+	count_label.add_theme_color_override("font_color", Color(1, 0.95, 0.4, 1))
+	count_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	count_label.add_theme_constant_override("outline_size", 4)
+	count_label.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	count_label.offset_left = -56
+	count_label.offset_top = 4
+	count_label.offset_right = -6
+	count_label.offset_bottom = 28
+	count_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	card_instance.add_child(count_label)
 
 func _add_card_to_grid(card_data: CardData, mode: CardUI.DisplayMode) -> CardUI:
 	var card_instance = card_scene.instantiate()
@@ -181,6 +224,10 @@ func _on_card_gui_input(event: InputEvent, card_data: CardData):
 func hide_and_clear():
 	_upgrade_preview_mode = false
 	_upgrade_base_cards.clear()
+	if close_button:
+		close_button.visible = true
+	if title_label:
+		title_label.text = tr("ui.deck_viewer.title_full")
 	hide()
 	_clear_grid()
 	_set_world_hud_dimmed(false)

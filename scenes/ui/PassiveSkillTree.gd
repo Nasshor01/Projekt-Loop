@@ -198,8 +198,8 @@ func _draw_connections(is_editor_preview: bool):
 			var to_ui_node = skill_ui_map[to_id_string]
 			var to_pos = to_ui_node.position + to_ui_node.size / 2.0
 			
-			var from_node = tree_data.get_node_by_id(skill_node.id)
-			var to_node = tree_data.get_node_by_id(to_id_string)
+			var _from_node = tree_data.get_node_by_id(skill_node.id)
+			var _to_node = tree_data.get_node_by_id(to_id_string)
 			
 			# Rovné čáry mezi uzly
 			var line = Line2D.new()

@@ -162,6 +162,9 @@
 "keyword.block.description","Absorbs damage before health.","Pohlcuje poškození před zdravím."
 "keyword.exhaust.title","Exhaust","Vyčerpání"
 "keyword.exhaust.description","Card is removed from combat after use.","Karta je po použití odstraněna ze souboje."
+"keyword.retain.title","Retain","Ponechání"
+"keyword.retain.description","Card is kept in hand between turns.","Karta zůstane v ruce mezi tahy."
+"card.effect.retain_keyword","Retain","Ponechání"
 "card.effect.deal_damage","{value} dmg","{value} dmg"
 "card.effect.gain_block","+{value} block","+{value} blok"
 "card.effect.heal","+{value} HP","+{value} HP"
@@ -217,6 +220,7 @@
 "card.effect.deal_damage_from_block","Dmg = Block","Poškození = Blok"
 "card.effect.deal_double_damage_from_block","Dmg = 2× Block","Poškození = 2× Blok"
 "card.effect.gain_extra_move","+1 Move","+1 pohyb"
+"card.effect.move_label","Move","pohyb"
 "card.effect.initiative","Initiative","Iniciativa"
 "card.effect.summon","Summon","Přivolání"
 "card.effect.place_terrain","Trap","Past"
@@ -226,6 +230,8 @@
 "ui.common.close","Close","Zavřít"
 "ui.common.continue","Continue","Pokračovat"
 "ui.common.back","Back","Zpět"
+"ui.common.confirm","Confirm","Potvrdit"
+"ui.common.skip","Skip","Přeskočit"
 "ui.settings.lang.english","English","Angličtina"
 "ui.settings.lang.czech","Czech","Čeština"
 "ui.main_menu.no_saved_run","No saved run found.","Žádný uložený run nenalezen."
@@ -645,8 +651,10 @@ Svaté"
 "card.gods_lightning","God's Lightning","Boží Blesk"
 "card.gods_lightning.desc","Deal 10 damage.
 If you kill an enemy, gain 1 energy.
+Gain +2 Initiative.
 Holy","Způsob 10 poškození.
 Pokud zabiješ nepřítele, získej 1 energii.
+Získej +2 Iniciativu.
 Svaté"
 "card.gods_wrath","God's Wrath","Boží Hněv"
 "card.gods_wrath.desc","Deal 10 damage.
@@ -936,8 +944,10 @@ Svaté"
 "card.gods_lightning+","God's Lightning+","Boží Blesk+"
 "card.gods_lightning+.desc","Deal 12 damage.
 If you kill an enemy, gain 1 energy.
+Gain +2 Initiative.
 Holy","Způsob 12 poškození.
 Pokud zabiješ nepřítele, získej 1 energii.
+Získej +2 Iniciativu.
 Svaté"
 "card.holy_wrath+","Holy Wrath+","Svatý Hněv+"
 "card.holy_wrath+.desc","Deal 10 damage.
@@ -1063,3 +1073,34 @@ Vyléč 8 HP.
 Způsob 10 poškození všem nepřátelům.
 Svaté
 Vyčerpání"
+"terrain.living_grove_root","Living Root","Živý kořen"
+"terrain.living_grove_root.desc","A cursed root from the Living Grove. End your turn here to draw; elsewhere you lose 1 HP.","Prokletý kořen Živého háje. Konec tahu zde = doběr; jinde −1 HP."
+"card.alchemy_vial","Alchemy Vial","Alchymistická lahvička"
+"card.alchemy_vial.desc","Heal 4.
+Exhaust","Vyléč 4.
+Vyčerpání"
+"card.alchemy_tonic","Alchemy Tonic","Alchymistický tonikum"
+"card.alchemy_tonic.desc","Gain 5 Block.
+Exhaust","Získej 5 Blok.
+Vyčerpání"
+"card.alchemy_spark","Alchemy Spark","Alchymistická jiskra"
+"card.alchemy_spark.desc","Draw 1 card.
+Exhaust","Doběr 1 kartu.
+Vyčerpání"
+"card.alchemy_reagent","Alchemy Reagent","Alchymistické činidlo"
+"card.alchemy_reagent.desc","Deal 6 damage.
+Exhaust","Způsob 6 poškození.
+Vyčerpání"
+"ui.artifact.prompt.title","Artifact","Artefakt"
+"ui.artifact.tablet.seal_title","Seal a card","Zapečetit kartu"
+"ui.artifact.tablet.seal_body","Choose 1 card to seal forever (−1 cost, +2 Block when played).","Vyber 1 kartu k trvalému zapečetění (−1 cena, +2 Blok při zahrání)."
+"ui.artifact.alchemist.title","Alchemist's Tools","Alchymistovy nástroje"
+"ui.artifact.alchemist.body","Discard 1 card from your hand to gain a temporary alchemy card.","Odhoď 1 kartu z ruky a získej dočasnou alchymistickou kartu."
+"ui.artifact.alchemist.hint","Discard 1 card from your hand to gain a temporary alchemy card.","Odhoď 1 kartu z ruky a získej dočasnou alchymistickou kartu."
+"ui.artifact.chalice.title","Crimson Chalice","Rudý kalich"
+"ui.artifact.chalice.body","Lose 3 HP. Discard 1 random card, then draw 2.","Ztráta 3 HP. Odhoď 1 náhodnou kartu a dobereš 2."
+"ui.artifact.chalice.hint","Lose 3 HP. Discard 1 random card, then draw 2.","Ztráta 3 HP. Odhoď 1 náhodnou kartu a dobereš 2."
+"ui.artifact.chalice.accept","Drink","Pít"
+"ui.artifact.eye.deny_title","All-Seeing Eye","Vševidoucí oko"
+"ui.artifact.eye.deny_body","Click an enemy to deny their next move.","Klikni na nepřítele a zakáž mu příští pohyb."
+"ui.artifact.eye.deny_hint","Click an enemy to deny their next move.","Klikni na nepřítele a zakáž mu příští pohyb."

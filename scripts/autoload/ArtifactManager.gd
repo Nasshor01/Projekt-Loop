@@ -2,17 +2,155 @@
 extends Node
 
 signal artifact_triggered(artifact_name: String, effect_description: String)
+@warning_ignore("unused_signal")
 signal extra_turn_requested
+## Tablet: GlobalUI opens deck pick for a permanent seal.
+signal permanent_seal_pick_requested
+
+const SEAL_COST_REDUCTION := 1
+const SEAL_BLOCK_BONUS := 2
 
 var _passive_artifacts: Array[ArtifactsData] = []
 var _triggered_artifacts: Dictionary = {}
 ## artifact identity -> ArtifactBehavior instance (runtime preserved across cache refresh)
 var _behavior_instances: Dictionary = {}
+## Cross-system flags (e.g. skip_enemy_round). Cleared on combat end.
+var _run_flags: Dictionary = {}
+## Queued player-facing prompts from behaviors (resolved by BattleScene).
+var _pending_prompts: Array = []
+
+
+func request_player_prompt(prompt: Dictionary) -> void:
+	if prompt.is_empty():
+		return
+	_pending_prompts.append(prompt)
+
+
+func has_pending_prompts() -> bool:
+	return not _pending_prompts.is_empty()
+
+
+func pop_pending_prompt() -> Dictionary:
+	if _pending_prompts.is_empty():
+		return {}
+	return _pending_prompts.pop_front()
+
+
+func clear_pending_prompts() -> void:
+	_pending_prompts.clear()
+
+
+func get_sealed_card_id() -> String:
+	if PlayerData and not PlayerData.sealed_card_id.is_empty():
+		return PlayerData.sealed_card_id
+	return ""
+
+
+func is_card_sealed(card: CardData) -> bool:
+	"""Seal is per CardData instance (meta), never by card_id — duplicates stay unsealed."""
+	if card == null:
+		return false
+	return card.has_meta("artifact_sealed") and bool(card.get_meta("artifact_sealed"))
+
+
+func request_permanent_seal_pick() -> void:
+	if permanent_seal_pick_requested.get_connections().is_empty():
+		# Fallback if GlobalUI has not connected yet (rare startup race).
+		if has_node("/root/GameManager"):
+			var gui = GameManager.global_ui_instance
+			if is_instance_valid(gui) and gui.has_method("begin_permanent_seal_pick"):
+				gui.call_deferred("begin_permanent_seal_pick")
+				return
+	permanent_seal_pick_requested.emit()
+
+
+func apply_permanent_seal(card: CardData) -> bool:
+	"""Stamp seal on one chosen master_deck instance. Tablet stays equipped."""
+	if card == null or not PlayerData:
+		return false
+	PlayerData.ensure_unique_master_deck_instances()
+	var idx: int = PlayerData.master_deck.find(card)
+	if idx < 0:
+		# Picker may hold a stale ref after uniquify — match by card_id once among unsealed.
+		for i in PlayerData.master_deck.size():
+			var candidate: CardData = PlayerData.master_deck[i]
+			if candidate == null:
+				continue
+			if candidate.card_id == card.card_id and not is_card_sealed(candidate):
+				idx = i
+				card = candidate
+				break
+	if idx < 0:
+		return false
+	# Only one sealed card per run.
+	for other_v in PlayerData.master_deck:
+		var other: CardData = other_v as CardData
+		if other != null and other != card and other.has_meta("artifact_sealed"):
+			other.remove_meta("artifact_sealed")
+	card.set_meta("artifact_sealed", true)
+	PlayerData.sealed_card_id = card.card_id
+	var src := card.resource_path
+	if src.is_empty() and card.has_meta("source_path"):
+		src = str(card.get_meta("source_path"))
+	PlayerData.sealed_card_source_path = src
+	return true
+
+
+func get_behavior_runtime(artifact_id: String) -> Dictionary:
+	if _behavior_instances.has(artifact_id):
+		var behavior: ArtifactBehavior = _behavior_instances[artifact_id]
+		if behavior != null:
+			return behavior.runtime
+	return {}
+
+
+func card_has_retain(card: CardData) -> bool:
+	return card != null and card.has_meta("artifact_retain") and bool(card.get_meta("artifact_retain"))
+
+
+func card_is_alchemy_temp(card: CardData) -> bool:
+	return card != null and card.has_meta("alchemy_temp") and bool(card.get_meta("alchemy_temp"))
+
+
+func apply_prompt_result(result: Dictionary) -> void:
+	var prompt_id: String = String(result.get("prompt_id", ""))
+	if prompt_id.is_empty():
+		return
+	for key in _behavior_instances:
+		var behavior: ArtifactBehavior = _behavior_instances[key]
+		if behavior != null and behavior.has_method("on_prompt_result"):
+			behavior.call("on_prompt_result", prompt_id, result)
 
 
 func _ready():
 	if PlayerData:
 		PlayerData.artifacts_changed.connect(_refresh_artifact_cache)
+
+
+func get_run_flag(key: String, default_value = null):
+	return _run_flags.get(key, default_value)
+
+
+func set_run_flag(key: String, value) -> void:
+	_run_flags[key] = value
+
+
+func clear_run_flags() -> void:
+	_run_flags.clear()
+
+
+func get_player_unit() -> Node:
+	return _get_player_unit()
+
+
+func get_enemy_count() -> int:
+	return _get_enemy_count()
+
+
+func get_card_cost(card: CardData) -> int:
+	if card == null:
+		return 0
+	return modify_card_cost(card, card.cost)
 
 
 func _artifact_key(artifact: ArtifactsData) -> String:
@@ -214,8 +352,11 @@ func get_conditional_bonus(effect_type: ArtifactsData.EffectType, context: Dicti
 func on_combat_start():
 	DebugLogger.log_info("ArtifactManager: Spouštím START_OF_COMBAT artefakty...")
 
+	clear_run_flags()
+	clear_pending_prompts()
 	_refresh_artifact_cache()
 	_dispatch_behaviors("on_combat_start", _base_ctx())
+	refresh_combat_visuals()
 
 	var results = trigger_artifacts(ArtifactsData.TriggerType.START_OF_COMBAT)
 
@@ -225,23 +366,40 @@ func on_combat_start():
 	return results
 
 
+func refresh_combat_visuals() -> void:
+	"""Re-paint throne/crown/grove/line markers (safe to call mid-combat / deferred)."""
+	_dispatch_behaviors("refresh_combat_visuals", _base_ctx())
+
+
 func on_combat_end():
 	_dispatch_behaviors("on_combat_end", _base_ctx())
+	clear_run_flags()
+	clear_pending_prompts()
 
 
 func on_turn_start():
 	DebugLogger.log_info("ArtifactManager: Spouštím START_OF_TURN artefakty...")
 
 	var context = _base_ctx()
+	_enrich_battle_ctx(context)
 	_dispatch_behaviors("on_turn_start", context)
-	_dispatch_behaviors("on_hand_ready", context)
+	_apply_turn_start_side_effects(context)
 
 	var results = trigger_artifacts(ArtifactsData.TriggerType.START_OF_TURN, context)
 	return results
 
 
+func on_hand_ready(extra_ctx: Dictionary = {}) -> void:
+	var context = _base_ctx()
+	_enrich_battle_ctx(context)
+	for k in extra_ctx:
+		context[k] = extra_ctx[k]
+	_dispatch_behaviors("on_hand_ready", context)
+
+
 func on_turn_end():
 	var context = _base_ctx()
+	_enrich_battle_ctx(context)
 	context["enemy_count"] = _get_enemy_count()
 	_dispatch_behaviors("on_turn_end", context)
 	return trigger_artifacts(ArtifactsData.TriggerType.END_OF_TURN, context)
@@ -249,27 +407,42 @@ func on_turn_end():
 
 func on_card_played(card_data: CardData):
 	var context = _base_ctx()
+	_enrich_battle_ctx(context)
 	context["card"] = card_data
-	context["card_cost"] = card_data.cost
-	context["card_id"] = card_data.card_id
-	context["card_name"] = card_data.card_name
+	context["card_cost"] = card_data.cost if card_data else 0
+	context["card_id"] = card_data.card_id if card_data else ""
+	context["card_name"] = card_data.card_name if card_data else ""
 	_dispatch_behaviors("on_card_played", context)
+	_apply_permanent_seal_on_play(card_data)
+	if bool(context.get("send_to_deck_bottom", false)) and card_data:
+		card_data.set_meta("tome_to_bottom", true)
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_CARD_PLAYED, context)
 
 
-func on_damage_taken(amount: int, attacker: Node = null):
+func _apply_permanent_seal_on_play(card_data: CardData) -> void:
+	if not is_card_sealed(card_data):
+		return
+	var player := _get_player_unit()
+	if player and player.has_method("add_block"):
+		player.add_block(SEAL_BLOCK_BONUS)
+
+
+func on_damage_taken(amount: int, attacker: Node = null) -> Dictionary:
 	var context = _base_ctx()
+	_enrich_battle_ctx(context)
 	context["damage_amount"] = amount
+	context["unblocked_amount"] = amount
 	context["attacker"] = attacker
+	context["damage_deferred"] = false
 	_dispatch_behaviors("on_damage_taken", context)
 	if amount > 0:
-		_dispatch_behaviors("on_unblocked_damage", {
-			"unblocked_amount": amount,
-			"damage_amount": amount,
-			"attacker": attacker,
-			"target": context.get("target")
-		})
-	return trigger_artifacts(ArtifactsData.TriggerType.ON_DAMAGE_TAKEN, context)
+		_dispatch_behaviors("on_unblocked_damage", context)
+	trigger_artifacts(ArtifactsData.TriggerType.ON_DAMAGE_TAKEN, context)
+	return context
+
+
+func on_unblocked_damage(amount: int, attacker: Node = null) -> Dictionary:
+	return on_damage_taken(amount, attacker)
 
 
 func on_damage_dealt(amount: int, target: Node, was_critical: bool = false):
@@ -279,6 +452,7 @@ func on_damage_dealt(amount: int, target: Node, was_critical: bool = false):
 		"critical_hit": was_critical,
 		"dealer": _get_player_unit()
 	}
+	_enrich_battle_ctx(context)
 	_dispatch_behaviors("on_damage_dealt", context)
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_DAMAGE_DEALT, context)
 
@@ -290,6 +464,7 @@ func on_enemy_death(enemy: Node):
 		"target": _get_player_unit(),
 		"enemy_count": _get_enemy_count() - 1
 	}
+	_enrich_battle_ctx(context)
 	_dispatch_behaviors("on_enemy_death", context)
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_ENEMY_DEATH, context)
 
@@ -297,6 +472,7 @@ func on_enemy_death(enemy: Node):
 func on_heal(amount: int):
 	var context = _base_ctx()
 	context["heal_amount"] = amount
+	_dispatch_behaviors("on_heal", context)
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_HEAL, context)
 
 
@@ -305,24 +481,31 @@ func on_block_gained(amount: int):
 		"block_amount": amount,
 		"target": _get_player_unit()
 	}
+	_dispatch_behaviors("on_block_gained", context)
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_BLOCK_GAINED, context)
 
 
 func modify_card_cost(card: CardData, cost: int) -> int:
 	var result := cost
 	var ctx := {"card": card, "cost": cost}
+	if not PlayerData:
+		return result
 	for artifact in PlayerData.artifacts:
 		if not _has_behavior(artifact):
 			continue
 		var behavior := _ensure_behavior(artifact)
 		if behavior:
 			result = behavior.modify_card_cost(ctx, result)
+	if is_card_sealed(card):
+		result = maxi(0, result - SEAL_COST_REDUCTION)
 	return result
 
 
 func modify_shop_price(price: int, item = null) -> int:
 	var result := price
 	var ctx := {"price": price, "item": item}
+	if not PlayerData:
+		return result
 	for artifact in PlayerData.artifacts:
 		if not _has_behavior(artifact):
 			continue
@@ -335,6 +518,8 @@ func modify_shop_price(price: int, item = null) -> int:
 func modify_gold_reward(gold: int) -> int:
 	var result := gold
 	var ctx := {"gold": gold}
+	if not PlayerData:
+		return result
 	for artifact in PlayerData.artifacts:
 		if not _has_behavior(artifact):
 			continue
@@ -344,12 +529,49 @@ func modify_gold_reward(gold: int) -> int:
 	return result
 
 
+func modify_outgoing_damage(damage: int, ctx: Dictionary = {}) -> int:
+	var result := damage
+	if not PlayerData:
+		return result
+	for artifact in PlayerData.artifacts:
+		if not _has_behavior(artifact):
+			continue
+		var behavior := _ensure_behavior(artifact)
+		if behavior:
+			result = behavior.modify_outgoing_damage(result, ctx)
+	return maxi(0, result)
+
+
+func modify_incoming_damage(damage: int, ctx: Dictionary = {}) -> int:
+	var result := damage
+	if not PlayerData:
+		return result
+	for artifact in PlayerData.artifacts:
+		if not _has_behavior(artifact):
+			continue
+		var behavior := _ensure_behavior(artifact)
+		if behavior:
+			result = behavior.modify_incoming_damage(result, ctx)
+	return maxi(0, result)
+
+
 func on_before_death(ctx: Dictionary = {}) -> Dictionary:
 	var merged := _base_ctx()
 	for k in ctx:
 		merged[k] = ctx[k]
+	if not merged.has("prevent_death"):
+		merged["prevent_death"] = false
 	_dispatch_behaviors("on_before_death", merged)
 	return merged
+
+
+## Called by Unit on lethal damage. Returns true if an artifact prevented death (e.g. Phoenix).
+func before_death(unit: Node = null) -> bool:
+	var ctx := {}
+	if unit != null:
+		ctx["target"] = unit
+	var result := on_before_death(ctx)
+	return bool(result.get("prevent_death", false))
 
 
 func on_move(steps: int = 1, from_cell: Vector2i = Vector2i.ZERO, to_cell: Vector2i = Vector2i.ZERO) -> void:
@@ -362,17 +584,33 @@ func on_move(steps: int = 1, from_cell: Vector2i = Vector2i.ZERO, to_cell: Vecto
 	})
 
 
+func on_unit_moved(unit: Node, from_cell: Vector2i = Vector2i.ZERO, to_cell: Vector2i = Vector2i.ZERO, steps: int = 1) -> void:
+	if unit == null or not is_instance_valid(unit):
+		return
+	if not _is_player_unit(unit):
+		return
+	_dispatch_behaviors("on_move", {
+		"unit": unit,
+		"steps": steps,
+		"distance": steps,
+		"from": from_cell,
+		"to": to_cell,
+		"target": unit
+	})
+
+
 func on_exhaust(card: CardData) -> Dictionary:
 	var ctx := {"card": card, "target": _get_player_unit()}
 	_dispatch_behaviors("on_exhaust", ctx)
 	return ctx
 
 
-func on_status_applied(target: Node, status_id: String, value: int) -> void:
+func on_status_applied(target: Node, status_id: String, value: int, duration: int = 1) -> void:
 	_dispatch_behaviors("on_status_applied", {
 		"target": target,
 		"status_id": status_id,
-		"value": value
+		"value": value,
+		"duration": duration
 	})
 
 
@@ -381,6 +619,52 @@ func on_thorns_damage(amount: int, target: Node = null) -> void:
 		"damage_amount": amount,
 		"target": target
 	})
+
+
+func _apply_turn_start_side_effects(context: Dictionary) -> void:
+	if bool(context.get("skip_enemy_turn", false)):
+		set_run_flag("skip_enemy_round", true)
+	if bool(context.get("show_enemy_move_preview", false)):
+		set_run_flag("show_enemy_move_preview", true)
+
+
+func _enrich_battle_ctx(context: Dictionary) -> void:
+	var battle := _find_battle_scene()
+	if battle == null:
+		return
+	var turn_v: Variant = battle.get("_current_turn_number")
+	if turn_v != null:
+		var turn_n := int(turn_v)
+		context["current_turn"] = turn_n
+		context["turn_number"] = turn_n
+
+
+func _find_battle_scene() -> Node:
+	var tree := get_tree()
+	if tree == null:
+		return null
+	var from_group: Node = tree.get_first_node_in_group("battle_scene")
+	if is_instance_valid(from_group):
+		return from_group
+	if GameManager and is_instance_valid(GameManager.current_scene):
+		var gm_scene: Node = GameManager.current_scene
+		if gm_scene.name == "BattleScene" or gm_scene.has_method("get_player_unit"):
+			return gm_scene
+	var current_scene = tree.current_scene
+	if current_scene and (current_scene.name == "BattleScene" or current_scene.has_method("get_player_unit")):
+		return current_scene
+	return null
+
+
+func _is_player_unit(unit: Node) -> bool:
+	if unit == null:
+		return false
+	if unit.is_in_group("player"):
+		return true
+	var ud: Variant = unit.get("unit_data")
+	if ud != null and ud.faction == UnitData.Faction.PLAYER:
+		return true
+	return false
 
 
 func _base_ctx() -> Dictionary:
@@ -481,7 +765,7 @@ func get_artifact_count() -> int:
 	return PlayerData.artifacts.size()
 
 
-func handle_custom_effect(artifact: ArtifactsData, context: Dictionary = {}) -> bool:
+func handle_custom_effect(artifact: ArtifactsData, _context: Dictionary = {}) -> bool:
 	# Legacy CZ custom_effect_id handlers removed — remake uses ArtifactBehavior scripts.
 	if artifact and not artifact.custom_effect_id.is_empty():
 		DebugLogger.log_warning("Unsupported custom_effect_id (legacy wiped): %s" % artifact.custom_effect_id)
@@ -491,10 +775,11 @@ func handle_custom_effect(artifact: ArtifactsData, context: Dictionary = {}) -> 
 func on_energy_spent(amount: int):
 	var context = {
 		"energy_spent": amount,
-		"current_energy": PlayerData.current_energy,
-		"max_energy": PlayerData.max_energy,
+		"current_energy": PlayerData.current_energy if PlayerData else 0,
+		"max_energy": PlayerData.max_energy if PlayerData else 0,
 		"target": _get_player_unit()
 	}
+	_dispatch_behaviors("on_energy_spent", context)
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_ENERGY_SPENT, context)
 
 
@@ -502,9 +787,10 @@ func on_draw_cards(cards_drawn: int, total_requested: int):
 	var context = {
 		"cards_drawn": cards_drawn,
 		"total_cards_requested": total_requested,
-		"hand_size": PlayerData.current_hand.size(),
+		"hand_size": PlayerData.current_hand.size() if PlayerData else 0,
 		"target": _get_player_unit()
 	}
+	_dispatch_behaviors("on_draw_cards", context)
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_DRAW_CARDS, context)
 
 

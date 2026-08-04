@@ -16,4 +16,6 @@ func on_before_death(ctx: Dictionary = {}) -> void:
 	_add_combat_damage_bonus(STRENGTH_BONUS)
 	if PlayerData:
 		PlayerData.set_meta("phoenix_feather_used", true)
+	if player.has_method("show_status_text"):
+		player.show_status_text("PHOENIX!", "heal")
 	ctx["prevent_death"] = true

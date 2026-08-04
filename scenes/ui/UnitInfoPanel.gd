@@ -1,6 +1,6 @@
 # Soubor: res://scenes/ui/UnitInfoPanel.gd
-# Kompaktní info panel (enemy hover / player). HP a intent jsou na gridu —
-# panel prioritizuje hrozbu, pasiva a statusy; výška se clampuje, scroll jen při overflow.
+# Kompaktní info panel (enemy hover / player). HP a intent jsou na gridu.
+# Panel se AUTOMATICKY roztáhne podle obsahu; scroll jen když už není kam růst.
 extends PanelContainer
 
 const ICON_BURNING = preload("res://art/icons/status/Bleed.png")
@@ -25,12 +25,12 @@ const ICON_DEFAULT = preload("res://art/icons/status/Poison.png")
 const PANEL_WIDTH := 260.0
 const PANEL_MARGIN_V := 20.0 # top+bottom content margins
 const VIEWPORT_MARGIN := 12.0
-const BOTTOM_SAFE_MARGIN := 96.0
 const TOP_SAFE_MARGIN := 90.0
 ## Keep clear of draw/discard piles anchored on the far-right edge.
 const RIGHT_PILE_SAFE_MARGIN := 88.0
 const STATUS_ICON_SIZE := 16
 const CHIP_FONT_SIZE := 12
+const MIN_PANEL_HEIGHT := 80.0
 
 const COLOR_MUTED := Color(0.72, 0.76, 0.84, 1)
 const COLOR_CHIP_BG := Color(0.14, 0.16, 0.22, 0.95)
@@ -68,6 +68,11 @@ const COLOR_CHIP_ALERT_FG := Color(1.0, 0.72, 0.55, 1)
 
 var _content_fingerprint: String = ""
 var _fit_queued: bool = false
+## Scene-authored bottom + side anchors — bottom stays pinned; top grows with content.
+var _pinned_offset_bottom: float = -96.0
+var _pinned_offset_left: float = 12.0
+var _pinned_offset_right: float = 272.0
+var _pins_cached: bool = false
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(PANEL_WIDTH, 0)
@@ -76,8 +81,22 @@ func _ready() -> void:
 		scroll_container.mouse_filter = Control.MOUSE_FILTER_STOP
 		scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 		scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		scroll_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	if content_root:
+		# SHRINK_BEGIN is required for ScrollContainer to scroll (EXPAND breaks it).
+		content_root.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		content_root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_apply_section_headers()
+	_cache_layout_pins()
 	hide_panel()
+
+
+func _cache_layout_pins() -> void:
+	"""Lock bottom + side slots from the scene. Top is free to grow upward."""
+	_pinned_offset_bottom = offset_bottom
+	_pinned_offset_left = offset_left
+	_pinned_offset_right = offset_right
+	_pins_cached = true
 
 func _apply_section_headers() -> void:
 	if intent_header:
@@ -190,7 +209,6 @@ func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
 		return
 	enemy_section.visible = true
 
-	# Intent — krátký title + detail bez "Next Move:"
 	var short_txt := ""
 	var detail_txt := ""
 	if unit_node.has_method("get_intent_short_text"):
@@ -200,20 +218,25 @@ func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
 	elif unit_node.has_method("get_intent_display_text"):
 		detail_txt = str(unit_node.get_intent_display_text()).strip_edges()
 
+	# Strip redundant "Next Move:" — section header already says NEXT.
+	for prefix in ["Next Move: ", "Další tah: ", "Next: "]:
+		if detail_txt.begins_with(prefix):
+			detail_txt = detail_txt.substr(prefix.length()).strip_edges()
+			break
+
 	if short_txt.is_empty() and detail_txt.is_empty():
 		intent_title_label.text = tr("ui.unit_info.intent_unknown")
 		intent_detail_label.visible = false
 	elif short_txt.is_empty():
 		intent_title_label.text = detail_txt
 		intent_detail_label.visible = false
+	elif detail_txt.is_empty() or detail_txt.to_upper() == short_txt.to_upper():
+		intent_title_label.text = short_txt
+		intent_detail_label.visible = false
 	else:
 		intent_title_label.text = short_txt
-		# Detail jen když přidává info (ne jen synonymum short title)
-		if _is_useful_intent_detail(short_txt, detail_txt):
-			intent_detail_label.text = detail_txt
-			intent_detail_label.visible = true
-		else:
-			intent_detail_label.visible = false
+		intent_detail_label.text = detail_txt
+		intent_detail_label.visible = true
 	intent_box.visible = true
 
 	# Passives jako chipy
@@ -239,15 +262,6 @@ func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
 		alerts_section.visible = true
 		for alert_text in alerts:
 			alerts_flow.add_child(_make_chip(alert_text, COLOR_CHIP_ALERT_BG, COLOR_CHIP_ALERT_FG))
-
-func _is_useful_intent_detail(short_txt: String, detail_txt: String) -> bool:
-	if detail_txt.is_empty():
-		return false
-	if detail_txt.to_upper() == short_txt.to_upper():
-		return false
-	if detail_txt.contains("(") or detail_txt.contains("+") or detail_txt.contains("%"):
-		return true
-	return detail_txt.split(" ", false).size() > 1
 
 func _update_status_display(unit_node: Node) -> void:
 	_clear_container(status_effects_list)
@@ -350,7 +364,6 @@ func _get_status_display_info(status_id: String, status_data: Dictionary) -> Dic
 
 	match status_id:
 		"aiming":
-			# Status value is absolute % of base damage (250 = 250% / 2.5×), same as ArcherAI.
 			return {"text": TranslationHelper.tr_format("status.label.aiming", {"value": val}), "color": Color.ORANGE}
 		"aura_devotion":
 			return {"text": TranslationHelper.tr_format("status.label.aura_devotion", {"value": val}), "color": Color.LIGHT_BLUE}
@@ -455,51 +468,68 @@ func _queue_fit_panel_height() -> void:
 	if _fit_queued:
 		return
 	_fit_queued = true
-	# Po přidání chipů/labelů počkáme 1 frame na layout (jako CardTooltip)
 	if is_inside_tree():
 		get_tree().process_frame.connect(_fit_panel_height, CONNECT_ONE_SHOT)
 	else:
 		call_deferred("_fit_panel_height")
 
 func _fit_panel_height() -> void:
+	"""Auto-expand panel to content height. Scroll only when viewport cap is hit."""
 	_fit_queued = false
 	if not visible or not is_instance_valid(scroll_container) or not is_instance_valid(content_root):
 		return
+	if not _pins_cached:
+		_cache_layout_pins()
 
-	var max_h := _get_max_panel_height()
-	var content_width := PANEL_WIDTH - 24.0 # side margins
+	var content_width := PANEL_WIDTH - 24.0
 	_set_wrap_width(content_root, content_width)
+	content_root.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 
+	# Measure natural content height (no artificial scroll min-height).
 	scroll_container.scroll_vertical = 0
 	scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll_container.custom_minimum_size = Vector2(content_width, 0)
 
-	# Necháme layout spočítat min. výšku obsahu
+	# One more frame so chips/labels finish layout before measuring.
+	if is_inside_tree():
+		await get_tree().process_frame
+	if not visible or not is_instance_valid(content_root):
+		return
+
 	var content_h: float = content_root.get_combined_minimum_size().y
 	var desired: float = content_h + PANEL_MARGIN_V
-	var capped: float = minf(desired, max_h)
+	var max_h: float = _get_max_panel_height()
+	var height: float = clampf(desired, MIN_PANEL_HEIGHT, max_h)
+	var needs_scroll: bool = desired > max_h + 0.5
 
-	custom_minimum_size = Vector2(PANEL_WIDTH, capped)
-	size = Vector2(PANEL_WIDTH, capped)
-	_apply_anchored_height(capped)
+	_apply_anchored_height(height)
 
-	if desired > max_h + 0.5:
+	# Scroll fills the panel; content stays shrink so overflow can scroll.
+	scroll_container.custom_minimum_size = Vector2.ZERO
+	if needs_scroll:
 		scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-		scroll_container.custom_minimum_size.y = maxf(0.0, capped - PANEL_MARGIN_V)
 	else:
 		scroll_container.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-		scroll_container.custom_minimum_size.y = content_h
 
 func _apply_anchored_height(height: float) -> void:
-	"""U bottom-anchored panelu nastaví offset_top tak, aby výška = height (roste nahoru)."""
+	"""Bottom-anchored: pin bottom/sides, grow/shrink top to match content height."""
+	if not _pins_cached:
+		_cache_layout_pins()
 	if anchor_bottom < 0.99:
+		custom_minimum_size = Vector2(PANEL_WIDTH, height)
 		return
-	offset_top = offset_bottom - height
-	# Enemy panel (right-anchored): never grow into the draw/discard pile column.
+
+	offset_bottom = _pinned_offset_bottom
+	offset_top = _pinned_offset_bottom - height
+
 	if anchor_right >= 0.99 and anchor_left >= 0.99:
-		if offset_right > -RIGHT_PILE_SAFE_MARGIN:
-			offset_right = -RIGHT_PILE_SAFE_MARGIN
+		offset_right = minf(_pinned_offset_right, -RIGHT_PILE_SAFE_MARGIN)
 		offset_left = offset_right - PANEL_WIDTH
+	else:
+		offset_left = _pinned_offset_left
+		offset_right = _pinned_offset_right
+
+	custom_minimum_size = Vector2(PANEL_WIDTH, height)
 
 func _set_wrap_width(node: Node, width: float) -> void:
 	if node is Label:
@@ -515,13 +545,17 @@ func _set_wrap_width(node: Node, width: float) -> void:
 		_set_wrap_width(child, width)
 
 func _get_max_panel_height() -> float:
+	"""Max height = from pinned bottom up to GlobalUI / top safe line (full auto-expand room)."""
+	if not is_inside_tree():
+		return 420.0
 	var viewport_h := get_viewport().get_visible_rect().size.y
 	var top_safe := TOP_SAFE_MARGIN
-	if Engine.is_editor_hint() or not is_inside_tree():
+	if Engine.is_editor_hint():
 		top_safe = VIEWPORT_MARGIN
 	else:
 		var gm = get_node_or_null("/root/GameManager")
 		if gm == null or not is_instance_valid(gm.global_ui_instance) or not gm.global_ui_instance.visible:
 			top_safe = VIEWPORT_MARGIN
-	var available := viewport_h - top_safe - BOTTOM_SAFE_MARGIN
-	return clampf(available, 120.0, 360.0)
+	# offset_bottom is negative from bottom; available height above that pin.
+	var available: float = viewport_h + _pinned_offset_bottom - top_safe
+	return maxf(MIN_PANEL_HEIGHT, available)

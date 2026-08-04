@@ -4,7 +4,7 @@ const START_THORNS := 2
 const MAX_BLOCK_PER_TURN := 3
 
 
-func on_combat_start(ctx: Dictionary = {}) -> void:
+func on_combat_start(_ctx: Dictionary = {}) -> void:
 	_add_combat_thorns(START_THORNS)
 	runtime["block_this_turn"] = 0
 
@@ -14,7 +14,7 @@ func on_turn_start(ctx: Dictionary = {}) -> void:
 	runtime["block_this_turn"] = 0
 
 
-func on_thorns_damage(ctx: Dictionary = {}) -> void:
+func on_thorns_damage(_ctx: Dictionary = {}) -> void:
 	if int(runtime.get("block_this_turn", 0)) >= MAX_BLOCK_PER_TURN:
 		return
 	var player := _get_player_unit()

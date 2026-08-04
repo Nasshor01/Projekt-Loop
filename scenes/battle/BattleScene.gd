@@ -50,6 +50,21 @@ const SHAPE_DIAMOND = [
 @onready var initiative_bar = $CanvasLayer/InitiativeBar
 @onready var card_tooltip: CardTooltip = $CanvasLayer/CardTooltip
 
+## STS2-style artifact interact — layout lives in BattleScene.tscn under ArtifactInteractUI.
+## HandPrompt (above hand) = Alchemist / Chalice. SidePrompt (right) = All-Seeing Eye.
+var _artifact_interact_mode: String = "" # "", "alchemist", "chalice", "eye"
+var _artifact_interact_waiting: bool = false
+@onready var _artifact_interact_root: Control = %ArtifactInteractUI
+@onready var _artifact_hand_prompt: VBoxContainer = %HandPrompt
+@onready var _artifact_side_prompt: VBoxContainer = %SidePrompt
+@onready var _artifact_title_label: Label = %TitleLabel
+@onready var _artifact_body_label: Label = %BodyLabel
+@onready var _artifact_drink_btn: Button = %DrinkButton
+@onready var _artifact_skip_btn: Button = %SkipButton
+@onready var _artifact_side_title_label: Label = %SideTitleLabel
+@onready var _artifact_side_body_label: Label = %SideBodyLabel
+@onready var _artifact_side_skip_btn: Button = %SideSkipButton
+
 @export var camera_3d: Camera3D 
 
 enum PlayerActionState { IDLE, CARD_SELECTED, UNIT_SELECTED }
@@ -142,6 +157,7 @@ func _ready():
 	if has_node("/root/ArtifactManager") and not ArtifactManager.extra_turn_requested.is_connected(_on_artifact_extra_turn_requested):
 		ArtifactManager.extra_turn_requested.connect(_on_artifact_extra_turn_requested)
 
+	_wire_artifact_interact_ui()
 	_update_ui_texts()
 	
 	_setup_camera_boundaries()
@@ -259,6 +275,19 @@ func _unhandled_input(event: InputEvent):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		var clicked_grid_cell = get_grid_cell_under_mouse()
 		DebugLogger.log_debug("KLIK! Grid coords: %s" % str(clicked_grid_cell))
+
+		# All-Seeing Eye deny pick: click an enemy on the grid
+		if _artifact_interact_mode == "eye" and _artifact_interact_waiting:
+			var picked = _resolve_living_unit_on_cell(clicked_grid_cell)
+			if is_instance_valid(picked) and picked is Unit and picked.get_unit_data().faction == UnitData.Faction.ENEMY:
+				ArtifactManager.apply_prompt_result({
+					"prompt_id": "all_seeing_deny",
+					"accepted": true,
+					"enemy": picked,
+				})
+				_finish_artifact_interact()
+				get_viewport().set_input_as_handled()
+				return
 		
 		# Logika SPAWN
 		if _current_battle_state == BattleState.AWAITING_PLAYER_SPAWN:
@@ -338,15 +367,18 @@ func _on_round_started(round_number: int):
 	_update_turn_display()
 	DebugLogger.log_info("=== KOLO %d ===" % round_number)
 
-	if is_instance_valid(initiative_bar) and has_node("/root/TurnManager"):
-		initiative_bar.update_turn_order(TurnManager.get_turn_order())
+	if is_instance_valid(initiative_bar):
+		if initiative_bar.has_method("refresh_from_turn_manager"):
+			initiative_bar.refresh_from_turn_manager()
+		elif has_node("/root/TurnManager"):
+			initiative_bar.update_turn_order(TurnManager.get_turn_order())
 
 func _on_turn_started(unit: Unit):
 	"""Volá se když je na řadě další jednotka"""
 	if is_instance_valid(initiative_bar):
+		if initiative_bar.has_method("refresh_from_turn_manager"):
+			initiative_bar.refresh_from_turn_manager()
 		initiative_bar.set_active_unit(unit)
-		if initiative_bar.has_method("advance_to_active"):
-			initiative_bar.advance_to_active(unit)
 
 	if not is_instance_valid(unit):
 		TurnManager.next_turn()
@@ -378,7 +410,10 @@ func _on_turn_started(unit: Unit):
 
 func _on_initiative_modifiers_changed(_unit: Unit, _total_initiative: int):
 	if is_instance_valid(initiative_bar):
-		initiative_bar.refresh_initiatives()
+		if initiative_bar.has_method("refresh_from_turn_manager"):
+			initiative_bar.refresh_from_turn_manager()
+		elif initiative_bar.has_method("refresh_initiatives"):
+			initiative_bar.refresh_initiatives()
 
 func _start_player_initiative_turn(_player_unit: Unit, extra_draw: int = 0):
 	"""Zahájí tah hráče v iniciativním systému"""
@@ -483,6 +518,16 @@ func _process_enemy_actions(enemy_unit: Unit):
 	
 	# Získáme POLE akcí z nového multi-action systému
 	var actions: Array = ai_instance.get_actions(enemy_unit, player_units_array, battle_grid_instance)
+
+	# All-Seeing Eye (and similar): deny MOVE/RUSH for one turn
+	if enemy_unit.has_meta("artifact_deny_move_next_turn") and bool(enemy_unit.get_meta("artifact_deny_move_next_turn")):
+		var filtered: Array = []
+		for action in actions:
+			if action.type == EnemyAIBase.AIAction.ActionType.MOVE or action.type == EnemyAIBase.AIAction.ActionType.RUSH:
+				continue
+			filtered.append(action)
+		actions = filtered
+		enemy_unit.remove_meta("artifact_deny_move_next_turn")
 	
 	# Tracking pro berserker frustraci
 	var did_attack_or_rush = false
@@ -638,8 +683,8 @@ func start_player_spawn_selection():
 		_coop_spawn_phase = 0
 		_coop_host_spawn_cell = Vector2i(-1, -1)
 		_coop_client_spawn_cell = Vector2i(-1, -1)
-		var spawn_points = battle_grid_instance.get_player_spawn_points(3)
-		battle_grid_instance.show_player_spawn_points(spawn_points)
+		var coop_spawn_points = battle_grid_instance.get_player_spawn_points(3)
+		battle_grid_instance.show_player_spawn_points(coop_spawn_points)
 		end_turn_button.disabled = true
 		return
 	_current_battle_state = BattleState.AWAITING_PLAYER_SPAWN
@@ -741,6 +786,7 @@ func _coop_spawn_two_players_at_positions(host_cell: Vector2i, client_cell: Vect
 		_add_coop_unit_label(u1, false)
 	if has_node("/root/ArtifactManager"):
 		ArtifactManager.on_combat_start()
+		call_deferred("_resync_artifact_grid_visuals")
 	spawn_enemy_units()
 	_place_terrain_features()
 	var all_units: Array[Unit] = [u1, u2]
@@ -769,6 +815,13 @@ func _start_combat_with_turn_manager(units_to_start: Array[Unit]):
 	else:
 		printerr("BattleScene: TurnManager není dostupný pro start_combat!")
 
+
+func _resync_artifact_grid_visuals() -> void:
+	"""Re-apply throne/crown/grove/line visuals once the grid is fully live."""
+	if not has_node("/root/ArtifactManager"):
+		return
+	ArtifactManager.refresh_combat_visuals()
+
 func confirm_player_spawn(at_position: Vector2i):
 	battle_grid_instance.hide_player_spawn_points()
 	
@@ -779,6 +832,8 @@ func confirm_player_spawn(at_position: Vector2i):
 	# NOVÉ: Reset artefaktů na začátku souboje (PŘED prvním tahem)
 	if has_node("/root/ArtifactManager"):
 		ArtifactManager.on_combat_start()
+		# One frame later: grid/camera are fully ready — re-paint zone markers.
+		call_deferred("_resync_artifact_grid_visuals")
 
 	# ===== OPRAVA ZDE: Definice 'all_units' =====
 	# Musíme shromáždit všechny jednotky, abychom je mohli předat TurnManageru
@@ -909,6 +964,165 @@ func _finish_drawing_hand():
 	end_turn_button.disabled = false
 	if has_node("/root/ArtifactManager"):
 		ArtifactManager.on_hand_ready()
+		_sync_hand_ui_after_artifacts()
+		await _run_sts2_artifact_interactions()
+		_sync_hand_ui_after_artifacts()
+		# Refresh cost/badge display after seal/retain/temp changes.
+		if is_instance_valid(player_hand_ui_instance):
+			for child in player_hand_ui_instance.get_children():
+				if child is CardUI and child.has_method("update_display"):
+					child.update_display()
+
+
+func _wire_artifact_interact_ui() -> void:
+	if is_instance_valid(_artifact_interact_root):
+		_artifact_interact_root.visible = false
+	if is_instance_valid(_artifact_hand_prompt):
+		_artifact_hand_prompt.visible = false
+	if is_instance_valid(_artifact_side_prompt):
+		_artifact_side_prompt.visible = false
+	if is_instance_valid(_artifact_skip_btn) and not _artifact_skip_btn.pressed.is_connected(_on_artifact_skip_pressed):
+		_artifact_skip_btn.pressed.connect(_on_artifact_skip_pressed)
+	if is_instance_valid(_artifact_side_skip_btn) and not _artifact_side_skip_btn.pressed.is_connected(_on_artifact_skip_pressed):
+		_artifact_side_skip_btn.pressed.connect(_on_artifact_skip_pressed)
+	if is_instance_valid(_artifact_drink_btn) and not _artifact_drink_btn.pressed.is_connected(_on_artifact_drink_pressed):
+		_artifact_drink_btn.pressed.connect(_on_artifact_drink_pressed)
+
+
+func _run_sts2_artifact_interactions() -> void:
+	if not has_node("/root/ArtifactManager"):
+		return
+	# Drain any leftover modal prompts (legacy) without showing them as boxes.
+	while ArtifactManager.has_pending_prompts():
+		ArtifactManager.pop_pending_prompt()
+
+	if bool(ArtifactManager.get_run_flag("pending_alchemist_discard", false)):
+		ArtifactManager.set_run_flag("pending_alchemist_discard", false)
+		await _begin_artifact_interact("alchemist")
+		_sync_hand_ui_after_artifacts()
+
+	if bool(ArtifactManager.get_run_flag("pending_chalice", false)):
+		ArtifactManager.set_run_flag("pending_chalice", false)
+		await _begin_artifact_interact("chalice")
+		_sync_hand_ui_after_artifacts()
+
+	if bool(ArtifactManager.get_run_flag("pending_eye_deny", false)):
+		ArtifactManager.set_run_flag("pending_eye_deny", false)
+		await _begin_artifact_interact("eye")
+
+
+func _begin_artifact_interact(mode: String) -> void:
+	if not is_instance_valid(_artifact_interact_root):
+		return
+	_artifact_interact_mode = mode
+	_artifact_interact_waiting = true
+	end_turn_button.disabled = true
+	if is_instance_valid(win_button):
+		win_button.visible = false
+	_reset_player_selection()
+
+	var use_hand_prompt := mode == "alchemist" or mode == "chalice"
+	if is_instance_valid(_artifact_hand_prompt):
+		_artifact_hand_prompt.visible = use_hand_prompt
+	if is_instance_valid(_artifact_side_prompt):
+		_artifact_side_prompt.visible = not use_hand_prompt
+
+	if use_hand_prompt:
+		match mode:
+			"alchemist":
+				_artifact_title_label.text = tr("ui.artifact.alchemist.title")
+				_artifact_body_label.text = tr("ui.artifact.alchemist.body")
+				_artifact_drink_btn.visible = false
+				_set_hand_drag_enabled(false)
+			"chalice":
+				_artifact_title_label.text = tr("ui.artifact.chalice.title")
+				_artifact_body_label.text = tr("ui.artifact.chalice.body")
+				_artifact_drink_btn.visible = true
+				_artifact_drink_btn.text = tr("ui.artifact.chalice.accept")
+		_artifact_skip_btn.visible = true
+		_artifact_skip_btn.text = tr("ui.common.skip")
+	else:
+		_artifact_side_title_label.text = tr("ui.artifact.eye.deny_title")
+		_artifact_side_body_label.text = tr("ui.artifact.eye.deny_body")
+		_artifact_side_skip_btn.text = tr("ui.common.skip")
+		ArtifactManager.set_run_flag("artifact_pick_enemy_deny", true)
+
+	_artifact_interact_root.visible = true
+
+	while _artifact_interact_waiting:
+		await get_tree().process_frame
+
+
+func _finish_artifact_interact() -> void:
+	_artifact_interact_waiting = false
+	_artifact_interact_mode = ""
+	if is_instance_valid(_artifact_interact_root):
+		_artifact_interact_root.visible = false
+	if is_instance_valid(_artifact_hand_prompt):
+		_artifact_hand_prompt.visible = false
+	if is_instance_valid(_artifact_side_prompt):
+		_artifact_side_prompt.visible = false
+	if is_instance_valid(_artifact_drink_btn):
+		_artifact_drink_btn.visible = false
+	_set_hand_drag_enabled(true)
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager.set_run_flag("artifact_pick_enemy_deny", false)
+	end_turn_button.disabled = false
+	if is_instance_valid(win_button) and OS.is_debug_build():
+		win_button.visible = true
+
+
+func _on_artifact_skip_pressed() -> void:
+	if not _artifact_interact_waiting:
+		return
+	match _artifact_interact_mode:
+		"alchemist":
+			ArtifactManager.apply_prompt_result({"prompt_id": "alchemist_discard", "accepted": false})
+		"chalice":
+			ArtifactManager.apply_prompt_result({"prompt_id": "crimson_chalice", "accepted": false})
+		"eye":
+			ArtifactManager.apply_prompt_result({"prompt_id": "all_seeing_deny", "accepted": false})
+	_finish_artifact_interact()
+
+
+func _on_artifact_drink_pressed() -> void:
+	if not _artifact_interact_waiting or _artifact_interact_mode != "chalice":
+		return
+	ArtifactManager.apply_prompt_result({"prompt_id": "crimson_chalice", "accepted": true})
+	_finish_artifact_interact()
+
+
+func _set_hand_drag_enabled(enabled: bool) -> void:
+	if not is_instance_valid(player_hand_ui_instance):
+		return
+	for child in player_hand_ui_instance.get_children():
+		if child is CardUI:
+			child.is_draggable = enabled
+
+
+func _sync_hand_ui_after_artifacts() -> void:
+	"""Rebuild CardUI if artifact hooks mutated PlayerData.current_hand (Chalice/Alchemist)."""
+	if not is_instance_valid(player_hand_ui_instance) or not PlayerData:
+		return
+	var ui_cards: Array = player_hand_ui_instance.get_children().filter(func(c): return c is CardUI)
+	var ui_data: Array = []
+	for c in ui_cards:
+		if c.card_data:
+			ui_data.append(c.card_data)
+	var data_hand: Array = PlayerData.current_hand.duplicate()
+	if ui_data.size() == data_hand.size():
+		var same := true
+		for i in range(data_hand.size()):
+			if ui_data[i] != data_hand[i]:
+				same = false
+				break
+		if same:
+			return
+	player_hand_ui_instance.clear_hand()
+	for card_data in data_hand:
+		player_hand_ui_instance.add_card_to_hand(card_data)
+	player_hand_ui_instance._request_arrange()
+	_update_pile_counts()
 
 
 func _on_artifact_extra_turn_requested():
@@ -1002,8 +1216,11 @@ func _on_unit_died(unit_node: Unit):
 		TurnManager.unregister_unit(unit_node)
 	
 	# Okamžitě aktualizuj initiative bar (jinak mrtvý zůstane v UI do konce kola)
-	if is_instance_valid(initiative_bar) and has_node("/root/TurnManager"):
-		initiative_bar.update_turn_order(TurnManager.get_turn_order())
+	if is_instance_valid(initiative_bar):
+		if initiative_bar.has_method("refresh_from_turn_manager"):
+			initiative_bar.refresh_from_turn_manager()
+		elif has_node("/root/TurnManager"):
+			initiative_bar.update_turn_order(TurnManager.get_turn_order())
 	
 	# Animace zmizení pro 3D (Scale místo Modulate)
 	# Nepřátelé pomaleji — ať je vidět smrt z pasti / poslední hit
@@ -1124,6 +1341,19 @@ func spawn_enemy_units():
 	DebugLogger.log_debug("Celkem nepřátel: %d" % _enemy_units.size())
 
 func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: CardData):
+	if _artifact_interact_mode == "alchemist" and _artifact_interact_waiting:
+		if not PlayerData.current_hand.has(card_data_resource):
+			return
+		ArtifactManager.apply_prompt_result({
+			"prompt_id": "alchemist_discard",
+			"accepted": true,
+			"card": card_data_resource,
+		})
+		_finish_artifact_interact()
+		_sync_hand_ui_after_artifacts()
+		return
+	if _artifact_interact_waiting:
+		return
 	if _current_battle_state != BattleState.PLAYER_TURN: return
 	# Guard: blokovat výběr karty pokud se právě zpracovává akce nebo se hraje karta
 	if _is_action_processing or _card_play_in_progress: return
@@ -1144,6 +1374,9 @@ func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: Car
 	_show_valid_targets_for_card(card_data_resource)
 
 func _on_player_hand_card_drag_started(card_ui_node: Control, card_data_resource: CardData):
+	if _artifact_interact_waiting:
+		player_hand_ui_instance.cancel_drag_ui()
+		return
 	if _current_battle_state != BattleState.PLAYER_TURN:
 		player_hand_ui_instance.cancel_drag_ui()
 		return
@@ -1281,7 +1514,7 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 	
 	for effect_data in ordered_effects:
 		if effect_data.effect_type == CardEffectData.EffectType.PLACE_TERRAIN:
-			if await _try_place_terrain_effect(effect_data, resolved_cell, card):
+			if _try_place_terrain_effect(effect_data, resolved_cell, card):
 				card_played_successfully = true
 			continue
 		var targets = _get_targets_for_effect(effect_data, initial_target, card)
@@ -1506,11 +1739,18 @@ func _move_unit_along_path(unit: Unit, path: Array[Vector2i], step_duration: flo
 		if not is_instance_valid(unit) or unit.current_health <= 0:
 			break
 		var cell: Vector2i = path[i]
-		final_pos = cell
+		var prev_cell: Vector2i = unit.grid_position
 
 		battle_grid_instance.remove_object_by_instance(unit)
 		if not battle_grid_instance.place_object_on_cell(unit, cell, true, step_duration):
+			# CRITICAL: restore occupancy — otherwise unit is a ghost and summons can stack on it.
+			if not battle_grid_instance.place_object_on_cell(unit, prev_cell, false):
+				push_error("BattleScene: failed to restore unit '%s' to cell %s after blocked move" % [
+					String(unit.unit_data.unit_id) if unit.unit_data else String(unit.name), str(prev_cell)
+				])
 			break
+
+		final_pos = cell
 
 		if has_node("/root/AudioManager"):
 			AudioManager.play_footstep()
@@ -1600,7 +1840,16 @@ func _rush_unit_along_path(unit: Unit, path: Array[Vector2i]) -> Vector2i:
 				break
 
 	if is_instance_valid(unit) and unit.current_health > 0:
-		battle_grid_instance.place_object_on_cell(unit, final_pos, false)
+		if not battle_grid_instance.place_object_on_cell(unit, final_pos, false):
+			# Rush left the unit off-grid; never leave a ghost (enables summon stacking).
+			var fallback: Vector2i = path[0]
+			if not battle_grid_instance.place_object_on_cell(unit, fallback, false):
+				push_error("BattleScene: rush restore failed for '%s'" % (
+					String(unit.unit_data.unit_id) if unit.unit_data else String(unit.name)
+				))
+			else:
+				final_pos = fallback
+				unit.position = battle_grid_instance.get_world_position_for_cell(fallback)
 	return final_pos
 
 func _teleport_unit_to_cell(unit: Unit, target_cell: Vector2i) -> Vector2i:
@@ -2143,7 +2392,7 @@ func _show_valid_targets_for_card(card: CardData):
 			CardEffectData.TargetType.EMPTY_GRID_CELL:
 				is_attack = false
 				for cell in battle_grid_instance.get_all_active_cells():
-					if battle_grid_instance.get_object_on_cell(cell) != null:
+					if _resolve_living_unit_on_cell(cell) != null:
 						continue
 					var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, cell)
 					if distance <= card.range_value:
@@ -2152,7 +2401,7 @@ func _show_valid_targets_for_card(card: CardData):
 				if effect.effect_type == CardEffectData.EffectType.PLACE_TERRAIN:
 					is_attack = false
 					for cell in battle_grid_instance.get_all_active_cells():
-						if battle_grid_instance.get_object_on_cell(cell) != null:
+						if _resolve_living_unit_on_cell(cell) != null:
 							continue
 						var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, cell)
 						if distance <= card.range_value:
@@ -2191,11 +2440,24 @@ func set_enemy_intents():
 		if not enemy_unit.has_method("update_intent"):
 			continue
 		enemy_unit.update_intent(_player_unit_node, battle_grid_instance)
+	# All-Seeing Eye: show move range for ALL living enemies when preview is flagged
+	if has_node("/root/ArtifactManager") and ArtifactManager.get_run_flag("show_enemy_move_preview", false):
+		if is_instance_valid(battle_grid_instance) and battle_grid_instance.has_method("show_all_enemy_move_previews"):
+			var living: Array = []
+			for enemy_unit in _enemy_units:
+				if is_instance_valid(enemy_unit) and enemy_unit.current_health > 0:
+					living.append(enemy_unit)
+			battle_grid_instance.show_all_enemy_move_previews(living)
+		elif is_instance_valid(battle_grid_instance) and battle_grid_instance.has_method("show_enemy_range"):
+			for enemy_unit in _enemy_units:
+				if is_instance_valid(enemy_unit) and enemy_unit.current_health > 0:
+					battle_grid_instance.show_enemy_range(enemy_unit)
+					break
 
-func _set_enemy_intents_visible(visible: bool) -> void:
+func _set_enemy_intents_visible(intents_visible: bool) -> void:
 	for enemy_unit in _enemy_units:
 		if is_instance_valid(enemy_unit) and enemy_unit.has_method("set_intent_visibility_allowed"):
-			enemy_unit.set_intent_visibility_allowed(visible)
+			enemy_unit.set_intent_visibility_allowed(intents_visible)
 
 # OPRAVA: Return type je Unit (což je Node3D, takže ok, ale explicitní Unit je lepší)
 func _spawn_unit(unit_data: UnitData, grid_pos: Vector2i) -> Unit:
@@ -2336,7 +2598,7 @@ func _try_play_selected_card_at_cell(clicked_grid_cell: Vector2i) -> bool:
 			return true
 		return false
 
-	var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
+	var target_node = _resolve_living_unit_on_cell(clicked_grid_cell)
 
 	if has_empty_cell_effect:
 		if is_instance_valid(target_node):
@@ -2395,7 +2657,7 @@ func _execute_card_play_at_cell(card: CardData, clicked_grid_cell: Vector2i) -> 
 			try_play_card(card, _player_unit_node)
 			return true
 		return false
-	var target_node = battle_grid_instance.get_object_on_cell(clicked_grid_cell)
+	var target_node = _resolve_living_unit_on_cell(clicked_grid_cell)
 	if has_empty_cell_effect:
 		if is_instance_valid(target_node):
 			return false
@@ -2419,6 +2681,19 @@ func _execute_card_play_at_cell(card: CardData, clicked_grid_cell: Vector2i) -> 
 	_card_play_in_progress = true
 	try_play_card(card, target_node, clicked_grid_cell)
 	return true
+
+func _resolve_living_unit_on_cell(cell: Vector2i) -> Node:
+	"""Grid occupancy first; if desynced (ghost), fall back to living units claiming that cell."""
+	if is_instance_valid(battle_grid_instance):
+		var on_grid = battle_grid_instance.get_object_on_cell(cell)
+		if is_instance_valid(on_grid):
+			return on_grid
+	for enemy in _enemy_units:
+		if is_instance_valid(enemy) and enemy.current_health > 0 and enemy.grid_position == cell:
+			return enemy
+	if is_instance_valid(_player_unit_node) and _player_unit_node.current_health > 0 and _player_unit_node.grid_position == cell:
+		return _player_unit_node
+	return null
 
 func _place_terrain_features():
 	var terrains_to_spawn = [ {"data": preload("res://data/terrain/rock.tres"), "count": 3}, {"data": preload("res://data/terrain/mud.tres"), "count": 2} ]
@@ -3028,16 +3303,47 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 			print("Neznámý typ speciální akce: %s" % special_type)
 
 func _find_spawn_position(near_unit: Unit) -> Vector2i:
-	"""Najde volnou pozici pro spawn jednotky poblíž"""
-	var adjacent = [
-		Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT
-	]
-	
+	"""Najde volnou pozici pro spawn: nejdřív adjacent, pak BFS dál. Nikdy na obsazené / ghost buňky."""
+	if not is_instance_valid(near_unit) or not is_instance_valid(battle_grid_instance):
+		return Vector2i(-1, -1)
+
+	var origin: Vector2i = near_unit.grid_position
+	var occupied: Dictionary = {}
+	for obj in battle_grid_instance.get_all_objects_on_grid():
+		if is_instance_valid(obj) and "grid_position" in obj:
+			occupied[obj.grid_position] = true
+	# Also treat living units' claimed grid_position as occupied (guards against grid desync ghosts).
+	for enemy in _enemy_units:
+		if is_instance_valid(enemy) and enemy.current_health > 0:
+			occupied[enemy.grid_position] = true
+	if is_instance_valid(_player_unit_node) and _player_unit_node.current_health > 0:
+		occupied[_player_unit_node.grid_position] = true
+	occupied[origin] = true
+
+	var adjacent: Array[Vector2i] = [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]
 	for offset in adjacent:
-		var pos = near_unit.grid_position + offset
-		if battle_grid_instance.is_cell_active(pos):
-			var obj = battle_grid_instance.get_object_on_cell(pos)
-			if not obj:
+		var pos: Vector2i = origin + offset
+		if battle_grid_instance.is_cell_active(pos) and not occupied.has(pos) and battle_grid_instance.get_object_on_cell(pos) == null:
+			return pos
+
+	# BFS ring search up to distance 4
+	var visited: Dictionary = {origin: true}
+	var queue: Array[Vector2i] = [origin]
+	var head := 0
+	while head < queue.size():
+		var current: Vector2i = queue[head]
+		head += 1
+		for offset in adjacent:
+			var pos: Vector2i = current + offset
+			if visited.has(pos):
+				continue
+			visited[pos] = true
+			if not battle_grid_instance.is_cell_active(pos):
+				continue
+			if battle_grid_instance.get_distance(origin, pos) > 4:
+				continue
+			queue.append(pos)
+			if not occupied.has(pos) and battle_grid_instance.get_object_on_cell(pos) == null:
 				return pos
-	
+
 	return Vector2i(-1, -1)

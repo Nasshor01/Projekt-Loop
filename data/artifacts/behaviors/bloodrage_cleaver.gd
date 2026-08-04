@@ -7,6 +7,7 @@ const COST_REDUCTION := 1
 func on_damage_taken(ctx: Dictionary = {}) -> void:
 	super.on_damage_taken(ctx)
 	var lost := int(runtime.get("hp_lost_this_combat", 0))
+	@warning_ignore("integer_division")
 	var stacks := lost / HP_PER_STRENGTH
 	var applied := int(runtime.get("strength_stacks", 0))
 	if stacks > applied:
@@ -14,7 +15,7 @@ func on_damage_taken(ctx: Dictionary = {}) -> void:
 		runtime["strength_stacks"] = stacks
 
 
-func on_enemy_death(ctx: Dictionary = {}) -> void:
+func on_enemy_death(_ctx: Dictionary = {}) -> void:
 	if PlayerData:
 		PlayerData.gain_energy(1)
 	runtime["next_attack_discount"] = COST_REDUCTION

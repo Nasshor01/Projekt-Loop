@@ -20,8 +20,11 @@ const DEFAULT_H := 10
 @export var brush_atlas_coord: Vector2i = Vector2i(0, 0)
 @export var brush_enabled: bool = true
 
+@warning_ignore("unused_private_class_variable")
 @export_tool_button("Rebuild 3D grid") var _btn_rebuild: Callable = rebuild_grid
+@warning_ignore("unused_private_class_variable")
 @export_tool_button("Paint soft checker") var _btn_checker: Callable = paint_soft_checker
+@warning_ignore("unused_private_class_variable")
 @export_tool_button("Paint center path") var _btn_path: Callable = paint_center_path
 
 var _cells: Dictionary = {} # Vector2i -> MeshInstance3D

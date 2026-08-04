@@ -5,7 +5,7 @@ const LOW_HP_THRESHOLD_PERCENT := 25
 const SKIP_ENEMY_USES := 1
 
 
-func on_combat_start(ctx: Dictionary = {}) -> void:
+func on_combat_start(_ctx: Dictionary = {}) -> void:
 	if PlayerData:
 		PlayerData.gain_energy(1)
 	runtime["skip_enemy_uses"] = 0
@@ -36,6 +36,11 @@ func _repeat_last_attack(ctx: Dictionary) -> void:
 	var enemy := _random_living_enemy()
 	if enemy and enemy.has_method("take_damage"):
 		enemy.take_damage(damage, true, false, false)
+		if enemy.has_method("show_status_text"):
+			enemy.show_status_text("LOOP!", "critical")
+	var player := _get_player_unit()
+	if player and player.has_method("show_status_text"):
+		player.show_status_text("HEART ECHO!", "heal")
 	ctx["repeated_attack"] = card_id
 
 
@@ -51,7 +56,10 @@ func _check_low_hp_skip(ctx: Dictionary) -> void:
 		return
 	if int(runtime.get("skip_enemy_uses", 0)) >= SKIP_ENEMY_USES:
 		return
-	var pct := PlayerData.current_hp * 100 / maxi(1, PlayerData.max_hp)
+	var pct := int(float(PlayerData.current_hp) * 100.0 / float(maxi(1, PlayerData.max_hp)))
 	if pct <= LOW_HP_THRESHOLD_PERCENT:
 		ctx["skip_enemy_turn"] = true
 		runtime["skip_enemy_uses"] = int(runtime.get("skip_enemy_uses", 0)) + 1
+		var player := _get_player_unit()
+		if player and player.has_method("show_status_text"):
+			player.show_status_text("LOOP SKIP!", "heal")

@@ -107,12 +107,19 @@ const KEYWORDS: Dictionary = {
 		"color": "#7F8C8D",
 		"search_terms": ["exhaust", "vyčerp"]
 	},
+	"retain": {
+		"title": "keyword.retain.title",
+		"icon": "res://art/icons/artifact_fx/retain_badge.png",
+		"description": "keyword.retain.description",
+		"color": "#7EC8FF",
+		"search_terms": ["retain", "ponech"]
+	},
 	"heal": {
 		"title": "keyword.heal.title",
 		"icon": "res://art/icons/status/Heal.png",
 		"description": "keyword.heal.description",
 		"color": "#2ECC71",
-		"search_terms": ["heal", "léč", "vyléč", "hp"]
+		"search_terms": ["heal", "léč", "vyléč", "restores hp", "vyléčí"]
 	},
 	"usage": {
 		"title": "keyword.usage.title",

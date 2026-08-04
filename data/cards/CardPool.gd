@@ -4,7 +4,7 @@ extends Resource
 
 @export var cards: Array[CardData] = []
 
-func get_available_cards(player_class: ClassData = null, player_subclass: SubclassData = null, unlocked_cards: Array[String] = []) -> Array[CardData]:
+func get_available_cards(player_class: ClassData = null, player_subclass: SubclassData = null, _unlocked_cards: Array[String] = []) -> Array[CardData]:
 	"""
 	Vrátí pole karet dostupných pro hráče.
 	Filtruje podle class/subclass. BASIC a (legacy) odměny bez BASIC.

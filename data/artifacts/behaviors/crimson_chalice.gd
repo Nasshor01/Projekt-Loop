@@ -2,10 +2,22 @@ extends ArtifactBehavior
 
 const SELF_DAMAGE := 3
 const DRAW_AMOUNT := 2
+const PROMPT_ID := "crimson_chalice"
 
 
-func on_turn_start(ctx: Dictionary = {}) -> void:
-	super.on_turn_start(ctx)
+func on_hand_ready(_ctx: Dictionary = {}) -> void:
+	if not PlayerData or PlayerData.current_hp <= SELF_DAMAGE:
+		return
+	if not _root_has_node("/root/ArtifactManager"):
+		return
+	ArtifactManager.set_run_flag("pending_chalice", true)
+
+
+func on_prompt_result(prompt_id: String, result: Dictionary) -> void:
+	if prompt_id != PROMPT_ID:
+		return
+	if not bool(result.get("accepted", false)):
+		return
 	if not PlayerData or PlayerData.current_hp <= SELF_DAMAGE:
 		return
 	var player := _get_player_unit()

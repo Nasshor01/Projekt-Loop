@@ -5,8 +5,23 @@ const ATTACKS_BEFORE_SHIFT := 3
 const SHIFT_EVERY_TURNS := 3
 
 
-func on_combat_start(ctx: Dictionary = {}) -> void:
+func on_acquired(_ctx: Dictionary = {}) -> void:
+	if _find_battle_grid() != null:
+		_pick_line()
+
+
+func on_combat_start(_ctx: Dictionary = {}) -> void:
 	_pick_line()
+
+
+func refresh_combat_visuals(_ctx: Dictionary = {}) -> void:
+	if not String(runtime.get("line_mode", "")).is_empty():
+		_refresh_line_visuals()
+
+
+func on_combat_end(_ctx: Dictionary = {}) -> void:
+	_sync_artifact_line_to_grid([])
+	super.on_combat_end(_ctx)
 
 
 func on_turn_start(ctx: Dictionary = {}) -> void:
@@ -40,6 +55,7 @@ func modify_card_cost(ctx: Dictionary, cost: int) -> int:
 func _pick_line() -> void:
 	var grid: Node = _find_battle_grid()
 	if grid == null:
+		push_warning("Gilded Dragonheart: BattleGrid not found — line not spawned")
 		return
 	var rows: int = int(grid.get("grid_rows"))
 	var columns: int = int(grid.get("grid_columns"))
@@ -49,6 +65,32 @@ func _pick_line() -> void:
 	else:
 		runtime["line_mode"] = "column"
 		runtime["line_index"] = randi_range(0, maxi(0, columns - 1))
+	print("Gilded Dragonheart: line mode=%s index=%d" % [
+		String(runtime.get("line_mode", "")), int(runtime.get("line_index", -1))
+	])
+	_refresh_line_visuals()
+
+
+func _refresh_line_visuals() -> void:
+	var grid: Node = _find_battle_grid()
+	if grid == null:
+		return
+	var cells: Array[Vector2i] = []
+	var mode: String = String(runtime.get("line_mode", ""))
+	var index: int = int(runtime.get("line_index", -1))
+	var rows: int = int(grid.get("grid_rows"))
+	var columns: int = int(grid.get("grid_columns"))
+	if mode == "row":
+		for x in range(columns):
+			var cell := Vector2i(x, index)
+			if grid.has_method("is_cell_active") and bool(grid.is_cell_active(cell)):
+				cells.append(cell)
+	elif mode == "column":
+		for y in range(rows):
+			var cell := Vector2i(index, y)
+			if grid.has_method("is_cell_active") and bool(grid.is_cell_active(cell)):
+				cells.append(cell)
+	_sync_artifact_line_to_grid(cells)
 
 
 func _is_on_active_line(cell: Vector2i) -> bool:

@@ -80,13 +80,13 @@ func _build_playlist() -> void:
 	var dir := DirAccess.open(SOUNDTRACK_DIR)
 	if dir != null:
 		dir.list_dir_begin()
-		var name: String = dir.get_next()
-		while name != "":
+		var file_name: String = dir.get_next()
+		while file_name != "":
 			if not dir.current_is_dir():
-				var lower := name.to_lower()
+				var lower := file_name.to_lower()
 				if lower.ends_with(".wav") or lower.ends_with(".ogg") or lower.ends_with(".mp3"):
-					found[name] = SOUNDTRACK_DIR.path_join(name)
-			name = dir.get_next()
+					found[file_name] = SOUNDTRACK_DIR.path_join(file_name)
+			file_name = dir.get_next()
 		dir.list_dir_end()
 	for preferred in PREFERRED_ORDER:
 		if found.has(preferred):

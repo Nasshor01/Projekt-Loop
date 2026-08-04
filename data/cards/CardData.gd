@@ -134,6 +134,8 @@ func get_keywords_from_effects() -> Array[String]:
 					keys.append("poison")
 	if max_uses_before_removal > 0 and not keys.has("usage"):
 		keys.append("usage")
+	if has_meta("artifact_retain") and bool(get_meta("artifact_retain")) and not keys.has("retain"):
+		keys.append("retain")
 	return keys
 
 # Pomocná funkce pro zjištění, zda karta má určitý tag
@@ -192,6 +194,7 @@ func get_damage_bonus() -> int:
 	return bonus
 
 ## Shorthand icon paths. Keep in sync with KeywordManager.ICON_MAP. Fallback when KeywordManager not available (e.g. editor).
+const _KeywordManagerScript := preload("res://scripts/autoload/KeywordManager.gd")
 const SHORTHAND_ICONS: Dictionary = {
 	"damage": "res://art/icons/status/attack.png",
 	"attack": "res://art/icons/status/attack.png",
@@ -216,10 +219,11 @@ const BB_HEAL := "#8fef9a"
 const BB_EXHAUST := "#ffb070"
 const BB_INITIATIVE := "#f0d9a0"
 
-## Face keyword colors for verbal keywords (Exhaust etc.). EN+CS titles.
+## Face keyword colors for verbal keywords (Exhaust / Retain etc.). EN+CS titles.
 const FACE_KEYWORD_COLORS := {
 	"holy": {"color": "#f0d060", "words": ["Holy", "Svaté"]},
 	"exhaust": {"color": "#ffb070", "words": ["Exhaust", "Vyčerpání"]},
+	"retain": {"color": "#7ec8ff", "words": ["Retain", "Ponechání"]},
 	"block": {"color": "#9ad4ff", "words": ["Block", "Blok"]},
 	"vulnerable": {"color": "#d4a0ff", "words": ["Vulnerable", "Zranitelnost"]},
 	"poison": {"color": "#8fef9a", "words": ["Poison", "Jed"]},
@@ -257,6 +261,13 @@ func generate_compact_description(icon_px: int = ICON_SIZE) -> String:
 			"index": -1, # before Exhaust / other verbal lines
 			"line": _format_holy_keyword_line(),
 		})
+	# Oathbreaker (and similar): permanent Retain stamped as meta on this instance.
+	if has_meta("artifact_retain") and bool(get_meta("artifact_retain")):
+		entries.append({
+			"prio": FACE_PRIO_VERBAL,
+			"index": 9999,
+			"line": _format_retain_keyword_line(),
+		})
 	if entries.is_empty():
 		return get_localized_description()
 	entries.sort_custom(func(a, b):
@@ -272,6 +283,11 @@ func generate_compact_description(icon_px: int = ICON_SIZE) -> String:
 func _format_holy_keyword_line() -> String:
 	"""Localized Holy / Svaté keyword title for the face."""
 	return "[b][color=%s]%s[/color][/b]" % [FACE_KEYWORD_COLORS["holy"]["color"], tr("keyword.holy.title")]
+
+
+func _format_retain_keyword_line() -> String:
+	"""Localized Retain / Ponechání keyword title for the face."""
+	return "[b][color=%s]%s[/color][/b]" % [FACE_KEYWORD_COLORS["retain"]["color"], tr("keyword.retain.title")]
 
 func _face_line_priority(effect: CardEffectData) -> int:
 	"""damage → block → heal/regen → keyword icons → verbal (Exhaust…)."""
@@ -310,7 +326,7 @@ func _img(icon_key: String, size: int = -1) -> String:
 	var px := size if size > 0 else _shorthand_icon_px
 	var path: String = ""
 	if not Engine.is_editor_hint():
-		path = KeywordManager.get_icon_path(icon_key)
+		path = _KeywordManagerScript.get_icon_path(icon_key)
 	if path.is_empty():
 		path = SHORTHAND_ICONS.get(icon_key, "")
 	if path.is_empty():
@@ -390,7 +406,7 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 			return "[b][color=%s]" % BB_EXHAUST + tr("card.effect.exhaust_keyword") + "[/color][/b]"
 		
 		CardEffectData.EffectType.GAIN_EXTRA_MOVE:
-			return "[b]" + tr("card.effect.gain_extra_move") + "[/b]"
+			return "[b]+%d %s[/b]" % [maxi(1, effect.value), tr("card.effect.move_label")]
 		
 		CardEffectData.EffectType.MODIFY_INITIATIVE_NEXT_ROUND:
 			var sign_str := "+" if effect.value >= 0 else ""

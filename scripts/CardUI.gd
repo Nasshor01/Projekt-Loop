@@ -66,7 +66,10 @@ const OUTLINE_USAGE := 4
 const COST_COLOR := Color(1.0, 0.95, 0.75, 1.0)
 ## Usage badge on frame edge — avoid pure yellow; use dark amber.
 const USAGE_COLOR := Color(0.45, 0.28, 0.05, 1.0)
+const PATH_SEAL_BADGE := "res://art/icons/artifact_fx/seal_badge.png"
+const PATH_RETAIN_BADGE := "res://art/icons/artifact_fx/retain_badge.png"
 static var _frame_texture_cache: Dictionary = {}
+static var _badge_texture_cache: Dictionary = {}
 
 @export var card_data: CardData:
 	set(new_card_data):
@@ -98,6 +101,9 @@ var _ui_nodes_ready = false
 @onready var description_label: RichTextLabel = $DescriptionLabel
 @onready var card_template: TextureRect = $CardTemplateImage
 var _usage_label: Label = null
+var _state_badge_row: HBoxContainer = null
+var _seal_badge: TextureRect = null
+var _retain_badge: TextureRect = null
 
 ## Scene (CardUI.tscn) slots — never hardcode full-face positions in code.
 var _scene_art_rect: Rect2
@@ -113,7 +119,6 @@ var target_scale: Vector2 = Vector2.ONE
 var target_position: Vector2 = Vector2.ZERO
 var is_dragging: bool = false
 var is_draggable: bool = true
-var _drag_offset: Vector2 = Vector2.ZERO
 var _drag_released: bool = false
 var _drag_start_pos: Vector2 = Vector2.ZERO
 
@@ -125,6 +130,7 @@ signal card_right_clicked(data: CardData)
 func _ready():
 	_ui_nodes_ready = true
 	_usage_label = get_node_or_null("UsageLabel") as Label
+	_ensure_state_badges()
 	_cache_scene_layout()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_set_child_mouse_filters()
@@ -334,7 +340,7 @@ func _is_verbal_keyword_face_line(line: String) -> bool:
 	var color_re := RegEx.new()
 	color_re.compile("\\[/?color(?:=[^\\]]*)?\\]")
 	s = color_re.sub(s, "", true).strip_edges()
-	return s in ["Holy", "Svaté", "Exhaust", "Vyčerpání", "Vulnerable", "Zranitelnost", "Poison", "Jed", "Block", "Blok"]
+	return s in ["Holy", "Svaté", "Exhaust", "Vyčerpání", "Retain", "Ponechání", "Vulnerable", "Zranitelnost", "Poison", "Jed", "Block", "Blok"]
 
 func _pack_face_description(desc: String, max_lines: int) -> String:
 	"""Pack trailing verbal keywords onto one line (Holy · Exhaust) so 5-effect cards fit."""
@@ -364,12 +370,12 @@ func _fit_name_font() -> void:
 		return
 	var base := NAME_FONT_COMPACT if display_mode == DisplayMode.COMPACT else name_font_size
 	var n := name_label.text.length()
-	var size := base
+	var name_size := base
 	if n > 16:
-		size = maxi(base - 2, NAME_FONT_MIN + 1)
+		name_size = maxi(base - 2, NAME_FONT_MIN + 1)
 	if n > 22:
-		size = maxi(base - 4, NAME_FONT_MIN)
-	name_label.add_theme_font_size_override("font_size", size)
+		name_size = maxi(base - 4, NAME_FONT_MIN)
+	name_label.add_theme_font_size_override("font_size", name_size)
 
 func _apply_description_font(line_count: int) -> int:
 	"""Effective face font size from description_font_size export (dense cards shrink more)."""
@@ -401,7 +407,7 @@ func _set_description_text(desc: String, font_size: int) -> void:
 	description_label.add_theme_font_size_override("bold_italics_font_size", font_size)
 	description_label.add_theme_font_size_override("mono_font_size", font_size)
 
-	var lines: PackedStringArray = [] if desc.is_empty() else desc.split("\n")
+	var lines: PackedStringArray = PackedStringArray() if desc.is_empty() else desc.split("\n")
 	var line_count := lines.size()
 	var sep := DESC_LINE_SEP_NORMAL
 	if line_count >= DESC_VERY_DENSE_LINE_THRESHOLD:
@@ -532,7 +538,56 @@ func update_display():
 		else:
 			_usage_label.visible = false
 
+	_update_state_badges()
 	_update_card_frame()
+
+func _ensure_state_badges() -> void:
+	if is_instance_valid(_state_badge_row):
+		return
+	_state_badge_row = HBoxContainer.new()
+	_state_badge_row.name = "StateBadgeRow"
+	_state_badge_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_state_badge_row.alignment = BoxContainer.ALIGNMENT_END
+	_state_badge_row.add_theme_constant_override("separation", 2)
+	_state_badge_row.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	_state_badge_row.offset_left = -72
+	_state_badge_row.offset_top = 28
+	_state_badge_row.offset_right = -6
+	_state_badge_row.offset_bottom = 52
+	add_child(_state_badge_row)
+	_seal_badge = _make_badge_icon(PATH_SEAL_BADGE)
+	_retain_badge = _make_badge_icon(PATH_RETAIN_BADGE)
+	_state_badge_row.add_child(_seal_badge)
+	_state_badge_row.add_child(_retain_badge)
+
+func _make_badge_icon(path: String) -> TextureRect:
+	var icon := TextureRect.new()
+	if not _badge_texture_cache.has(path):
+		_badge_texture_cache[path] = load(path) as Texture2D
+	icon.texture = _badge_texture_cache.get(path)
+	icon.custom_minimum_size = Vector2(22, 22)
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon.visible = false
+	return icon
+
+func _update_state_badges() -> void:
+	_ensure_state_badges()
+	if display_mode == DisplayMode.COMPACT or card_data == null:
+		_state_badge_row.visible = false
+		return
+	_state_badge_row.visible = true
+	var sealed := false
+	var retain := false
+	if not Engine.is_editor_hint() and has_node("/root/ArtifactManager"):
+		sealed = ArtifactManager.is_card_sealed(card_data)
+		retain = ArtifactManager.card_has_retain(card_data)
+	else:
+		retain = card_data.has_meta("artifact_retain") and bool(card_data.get_meta("artifact_retain"))
+	_seal_badge.visible = sealed
+	_retain_badge.visible = retain
 
 func _display_energy_cost() -> int:
 	if not card_data:

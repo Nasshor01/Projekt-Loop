@@ -1,37 +1,19 @@
 extends ArtifactBehavior
 
-const SEALED_COST_REDUCTION := 1
-const SEAL_BLOCK_BONUS := 2
+## On acquire: pick one deck card to seal forever. Artifact stays (not consumed).
+## Cost (−1) and Block (+2 on play) are applied by ArtifactManager permanent seal helpers.
 
 
-func on_combat_start(ctx: Dictionary = {}) -> void:
-	runtime["sealed_card_id"] = ""
-	runtime["seal_pick_pending"] = true
-
-
-func on_hand_ready(ctx: Dictionary = {}) -> void:
-	if not runtime.get("seal_pick_pending", false):
+func on_acquired(_ctx: Dictionary = {}) -> void:
+	if not _root_has_node("/root/ArtifactManager"):
 		return
-	runtime["seal_pick_pending"] = false
-	# UI seal pick not wired — seal first master_deck card as best-effort fallback.
-	if PlayerData and not PlayerData.master_deck.is_empty():
-		var card: CardData = PlayerData.master_deck[0]
-		if card:
-			runtime["sealed_card_id"] = card.card_id
-
-
-func on_card_played(ctx: Dictionary = {}) -> void:
-	var card: CardData = ctx.get("card") as CardData
-	if card == null:
+	if PlayerData == null or PlayerData.master_deck.is_empty():
 		return
-	if runtime.get("sealed_card_id", "") == card.card_id:
-		var player := _get_player_unit()
-		if player and player.has_method("add_block"):
-			player.add_block(SEAL_BLOCK_BONUS)
-
-
-func modify_card_cost(ctx: Dictionary, cost: int) -> int:
-	var card: CardData = ctx.get("card") as CardData
-	if card and runtime.get("sealed_card_id", "") == card.card_id:
-		return maxi(0, cost - SEALED_COST_REDUCTION)
-	return cost
+	# Already sealed a card this run — keep Tablet, no second pick.
+	if not PlayerData.sealed_card_id.is_empty():
+		return
+	for card_v in PlayerData.master_deck:
+		var card: CardData = card_v as CardData
+		if card != null and card.has_meta("artifact_sealed") and bool(card.get_meta("artifact_sealed")):
+			return
+	ArtifactManager.request_permanent_seal_pick()

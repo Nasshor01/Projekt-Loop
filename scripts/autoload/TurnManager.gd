@@ -14,7 +14,10 @@ var _turn_order: Array[Unit] = []
 var _current_turn_index: int = 0
 var _round_number: int = 0
 var _is_combat_active: bool = false
+## Pending bonuses applied when the NEXT round is sorted (cleared after sort).
 var _initiative_modifiers: Dictionary = {}
+## Initiative values locked for the CURRENT round display (instance_id -> int).
+var _locked_initiative: Dictionary = {}
 
 func start_combat(all_units: Array[Unit]):
 	"""Inicializuje souboj se všemi jednotkami"""
@@ -28,41 +31,50 @@ func start_combat(all_units: Array[Unit]):
 	# Zahaj první kolo
 	_start_new_round()
 
-func _calculate_turn_order():
-	"""Vypočítá pořadí tahů podle iniciativy (sestupně)"""
-	_turn_order.clear()
-	_turn_order = _combatants.duplicate()
-	
-	# Seřaď podle iniciativy (vyšší = dřív)
-	_turn_order.sort_custom(func(a: Unit, b: Unit):
-		
-		# ZÁKLADNÍ INICIATIVA (neměnná)
-		var base_init_a = a.unit_data.initiative if a.unit_data else 0
-		var base_init_b = b.unit_data.initiative if b.unit_data else 0
-		
-		# DOČASNÝ BONUS (z karet z minulého kola)
-		var mod_a = _initiative_modifiers.get(a.get_instance_id(), 0)
-		var mod_b = _initiative_modifiers.get(b.get_instance_id(), 0)
-		
-		# CELKOVÁ INICIATIVA (pro toto kolo)
-		var init_a = base_init_a + mod_a
-		var init_b = base_init_b + mod_b
-		
-		# Remíza - hráč má prioritu
+func _effective_initiative(unit: Unit, use_pending_mods: bool) -> int:
+	if not is_instance_valid(unit) or not unit.unit_data:
+		return 0
+	var base: int = unit.unit_data.initiative
+	if use_pending_mods:
+		return base + int(_initiative_modifiers.get(unit.get_instance_id(), 0))
+	return base
+
+
+func _sort_units_by_initiative(units: Array[Unit], use_pending_mods: bool) -> Array[Unit]:
+	var sorted_units: Array[Unit] = units.duplicate()
+	sorted_units.sort_custom(func(a: Unit, b: Unit):
+		var init_a: int = _effective_initiative(a, use_pending_mods)
+		var init_b: int = _effective_initiative(b, use_pending_mods)
 		if init_a == init_b:
-			var is_a_player = a.unit_data.faction == UnitData.Faction.PLAYER
-			# var is_b_player = b.unit_data.faction == UnitData.Faction.PLAYER # Není potřeba
-			return is_a_player  # Hráč má přednost
-		
-		return init_a > init_b  # Vyšší iniciativa je dřív
+			var is_a_player = a.unit_data and a.unit_data.faction == UnitData.Faction.PLAYER
+			return is_a_player
+		return init_a > init_b
 	)
-	
+	return sorted_units
+
+
+func _living_combatants() -> Array[Unit]:
+	var living: Array[Unit] = []
+	for unit in _combatants:
+		if is_instance_valid(unit) and unit.current_health > 0:
+			living.append(unit)
+	return living
+
+
+func _calculate_turn_order():
+	"""Vypočítá pořadí tahů podle iniciativy (sestupně) a zamkne hodnoty pro UI."""
+	_turn_order = _sort_units_by_initiative(_living_combatants(), true)
+	_locked_initiative.clear()
+	for unit in _turn_order:
+		_locked_initiative[unit.get_instance_id()] = _effective_initiative(unit, true)
+
 	print("TurnManager: Pořadí tahů pro kolo %d:" % _round_number)
 	for i in range(_turn_order.size()):
 		var unit = _turn_order[i]
 		var base_init = unit.unit_data.initiative if unit.unit_data else 0
-		var mod = _initiative_modifiers.get(unit.get_instance_id(), 0)
-		print("  %d. %s (Základ: %d, Bonus: %d, Celkem: %d)" % [i + 1, unit.unit_data.unit_name, base_init, mod, base_init + mod])
+		var total = int(_locked_initiative.get(unit.get_instance_id(), base_init))
+		var mod = total - base_init
+		print("  %d. %s (Základ: %d, Bonus: %d, Celkem: %d)" % [i + 1, unit.unit_data.unit_name, base_init, mod, total])
 
 func _start_new_round():
 	"""Zahájí nové kolo"""
@@ -203,11 +215,65 @@ func get_turn_order() -> Array[Unit]:
 	"""Vrátí aktuální pořadí tahů (pro UI)"""
 	return _turn_order.duplicate()
 
-func get_initiative_modifier_for_unit(unit: Unit) -> int:
-	"""Vrátí dočasný modifikátor iniciativy pro danou jednotku."""
+
+func get_remaining_turn_order() -> Array[Unit]:
+	"""Living units still to act this round, including the current one (left → first)."""
+	var remaining: Array[Unit] = []
+	if not _is_combat_active:
+		return remaining
+	for i in range(_current_turn_index, _turn_order.size()):
+		var unit: Unit = _turn_order[i]
+		if is_instance_valid(unit) and unit.current_health > 0:
+			remaining.append(unit)
+	return remaining
+
+
+func get_next_round_preview_order() -> Array[Unit]:
+	"""Projected order for next round using base init + pending modifiers."""
+	return _sort_units_by_initiative(_living_combatants(), true)
+
+
+func get_locked_initiative_for_unit(unit: Unit) -> int:
+	"""Initiative that sorted the CURRENT round (for remaining-slot labels)."""
 	if not is_instance_valid(unit):
 		return 0
-	return _initiative_modifiers.get(unit.get_instance_id(), 0)
+	var id: int = unit.get_instance_id()
+	if _locked_initiative.has(id):
+		return int(_locked_initiative[id])
+	return _effective_initiative(unit, false)
+
+
+func get_projected_initiative_for_unit(unit: Unit) -> int:
+	"""Initiative for NEXT round preview (base + pending mods)."""
+	return _effective_initiative(unit, true)
+
+
+## Entries for InitiativeBar: {unit, is_preview, initiative, pending_mod}
+func get_initiative_bar_entries() -> Array:
+	var entries: Array = []
+	for unit in get_remaining_turn_order():
+		entries.append({
+			"unit": unit,
+			"is_preview": false,
+			"initiative": get_locked_initiative_for_unit(unit),
+			"pending_mod": 0,
+		})
+	for unit in get_next_round_preview_order():
+		var pending: int = get_initiative_modifier_for_unit(unit)
+		entries.append({
+			"unit": unit,
+			"is_preview": true,
+			"initiative": get_projected_initiative_for_unit(unit),
+			"pending_mod": pending,
+		})
+	return entries
+
+
+func get_initiative_modifier_for_unit(unit: Unit) -> int:
+	"""Vrátí dočasný modifikátor iniciativy pro danou jednotku (pending → next round)."""
+	if not is_instance_valid(unit):
+		return 0
+	return int(_initiative_modifiers.get(unit.get_instance_id(), 0))
 
 func modify_initiative_next_round(unit: Unit, change: int):
 	"""
@@ -240,6 +306,7 @@ func reset():
 	_combatants.clear()
 	_turn_order.clear()
 	_initiative_modifiers.clear()
+	_locked_initiative.clear()
 	_current_turn_index = 0
 	_round_number = 0
 	_is_combat_active = false

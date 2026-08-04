@@ -78,6 +78,12 @@ func _on_text_submitted(command_text: String):
 		
 		"add_all_artifacts":
 			_cmd_add_all_artifacts()
+
+		"playtest_artifacts", "add_playtest":
+			_cmd_playtest_artifacts()
+
+		"grid_artifacts", "add_grid":
+			_cmd_grid_artifacts()
 		
 		"clear_artifacts":
 			_cmd_clear_artifacts()
@@ -187,6 +193,72 @@ func _cmd_add_all_artifacts():
 	
 	log_success("🎉 Hotovo! Přidáno: %d, Selhalo: %d" % [added_count, failed_count])
 
+
+const PLAYTEST_ARTIFACTS: Array[String] = [
+	"throne_fragment",
+	"crown_of_dominion",
+	"gilded_dragonheart",
+	"ring_of_the_living_grove",
+	"tablet_of_forgotten_oaths",
+	"alchemists_tools",
+	"all_seeing_eye",
+	"crimson_chalice",
+	"oathbreaker_seal",
+]
+
+## Only artifacts that spawn visuals on the battle grid.
+const GRID_ARTIFACTS: Array[String] = [
+	"throne_fragment",
+	"crown_of_dominion",
+	"gilded_dragonheart",
+	"ring_of_the_living_grove",
+]
+
+
+func _cmd_playtest_artifacts() -> void:
+	log_message("🧪 Playtest set (%d artefaktů)..." % PLAYTEST_ARTIFACTS.size())
+	var added_count := 0
+	var failed_count := 0
+	for key in PLAYTEST_ARTIFACTS:
+		if not all_artifacts.has(key):
+			failed_count += 1
+			log_message("  ❌ %s (nenalezen)" % key)
+			continue
+		var artifact: ArtifactsData = all_artifacts[key]
+		if PlayerData.add_artifact(artifact):
+			added_count += 1
+			log_message("  ✅ %s" % artifact.artifact_name)
+		else:
+			failed_count += 1
+			log_message("  ❌ %s (už vlastníš / max stacky)" % artifact.artifact_name)
+	log_success("🎉 Playtest hotovo! Přidáno: %d, Selhalo: %d" % [added_count, failed_count])
+
+
+func _cmd_grid_artifacts() -> void:
+	log_message("🗺️ Grid spawn set — ideálně PŘED vstupem do fightu:")
+	log_message("  throne_fragment     — 2 flat markery + zlatý tint (jako bahno)")
+	log_message("  crown_of_dominion   — 1 flat marker + fialový tint")
+	log_message("  gilded_dragonheart  — highlight řádku/sloupce")
+	log_message("  ring_of_the_living_grove — root jako bahno + zelený tint")
+	var added_count := 0
+	var _failed_count := 0
+	for key in GRID_ARTIFACTS:
+		if not all_artifacts.has(key):
+			_failed_count += 1
+			log_message("  ❌ %s (nenalezen)" % key)
+			continue
+		var artifact: ArtifactsData = all_artifacts[key]
+		if PlayerData.add_artifact(artifact):
+			added_count += 1
+			log_message("  ✅ %s" % artifact.artifact_name)
+		else:
+			_failed_count += 1
+			log_message("  ❌ %s (už vlastníš / max stacky)" % artifact.artifact_name)
+	# Mid-battle: force re-paint after acquire hooks.
+	if ArtifactManager and ArtifactManager.has_method("refresh_combat_visuals"):
+		ArtifactManager.refresh_combat_visuals()
+	log_success("🎉 Grid set hotovo! Přidáno: %d. Koukej na LEVOU polovinu gridu (flat markery + tint)." % added_count)
+
 func _cmd_clear_artifacts():
 	var count = PlayerData.artifacts.size()
 	PlayerData.artifacts.clear()
@@ -260,14 +332,14 @@ func _cmd_test_artifacts() -> void:
 	var ok: Array = report.get("ok", [])
 	var failed: Array = report.get("failed", [])
 	log_message("🧪 Behavior scripts OK: %d" % ok.size())
-	for name in ok:
-		log_message("  ✅ %s" % name)
+	for script_name in ok:
+		log_message("  ✅ %s" % script_name)
 	if failed.is_empty():
 		log_success("Všechny behavior skripty se načetly.")
 	else:
 		log_error("Behavior scripts FAILED: %d" % failed.size())
-		for name in failed:
-			log_error("  ❌ %s" % name)
+		for script_name in failed:
+			log_error("  ❌ %s" % script_name)
 	# Also verify catalog .tres resolve
 	var catalog_ok := 0
 	var catalog_fail := 0
@@ -396,6 +468,8 @@ func _cmd_help():
 	log_message("  remove_artifact <název> - Odebere artefakt")
 	log_message("  list_artifacts [owned] - Zobrazí všechny/vlastněné artefakty")
 	log_message("  add_all_artifacts - Přidá všechny artefakty jednou")
+	log_message("  playtest_artifacts (alias: add_playtest) - Throne/Crown/Grove/Tablet/Alchemy/Eye/Chalice/Oathbreaker…")
+	log_message("  grid_artifacts (alias: add_grid) - Jen spawn na zemi: Throne/Crown/Gilded/Grove")
 	log_message("  clear_artifacts - Odstraní všechny artefakty")
 	log_message("  artifact_info <název> - Zobrazí detaily artefaktu")
 	log_message("  add_gold <číslo> - Přidá zlato")

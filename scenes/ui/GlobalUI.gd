@@ -15,6 +15,7 @@ extends CanvasLayer
 @onready var version_label = %VersionLabel
 
 var _deck_tooltip_card_data: CardData = null
+var _seal_pick_active: bool = false
 
 func _ready():
 	# Připojení k signálům z PlayerData pro aktualizaci UI
@@ -23,6 +24,8 @@ func _ready():
 	PlayerData.deck_changed.connect(_on_player_deck_changed)
 	PlayerData.floor_changed.connect(_on_player_floor_changed)
 	PlayerData.loop_level_changed.connect(_on_player_loop_level_changed)
+	if has_node("/root/ArtifactManager") and not ArtifactManager.permanent_seal_pick_requested.is_connected(_on_permanent_seal_pick_requested):
+		ArtifactManager.permanent_seal_pick_requested.connect(_on_permanent_seal_pick_requested)
 
 	# Připojení tlačítek z hlavní lišty
 	deck_button.pressed.connect(_on_deck_button_pressed)
@@ -86,10 +89,53 @@ func _on_player_loop_level_changed(new_level):
 # --- Obsluha tlačítek v hlavní liště ---
 
 func _on_deck_button_pressed():
+	if _seal_pick_active:
+		return
 	# Pokud je otevřené menu, zavřeme ho
 	if popup_menu.visible:
 		_close_menu()
+	PlayerData.ensure_unique_master_deck_instances()
 	deck_viewer.display_deck(PlayerData.master_deck)
+
+
+func _on_permanent_seal_pick_requested() -> void:
+	begin_permanent_seal_pick()
+
+
+func begin_permanent_seal_pick() -> void:
+	if _seal_pick_active:
+		return
+	if PlayerData == null or PlayerData.master_deck.is_empty():
+		return
+	_seal_pick_active = true
+	if popup_menu.visible:
+		_close_menu()
+	# Must uniquify before pick — shared .tres refs would seal every copy of that card.
+	PlayerData.ensure_unique_master_deck_instances()
+	var cards: Array[CardData] = []
+	for card_v in PlayerData.master_deck:
+		var card: CardData = card_v as CardData
+		if card != null:
+			cards.append(card)
+	if not deck_viewer.card_selected.is_connected(_on_seal_card_selected):
+		deck_viewer.card_selected.connect(_on_seal_card_selected)
+	deck_viewer.show_seal_selection(cards)
+
+
+func _on_seal_card_selected(card_data: CardData) -> void:
+	if not _seal_pick_active:
+		return
+	_seal_pick_active = false
+	if deck_viewer.card_selected.is_connected(_on_seal_card_selected):
+		deck_viewer.card_selected.disconnect(_on_seal_card_selected)
+	if deck_viewer.has_node("%CloseButton"):
+		deck_viewer.get_node("%CloseButton").visible = true
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager.apply_permanent_seal(card_data)
+	if deck_viewer.has_method("hide_and_clear"):
+		deck_viewer.hide_and_clear()
+	else:
+		deck_viewer.hide()
 
 func _on_deck_viewer_card_right_clicked(card_data: CardData):
 	if not card_tooltip:

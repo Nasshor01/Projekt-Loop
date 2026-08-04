@@ -41,8 +41,14 @@ func _ready():
 	rng = RandomNumberGenerator.new()
 	rng.randomize()
 	
+	# Above GlobalUI (layer 20) so upgrade toggle / deck viewer stay clickable.
+	if has_node("UI") and $UI is CanvasLayer:
+		($UI as CanvasLayer).layer = 25
+	
 	result_panel.visible = false
 	event_panel.visible = true
+	if continue_button:
+		continue_button.text = tr("ui.common.continue")
 	
 	# Skryj card removal viewer na začátku
 	if card_removal_viewer:
@@ -105,18 +111,18 @@ func _wait_for_event_data():
 	else:
 		_show_error_message()
 
-func _get_random_event_for_floor(floor: int) -> EventData:
+func _get_random_event_for_floor(floor_number: int) -> EventData:
 	"""Získá náhodný event z vlastního poolu pomocí EventManager logiky"""
 	if not EVENT_POOL or not EVENT_POOL.events:
 		printerr("EventScene: Event pool neexistuje nebo je prázdný!")
 		return null
 	
 	# Použij EventManager pro filtrování
-	var available_events = EventManager.filter_events_for_floor(EVENT_POOL.events, floor)
+	var available_events = EventManager.filter_events_for_floor(EVENT_POOL.events, floor_number)
 	
 	if available_events.is_empty():
-		printerr("EventScene: Pro patro %d nebyly nalezeny žádné dostupné eventy!" % floor)
-		EventManager.debug_available_events(EVENT_POOL.events, floor)
+		printerr("EventScene: Pro patro %d nebyly nalezeny žádné dostupné eventy!" % floor_number)
+		EventManager.debug_available_events(EVENT_POOL.events, floor_number)
 		return null
 	
 	var chosen_event = available_events.pick_random()
@@ -124,7 +130,7 @@ func _get_random_event_for_floor(floor: int) -> EventData:
 	# Označ event jako použitý
 	EventManager.mark_event_as_used(chosen_event)
 	
-	print(TranslationHelper.tr_format("log.event.selected", {"name": chosen_event.get_localized_name(), "floor": floor}))
+	print(TranslationHelper.tr_format("log.event.selected", {"name": chosen_event.get_localized_name(), "floor": floor_number}))
 	return chosen_event
 
 func _show_error_message():
@@ -359,10 +365,11 @@ func _ensure_upgrade_preview_toggle() -> void:
 	_upgrade_preview_toggle.pressed.connect(_on_upgrade_preview_toggle_pressed)
 	$UI.add_child(_upgrade_preview_toggle)
 	_upgrade_preview_toggle.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	# Below GlobalUI HP bar (~90px) so the toggle is visible and clickable.
 	_upgrade_preview_toggle.offset_left = 24
-	_upgrade_preview_toggle.offset_top = 24
+	_upgrade_preview_toggle.offset_top = 100
 	_upgrade_preview_toggle.offset_right = 280
-	_upgrade_preview_toggle.offset_bottom = 64
+	_upgrade_preview_toggle.offset_bottom = 140
 	_upgrade_preview_toggle.z_index = 250
 
 func _on_upgrade_preview_toggle_pressed() -> void:
@@ -412,7 +419,8 @@ func _on_upgrade_card_clicked(card_data: CardData):
 	# Vylepši kartu (card_data je vždy base, i když face ukazuje upgraded)
 	var index = PlayerData.master_deck.find(card_data)
 	if index != -1 and is_instance_valid(card_data.upgraded_version):
-		var upgraded = card_data.upgraded_version
+		var upgraded = card_data.upgraded_version.duplicate(true)
+		PlayerData.transfer_seal_on_upgrade(card_data, upgraded)
 		PlayerData.master_deck[index] = upgraded
 		print(TranslationHelper.tr_format("event.card_upgraded", {"from": card_data.get_localized_name(), "to": upgraded.get_localized_name()}))
 		

@@ -30,7 +30,7 @@ func get_actions(enemy_unit: Unit, all_player_units: Array, battle_grid: BattleG
 	var allies = get_all_enemies(enemy_unit, battle_grid)
 	var allies_in_range = _find_allies_in_range(enemy_unit, battle_grid, BUFF_RANGE)
 	var allies_in_wc_range = _find_allies_in_range(enemy_unit, battle_grid, WAR_CRY_RANGE)
-	var distance_to_player = battle_grid.get_distance(enemy_unit.grid_position, player_unit.grid_position)
+	var _distance_to_player = battle_grid.get_distance(enemy_unit.grid_position, player_unit.grid_position)
 	
 	# === 1. WAR CRY (AoE buff pokud 2+ spojenců v dosahu) ===
 	if wc_cd <= 0 and allies_in_wc_range.size() >= 2:
@@ -78,9 +78,9 @@ func get_actions(enemy_unit: Unit, all_player_units: Array, battle_grid: BattleG
 	var attack_pos = find_attack_move_position(enemy_unit, player_unit, battle_grid)
 	if attack_pos != Vector2i(-1, -1) and allies.is_empty():
 		# Monk útočí jen pokud nemá žádné spojence k buffování
-		var path = find_path(enemy_unit, attack_pos, battle_grid)
-		if not path.is_empty():
-			actions.append(create_move_action(path))
+		var move_path = find_path(enemy_unit, attack_pos, battle_grid)
+		if not move_path.is_empty():
+			actions.append(create_move_action(move_path))
 			var ki_strike = create_attack_action(player_unit, 1.0)
 			ki_strike.special_data["ki_strike"] = true
 			actions.append(ki_strike)
@@ -104,9 +104,9 @@ func get_actions(enemy_unit: Unit, all_player_units: Array, battle_grid: BattleG
 		return actions
 	
 	# === 7. POHYB K HRÁČI (poslední možnost) ===
-	var path = find_path_to_adjacent(enemy_unit, player_unit, battle_grid)
-	if not path.is_empty():
-		actions.append(create_move_action(path))
+	var approach_path = find_path_to_adjacent(enemy_unit, player_unit, battle_grid)
+	if not approach_path.is_empty():
+		actions.append(create_move_action(approach_path))
 		return actions
 	
 	return [create_pass_action()]

@@ -3,7 +3,7 @@ extends ArtifactBehavior
 const MAX_STORED_ENERGY := 2
 
 
-func on_turn_end(ctx: Dictionary = {}) -> void:
+func on_turn_end(_ctx: Dictionary = {}) -> void:
 	if not PlayerData:
 		return
 	var leftover := PlayerData.current_energy

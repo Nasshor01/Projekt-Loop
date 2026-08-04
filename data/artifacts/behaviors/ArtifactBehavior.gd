@@ -31,19 +31,24 @@ func _root_get_node_or_null(path: NodePath) -> Node:
 
 
 func _find_battle_scene() -> Node:
+	"""Resolve live BattleScene. GameManager hosts scenes in SceneContainer — tree.current_scene is NOT reliable."""
 	var tree: SceneTree = _scene_tree()
 	if tree == null:
 		return null
+	var from_group: Node = tree.get_first_node_in_group("battle_scene")
+	if _is_battle_scene(from_group):
+		return from_group
+	# Autoload GameManager keeps the real current battle/map under scene_container.
+	if GameManager:
+		if is_instance_valid(GameManager.current_scene) and _is_battle_scene(GameManager.current_scene):
+			return GameManager.current_scene
+		if is_instance_valid(GameManager.scene_container):
+			for child in GameManager.scene_container.get_children():
+				if _is_battle_scene(child):
+					return child
 	var current: Node = tree.current_scene
 	if _is_battle_scene(current):
 		return current
-	var stack: Array[Node] = [tree.root]
-	while not stack.is_empty():
-		var node: Node = stack.pop_back()
-		if _is_battle_scene(node):
-			return node
-		for child in node.get_children():
-			stack.append(child)
 	return null
 
 
@@ -275,39 +280,39 @@ func _has_status(unit: Node, status_id: String) -> bool:
 	return statuses is Dictionary and (statuses as Dictionary).has(status_id)
 
 
-func on_acquired(ctx: Dictionary = {}) -> void:
+func on_acquired(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func on_removed(ctx: Dictionary = {}) -> void:
+func on_removed(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func on_combat_start(ctx: Dictionary = {}) -> void:
+func on_combat_start(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func on_combat_end(ctx: Dictionary = {}) -> void:
+func on_combat_end(_ctx: Dictionary = {}) -> void:
 	_cleanup_combat_stat_bonuses()
 
 
-func on_turn_start(ctx: Dictionary = {}) -> void:
+func on_turn_start(_ctx: Dictionary = {}) -> void:
 	runtime["turn_counter"] = int(runtime.get("turn_counter", 0)) + 1
 
 
-func on_turn_end(ctx: Dictionary = {}) -> void:
+func on_turn_end(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func on_hand_ready(ctx: Dictionary = {}) -> void:
+func on_hand_ready(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func on_card_played(ctx: Dictionary = {}) -> void:
+func on_card_played(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func on_damage_dealt(ctx: Dictionary = {}) -> void:
+func on_damage_dealt(_ctx: Dictionary = {}) -> void:
 	pass
 
 
@@ -317,44 +322,68 @@ func on_damage_taken(ctx: Dictionary = {}) -> void:
 		_track_combat_hp_lost(amount)
 
 
-func on_unblocked_damage(ctx: Dictionary = {}) -> void:
+func on_unblocked_damage(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func on_enemy_death(ctx: Dictionary = {}) -> void:
+func on_enemy_death(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func on_move(ctx: Dictionary = {}) -> void:
+func on_move(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func on_exhaust(ctx: Dictionary = {}) -> void:
+func on_exhaust(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func on_before_death(ctx: Dictionary = {}) -> void:
+func on_before_death(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func on_status_applied(ctx: Dictionary = {}) -> void:
+func on_status_applied(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func on_thorns_damage(ctx: Dictionary = {}) -> void:
+func on_thorns_damage(_ctx: Dictionary = {}) -> void:
 	pass
 
 
-func modify_card_cost(ctx: Dictionary, cost: int) -> int:
+func on_heal(_ctx: Dictionary = {}) -> void:
+	pass
+
+
+func on_block_gained(_ctx: Dictionary = {}) -> void:
+	pass
+
+
+func on_energy_spent(_ctx: Dictionary = {}) -> void:
+	pass
+
+
+func on_draw_cards(_ctx: Dictionary = {}) -> void:
+	pass
+
+
+func modify_card_cost(_ctx: Dictionary, cost: int) -> int:
 	return cost
 
 
-func modify_shop_price(ctx: Dictionary, price: int) -> int:
+func modify_shop_price(_ctx: Dictionary, price: int) -> int:
 	return price
 
 
-func modify_gold_reward(ctx: Dictionary, gold: int) -> int:
+func modify_gold_reward(_ctx: Dictionary, gold: int) -> int:
 	return gold
+
+
+func modify_outgoing_damage(damage: int, _ctx: Dictionary = {}) -> int:
+	return damage
+
+
+func modify_incoming_damage(damage: int, _ctx: Dictionary = {}) -> int:
+	return damage
 
 
 ## Passive bonuses re-applied by PlayerData.apply_passive_skills() (which resets base max_hp).
@@ -364,3 +393,33 @@ func get_passive_max_hp_bonus() -> int:
 
 func get_passive_max_energy_bonus() -> int:
 	return 0
+
+
+func _sync_artifact_zones_to_grid(zones: Array) -> void:
+	var grid: Node = _find_battle_grid()
+	if grid == null:
+		push_warning("ArtifactBehavior: no BattleGrid — cannot sync zones %s" % str(zones))
+		return
+	if grid.has_method("set_artifact_zones"):
+		grid.call("set_artifact_zones", zones)
+
+
+func _sync_artifact_line_to_grid(cells: Array[Vector2i]) -> void:
+	var grid: Node = _find_battle_grid()
+	if grid == null:
+		push_warning("ArtifactBehavior: no BattleGrid — cannot sync line highlight")
+		return
+	if grid.has_method("set_artifact_line_highlight"):
+		grid.call("set_artifact_line_highlight", cells)
+
+
+func _clear_artifact_zones_of_kind(kind: String) -> void:
+	var grid: Node = _find_battle_grid()
+	if grid != null and grid.has_method("clear_artifact_zones_of_kind"):
+		grid.call("clear_artifact_zones_of_kind", kind)
+
+
+func _clear_artifact_visuals_on_grid() -> void:
+	var grid: Node = _find_battle_grid()
+	if grid != null and grid.has_method("clear_artifact_zones"):
+		grid.call("clear_artifact_zones")

@@ -5,15 +5,31 @@ const ZONE_CHARGES := 3
 const COST_REDUCTION := 1
 
 
-func on_combat_start(ctx: Dictionary = {}) -> void:
+func on_acquired(_ctx: Dictionary = {}) -> void:
+	# Mid-combat console/reward acquire: spawn markers immediately.
+	if _find_battle_grid() != null:
+		_spawn_thrones()
+
+
+func on_combat_start(_ctx: Dictionary = {}) -> void:
 	_spawn_thrones()
 
 
-func on_card_played(ctx: Dictionary = {}) -> void:
+func refresh_combat_visuals(_ctx: Dictionary = {}) -> void:
+	if not (runtime.get("thrones", []) as Array).is_empty():
+		_refresh_throne_visuals()
+
+
+func on_combat_end(_ctx: Dictionary = {}) -> void:
+	_clear_artifact_zones_of_kind("throne")
+	super.on_combat_end(_ctx)
+
+
+func on_card_played(_ctx: Dictionary = {}) -> void:
 	_consume_throne_charge_if_standing()
 
 
-func on_turn_end(ctx: Dictionary = {}) -> void:
+func on_turn_end(_ctx: Dictionary = {}) -> void:
 	var player: Node = _get_player_unit()
 	if player == null:
 		return
@@ -21,7 +37,7 @@ func on_turn_end(ctx: Dictionary = {}) -> void:
 		PlayerData.draw_cards(1)
 
 
-func modify_card_cost(ctx: Dictionary, cost: int) -> int:
+func modify_card_cost(_ctx: Dictionary, cost: int) -> int:
 	var player: Node = _get_player_unit()
 	if player != null and _is_on_throne(_unit_grid_pos(player)):
 		return maxi(0, cost - COST_REDUCTION)
@@ -31,13 +47,32 @@ func modify_card_cost(ctx: Dictionary, cost: int) -> int:
 func _spawn_thrones() -> void:
 	var grid: Node = _find_battle_grid()
 	if grid == null:
+		push_warning("Throne Fragment: BattleGrid not found — markers not spawned")
 		return
 	var cells: Array[Vector2i] = _player_half_cells(grid)
+	if cells.is_empty():
+		push_warning("Throne Fragment: no player-half cells — markers not spawned")
+		return
 	cells.shuffle()
 	var thrones: Array = []
 	for i in mini(THRONE_COUNT, cells.size()):
 		thrones.append({"cell": cells[i], "charges": ZONE_CHARGES})
 	runtime["thrones"] = thrones
+	print("Throne Fragment: spawning %d thrones on %s" % [thrones.size(), str(thrones)])
+	_refresh_throne_visuals()
+
+
+func _refresh_throne_visuals() -> void:
+	var zones: Array = []
+	for entry_v in runtime.get("thrones", []):
+		var entry: Dictionary = entry_v as Dictionary
+		zones.append({
+			"cell": entry.get("cell", Vector2i(-1, -1)),
+			"kind": "throne",
+			"charges": int(entry.get("charges", 0)),
+			"max_charges": ZONE_CHARGES,
+		})
+	_sync_artifact_zones_to_grid(zones)
 
 
 func _is_on_throne(cell: Vector2i) -> bool:
@@ -68,4 +103,5 @@ func _consume_throne_charge_if_standing() -> void:
 			entry["charges"] = ZONE_CHARGES
 			thrones[i] = entry
 		runtime["thrones"] = thrones
+		_refresh_throne_visuals()
 		break

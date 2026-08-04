@@ -10,7 +10,7 @@ func on_damage_taken(ctx: Dictionary = {}) -> void:
 	_add_combat_thorns(1)
 
 
-func on_enemy_death(ctx: Dictionary = {}) -> void:
+func on_enemy_death(_ctx: Dictionary = {}) -> void:
 	var lost := int(runtime.get("hp_lost_this_combat", 0))
 	if lost <= 0:
 		return

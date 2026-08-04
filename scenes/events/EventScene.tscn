@@ -9,6 +9,7 @@
 script = ExtResource("1_snngf")
 
 [node name="UI" type="CanvasLayer" parent="."]
+layer = 25
 
 [node name="Background" type="TextureRect" parent="UI"]
 anchors_preset = 15
@@ -136,7 +137,7 @@ fit_content = true
 custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
 size_flags_horizontal = 4
-text = "Pokračovat"
+text = "Continue"
 
 [node name="CardPileViewer" parent="UI" instance=ExtResource("2_xntkm")]
 unique_name_in_owner = true

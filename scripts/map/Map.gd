@@ -372,7 +372,7 @@ func _build_tutorial_map() -> MapData:
 	final_node.row = 2
 	final_node.column = 0
 	
-	var spacing_x = generator_node.vis_x_spacing if is_instance_valid(generator_node) else 128
+	var _spacing_x = generator_node.vis_x_spacing if is_instance_valid(generator_node) else 128
 	var spacing_y = generator_node.vis_y_spacing if is_instance_valid(generator_node) else 80
 	start_node.position = Vector2(0, 0)
 	camp_node.position = Vector2(0, -spacing_y)

@@ -230,7 +230,7 @@ static func setup_connections_paladin_tiered(nodes: Array[PassiveSkillNode]):
 	if node_map.has("avatar_of_light"):
 		node_map["avatar_of_light"].connected_nodes = []
 
-static func setup_connections_clean(nodes: Array[PassiveSkillNode]):
+static func setup_connections_clean(_nodes: Array[PassiveSkillNode]):
 	"""Zastaralé: pro Paladin strom se používá setup_connections_paladin_tiered(). Pro generování z config slouží setup_connections_from_config()."""
 	pass
 

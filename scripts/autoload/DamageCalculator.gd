@@ -84,7 +84,7 @@ func get_final_damage(
 
 	# Critical: +floor(base_value/2)
 	if is_critical:
-		total += base_value / 2
+		total += base_value >> 1
 
 	# Defensive Stance: 50% less damage (card description: "The next attack against you deals 50% less damage")
 	if target is Unit and target.active_statuses.has("defensive_stance"):
