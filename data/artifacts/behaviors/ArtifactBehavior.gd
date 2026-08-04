@@ -217,6 +217,10 @@ func _add_combat_thorns(amount: int) -> void:
 	runtime["thorns_added"] = int(runtime.get("thorns_added", 0)) + amount
 	if PlayerData:
 		PlayerData.thorns_damage += amount
+	# Combat reflect reads Unit status OR PlayerData — keep both in sync for UI + damage.
+	var player: Node = _get_player_unit()
+	if is_instance_valid(player) and player.has_method("apply_status"):
+		player.call("apply_status", "thorns", amount, 99)
 
 
 func _add_combat_damage_bonus(amount: int) -> void:
@@ -233,6 +237,15 @@ func _cleanup_combat_stat_bonuses() -> void:
 	var thorns: int = int(runtime.get("thorns_added", 0))
 	if thorns > 0:
 		PlayerData.thorns_damage = maxi(0, PlayerData.thorns_damage - thorns)
+		var player: Node = _get_player_unit()
+		if is_instance_valid(player) and player.get("active_statuses") is Dictionary:
+			var statuses: Dictionary = player.get("active_statuses")
+			if statuses.has("thorns"):
+				statuses["thorns"].value = int(statuses["thorns"].get("value", 0)) - thorns
+				if int(statuses["thorns"].value) <= 0:
+					statuses.erase("thorns")
+				if player.has_method("_update_stats_and_emit_signal"):
+					player.call("_update_stats_and_emit_signal")
 	var dmg: int = int(runtime.get("damage_bonus_added", 0))
 	if dmg > 0:
 		PlayerData.global_card_damage_bonus = maxi(0, PlayerData.global_card_damage_bonus - dmg)

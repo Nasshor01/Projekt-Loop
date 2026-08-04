@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://bojpq3tydo1tl"]
+[gd_scene load_steps=4 format=3 uid="uid://bojpq3tydo1tl"]
 
 [ext_resource type="Script" uid="uid://cygnyo7kpi8hh" path="res://scenes/rewards/TreasureScene.gd" id="1_jjf1o"]
 [ext_resource type="Texture2D" uid="uid://c5ud8evr75ovg" path="res://art/sprites/backgrounds/bg_treasure_gold_shrine-Sheet-export.png" id="2_bg"]
+[ext_resource type="PackedScene" uid="uid://blayoutslot01" path="res://scenes/ui/LayoutSlot.tscn" id="3_slot"]
 
 [node name="TreasureScene" type="CanvasLayer"]
 script = ExtResource("1_jjf1o")
@@ -27,6 +28,7 @@ mouse_filter = 2
 color = Color(0.02, 0.02, 0.04, 0.14)
 
 [node name="Label" type="Label" parent="."]
+unique_name_in_owner = true
 anchors_preset = 10
 anchor_right = 1.0
 offset_left = 40.0
@@ -42,18 +44,62 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="."]
+[node name="Slots" type="Control" parent="."]
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 64.0
-offset_top = 168.0
-offset_right = -64.0
-offset_bottom = -64.0
 grow_horizontal = 2
 grow_vertical = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
 mouse_filter = 2
-theme_override_constants/separation = 20
-alignment = 1
+
+[node name="ArtifactSlot_0" parent="Slots" instance=ExtResource("3_slot")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 320.0
+offset_top = 264.0
+offset_right = 392.0
+offset_bottom = 336.0
+slot_kind = 1
+preview_label = "Art 0"
+slot_size = Vector2(72, 72)
+
+[node name="ArtifactSlot_1" parent="Slots" instance=ExtResource("3_slot")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 544.0
+offset_top = 456.0
+offset_right = 616.0
+offset_bottom = 528.0
+slot_kind = 1
+preview_label = "Art 1"
+slot_size = Vector2(72, 72)
+
+[node name="ArtifactSlot_2" parent="Slots" instance=ExtResource("3_slot")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 768.0
+offset_top = 264.0
+offset_right = 840.0
+offset_bottom = 336.0
+slot_kind = 1
+preview_label = "Art 2"
+slot_size = Vector2(72, 72)
+
+[node name="SkipButton" type="Button" parent="."]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(200, 52)
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -240.0
+offset_top = -72.0
+offset_right = -28.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 20
+text = "Continue"

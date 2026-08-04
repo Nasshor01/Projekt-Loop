@@ -269,10 +269,14 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 	if absorbed_by_block > 0 and damage_to_deal > 0:
 		await get_tree().create_timer(0.3).timeout
 
-	# Thorns reflect
-	if absorbed_by_block + damage_to_deal > 0 and active_statuses.has("thorns") and is_instance_valid(attacker):
-		var thorns_amt := int(active_statuses["thorns"].get("value", 0))
-		if thorns_amt > 0 and attacker.has_method("take_damage"):
+	# Thorns reflect — player pool lives on PlayerData; enemies use status.
+	var thorns_amt := 0
+	if _is_local_player() and has_node("/root/PlayerData"):
+		thorns_amt = PlayerData.get_thorns_damage()
+	elif active_statuses.has("thorns"):
+		thorns_amt = int(active_statuses["thorns"].get("value", 0))
+	if absorbed_by_block + damage_to_deal > 0 and thorns_amt > 0 and is_instance_valid(attacker):
+		if attacker.has_method("take_damage"):
 			attacker.take_damage(thorns_amt, true, false, false)
 			if _is_local_player() and has_node("/root/ArtifactManager"):
 				ArtifactManager.on_thorns_damage(thorns_amt, attacker)
@@ -460,6 +464,9 @@ func process_turn_end_statuses():
 			continue
 		# Poison ticks at start of turn — skip here so duration isn't double-decremented
 		if status_id == "poison":
+			continue
+		# Combat thorns (Spiral Bulwark etc.) last whole fight — cleaned on combat end
+		if status_id == "thorns":
 			continue
 		# "Next hit / next attack" buffs must survive end-of-turn into enemy turns
 		if status_id in UNTIL_CONSUMED_STATUSES:

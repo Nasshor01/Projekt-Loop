@@ -445,12 +445,13 @@ func on_unblocked_damage(amount: int, attacker: Node = null) -> Dictionary:
 	return on_damage_taken(amount, attacker)
 
 
-func on_damage_dealt(amount: int, target: Node, was_critical: bool = false):
+func on_damage_dealt(amount: int, target: Node, was_critical: bool = false, card: CardData = null):
 	var context = {
 		"damage_amount": amount,
 		"target": target,
 		"critical_hit": was_critical,
-		"dealer": _get_player_unit()
+		"dealer": _get_player_unit(),
+		"card": card
 	}
 	_enrich_battle_ctx(context)
 	_dispatch_behaviors("on_damage_dealt", context)

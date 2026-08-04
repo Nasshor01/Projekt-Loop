@@ -14,28 +14,28 @@ const SKIP_CARD_GOLD_NORMAL: int = 10
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 const ArtifactChoiceUIScene = preload("res://scenes/ui/ArtifactChoiceUI.tscn")
 const REWARD_CARD_SIZE = CardUI.DESIGN_SIZE
-const REWARD_CARD_SCALE = Vector2(1.0, 1.0)
 const REWARD_HOVER_SCALE := 1.06
-const REWARD_CARD_H_SEP := 48
-const REWARD_CARD_V_SEP := 24
-## 4+ cards (village): slightly smaller so a 2×2 STS-style cluster fits.
-const REWARD_GRID_SCALE := Vector2(0.88, 0.88)
 
 @onready var title_label: Label = %TitleLabel
 @onready var gold_label: Label = %GoldLabel
 @onready var gold_display: HBoxContainer = %GoldRewardDisplay
-@onready var card_container: GridContainer = %CardContainer
-@onready var artifact_container: HBoxContainer = %ArtifactContainer
 @onready var skip_button: Button = %SkipButton
 @onready var card_tooltip: CardTooltip = %CardTooltip
 @onready var tutorial_hint_label: Label = %TutorialHintLabel
 @onready var tutorial_card_added_label: Label = %TutorialCardAddedLabel
+
+var card_slots: Array[LayoutSlot] = []
+var artifact_slots: Array[LayoutSlot] = []
 
 # Tooltip management
 var _current_tooltip_card_data: CardData = null
 var _tutorial_return_to_menu := false
 var _tutorial_hint_text := ""
 var _tutorial_final_reward := false
+# Combo reward (elite): artifact + card — can take both, or card/skip without artifact
+var _combo_mode: bool = false
+var _artifact_claimed: bool = false
+var _card_resolved: bool = false
 # Coop shared reward
 var _coop_my_choice_path: String = ""      # cesta ke kartě, kterou jsem vybral (prázdná = ještě nevybral)
 var _coop_other_choice_path: String = ""   # cesta ke kartě druhého hráče
@@ -48,8 +48,39 @@ var _reward_hover_tweens: Dictionary = {}  # CardUI -> Tween
 func _ready():
 	# Jen inicializace, ŽÁDNÁ logika pro UI
 	print("DEBUG: RewardScene._ready() volán")
+	_collect_layout_slots()
+	for slot in card_slots:
+		if is_instance_valid(slot):
+			slot.visible = false
+	for slot in artifact_slots:
+		if is_instance_valid(slot):
+			slot.visible = false
 	
 	# Tooltip se nyní zobrazuje/schovává pomocí pravého kliknutí - žádné timery nejsou potřeba
+
+
+func _collect_layout_slots() -> void:
+	"""Picks up CardSlot_0..N / ArtifactSlot_0..N from Slots — add more in editor freely."""
+	card_slots.clear()
+	artifact_slots.clear()
+	var root := get_node_or_null("Slots")
+	if root == null:
+		return
+	var i := 0
+	while true:
+		var slot := root.get_node_or_null("CardSlot_%d" % i) as LayoutSlot
+		if slot == null:
+			break
+		card_slots.append(slot)
+		i += 1
+	i = 0
+	while true:
+		var slot := root.get_node_or_null("ArtifactSlot_%d" % i) as LayoutSlot
+		if slot == null:
+			break
+		artifact_slots.append(slot)
+		i += 1
+	print("DEBUG: layout slots cards=", card_slots.size(), " artifacts=", artifact_slots.size())
 
 
 func setup_ui():
@@ -68,46 +99,59 @@ func setup_ui():
 	else:
 		gold_display.visible = false
 
-	# 2. Karty
-	if not card_choices.is_empty():
+	var has_cards := not card_choices.is_empty()
+	var has_artifacts := not artifact_rewards.is_empty()
+	_combo_mode = has_cards and has_artifacts
+	_artifact_claimed = false
+	_card_resolved = false
+
+	# 2. Karty → CardSlot_i
+	for slot in card_slots:
+		slot.visible = false
+		slot.clear_mounted()
+	if has_cards:
 		title_label.text = tr("ui.reward.choose_card")
-		_configure_reward_card_grid(card_choices.size())
-		var face_scale := REWARD_GRID_SCALE if card_choices.size() >= 4 else REWARD_CARD_SCALE
 		if tutorial_card_added_label:
 			tutorial_card_added_label.text = tr("ui.reward.tutorial_card_added")
-		for card_data in card_choices:
-			var card_ui = CardUIScene.instantiate()
-			card_container.add_child(card_ui)
+		for i in range(card_choices.size()):
+			if i >= card_slots.size():
+				break
+			var card_data: CardData = card_choices[i]
+			var slot: LayoutSlot = card_slots[i]
+			slot.visible = true
+			var card_ui: CardUI = CardUIScene.instantiate()
+			slot.mount(card_ui)
 			card_ui.load_card(card_data)
-			if card_ui is CardUI:
-				card_ui.apply_display_mode(CardUI.DisplayMode.REWARD)
-				card_ui.custom_minimum_size = REWARD_CARD_SIZE
-				card_ui.pivot_offset = card_ui.custom_minimum_size * 0.5
-				card_ui.original_scale = face_scale
-				card_ui.base_scale = face_scale
-				card_ui.target_scale = face_scale
-				card_ui.scale = face_scale
-				card_ui.set_process(false)
-				call_deferred("_sync_reward_card_layout", card_ui)
+			card_ui.apply_display_mode(CardUI.DisplayMode.REWARD)
+			card_ui.custom_minimum_size = REWARD_CARD_SIZE
+			card_ui.size = REWARD_CARD_SIZE
+			card_ui.set_process(false)
 			card_ui.card_clicked.connect(_on_card_clicked)
 			card_ui.card_right_clicked.connect(_on_card_right_clicked)
+			slot.fit_mounted()
+			call_deferred("_sync_reward_card_layout", card_ui)
 		# Hover až po layoutu — jinak spawn pod kurzorem spustí falešný mouse_entered.
 		call_deferred("_enable_reward_card_hover")
-	else:
-		card_container.visible = false
 
-	# 3. Artefakty
-	if not artifact_rewards.is_empty():
-		if card_choices.is_empty():
+	# 3. Artefakty → ArtifactSlot_i
+	for slot in artifact_slots:
+		slot.visible = false
+		slot.clear_mounted()
+	if has_artifacts:
+		if not has_cards:
 			title_label.text = tr("ui.reward.title")
-		artifact_container.alignment = BoxContainer.ALIGNMENT_CENTER
-		for artifact_data in artifact_rewards:
+		for i in range(artifact_rewards.size()):
+			if i >= artifact_slots.size():
+				break
+			var artifact_data: ArtifactsData = artifact_rewards[i]
+			var slot: LayoutSlot = artifact_slots[i]
+			slot.visible = true
 			var artifact_ui = ArtifactChoiceUIScene.instantiate()
-			artifact_container.add_child(artifact_ui)
+			slot.mount(artifact_ui)
+			artifact_ui.set_icon_only(true)
 			artifact_ui.display_artifact(artifact_data)
 			artifact_ui.artifact_chosen.connect(_on_artifact_selected)
-	else:
-		artifact_container.visible = false
+			slot.fit_mounted()
 		
 	# 4. Tlačítko "Přeskočit" / "Pokračovat"
 	# TEPRVE NYNÍ nastavujeme tlačítko, když už máme správné hodnoty
@@ -137,26 +181,25 @@ func _on_card_clicked(card_to_add: CardData):
 		return
 	# Solo: výběr karty
 	PlayerData.master_deck.append(card_to_add)
-	for child in card_container.get_children():
-		child.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	card_container.visible = false
+	_card_resolved = true
+	for card_ui in _iter_reward_card_uis():
+		card_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for slot in card_slots:
+		slot.visible = false
 	skip_button.disabled = true
-	if artifact_container.get_child_count() == 0:
-		if _tutorial_return_to_menu:
-			_show_tutorial_card_added()
-			await get_tree().create_timer(0.8).timeout
-		_finish_reward()
-	else:
-		skip_button.text = tr("ui.common.continue")
-		skip_button.disabled = false
-		if skip_button.pressed.is_connected(_on_skip_pressed):
-			skip_button.pressed.disconnect(_on_skip_pressed)
-		skip_button.pressed.connect(_finish_reward)
+	# Elite combo: karta bez artefaktu = artefakt přeskočen
+	if _combo_mode and not _artifact_claimed:
+		_hide_untaken_artifacts()
+	if _tutorial_return_to_menu:
+		_show_tutorial_card_added()
+		await get_tree().create_timer(0.8).timeout
+	_finish_reward()
 
 func _on_skip_pressed():
 	if _is_coop():
 		_coop_on_skip()
 		return
+	_card_resolved = true
 	if encounter_type == EncounterData.EncounterType.NORMAL and not card_choices.is_empty():
 		PlayerData.add_gold(SKIP_CARD_GOLD_NORMAL)
 		if gold_reward > 0:
@@ -165,6 +208,9 @@ func _on_skip_pressed():
 		else:
 			gold_display.visible = true
 			gold_label.text = TranslationHelper.tr_format("ui.reward.gold", {"value": SKIP_CARD_GOLD_NORMAL})
+	# Elite combo: skip karty bez artefaktu = artefakt nebereš
+	if _combo_mode and not _artifact_claimed:
+		_hide_untaken_artifacts()
 	_finish_reward()
 
 # ===== COOP sdílený reward =====
@@ -210,8 +256,8 @@ func _coop_on_skip():
 		PlayerData.add_gold(SKIP_CARD_GOLD_NORMAL)
 	# Disable vstup
 	skip_button.disabled = true
-	for child in card_container.get_children():
-		child.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for card_ui in _iter_reward_card_uis():
+		card_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	rpc("_rpc_coop_reward_skipped")
 	_coop_check_both_done()
 
@@ -239,10 +285,8 @@ func _rpc_coop_reward_skipped():
 
 func _coop_update_card_visuals():
 	"""Vizuální aktualizace karet: moje = zelená (klikatelná pro odznačení), druhého = modrá (disable)."""
-	for child in card_container.get_children():
-		if not child is CardUI:
-			continue
-		var card_data_node: CardData = child.card_data if "card_data" in child else null
+	for child in _iter_reward_card_uis():
+		var card_data_node: CardData = child.card_data
 		if not card_data_node:
 			continue
 		var path = card_data_node.resource_path
@@ -279,15 +323,34 @@ func _coop_check_both_done():
 			_finish_reward()
 
 func _on_artifact_selected(artifact_to_add: ArtifactsData):
+	if _artifact_claimed:
+		return
 	PlayerData.add_artifact(artifact_to_add)
-	# Deaktivujeme všechny ostatní volby artefaktů, aby hráč mohl vybrat jen jeden
-	for child in artifact_container.get_children():
+	_artifact_claimed = true
+	# Deaktivujeme všechny volby artefaktů; vybraný zvýrazníme
+	for child in _iter_reward_artifact_uis():
 		child.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		if child.artifact_data != artifact_to_add:
 			child.modulate = Color(0.5, 0.5, 0.5)
+		else:
+			child.modulate = Color(0.55, 1.0, 0.55)
+	# Elite combo: artefakt vzatý — ještě karta nebo skip
+	if _combo_mode and not _card_resolved:
+		title_label.text = tr("ui.reward.choose_card")
+		return
+	# Boss-only (nebo karta už vyřešená): končíme
 	skip_button.disabled = true
-	# Po výběru artefaktu rovnou jdeme na mapu
 	_finish_reward()
+
+
+func _hide_untaken_artifacts() -> void:
+	for slot in artifact_slots:
+		if not is_instance_valid(slot):
+			continue
+		var mounted := slot.get_mounted()
+		if is_instance_valid(mounted):
+			mounted.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.visible = false
 
 func _on_card_right_clicked(card_data: CardData):
 	"""Toggle tooltip při pravém kliknutí na kartu"""
@@ -315,12 +378,6 @@ func _on_card_hover_exited():
 	card_tooltip.hide_tooltip()
 	_current_tooltip_card_data = null
 
-func _configure_reward_card_grid(count: int) -> void:
-	"""STS2: ≤3 = jedna řada. 4+ (village) = 2×N cluster."""
-	card_container.columns = count if count <= 3 else 2
-	card_container.add_theme_constant_override("h_separation", REWARD_CARD_H_SEP)
-	card_container.add_theme_constant_override("v_separation", REWARD_CARD_V_SEP)
-
 func _show_card_tooltip():
 	"""Tooltip vedle vybrané karty — ne přes ostatní volby."""
 	if not _current_tooltip_card_data or not card_tooltip:
@@ -347,15 +404,33 @@ func _show_card_tooltip():
 	card_tooltip.show_tooltip(_current_tooltip_card_data, tip_pos)
 
 func _find_reward_card_ui(card_data: CardData) -> CardUI:
-	for child in card_container.get_children():
-		if not child is CardUI:
-			continue
-		var cd: CardData = child.card_data
+	for card_ui in _iter_reward_card_uis():
+		var cd: CardData = card_ui.card_data
 		if cd == card_data:
-			return child
+			return card_ui
 		if cd and card_data and cd.resource_path == card_data.resource_path and not card_data.resource_path.is_empty():
-			return child
+			return card_ui
 	return null
+
+func _iter_reward_card_uis() -> Array[CardUI]:
+	var cards: Array[CardUI] = []
+	for slot in card_slots:
+		if not is_instance_valid(slot) or not slot.visible:
+			continue
+		var mounted := slot.get_mounted()
+		if mounted is CardUI:
+			cards.append(mounted as CardUI)
+	return cards
+
+func _iter_reward_artifact_uis() -> Array:
+	var arts: Array = []
+	for slot in artifact_slots:
+		if not is_instance_valid(slot) or not slot.visible:
+			continue
+		var mounted := slot.get_mounted()
+		if is_instance_valid(mounted):
+			arts.append(mounted)
+	return arts
 
 func _apply_tutorial_overrides():
 	if not Engine.is_editor_hint() and has_node("/root/GameManager"):
@@ -381,17 +456,14 @@ func _sync_reward_card_layout(card_ui: CardUI):
 	card_ui.set_target_position(card_ui.position)
 
 func _enable_reward_card_hover() -> void:
-	"""Počkej na layout GridContaineru, reset scale, teprve pak zapni hover."""
+	"""Počkej na layout slotů, reset scale, teprve pak zapni hover."""
 	await get_tree().process_frame
 	await get_tree().process_frame
 	_reward_hover_ready = true
 	_reward_hovered_card = null
-	for child in card_container.get_children():
-		if not child is CardUI:
-			continue
-		var card_ui: CardUI = child
+	for card_ui in _iter_reward_card_uis():
 		_kill_reward_hover_tween(card_ui)
-		var base: Vector2 = card_ui.original_scale if card_ui.original_scale != Vector2.ZERO else REWARD_CARD_SCALE
+		var base: Vector2 = card_ui.original_scale if card_ui.original_scale != Vector2.ZERO else Vector2.ONE
 		card_ui.scale = base
 		card_ui.target_scale = base
 		_wire_reward_card_hover(card_ui)
@@ -404,7 +476,7 @@ func _wire_reward_card_hover(card_ui: CardUI) -> void:
 	card_ui.mouse_exited.connect(_on_reward_card_hover_exit.bind(card_ui))
 
 func _reward_card_base_scale(card_ui: CardUI) -> Vector2:
-	return card_ui.original_scale if card_ui.original_scale != Vector2.ZERO else REWARD_CARD_SCALE
+	return card_ui.original_scale if card_ui.original_scale != Vector2.ZERO else Vector2.ONE
 
 func _kill_reward_hover_tween(card_ui: CardUI) -> void:
 	if _reward_hover_tweens.has(card_ui):

@@ -124,16 +124,21 @@ func _display_item_content():
 			if not card_ui.mouse_exited.is_connected(_on_content_mouse_exited):
 				card_ui.mouse_exited.connect(_on_content_mouse_exited.bind(card_ui))
 		call_deferred("_center_card_in_slot", card_ui if card_ui is CardUI else null)
+		call_deferred("_notify_parent_slot_refit")
 
 	elif item_data is ArtifactsData:
 		var artifact_ui = preload("res://scenes/ui/ArtifactChoiceUI.tscn").instantiate()
 		item_content_container.add_child(artifact_ui)
+		artifact_ui.set_icon_only(true)
 		artifact_ui.display_artifact(item_data)
 		if artifact_stack_info and not artifact_stack_info.is_empty():
 			artifact_ui.set_stack_info(artifact_stack_info)
-		artifact_ui.scale = Vector2(0.85, 0.85)
 		if not artifact_ui.artifact_chosen.is_connected(_on_artifact_clicked_buy):
 			artifact_ui.artifact_chosen.connect(_on_artifact_clicked_buy)
+		# Shrink ShopItemUI footprint so LayoutSlot can scale icon+price cleanly.
+		item_content_container.custom_minimum_size = ArtifactChoiceUI.ICON_ONLY_SIZE
+		custom_minimum_size = Vector2(ArtifactChoiceUI.ICON_ONLY_SIZE.x, ArtifactChoiceUI.ICON_ONLY_SIZE.y + 36.0)
+		call_deferred("_notify_parent_slot_refit")
 
 func _on_card_clicked_buy(_data: CardData) -> void:
 	_try_purchase()
@@ -165,6 +170,30 @@ func _on_content_mouse_exited(node: Control) -> void:
 	tween.tween_property(node, "scale", base, 0.12)
 	if item_data is CardData:
 		emit_signal("card_hover_exited", item_data)
+
+func get_layout_natural_size() -> Vector2:
+	var ms := custom_minimum_size
+	if ms.x > 1.0 and ms.y > 1.0:
+		return ms
+	return Vector2(200, 300)
+
+
+func set_slot_fit_scale(fit_scale: Vector2) -> void:
+	# LayoutSlot already applied scale on this root; keep content at 1× relative.
+	for child in item_content_container.get_children() if is_instance_valid(item_content_container) else []:
+		if child is CardUI:
+			var card := child as CardUI
+			card.original_scale = Vector2.ONE
+			card.base_scale = Vector2.ONE
+			card.target_scale = Vector2.ONE
+			card.scale = Vector2.ONE
+
+
+func _notify_parent_slot_refit() -> void:
+	var parent := get_parent()
+	if parent is LayoutSlot:
+		(parent as LayoutSlot).fit_mounted()
+
 
 func _center_card_in_slot(card_ui: CardUI) -> void:
 	if not is_instance_valid(card_ui) or not is_instance_valid(item_content_container):

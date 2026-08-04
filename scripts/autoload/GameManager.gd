@@ -628,10 +628,10 @@ func _prepare_battle_rewards():
 	# 3. Odměna artefaktů (jen pro elity a bossy)
 	var artifact_reward = []
 	if encounter_type == EncounterData.EncounterType.ELITE:
-		if randf() < 0.40: # 40% šance
-			var artifact = _get_random_elite_artifact()
-			if artifact:
-				artifact_reward.append(artifact)
+		# Elite always grants one artifact (pool may still be empty if player owns everything).
+		var artifact = _get_random_elite_artifact()
+		if artifact:
+			artifact_reward.append(artifact)
 	
 	elif encounter_type == EncounterData.EncounterType.BOSS:
 		if is_instance_valid(BOSS_ARTIFACT_POOL) and BOSS_ARTIFACT_POOL.artifacts != null and not BOSS_ARTIFACT_POOL.artifacts.is_empty():
@@ -661,30 +661,24 @@ func _get_random_elite_artifact() -> ArtifactsData:
 		print("DEBUG: Žádné dostupné elite artefakty")
 		return null
 
+	# Live elite pool is mostly Rare + Legendary — never target empty rarities.
+	var legendary = available.filter(func(art): return art.artifact_type == ArtifactsData.ArtifactType.LEGENDARY)
+	var rare = available.filter(func(art): return art.artifact_type == ArtifactsData.ArtifactType.RARE)
+	var uncommon = available.filter(func(art): return art.artifact_type == ArtifactsData.ArtifactType.UNCOMMON)
+	var common = available.filter(func(art): return art.artifact_type == ArtifactsData.ArtifactType.COMMON)
+
 	var roll = randf()
-	var target_rarity = ArtifactsData.ArtifactType.COMMON
-	if roll < 0.05: # 5% Rare
-		target_rarity = ArtifactsData.ArtifactType.RARE
-	elif roll < 0.35: # 30% Uncommon
-		target_rarity = ArtifactsData.ArtifactType.UNCOMMON
-
-	var filtered_pool = available.filter(func(art): return art.artifact_type == target_rarity)
-	if not filtered_pool.is_empty():
-		return filtered_pool.pick_random()
-	
-	# Fallback, pokud se nenajde daná rarita, zkusíme o stupeň nižší
-	if target_rarity == ArtifactsData.ArtifactType.RARE:
-		filtered_pool = available.filter(func(art): return art.artifact_type == ArtifactsData.ArtifactType.UNCOMMON)
-		if not filtered_pool.is_empty(): 
-			return filtered_pool.pick_random()
-
-	# Poslední záchrana, vrátíme jakýkoliv common
-	filtered_pool = available.filter(func(art): return art.artifact_type == ArtifactsData.ArtifactType.COMMON)
-	if not filtered_pool.is_empty(): 
-		return filtered_pool.pick_random()
-
-	print("DEBUG: Nepodařilo se najít žádný vhodný artefakt")
-	return null # Pokud v poolu nejsou ani common, nevrátíme nic
+	if not legendary.is_empty() and roll < 0.15:
+		return legendary.pick_random()
+	if not rare.is_empty():
+		return rare.pick_random()
+	if not legendary.is_empty():
+		return legendary.pick_random()
+	if not uncommon.is_empty():
+		return uncommon.pick_random()
+	if not common.is_empty():
+		return common.pick_random()
+	return available.pick_random()
 
 #==============================================================================
 # Popup Menu Logic

@@ -265,7 +265,7 @@ func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
 
 func _update_status_display(unit_node: Node) -> void:
 	_clear_container(status_effects_list)
-	if not "active_statuses" in unit_node or unit_node.active_statuses.is_empty():
+	if not (unit_node is Unit) or unit_node.active_statuses.is_empty():
 		status_section.visible = false
 		return
 
@@ -454,9 +454,9 @@ func _build_fingerprint(unit_node: Node) -> String:
 		parts.append(str(unit_node.get_intent_short_text()))
 	if unit_node.has_method("get_intent_detail_text"):
 		parts.append(str(unit_node.get_intent_detail_text()))
-	elif "current_intent_text" in unit_node:
+	elif unit_node is Unit:
 		parts.append(str(unit_node.current_intent_text))
-	if "active_statuses" in unit_node:
+	if unit_node is Unit:
 		parts.append(str(unit_node.active_statuses))
 	if unit_node.has_method("get_status_counters_list"):
 		parts.append(",".join(unit_node.get_status_counters_list()))

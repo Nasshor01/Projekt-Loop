@@ -2023,10 +2023,9 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 				if target == _player_unit_node:
 					_took_damage_last_turn = true
 				
-				# Trigger damage dealt artefakty
-				# POZNÁMKA: Ujisti se, že ArtifactManager.on_damage_dealt bere jako argument 'Node' nebo 'Unit'
+				# Trigger damage dealt artefakty (card must be in ctx — Frostbite/Gilded/Plague Mace filter by it)
 				if has_node("/root/ArtifactManager"):
-					ArtifactManager.on_damage_dealt(damage_to_deal, target, is_critical)
+					ArtifactManager.on_damage_dealt(damage_to_deal, target, is_critical, card_ref)
 
 		CardEffectData.EffectType.GAIN_BLOCK:
 			if target.has_method("add_block"):
@@ -2051,13 +2050,14 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 				
 				# Podpora pro retained_block (blok, který nezmizí na konci tahu)
 				# Pokud string_value obsahuje "retain", nastavíme retained_block
-				if effect.string_value.contains("retain") and target.has("retained_block"):
+				# NOTE: Never use Dictionary.has() or `"prop" in node` on Unit — both call .has() and crash on Node3D.
+				if effect.string_value.contains("retain") and target is Unit:
 					var total_block_added = block_amount
 					if condition_met_before and effect.conditional_bonus_value > 0:
 						total_block_added += effect.conditional_bonus_value
 					target.retained_block += total_block_added
 					# Ujistíme se, že retained_block nepřesáhne current_block
-					target.retained_block = min(target.retained_block, target.current_block)
+					target.retained_block = mini(target.retained_block, target.current_block)
 			
 		CardEffectData.EffectType.HEAL_UNIT:
 			if target.has_method("heal"):
@@ -2102,7 +2102,7 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 			if target.has_method("apply_status"):
 				# Speciální případ: remove_all_debuffs
 				if effect.string_value == "remove_all_debuffs":
-					if target is Unit and target.has("active_statuses"):
+					if target is Unit:
 						# Odstraň debuffy; zachovej buffy (regeneration, aury, until-consumed)
 						var statuses_to_remove = []
 						var keep_buffs := [

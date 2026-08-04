@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3 uid="uid://cx0eokfi1stc4"]
+[gd_scene load_steps=6 format=3 uid="uid://cx0eokfi1stc4"]
 
 [ext_resource type="Script" uid="uid://f1bfi2viwtrk" path="res://scenes/shop/ShopScene.gd" id="1_y0td3"]
 [ext_resource type="PackedScene" uid="uid://pjdtf3hky6c6" path="res://scenes/ui/DeckViewer.tscn" id="2_d8mpu"]
 [ext_resource type="PackedScene" uid="uid://dah2k3m4n5p6q" path="res://scenes/ui/CardTooltip.tscn" id="3_tooltip"]
 [ext_resource type="Texture2D" uid="uid://db74txehf7rrp" path="res://art/sprites/backgrounds/bg_shop_lantern_alley-Sheet-export.png" id="4_bg"]
+[ext_resource type="PackedScene" uid="uid://blayoutslot01" path="res://scenes/ui/LayoutSlot.tscn" id="5_slot"]
 
 [node name="ShopScene" type="Node2D"]
 script = ExtResource("1_y0td3")
@@ -36,6 +37,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 theme_override_constants/margin_left = 40
 theme_override_constants/margin_top = 88
 theme_override_constants/margin_right = 40
@@ -43,6 +45,7 @@ theme_override_constants/margin_bottom = 24
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/MainContainer"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 12
 
 [node name="TitleLabel" type="Label" parent="CanvasLayer/MainContainer/VBoxContainer"]
@@ -54,35 +57,9 @@ theme_override_font_sizes/font_size = 22
 text = "Merchant"
 horizontal_alignment = 1
 
-[node name="TopSpacer" type="Control" parent="CanvasLayer/MainContainer/VBoxContainer"]
+[node name="BodySpacer" type="Control" parent="CanvasLayer/MainContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-size_flags_stretch_ratio = 0.35
-mouse_filter = 2
-
-[node name="GoodsRow" type="HBoxContainer" parent="CanvasLayer/MainContainer/VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-size_flags_stretch_ratio = 1.4
-theme_override_constants/separation = 36
-alignment = 1
-
-[node name="CardsRow" type="HBoxContainer" parent="CanvasLayer/MainContainer/VBoxContainer/GoodsRow"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_constants/separation = 28
-alignment = 1
-
-[node name="RelicSlot" type="HBoxContainer" parent="CanvasLayer/MainContainer/VBoxContainer/GoodsRow"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 4
-alignment = 1
-
-[node name="BottomSpacer" type="Control" parent="CanvasLayer/MainContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 8)
-layout_mode = 2
 mouse_filter = 2
 
 [node name="Footer" type="HBoxContainer" parent="CanvasLayer/MainContainer/VBoxContainer"]
@@ -110,10 +87,125 @@ size_flags_horizontal = 8
 text = "Leave"
 flat = true
 
-[node name="CardPileViewer" parent="CanvasLayer/MainContainer" instance=ExtResource("2_d8mpu")]
+[node name="Slots" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 120.0
+offset_bottom = -70.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CardSlot_0" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 114.0
+offset_top = 72.0
+offset_right = 234.0
+offset_bottom = 252.0
+slot_kind = 2
+preview_label = "Shop 0"
+slot_size = Vector2(120, 180)
+
+[node name="CardSlot_1" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 274.0
+offset_top = 72.0
+offset_right = 394.0
+offset_bottom = 252.0
+slot_kind = 2
+preview_label = "Shop 1"
+slot_size = Vector2(120, 180)
+
+[node name="CardSlot_2" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 434.0
+offset_top = 72.0
+offset_right = 554.0
+offset_bottom = 252.0
+slot_kind = 2
+preview_label = "Shop 2"
+slot_size = Vector2(120, 180)
+
+[node name="CardSlot_3" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 594.0
+offset_top = 72.0
+offset_right = 714.0
+offset_bottom = 252.0
+slot_kind = 2
+preview_label = "Shop 3"
+slot_size = Vector2(120, 180)
+
+[node name="CardSlot_4" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
+unique_name_in_owner = true
+offset_left = 754.0
+offset_top = 72.0
+offset_right = 874.0
+offset_bottom = 252.0
+slot_kind = 2
+preview_label = "Shop 3"
+slot_size = Vector2(120, 180)
+
+[node name="CardSlot_5" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
+unique_name_in_owner = true
+offset_left = 914.0
+offset_top = 72.0
+offset_right = 1034.0
+offset_bottom = 252.0
+slot_kind = 2
+preview_label = "Shop 3"
+slot_size = Vector2(120, 180)
+
+[node name="ArtifactSlot_0" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 232.0
+offset_top = 328.0
+offset_right = 344.0
+offset_bottom = 468.0
+slot_kind = 1
+preview_label = "Relic"
+slot_size = Vector2(112, 140)
+
+[node name="ArtifactSlot_1" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
+unique_name_in_owner = true
+offset_left = 424.0
+offset_top = 328.0
+offset_right = 536.0
+offset_bottom = 468.0
+slot_kind = 1
+preview_label = "Relic"
+slot_size = Vector2(112, 140)
+
+[node name="ArtifactSlot_2" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
+unique_name_in_owner = true
+offset_left = 616.0
+offset_top = 328.0
+offset_right = 728.0
+offset_bottom = 468.0
+slot_kind = 1
+preview_label = "Relic"
+slot_size = Vector2(112, 140)
+
+[node name="ArtifactSlot_3" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
+unique_name_in_owner = true
+offset_left = 808.0
+offset_top = 328.0
+offset_right = 920.0
+offset_bottom = 468.0
+slot_kind = 1
+preview_label = "Relic"
+slot_size = Vector2(112, 140)
+
+[node name="CardPileViewer" parent="CanvasLayer" instance=ExtResource("2_d8mpu")]
 unique_name_in_owner = true
 visible = false
-layout_mode = 2
 
 [node name="CardTooltip" parent="CanvasLayer" instance=ExtResource("3_tooltip")]
 unique_name_in_owner = true

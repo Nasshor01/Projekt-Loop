@@ -20,17 +20,18 @@ const CARD_REMOVAL_INCREMENT = 25
 var rare_card_chance: float = 0.1
 
 @onready var title_label: Label = %TitleLabel
-@onready var cards_row: HBoxContainer = %CardsRow
-@onready var relic_slot: HBoxContainer = %RelicSlot
 @onready var remove_card_button: Button = %RemoveCardButton
 @onready var leave_button: Button = %LeaveButton
 @onready var card_pile_viewer = %CardPileViewer
 @onready var card_tooltip: CardTooltip = %CardTooltip
+var card_slots: Array[LayoutSlot] = []
+var artifact_slots: Array[LayoutSlot] = []
 
 var items_on_sale: Dictionary = {}
 var _current_tooltip_card_data: CardData = null
 
 func _ready():
+	_collect_layout_slots()
 	leave_button.gui_input.connect(_on_leave_button_input)
 	remove_card_button.pressed.connect(_on_remove_card_button_pressed)
 	card_pile_viewer.visibility_changed.connect(_on_viewer_visibility_changed)
@@ -38,6 +39,13 @@ func _ready():
 		card_pile_viewer.card_right_clicked.connect(_on_card_right_clicked)
 	if has_node("/root/PlayerData") and not PlayerData.gold_changed.is_connected(_on_gold_changed):
 		PlayerData.gold_changed.connect(_on_gold_changed)
+
+	for slot in card_slots:
+		if is_instance_valid(slot):
+			slot.visible = false
+	for slot in artifact_slots:
+		if is_instance_valid(slot):
+			slot.visible = false
 
 	_update_ui_texts()
 
@@ -56,6 +64,27 @@ func _ready():
 
 func _is_coop_run() -> bool:
 	return has_node("/root/GameManager") and GameManager.is_coop_run
+
+func _collect_layout_slots() -> void:
+	card_slots.clear()
+	artifact_slots.clear()
+	var root := get_node_or_null("CanvasLayer/Slots")
+	if root == null:
+		return
+	var i := 0
+	while true:
+		var slot := root.get_node_or_null("CardSlot_%d" % i) as LayoutSlot
+		if slot == null:
+			break
+		card_slots.append(slot)
+		i += 1
+	i = 0
+	while true:
+		var slot := root.get_node_or_null("ArtifactSlot_%d" % i) as LayoutSlot
+		if slot == null:
+			break
+		artifact_slots.append(slot)
+		i += 1
 
 func _wait_for_shop_data():
 	for i in range(50):
@@ -76,19 +105,51 @@ func _update_ui_texts():
 		leave_button.text = tr("ui.shop.leave")
 
 func _clear_shop_slots() -> void:
-	for child in cards_row.get_children():
-		child.queue_free()
-	for child in relic_slot.get_children():
-		child.queue_free()
+	for slot in card_slots:
+		if is_instance_valid(slot):
+			slot.clear_mounted()
+			slot.visible = false
+	for slot in artifact_slots:
+		if is_instance_valid(slot):
+			slot.clear_mounted()
+			slot.visible = false
 
 func _all_shop_items() -> Array:
 	var items: Array = []
-	items.append_array(cards_row.get_children())
-	items.append_array(relic_slot.get_children())
+	for slot in card_slots:
+		if not is_instance_valid(slot):
+			continue
+		var mounted := slot.get_mounted()
+		if is_instance_valid(mounted):
+			items.append(mounted)
+	for slot in artifact_slots:
+		if not is_instance_valid(slot):
+			continue
+		var mounted := slot.get_mounted()
+		if is_instance_valid(mounted):
+			items.append(mounted)
 	return items
 
-func _attach_shop_item(shop_item_ui: ShopItemUI, parent: Control) -> void:
-	parent.add_child(shop_item_ui)
+func _next_free_card_slot() -> LayoutSlot:
+	for slot in card_slots:
+		if is_instance_valid(slot) and slot.is_empty():
+			return slot
+	return null
+
+func _next_free_artifact_slot() -> LayoutSlot:
+	for slot in artifact_slots:
+		if is_instance_valid(slot) and slot.is_empty():
+			return slot
+	return null
+
+func _attach_shop_item(shop_item_ui: ShopItemUI, is_artifact: bool = false) -> void:
+	var slot: LayoutSlot = _next_free_artifact_slot() if is_artifact else _next_free_card_slot()
+	if slot == null:
+		push_warning("ShopScene: no free layout slot for item")
+		shop_item_ui.queue_free()
+		return
+	slot.visible = true
+	slot.mount(shop_item_ui)
 	shop_item_ui.item_purchased.connect(_on_item_purchased)
 	shop_item_ui.card_right_clicked.connect(_on_card_right_clicked)
 	shop_item_ui.card_hover_exited.connect(_on_card_hover_exited)
@@ -130,7 +191,7 @@ func _generate_shop_inventory():
 			shop_item_ui.setup_item(card_data, items_on_sale[card_data], true, list_price)
 		else:
 			shop_item_ui.setup_item(card_data, list_price)
-		_attach_shop_item(shop_item_ui, cards_row)
+		_attach_shop_item(shop_item_ui)
 
 	var available_artifacts = get_available_artifacts(SHOP_ARTIFACT_POOL.artifacts.duplicate())
 	if not available_artifacts.is_empty():
@@ -142,7 +203,7 @@ func _generate_shop_inventory():
 			if has_node("/root/ArtifactManager"):
 				art_price = ArtifactManager.modify_shop_price(ARTIFACT_PRICE, artifact_to_sell)
 			shop_item_ui.setup_item(artifact_to_sell, art_price, false, 0, stack_info)
-			_attach_shop_item(shop_item_ui, relic_slot)
+			_attach_shop_item(shop_item_ui, true)
 
 	_refresh_all_affordability()
 
@@ -183,7 +244,7 @@ func _generate_shop_from_host_data(data: Array):
 				shop_item_ui.setup_item(card, price, true, original_price)
 			else:
 				shop_item_ui.setup_item(card, price)
-			_attach_shop_item(shop_item_ui, cards_row)
+			_attach_shop_item(shop_item_ui)
 
 		elif item_type == "artifact":
 			var artifact = load(path) as ArtifactsData
@@ -192,7 +253,7 @@ func _generate_shop_from_host_data(data: Array):
 			var shop_item_ui = ShopItemUIScene.instantiate()
 			var stack_info = PlayerData.get_artifact_stack_info(artifact.artifact_name)
 			shop_item_ui.setup_item(artifact, ARTIFACT_PRICE, false, 0, stack_info)
-			_attach_shop_item(shop_item_ui, relic_slot)
+			_attach_shop_item(shop_item_ui, true)
 
 	_refresh_all_affordability()
 

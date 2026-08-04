@@ -2,6 +2,7 @@ extends ArtifactBehavior
 
 const CHILL_VALUE := 1
 const CHILL_THRESHOLD := 3
+const BONUS_MULT := 1.5
 
 
 func on_damage_dealt(ctx: Dictionary = {}) -> void:
@@ -12,8 +13,12 @@ func on_damage_dealt(ctx: Dictionary = {}) -> void:
 	if not is_instance_valid(target):
 		return
 	_apply_status(target, "chilled", CHILL_VALUE, 2)
-	if _has_status(target, "chilled"):
-		var chill: int = _status_value(target, "chilled")
-		if chill >= CHILL_THRESHOLD:
-			_apply_status(target, "weakness", 1, 1)
-			ctx["damage_multiplier"] = 1.5
+	if _status_value(target, "chilled") >= CHILL_THRESHOLD:
+		_apply_status(target, "weakness", 1, 1)
+
+
+func modify_outgoing_damage(damage: int, ctx: Dictionary = {}) -> int:
+	var target: Node = ctx.get("target") as Node
+	if is_instance_valid(target) and _status_value(target, "chilled") >= CHILL_THRESHOLD:
+		return int(round(float(damage) * BONUS_MULT))
+	return damage
