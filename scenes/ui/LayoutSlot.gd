@@ -117,7 +117,7 @@ func _refresh_preview() -> void:
 	_preview.color = color
 	if _label:
 		_label.text = preview_label
-		_label.add_theme_font_size_override("font_size", 12)
+		_label.add_theme_font_size_override("font_size", 20)
 		_label.add_theme_color_override("font_color", Color(1, 1, 1, 0.95))
 		_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 		_label.add_theme_constant_override("outline_size", 3)
@@ -183,8 +183,11 @@ func fit_mounted() -> void:
 	else:
 		fit_scale = Vector2(target.x / natural.x, target.y / natural.y)
 
-	_mounted.pivot_offset = natural * 0.5
+	# Scale from top-left (no center pivot) so visual rect == mouse hitbox.
+	_mounted.pivot_offset = Vector2.ZERO
 	_mounted.scale = fit_scale
+	_mounted.size = natural
+	_mounted.custom_minimum_size = natural
 	var drawn := natural * fit_scale
 	_mounted.position = Vector2(
 		(target.x - drawn.x) * 0.5,
@@ -212,4 +215,4 @@ func _get_natural_size(node: Control) -> Vector2:
 		return ms
 	if node.size.x > 1.0 and node.size.y > 1.0:
 		return node.size
-	return Vector2(192, 240)
+	return CardUI.DESIGN_SIZE

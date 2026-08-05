@@ -4,7 +4,7 @@ extends CanvasLayer
 @onready var gold_label = $MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay/GoldLabel
 @onready var floor_label = $MainPanel/MarginContainer/MainLayout/CenterSection/FloorDisplay/FloorLabel
 @onready var ng_plus_label = $MainPanel/MarginContainer/MainLayout/CenterSection/NGPlusDisplay/NGPlusLabel
-@onready var player_artifacts_ui = $MainPanel/MarginContainer/MainLayout/RightSection/PlayerArtifactsUI
+@onready var player_artifacts_ui = $ArtifactsStrip/PlayerArtifactsUI
 @onready var deck_button = $MainPanel/MarginContainer/MainLayout/RightSection/DeckButton
 @onready var menu_button = $MainPanel/MarginContainer/MainLayout/RightSection/MenuButton
 @onready var deck_viewer = $DeckViewer

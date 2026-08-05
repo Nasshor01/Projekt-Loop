@@ -38,7 +38,7 @@ offset_bottom = 148.0
 grow_horizontal = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 40
 text = "Našel jsi poklad! Vyber si artefakt."
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -56,35 +56,35 @@ mouse_filter = 2
 [node name="ArtifactSlot_0" parent="Slots" instance=ExtResource("3_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 320.0
-offset_top = 264.0
-offset_right = 392.0
-offset_bottom = 336.0
+offset_left = 800.0
+offset_top = 344.0
+offset_right = 920.0
+offset_bottom = 464.0
 slot_kind = 1
 preview_label = "Art 0"
-slot_size = Vector2(72, 72)
+slot_size = Vector2(120, 120)
 
 [node name="ArtifactSlot_1" parent="Slots" instance=ExtResource("3_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 544.0
-offset_top = 456.0
-offset_right = 616.0
-offset_bottom = 528.0
+offset_left = 1024.0
+offset_top = 536.0
+offset_right = 1144.0
+offset_bottom = 656.0
 slot_kind = 1
 preview_label = "Art 1"
-slot_size = Vector2(72, 72)
+slot_size = Vector2(120, 120)
 
 [node name="ArtifactSlot_2" parent="Slots" instance=ExtResource("3_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 768.0
-offset_top = 264.0
-offset_right = 840.0
-offset_bottom = 336.0
+offset_left = 1248.0
+offset_top = 344.0
+offset_right = 1368.0
+offset_bottom = 464.0
 slot_kind = 1
 preview_label = "Art 2"
-slot_size = Vector2(72, 72)
+slot_size = Vector2(120, 120)
 
 [node name="SkipButton" type="Button" parent="."]
 unique_name_in_owner = true
@@ -101,5 +101,5 @@ offset_right = -28.0
 offset_bottom = -20.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 33
 text = "Continue"

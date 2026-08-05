@@ -6,18 +6,7 @@ const ShopItemUIScene = preload("res://scenes/shop/ShopItemUI.tscn")
 const SHOP_CARD_POOL = preload("res://data/cards/shop_card_pool.tres")
 const SHOP_ARTIFACT_POOL = preload("res://data/artifacts/basic_artifact_pool.tres")
 
-const CARD_PRICES = {
-	CardData.CardRarity.BASIC: 30,
-	CardData.CardRarity.COMMON: 50,
-	CardData.CardRarity.UNCOMMON: 50, ## deprecated → same as Common
-	CardData.CardRarity.RARE: 120,
-	CardData.CardRarity.EPIC: 200,
-	CardData.CardRarity.LEGENDARY: 300,
-}
-const ARTIFACT_PRICE = 200
-const CARD_REMOVAL_BASE_COST = 75
-const CARD_REMOVAL_INCREMENT = 25
-var rare_card_chance: float = 0.1
+var rare_card_chance: float = 0.3
 
 @onready var title_label: Label = %TitleLabel
 @onready var remove_card_button: Button = %RemoveCardButton
@@ -159,8 +148,9 @@ func _generate_shop_inventory():
 	_clear_shop_slots()
 
 	rare_card_chance = VillageBonuses.get_rare_card_chance()
+	var card_offer_count := mini(VillageBonuses.get_shop_card_count(), card_slots.size())
 	var cards_to_sell = SHOP_CARD_POOL.pick_weighted_cards(
-		VillageBonuses.get_shop_card_count(),
+		card_offer_count,
 		rare_card_chance,
 		PlayerData.selected_class,
 		PlayerData.selected_subclass,
@@ -174,8 +164,7 @@ func _generate_shop_inventory():
 
 	var sale_card = cards_to_sell.pick_random()
 	if is_instance_valid(sale_card):
-		var sale_base = CARD_PRICES.get(sale_card.rarity, 50)
-		var sale_price = int(sale_base * 0.5)
+		var sale_price = ShopPricing.card_sale_price(sale_card.rarity)
 		if has_node("/root/ArtifactManager"):
 			sale_price = ArtifactManager.modify_shop_price(sale_price, sale_card)
 		items_on_sale[sale_card] = sale_price
@@ -184,7 +173,7 @@ func _generate_shop_inventory():
 		if not is_instance_valid(card_data):
 			continue
 		var shop_item_ui = ShopItemUIScene.instantiate()
-		var list_price = CARD_PRICES.get(card_data.rarity, 50)
+		var list_price = ShopPricing.card_list_price(card_data.rarity)
 		if has_node("/root/ArtifactManager"):
 			list_price = ArtifactManager.modify_shop_price(list_price, card_data)
 		if items_on_sale.has(card_data):
@@ -193,19 +182,33 @@ func _generate_shop_inventory():
 			shop_item_ui.setup_item(card_data, list_price)
 		_attach_shop_item(shop_item_ui)
 
-	var available_artifacts = get_available_artifacts(SHOP_ARTIFACT_POOL.artifacts.duplicate())
-	if not available_artifacts.is_empty():
-		var artifact_to_sell = available_artifacts.pick_random()
-		if is_instance_valid(artifact_to_sell):
-			var shop_item_ui = ShopItemUIScene.instantiate()
-			var stack_info = PlayerData.get_artifact_stack_info(artifact_to_sell.artifact_name)
-			var art_price: int = ARTIFACT_PRICE
-			if has_node("/root/ArtifactManager"):
-				art_price = ArtifactManager.modify_shop_price(ARTIFACT_PRICE, artifact_to_sell)
-			shop_item_ui.setup_item(artifact_to_sell, art_price, false, 0, stack_info)
-			_attach_shop_item(shop_item_ui, true)
+	_offer_shop_artifacts()
 
 	_refresh_all_affordability()
+
+
+func _offer_shop_artifacts() -> void:
+	var want := mini(VillageBonuses.get_shop_artifact_count(), artifact_slots.size())
+	if want <= 0:
+		return
+	var available_artifacts = get_available_artifacts(SHOP_ARTIFACT_POOL.artifacts.duplicate())
+	if available_artifacts.is_empty():
+		return
+	available_artifacts.shuffle()
+	var offered := 0
+	for artifact_to_sell in available_artifacts:
+		if offered >= want:
+			break
+		if not is_instance_valid(artifact_to_sell):
+			continue
+		var shop_item_ui = ShopItemUIScene.instantiate()
+		var stack_info = PlayerData.get_artifact_stack_info(artifact_to_sell.artifact_name)
+		var art_price: int = ShopPricing.artifact_price(artifact_to_sell)
+		if has_node("/root/ArtifactManager"):
+			art_price = ArtifactManager.modify_shop_price(art_price, artifact_to_sell)
+		shop_item_ui.setup_item(artifact_to_sell, art_price, false, 0, stack_info)
+		_attach_shop_item(shop_item_ui, true)
+		offered += 1
 
 func _serialize_shop_inventory() -> Array:
 	var result: Array = []
@@ -213,13 +216,23 @@ func _serialize_shop_inventory() -> Array:
 		if not is_instance_valid(child) or not child.has_method("get_item_data"):
 			continue
 		var item = child.get_item_data()
+		var shown_price: int = child.purchase_cost if child is ShopItemUI else 50
 		if item is CardData:
 			var is_sale = items_on_sale.has(item)
-			var price = items_on_sale[item] if is_sale else CARD_PRICES.get(item.rarity, 50)
-			var original = CARD_PRICES.get(item.rarity, 50)
-			result.append({"type": "card", "path": item.resource_path, "price": price, "is_sale": is_sale, "original_price": original})
+			var original = ShopPricing.CARD_BASE.get(item.rarity, 50)
+			result.append({
+				"type": "card",
+				"path": item.resource_path,
+				"price": shown_price,
+				"is_sale": is_sale,
+				"original_price": original
+			})
 		elif item is ArtifactsData:
-			result.append({"type": "artifact", "path": item.resource_path, "price": ARTIFACT_PRICE})
+			result.append({
+				"type": "artifact",
+				"path": item.resource_path,
+				"price": shown_price
+			})
 	return result
 
 func _generate_shop_from_host_data(data: Array):
@@ -252,7 +265,7 @@ func _generate_shop_from_host_data(data: Array):
 				continue
 			var shop_item_ui = ShopItemUIScene.instantiate()
 			var stack_info = PlayerData.get_artifact_stack_info(artifact.artifact_name)
-			shop_item_ui.setup_item(artifact, ARTIFACT_PRICE, false, 0, stack_info)
+			shop_item_ui.setup_item(artifact, price, false, 0, stack_info)
 			_attach_shop_item(shop_item_ui, true)
 
 	_refresh_all_affordability()
@@ -272,9 +285,9 @@ func _on_item_purchased(item_data: Resource, shop_item: ShopItemUI):
 	var cost: int = shop_item.purchase_cost if is_instance_valid(shop_item) else -1
 	if cost < 0:
 		if item_data is CardData:
-			cost = items_on_sale[item_data] if items_on_sale.has(item_data) else CARD_PRICES.get(item_data.rarity, 50)
+			cost = items_on_sale[item_data] if items_on_sale.has(item_data) else ShopPricing.card_list_price(item_data.rarity)
 		else:
-			cost = ARTIFACT_PRICE
+			cost = ShopPricing.artifact_price(item_data as ArtifactsData)
 		if has_node("/root/ArtifactManager"):
 			cost = ArtifactManager.modify_shop_price(cost, item_data)
 
@@ -334,7 +347,7 @@ func _shop_check_both_ready():
 		GameManager.leave_shop()
 
 func get_card_removal_cost() -> int:
-	return CARD_REMOVAL_BASE_COST + PlayerData.shop_card_removals_count * CARD_REMOVAL_INCREMENT
+	return ShopPricing.removal_cost(PlayerData.shop_card_removals_count)
 
 func _on_remove_card_button_pressed():
 	if PlayerData.gold >= get_card_removal_cost():

@@ -70,7 +70,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 41
+theme_override_font_sizes/font_size = 68
 text = "Název Eventu"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -83,8 +83,8 @@ stretch_mode = 5
 
 [node name="DescriptionText" type="RichTextLabel" parent="UI/EventPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/mono_font_size = 20
-theme_override_font_sizes/normal_font_size = 20
+theme_override_font_sizes/mono_font_size = 33
+theme_override_font_sizes/normal_font_size = 33
 bbcode_enabled = true
 text = "Zde bude delší popis toho, co se děje. Může mít více řádků a vyprávět krátký příběh, který hráče uvede do situace."
 fit_content = true
@@ -128,7 +128,7 @@ theme_override_constants/separation = 20
 
 [node name="ResultText" type="RichTextLabel" parent="UI/ResultPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/normal_font_size = 24
+theme_override_font_sizes/normal_font_size = 40
 bbcode_enabled = true
 text = "Zde bude výsledek tvé volby."
 fit_content = true

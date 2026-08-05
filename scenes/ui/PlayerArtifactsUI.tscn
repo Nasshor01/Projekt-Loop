@@ -2,7 +2,9 @@
 
 [ext_resource type="Script" uid="uid://c4yck52k7eiu6" path="res://scenes/ui/PlayerArtifactsUI.gd" id="1_1qvl0"]
 
-[node name="PlayerArtifactsUI" type="HBoxContainer"]
+[node name="PlayerArtifactsUI" type="HFlowContainer"]
 offset_right = 40.0
 offset_bottom = 40.0
+mouse_filter = 2
+size_flags_horizontal = 3
 script = ExtResource("1_1qvl0")

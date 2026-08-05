@@ -20,7 +20,7 @@ func _ready():
 		tier_label.name = "TierLabel"
 		tier_label.position = Vector2(4, 4)
 		tier_label.size = Vector2(20, 20)
-		tier_label.add_theme_font_size_override("font_size", 12)
+		tier_label.add_theme_font_size_override("font_size", 20)
 		tier_label.add_theme_color_override("font_color", Color.WHITE)
 		tier_label.add_theme_color_override("font_shadow_color", Color.BLACK)
 		tier_label.add_theme_constant_override("shadow_offset_x", 1)
@@ -32,7 +32,7 @@ func _ready():
 	if not cost_label:
 		cost_label = Label.new()
 		cost_label.name = "CostLabel"
-		cost_label.add_theme_font_size_override("font_size", 10)
+		cost_label.add_theme_font_size_override("font_size", 17)
 		cost_label.add_theme_color_override("font_color", Color.YELLOW)
 		cost_label.add_theme_color_override("font_shadow_color", Color.BLACK)
 		cost_label.add_theme_constant_override("shadow_offset_x", 1)

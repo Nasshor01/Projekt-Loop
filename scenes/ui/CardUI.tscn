@@ -41,22 +41,20 @@ max_uses_before_removal = -1
 metadata/_custom_type_script = "uid://uk53klqs1ti4"
 
 [node name="CardUi" type="Control"]
-custom_minimum_size = Vector2(192, 240)
+custom_minimum_size = Vector2(320, 400)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 64.0
-offset_bottom = 80.0
+offset_right = 320.0
+offset_bottom = 400.0
 script = ExtResource("1_ob8v0")
 card_data = SubResource("Resource_r3b4p")
-name_font_size = 14
-description_font_size = 14
 
 [node name="CardTemplateImage" type="TextureRect" parent="."]
 texture_filter = 1
-custom_minimum_size = Vector2(192, 240)
+custom_minimum_size = Vector2(320, 400)
 layout_mode = 0
-offset_right = 192.0
-offset_bottom = 240.0
+offset_right = 320.0
+offset_bottom = 400.0
 mouse_filter = 2
 texture = ExtResource("4_pmyly")
 expand_mode = 1
@@ -65,25 +63,25 @@ stretch_mode = 5
 [node name="ArtworkTextureRect" type="TextureRect" parent="."]
 texture_filter = 1
 layout_mode = 0
-offset_left = 39.0
-offset_top = 39.0
-offset_right = 153.0
-offset_bottom = 96.0
+offset_left = 65.0
+offset_top = 65.0
+offset_right = 255.0
+offset_bottom = 160.0
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
 [node name="NameLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 33.0
-offset_top = 98.0
-offset_right = 159.0
-offset_bottom = 122.0
+offset_left = 55.0
+offset_top = 163.0
+offset_right = 265.0
+offset_bottom = 203.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("4_cardfont")
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 28
 text = "Název karty"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -91,15 +89,15 @@ clip_text = true
 
 [node name="CostLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 78.0
-offset_top = 4.0
-offset_right = 114.0
-offset_bottom = 40.0
+offset_left = 130.0
+offset_top = 7.0
+offset_right = 190.0
+offset_bottom = 67.0
 theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 theme_override_fonts/font = ExtResource("4_cardfont")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 37
 text = "XX"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -107,16 +105,16 @@ clip_text = true
 
 [node name="DescriptionLabel" type="RichTextLabel" parent="."]
 layout_mode = 0
-offset_left = 42.0
-offset_top = 126.0
-offset_right = 150.0
-offset_bottom = 208.0
+offset_left = 70.0
+offset_top = 210.0
+offset_right = 250.0
+offset_bottom = 347.0
 theme_override_colors/default_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 theme_override_constants/line_separation = 2
 theme_override_fonts/normal_font = ExtResource("4_cardfont")
-theme_override_font_sizes/normal_font_size = 19
+theme_override_font_sizes/normal_font_size = 32
 bbcode_enabled = true
 text = "[center]Popis karty[/center]"
 scroll_active = false
@@ -124,15 +122,15 @@ horizontal_alignment = 1
 
 [node name="UsageLabel" type="Label" parent="."]
 layout_mode = 0
-offset_left = 130.0
-offset_top = 208.0
-offset_right = 188.0
-offset_bottom = 232.0
+offset_left = 217.0
+offset_top = 347.0
+offset_right = 313.0
+offset_bottom = 387.0
 theme_override_colors/font_color = Color(0.45, 0.28, 0.05, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_fonts/font = ExtResource("4_cardfont")
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 20
 text = "1/2"
 horizontal_alignment = 2
 vertical_alignment = 2

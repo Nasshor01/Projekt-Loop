@@ -33,8 +33,6 @@ color = Color(0.04, 0.05, 0.08, 0.2)
 
 [node name="MapGenerator" type="Node" parent="."]
 script = ExtResource("2_nuen2")
-vis_y_spacing = 100
-vis_position_randomness = Vector2(8, 6)
 vis_boss_y_offset = -85.0
 
 [node name="Connections" type="Node2D" parent="."]
@@ -44,17 +42,16 @@ vis_boss_y_offset = -85.0
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="SeedLabel" type="Label" parent="CanvasLayer"]
-offset_left = 2.0
-offset_top = 622.0
-offset_right = 42.0
-offset_bottom = 645.0
+offset_left = 24.0
+offset_top = 768.0
+offset_right = 64.0
+offset_bottom = 793.0
 
 [node name="Panel" type="Panel" parent="CanvasLayer"]
-visible = false
-offset_left = 5.0
-offset_top = 462.0
-offset_right = 186.0
-offset_bottom = 566.0
+offset_left = 16.0
+offset_top = 816.0
+offset_right = 272.0
+offset_bottom = 1008.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Panel"]
 layout_mode = 0
@@ -91,6 +88,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -45.0
+offset_right = 40.0
+offset_bottom = 103.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 5
@@ -105,6 +106,6 @@ layout_mode = 2
 
 [node name="Label" type="Label" parent="CanvasLayer/LegendPanel/LegendContainer/HBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 33
 
 [node name="DevConsole" parent="." instance=ExtResource("3_nuen2")]

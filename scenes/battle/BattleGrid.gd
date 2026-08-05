@@ -583,7 +583,7 @@ func _spawn_move_preview_arrow(enemy_node: Node) -> void:
 		return
 	var arrow := Label3D.new()
 	arrow.text = "▼"
-	arrow.font_size = 64
+	arrow.font_size = 107
 	arrow.modulate = Color(0.35, 0.75, 1.0, 1)
 	arrow.outline_modulate = Color(0, 0, 0, 1)
 	arrow.outline_size = 8
@@ -752,7 +752,7 @@ func _rebuild_artifact_markers() -> void:
 		var max_charges: int = int(info.get("max_charges", 3))
 		var label := Label3D.new()
 		label.text = "%d/%d" % [charges, max_charges]
-		label.font_size = 72
+		label.font_size = 120
 		label.modulate = Color(1, 0.95, 0.45, 1)
 		label.outline_modulate = Color(0, 0, 0, 1)
 		label.outline_size = 12

@@ -81,7 +81,7 @@ func _add_round_separator() -> void:
 	tip.text = "›"
 	tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	tip.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	tip.add_theme_font_size_override("font_size", 14)
+	tip.add_theme_font_size_override("font_size", 23)
 	tip.add_theme_color_override("font_color", Color(0.1, 0.08, 0.04, 1))
 	tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	sep.add_child(tip)

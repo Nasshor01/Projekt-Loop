@@ -64,7 +64,7 @@ grow_horizontal = 0
 grow_vertical = 0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 20
 text = "Pre-Alpha 0.3.7"
 horizontal_alignment = 2
 
@@ -142,7 +142,7 @@ theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="MultiplayerPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 27
 text = "MULTIPLAYER"
 horizontal_alignment = 1
 

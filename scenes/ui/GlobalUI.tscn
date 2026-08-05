@@ -56,7 +56,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 37
 text = "HP: 50/50"
 
 [node name="CenterSection" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout"]
@@ -79,7 +79,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.35, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 30
 text = "Zlato: 100"
 
 [node name="FloorDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
@@ -91,7 +91,7 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 30
 text = "Patro: 1"
 
 [node name="NGPlusDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
@@ -103,16 +103,13 @@ alignment = 1
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 30
 text = "NG+: 0"
 
 [node name="RightSection" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout"]
 layout_mode = 2
 theme_override_constants/separation = 15
 alignment = 1
-
-[node name="PlayerArtifactsUI" parent="MainPanel/MarginContainer/MainLayout/RightSection" instance=ExtResource("2_z3wfs")]
-layout_mode = 2
 
 [node name="DeckButton" type="Button" parent="MainPanel/MarginContainer/MainLayout/RightSection"]
 layout_mode = 2
@@ -121,6 +118,24 @@ text = "Balíček (30)"
 [node name="MenuButton" type="Button" parent="MainPanel/MarginContainer/MainLayout/RightSection"]
 layout_mode = 2
 text = "Menu"
+
+[node name="ArtifactsStrip" type="MarginContainer" parent="."]
+clip_contents = true
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 80.0
+offset_right = -1408.0
+offset_bottom = 576.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 4
+
+[node name="PlayerArtifactsUI" parent="ArtifactsStrip" instance=ExtResource("2_z3wfs")]
+layout_mode = 2
+size_flags_vertical = 3
 
 [node name="DeckViewer" parent="." instance=ExtResource("3_abcde")]
 visible = false
@@ -160,7 +175,7 @@ offset_bottom = -14.0
 grow_horizontal = 0
 grow_vertical = 0
 theme_override_colors/font_color = Color(1, 1, 1, 0.35)
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 17
 text = "Pre-Alpha 0.3.7"
 horizontal_alignment = 2
 vertical_alignment = 2

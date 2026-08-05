@@ -85,7 +85,7 @@ func _make_building_row(building_id: String) -> PanelContainer:
 		VillageBonuses.get_building_name(building_id),
 		TranslationHelper.tr_format("village.level", {"current": level, "max": max_lv})
 	]
-	name_label.add_theme_font_size_override("font_size", 16)
+	name_label.add_theme_font_size_override("font_size", 27)
 	text_col.add_child(name_label)
 
 	var current_label := Label.new()

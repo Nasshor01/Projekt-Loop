@@ -19,9 +19,12 @@ const DEFS := {
 
 const BASE_REWARD_CARDS := 3
 const BASE_SHOP_CARDS := 3
-const BASE_RARE_CHANCE := 0.1
-const BASE_EPIC_CHANCE := 0.05
-const BASE_LEGENDARY_CHANCE := 0.02
+const BASE_SHOP_ARTIFACTS := 1
+## STS2-ish combat reward bands (Common ≈ remainder).
+## Rare≈STS Uncommon, Epic≈STS Rare, Legendary above Rare.
+const BASE_RARE_CHANCE := 0.30
+const BASE_EPIC_CHANCE := 0.12
+const BASE_LEGENDARY_CHANCE := 0.03
 
 static func get_def(building_id: String) -> Dictionary:
 	return DEFS.get(building_id, {})
@@ -70,31 +73,45 @@ static func get_battle_start_block() -> int:
 	return get_level(CHAPEL) * int(get_def(CHAPEL).get("block_per_level", 2))
 
 static func get_reward_card_count() -> int:
+	## RewardScene has 4 CardSlots — never offer more than layout.
 	var lib := get_level(LIBRARY)
-	if lib >= 5:
-		return 5
 	if lib >= 1:
 		return 4
 	return BASE_REWARD_CARDS
 
 static func get_shop_card_count() -> int:
-	if get_level(LIBRARY) >= 3:
-		return BASE_SHOP_CARDS + 1
+	## ShopScene has 6 CardSlots — Library fills them gradually.
+	var lib := get_level(LIBRARY)
+	if lib >= 5:
+		return 6
+	if lib >= 3:
+		return 5
+	if lib >= 1:
+		return 4
 	return BASE_SHOP_CARDS
+
+## How many relic icons the shop fills (scene has 3 ArtifactSlots). Market unlocks more.
+static func get_shop_artifact_count() -> int:
+	var market := get_level(MARKET)
+	if market >= 3:
+		return 3
+	if market >= 1:
+		return 2
+	return BASE_SHOP_ARTIFACTS
 
 static func get_rare_card_chance() -> float:
 	var chance := BASE_RARE_CHANCE
 	var lib := get_level(LIBRARY)
 	if lib >= 2:
-		chance += 0.05
+		chance += 0.04
 	if lib >= 4:
-		chance += 0.05
+		chance += 0.04
 	return chance
 
 static func get_epic_card_chance() -> float:
 	var chance := BASE_EPIC_CHANCE
 	if get_level(LIBRARY) >= 4:
-		chance += 0.03
+		chance += 0.04
 	return chance
 
 static func get_legendary_card_chance() -> float:
@@ -125,12 +142,14 @@ static func get_building_name(building_id: String) -> String:
 static func get_current_effect_text(building_id: String) -> String:
 	var level := get_level(building_id)
 	if level <= 0:
+		if building_id == MARKET:
+			return TranslationHelper.tr_format("village.effect.market_relics", {"value": get_shop_artifact_count()})
 		return _tr("village.effect.none")
 	match building_id:
 		WELL:
 			return TranslationHelper.tr_format("village.effect.well_current", {"value": get_max_hp_bonus()})
 		MARKET:
-			return TranslationHelper.tr_format("village.effect.market_current", {"value": get_starting_gold_bonus()})
+			return _market_current_text()
 		LIBRARY:
 			return _library_current_text(level)
 		CHAPEL:
@@ -146,12 +165,30 @@ static func get_next_effect_text(building_id: String) -> String:
 		WELL:
 			return TranslationHelper.tr_format("village.effect.well_next", {"value": int(get_def(WELL).get("hp_per_level", 4))})
 		MARKET:
-			return TranslationHelper.tr_format("village.effect.market_next", {"value": int(get_def(MARKET).get("gold_per_level", 8))})
+			return _market_next_text(level + 1)
 		LIBRARY:
 			return _library_next_text(level + 1)
 		CHAPEL:
 			return TranslationHelper.tr_format("village.effect.chapel_next", {"value": int(get_def(CHAPEL).get("block_per_level", 2))})
 	return ""
+
+static func _market_current_text() -> String:
+	var parts: PackedStringArray = []
+	var gold_bonus := get_starting_gold_bonus()
+	if gold_bonus > 0:
+		parts.append(TranslationHelper.tr_format("village.effect.market_current", {"value": gold_bonus}))
+	parts.append(TranslationHelper.tr_format("village.effect.market_relics", {"value": get_shop_artifact_count()}))
+	return ", ".join(parts)
+
+static func _market_next_text(next_level: int) -> String:
+	var parts: PackedStringArray = []
+	parts.append(TranslationHelper.tr_format("village.effect.market_next", {"value": int(get_def(MARKET).get("gold_per_level", 8))}))
+	match next_level:
+		1:
+			parts.append(_tr("village.effect.market_next_relics_2"))
+		3:
+			parts.append(_tr("village.effect.market_next_relics_3"))
+	return ", ".join(parts)
 
 static func _library_current_text(level: int) -> String:
 	var parts: PackedStringArray = []

@@ -130,7 +130,6 @@ func _ready():
 		printerr("CHYBA: TurnManager není dostupný!")
 
 	PlayerData.reset_battle_stats()
-	PlayerData.energy_changed.connect(_on_energy_changed)
 	player_hand_ui_instance.hand_card_was_clicked.connect(_on_player_hand_card_clicked)
 	player_hand_ui_instance.hand_card_drag_started.connect(_on_player_hand_card_drag_started)
 	player_hand_ui_instance.hand_card_drag_released.connect(_on_player_hand_card_drag_released)
@@ -184,7 +183,6 @@ func _update_ui_texts():
 	if is_instance_valid(energy_label):
 		energy_label.visible = false
 	_update_turn_display()
-	_on_energy_changed(PlayerData.current_energy)
 
 func _process(delta):
 	if not camera_3d: return
@@ -800,7 +798,7 @@ func _add_coop_unit_label(unit: Unit, is_mine: bool):
 	var label = Label3D.new()
 	label.text = "Ty" if is_mine else "Spoluhráč"
 	label.position = Vector3(0, 1.6, 0)
-	label.font_size = 38
+	label.font_size = 63
 	label.outline_size = 12
 	if is_mine:
 		label.modulate = Color(1.0, 0.85, 0.3)  # zlatá
@@ -1658,7 +1656,7 @@ func _show_floating_notification(text: String, color: Color):
 	var label = Label.new()
 	label.text = text
 	label.add_theme_color_override("font_color", color)
-	label.add_theme_font_size_override("font_size", 19)
+	label.add_theme_font_size_override("font_size", 32)
 	label.add_theme_color_override("font_shadow_color", Color.BLACK)
 	label.add_theme_constant_override("shadow_offset_x", 2)
 	label.add_theme_constant_override("shadow_offset_y", 2)
@@ -2322,10 +2320,6 @@ func _on_end_turn_button_pressed():
 	# Odhoď karty
 	player_hand_ui_instance.discard_hand_animated(discard_pile_button.global_position)
 	# ============================================
-
-func _on_energy_changed(new_amount: int):
-	energy_label.text = TranslationHelper.tr_format("ui.battle.energy", {"value": new_amount})
-	player_info_panel.update_energy_display()
 
 func _physics_process(_delta):
 	# Raycast pro enemy hover (card target preview je už v _process, nevolat 2×)

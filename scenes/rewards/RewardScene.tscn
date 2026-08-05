@@ -58,7 +58,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 47
 text = "Choose a card"
 horizontal_alignment = 1
 
@@ -81,7 +81,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.45, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 30
 horizontal_alignment = 1
 
 [node name="TutorialHintLabel" type="Label" parent="HeaderBand/HeaderCenter/HeaderVBox"]
@@ -90,7 +90,7 @@ visible = false
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 25
 text = "Tutorial hint"
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -101,7 +101,7 @@ visible = false
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 15
+theme_override_font_sizes/font_size = 25
 text = "Tuto kartu jsi právě přidal do svého balíčku!"
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -118,79 +118,75 @@ mouse_filter = 2
 [node name="CardSlot_0" parent="Slots" instance=ExtResource("4_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 128.0
-offset_top = 192.0
-offset_right = 262.0
-offset_bottom = 360.0
+offset_left = 256.0
+offset_top = 320.0
+offset_right = 513.0
+offset_bottom = 633.0
 preview_label = "Card 0"
+slot_size = Vector2(257, 313)
 
 [node name="CardSlot_1" parent="Slots" instance=ExtResource("4_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 320.0
-offset_top = 192.0
-offset_right = 454.0
-offset_bottom = 360.0
+offset_left = 640.0
+offset_top = 320.0
+offset_right = 897.0
+offset_bottom = 633.0
 preview_label = "Card 1"
+slot_size = Vector2(257, 313)
 
 [node name="CardSlot_2" parent="Slots" instance=ExtResource("4_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 512.0
-offset_top = 192.0
-offset_right = 646.0
-offset_bottom = 360.0
+offset_left = 1028.0
+offset_top = 320.0
+offset_right = 1285.0
+offset_bottom = 633.0
 preview_label = "Card 2"
+slot_size = Vector2(257, 313)
 
 [node name="CardSlot_3" parent="Slots" instance=ExtResource("4_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 704.0
-offset_top = 192.0
-offset_right = 838.0
-offset_bottom = 360.0
+offset_left = 1408.0
+offset_top = 320.0
+offset_right = 1665.0
+offset_bottom = 633.0
 preview_label = "Card 3"
-
-[node name="CardSlot_4" parent="Slots" instance=ExtResource("4_slot")]
-unique_name_in_owner = true
-offset_left = 896.0
-offset_top = 192.0
-offset_right = 1030.0
-offset_bottom = 360.0
-preview_label = "Card 4"
+slot_size = Vector2(257, 313)
 
 [node name="ArtifactSlot_0" parent="Slots" instance=ExtResource("4_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 448.0
-offset_top = 448.0
-offset_right = 520.0
-offset_bottom = 520.0
+offset_left = 513.0
+offset_top = 768.0
+offset_right = 633.0
+offset_bottom = 888.0
 slot_kind = 1
 preview_label = "Art 0"
-slot_size = Vector2(72, 72)
+slot_size = Vector2(120, 120)
 
 [node name="ArtifactSlot_1" parent="Slots" instance=ExtResource("4_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 538.0
-offset_top = 448.0
-offset_right = 610.0
-offset_bottom = 520.0
+offset_left = 897.0
+offset_top = 768.0
+offset_right = 1017.0
+offset_bottom = 888.0
 slot_kind = 1
 preview_label = "Art 1"
-slot_size = Vector2(72, 72)
+slot_size = Vector2(120, 120)
 
 [node name="ArtifactSlot_2" parent="Slots" instance=ExtResource("4_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 628.0
-offset_top = 448.0
-offset_right = 700.0
-offset_bottom = 520.0
+offset_left = 1285.0
+offset_top = 768.0
+offset_right = 1405.0
+offset_bottom = 888.0
 slot_kind = 1
 preview_label = "Art 2"
-slot_size = Vector2(72, 72)
+slot_size = Vector2(120, 120)
 
 [node name="SkipButton" type="Button" parent="."]
 unique_name_in_owner = true
@@ -206,7 +202,7 @@ offset_right = -28.0
 offset_bottom = -20.0
 grow_horizontal = 0
 grow_vertical = 0
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 33
 text = "Skip"
 
 [node name="TooltipLayer" type="CanvasLayer" parent="."]

@@ -29,7 +29,7 @@ const TOP_SAFE_MARGIN := 90.0
 ## Keep clear of draw/discard piles anchored on the far-right edge.
 const RIGHT_PILE_SAFE_MARGIN := 88.0
 const STATUS_ICON_SIZE := 16
-const CHIP_FONT_SIZE := 12
+const CHIP_FONT_SIZE := 20
 const MIN_PANEL_HEIGHT := 80.0
 
 const COLOR_MUTED := Color(0.72, 0.76, 0.84, 1)
@@ -286,7 +286,7 @@ func _create_status_row(status_id: String, status_data: Dictionary) -> HBoxConta
 	row.add_child(icon_rect)
 
 	var label = Label.new()
-	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_font_size_override("font_size", 20)
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var info = _get_status_display_info(status_id, status_data)

@@ -113,7 +113,7 @@ func _display_item_content():
 		if card_ui is CardUI:
 			card_ui.apply_display_mode(CardUI.DisplayMode.SHOP)
 			card_ui.custom_minimum_size = SHOP_CARD_MIN_SIZE
-			card_ui.pivot_offset = card_ui.custom_minimum_size * 0.5
+			card_ui.pivot_offset = Vector2.ZERO
 			card_ui.position = Vector2.ZERO
 			if not card_ui.card_clicked.is_connected(_on_card_clicked_buy):
 				card_ui.card_clicked.connect(_on_card_clicked_buy)

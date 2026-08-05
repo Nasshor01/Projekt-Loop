@@ -131,7 +131,7 @@ func _add_deck_count_label(card_instance: CardUI, count: int) -> void:
 	var count_label = Label.new()
 	count_label.text = TranslationHelper.tr_format("ui.deck_viewer.count", {"value": count})
 	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	count_label.add_theme_font_size_override("font_size", 22)
+	count_label.add_theme_font_size_override("font_size", 37)
 	count_label.add_theme_color_override("font_color", Color(1, 0.95, 0.4, 1))
 	count_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
 	count_label.add_theme_constant_override("outline_size", 4)

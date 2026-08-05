@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://drcylmyjefmn0"]
+[gd_scene load_steps=16 format=3 uid="uid://drcylmyjefmn0"]
 
 [ext_resource type="Script" uid="uid://d3ytuwmimqlg4" path="res://scenes/battle/BattleScene.gd" id="1_vd1me"]
 [ext_resource type="Resource" uid="uid://d118t8olbc47a" path="res://data/encounters/first_battle.tres" id="2_q8wks"]
@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://ckvi6eu1vd02a" path="res://scenes/ui/DevConsole.tscn" id="8_5282s"]
 [ext_resource type="PackedScene" uid="uid://d1e2f3g4h5i6j" path="res://scenes/ui/initiative_bar/InitiativeBar.tscn" id="9_abcde"]
 [ext_resource type="PackedScene" uid="uid://dah2k3m4n5p6q" path="res://scenes/ui/CardTooltip.tscn" id="10_tooltip"]
+[ext_resource type="PackedScene" uid="uid://igmyfibd5goq" path="res://scenes/ui/GlobalUI.tscn" id="13_4ro08"]
 [ext_resource type="Shader" uid="uid://m845njhhr6k5" path="res://art/shaders/space_background.gdshader" id="space_shader"]
 [ext_resource type="Texture2D" uid="uid://b5cinf6xqdsui" path="res://art/icons/space_Background_4096x2048.png" id="space_tex"]
 
@@ -99,49 +100,52 @@ danger_zone_color = Color(0.8, 0.2, 0.2, 0.588235)
 layer = 2
 
 [node name="InitiativeBar" parent="CanvasLayer" instance=ExtResource("9_abcde")]
-offset_left = -287.0
-offset_top = 89.0
-offset_right = 289.0
-offset_bottom = 145.0
+offset_left = -448.0
+offset_top = 128.0
+offset_right = 448.0
+offset_bottom = 196.0
 
 [node name="PlayerHandUI" parent="CanvasLayer" instance=ExtResource("3_rjp4h")]
-offset_left = 188.0
-offset_top = 496.0
-offset_right = 996.0
-offset_bottom = 624.0
+offset_left = 560.0
+offset_top = 952.0
+offset_right = 1368.0
+offset_bottom = 1080.0
 
 [node name="EndTurnButton" type="Button" parent="CanvasLayer"]
-offset_left = 1032.0
-offset_top = 106.0
-offset_right = 1128.0
-offset_bottom = 146.0
+offset_left = 1728.0
+offset_top = 200.0
+offset_right = 1824.0
+offset_bottom = 240.0
 text = "Ukončit tah"
 
-[node name="VictoryLabel" type="Label" parent="CanvasLayer"]
-visible = false
-z_index = 50
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 150.0
-offset_bottom = 230.0
-grow_horizontal = 2
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 54
-text = "Výhra"
+[node name="WinButton" type="Button" parent="CanvasLayer"]
+offset_left = 1728.0
+offset_top = 256.0
+offset_right = 1834.0
+offset_bottom = 286.0
+text = "Okamžitá výhra"
+
+[node name="TurnCounterLabel" type="Label" parent="CanvasLayer"]
+offset_left = 1728.0
+offset_top = 296.0
+offset_right = 1824.0
+offset_bottom = 344.0
+theme_override_font_sizes/font_size = 33
+text = "Tah: 1"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="EnergyLabel" type="Label" parent="CanvasLayer"]
-visible = false
-offset_top = 448.0
-offset_right = 140.0
-offset_bottom = 492.0
-theme_override_colors/font_color = Color(0.55, 0.9, 1, 1)
+[node name="VictoryLabel" type="Label" parent="CanvasLayer"]
+z_index = 50
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 328.0
+offset_bottom = 408.0
+grow_horizontal = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 24
-text = "Energie:"
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 90
+text = "Výhra"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -149,10 +153,8 @@ vertical_alignment = 1
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 12.0
 offset_top = -360.0
-offset_right = 272.0
-offset_bottom = -136.0
+offset_right = 360.0
 grow_vertical = 0
 
 [node name="EnemyInfoPanel" parent="CanvasLayer" instance=ExtResource("4_t3o3d")]
@@ -163,8 +165,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -348.0
 offset_top = -360.0
-offset_right = -88.0
-offset_bottom = -184.0
 grow_horizontal = 0
 grow_vertical = 0
 
@@ -177,9 +177,9 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -64.0
-offset_top = -336.0
+offset_top = -568.0
 offset_right = -16.0
-offset_bottom = -272.0
+offset_bottom = -504.0
 grow_horizontal = 0
 grow_vertical = 0
 
@@ -192,35 +192,18 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -64.0
-offset_top = -256.0
+offset_top = -488.0
 offset_right = -16.0
-offset_bottom = -192.0
+offset_bottom = -424.0
 grow_horizontal = 0
 grow_vertical = 0
 
-[node name="WinButton" type="Button" parent="CanvasLayer"]
-offset_left = 1032.0
-offset_top = 162.0
-offset_right = 1124.0
-offset_bottom = 183.0
-text = "Okamžitá výhra"
-
-[node name="TurnCounterLabel" type="Label" parent="CanvasLayer"]
-offset_left = 1032.0
-offset_top = 202.0
-offset_right = 1128.0
-offset_bottom = 250.0
-theme_override_font_sizes/font_size = 20
-text = "Tah: 1"
-horizontal_alignment = 1
-vertical_alignment = 1
-
 [node name="CardTooltip" parent="CanvasLayer" instance=ExtResource("10_tooltip")]
 unique_name_in_owner = true
-offset_left = 384.0
-offset_top = 168.0
-offset_right = 734.0
-offset_bottom = 418.0
+offset_left = 1472.0
+offset_top = 192.0
+offset_right = 1920.0
+offset_bottom = 640.0
 
 [node name="ArtifactInteractUI" type="Control" parent="CanvasLayer"]
 unique_name_in_owner = true
@@ -252,7 +235,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 43
 text = "Alchemists Tools"
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -264,7 +247,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.92, 0.85, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 30
 text = "Discard 1 card from your hand to gain a temporary alchemy card."
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -306,7 +289,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 30
 text = "All-Seeing Eye"
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -318,7 +301,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.92, 0.85, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 23
 text = "Click an enemy to deny their next move."
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -343,9 +326,12 @@ layer = 10
 [node name="CardPileViewer" parent="OverlayLayer" instance=ExtResource("6_q8wks")]
 unique_name_in_owner = true
 visible = false
-offset_left = 256.0
-offset_top = 152.0
-offset_right = 896.0
-offset_bottom = 448.0
+offset_left = 136.0
+offset_top = 184.0
+offset_right = 1792.0
+offset_bottom = 960.0
+
+[node name="GlobalUI" parent="." instance=ExtResource("13_4ro08")]
+visible = false
 
 [connection signal="pressed" from="CanvasLayer/EndTurnButton" to="." method="_on_end_turn_button_pressed"]

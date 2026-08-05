@@ -35,6 +35,8 @@ color = Color(0.04, 0.05, 0.08, 0.12)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 104.0
+offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -53,7 +55,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 37
 text = "Merchant"
 horizontal_alignment = 1
 
@@ -101,107 +103,97 @@ mouse_filter = 2
 [node name="CardSlot_0" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 114.0
-offset_top = 72.0
-offset_right = 234.0
-offset_bottom = 252.0
+offset_left = 64.0
+offset_top = 136.0
+offset_right = 264.0
+offset_bottom = 436.0
 slot_kind = 2
 preview_label = "Shop 0"
-slot_size = Vector2(120, 180)
+slot_size = Vector2(200, 300)
 
 [node name="CardSlot_1" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 274.0
-offset_top = 72.0
-offset_right = 394.0
-offset_bottom = 252.0
+offset_left = 384.0
+offset_top = 136.0
+offset_right = 584.0
+offset_bottom = 436.0
 slot_kind = 2
 preview_label = "Shop 1"
-slot_size = Vector2(120, 180)
+slot_size = Vector2(200, 300)
 
 [node name="CardSlot_2" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 434.0
-offset_top = 72.0
-offset_right = 554.0
-offset_bottom = 252.0
+offset_left = 704.0
+offset_top = 136.0
+offset_right = 904.0
+offset_bottom = 436.0
 slot_kind = 2
 preview_label = "Shop 2"
-slot_size = Vector2(120, 180)
+slot_size = Vector2(200, 300)
 
 [node name="CardSlot_3" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 594.0
-offset_top = 72.0
-offset_right = 714.0
-offset_bottom = 252.0
+offset_left = 1016.0
+offset_top = 136.0
+offset_right = 1216.0
+offset_bottom = 436.0
 slot_kind = 2
 preview_label = "Shop 3"
-slot_size = Vector2(120, 180)
+slot_size = Vector2(200, 300)
 
 [node name="CardSlot_4" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
 unique_name_in_owner = true
-offset_left = 754.0
-offset_top = 72.0
-offset_right = 874.0
-offset_bottom = 252.0
+offset_left = 1336.0
+offset_top = 136.0
+offset_right = 1536.0
+offset_bottom = 436.0
 slot_kind = 2
-preview_label = "Shop 3"
-slot_size = Vector2(120, 180)
+preview_label = "Shop 4"
+slot_size = Vector2(200, 300)
 
 [node name="CardSlot_5" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
 unique_name_in_owner = true
-offset_left = 914.0
-offset_top = 72.0
-offset_right = 1034.0
-offset_bottom = 252.0
+offset_left = 1656.0
+offset_top = 136.0
+offset_right = 1856.0
+offset_bottom = 436.0
 slot_kind = 2
-preview_label = "Shop 3"
-slot_size = Vector2(120, 180)
+preview_label = "Shop 5"
+slot_size = Vector2(200, 300)
 
 [node name="ArtifactSlot_0" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 232.0
-offset_top = 328.0
-offset_right = 344.0
-offset_bottom = 468.0
+offset_left = 536.0
+offset_top = 648.0
+offset_right = 704.0
+offset_bottom = 840.0
 slot_kind = 1
 preview_label = "Relic"
-slot_size = Vector2(112, 140)
+slot_size = Vector2(168, 192)
 
 [node name="ArtifactSlot_1" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
 unique_name_in_owner = true
-offset_left = 424.0
-offset_top = 328.0
-offset_right = 536.0
-offset_bottom = 468.0
+offset_left = 880.0
+offset_top = 648.0
+offset_right = 1048.0
+offset_bottom = 840.0
 slot_kind = 1
 preview_label = "Relic"
-slot_size = Vector2(112, 140)
+slot_size = Vector2(168, 192)
 
 [node name="ArtifactSlot_2" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
 unique_name_in_owner = true
-offset_left = 616.0
-offset_top = 328.0
-offset_right = 728.0
-offset_bottom = 468.0
+offset_left = 1216.0
+offset_top = 648.0
+offset_right = 1384.0
+offset_bottom = 840.0
 slot_kind = 1
 preview_label = "Relic"
-slot_size = Vector2(112, 140)
-
-[node name="ArtifactSlot_3" parent="CanvasLayer/Slots" instance=ExtResource("5_slot")]
-unique_name_in_owner = true
-offset_left = 808.0
-offset_top = 328.0
-offset_right = 920.0
-offset_bottom = 468.0
-slot_kind = 1
-preview_label = "Relic"
-slot_size = Vector2(112, 140)
+slot_size = Vector2(168, 192)
 
 [node name="CardPileViewer" parent="CanvasLayer" instance=ExtResource("2_d8mpu")]
 unique_name_in_owner = true
@@ -209,3 +201,7 @@ visible = false
 
 [node name="CardTooltip" parent="CanvasLayer" instance=ExtResource("3_tooltip")]
 unique_name_in_owner = true
+offset_left = 48.0
+offset_top = 584.0
+offset_right = 416.0
+offset_bottom = 759.0

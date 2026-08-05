@@ -5,8 +5,8 @@ class_name CardUI
 extends Control
 
 ## Design size in CardUI.tscn — contexts scale from this, don't crush below ~0.8 for readable text.
-## Warrior frames are 64×80 → displayed at 3× = 192×240.
-const DESIGN_SIZE: Vector2 = Vector2(192, 240)
+## Warrior frames are 64×80 → displayed at 5× = 320×400 (1920×1080 design; was 3× at 1152×648).
+const DESIGN_SIZE: Vector2 = Vector2(320, 400)
 
 ## How the card is presented. Data still comes from CardData (.tres).
 enum DisplayMode {
@@ -22,7 +22,7 @@ const SCALE_SHOP := Vector2(1.0, 1.0)
 const SCALE_REWARD := Vector2(0.95, 0.95)
 const SCALE_DECK := Vector2(0.85, 0.85)
 const SCALE_COMPACT := Vector2(1.0, 1.0)
-const COMPACT_SIZE := Vector2(168, 210)
+const COMPACT_SIZE := Vector2(280, 350)
 
 ## StS-style face: fixed text slot, clamp lines.
 ## Name + description sizes: edit @export on CardUI root (not child Theme Overrides).
@@ -34,15 +34,15 @@ const DESC_DENSE_LINE_THRESHOLD := 3
 const DESC_VERY_DENSE_LINE_THRESHOLD := 5
 const DESC_DENSE_SHRINK := 1
 const DESC_VERY_DENSE_SHRINK := 2
-const DESC_FONT_MIN := 10
+const DESC_FONT_MIN := 17
 const DESC_LINE_SEP_NORMAL := 2
 const DESC_LINE_SEP_DENSE := 0
 const DESC_LINE_SEP_VERY_DENSE := -2
-const COST_FONT_SIZE := 22
+const COST_FONT_SIZE := 37
 ## Compact face only — full face uses name_font_size export.
-const NAME_FONT_COMPACT := 14
-const NAME_FONT_MIN := 10
-const USAGE_FONT_SIZE := 12
+const NAME_FONT_COMPACT := 23
+const NAME_FONT_MIN := 17
+const USAGE_FONT_SIZE := 20
 
 ## Modular Warrior frames by rarity (curses use curse.png).
 ## Live set: Basic / Common / Rare / Epic / Legendary. Uncommon cancelled.
@@ -80,12 +80,12 @@ static var _badge_texture_cache: Dictionary = {}
 @export var placeholder_artwork: Texture2D
 @export var static_layout: bool = false
 ## Font sizes: CardUI ROOT in Inspector. Outline/colors: DescriptionLabel Theme Overrides (script does not overwrite them).
-@export_range(8, 48, 1) var name_font_size: int = 22:
+@export_range(8, 80, 1) var name_font_size: int = 23:
 	set(value):
 		name_font_size = value
 		if is_inside_tree() and _ui_nodes_ready and card_data:
 			update_display()
-@export_range(8, 48, 1) var description_font_size: int = 24:
+@export_range(8, 80, 1) var description_font_size: int = 23:
 	set(value):
 		description_font_size = value
 		if is_inside_tree() and _ui_nodes_ready and card_data:
@@ -299,18 +299,18 @@ func _layout_compact() -> void:
 		artwork_texture_rect.visible = false
 	# Compact is a different face — keep local overrides; full mode uses scene.
 	if cost_label:
-		cost_label.position = Vector2(66, 4)
-		cost_label.size = Vector2(36, 36)
+		cost_label.position = Vector2(110, 7)
+		cost_label.size = Vector2(60, 60)
 		cost_label.add_theme_font_size_override("font_size", COST_FONT_SIZE)
 	if name_label:
-		name_label.position = Vector2(16, 52)
-		name_label.size = Vector2(136, 40)
+		name_label.position = Vector2(27, 87)
+		name_label.size = Vector2(227, 67)
 		name_label.add_theme_font_size_override("font_size", NAME_FONT_COMPACT)
 		name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if description_label:
 		description_label.visible = true
-		description_label.position = Vector2(16, 100)
-		description_label.size = Vector2(136, 96)
+		description_label.position = Vector2(27, 167)
+		description_label.size = Vector2(227, 160)
 	if _usage_label:
 		_usage_label.visible = false
 
@@ -548,12 +548,12 @@ func _ensure_state_badges() -> void:
 	_state_badge_row.name = "StateBadgeRow"
 	_state_badge_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_state_badge_row.alignment = BoxContainer.ALIGNMENT_END
-	_state_badge_row.add_theme_constant_override("separation", 2)
+	_state_badge_row.add_theme_constant_override("separation", 3)
 	_state_badge_row.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_state_badge_row.offset_left = -72
-	_state_badge_row.offset_top = 28
-	_state_badge_row.offset_right = -6
-	_state_badge_row.offset_bottom = 52
+	_state_badge_row.offset_left = -120
+	_state_badge_row.offset_top = 47
+	_state_badge_row.offset_right = -10
+	_state_badge_row.offset_bottom = 87
 	add_child(_state_badge_row)
 	_seal_badge = _make_badge_icon(PATH_SEAL_BADGE)
 	_retain_badge = _make_badge_icon(PATH_RETAIN_BADGE)
@@ -565,7 +565,7 @@ func _make_badge_icon(path: String) -> TextureRect:
 	if not _badge_texture_cache.has(path):
 		_badge_texture_cache[path] = load(path) as Texture2D
 	icon.texture = _badge_texture_cache.get(path)
-	icon.custom_minimum_size = Vector2(22, 22)
+	icon.custom_minimum_size = Vector2(37, 37)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST

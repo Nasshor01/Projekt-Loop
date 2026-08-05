@@ -14,6 +14,8 @@ var _icon_only := false
 
 const ICON_ONLY_SIZE := Vector2(96, 96)
 
+var _tip_text: String = ""
+
 
 func _gui_input(event: InputEvent):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -21,6 +23,14 @@ func _gui_input(event: InputEvent):
 		var tween = create_tween()
 		tween.tween_property(self, "modulate", Color.GRAY, 0.1)
 		tween.tween_property(self, "modulate", Color.WHITE, 0.1)
+
+
+func _ready() -> void:
+	tooltip_text = ""
+	if not mouse_entered.is_connected(_on_mouse_entered_tip):
+		mouse_entered.connect(_on_mouse_entered_tip)
+	if not mouse_exited.is_connected(_on_mouse_exited_tip):
+		mouse_exited.connect(_on_mouse_exited_tip)
 
 
 func set_compact_mode(enabled: bool) -> void:
@@ -35,14 +45,14 @@ func set_compact_mode(enabled: bool) -> void:
 		custom_minimum_size = Vector2(220, 0)
 		icon.custom_minimum_size = Vector2(96, 96)
 		description_label.custom_minimum_size = Vector2(200, 0)
-		description_label.add_theme_font_size_override("normal_font_size", 13)
-		name_label.add_theme_font_size_override("font_size", 16)
+		description_label.add_theme_font_size_override("normal_font_size", 22)
+		name_label.add_theme_font_size_override("font_size", 27)
 	else:
 		custom_minimum_size = Vector2(0, 0)
 		icon.custom_minimum_size = Vector2(128, 128)
 		description_label.custom_minimum_size = Vector2(0, 100)
-		description_label.add_theme_font_size_override("normal_font_size", 15)
-		name_label.add_theme_font_size_override("font_size", 18)
+		description_label.add_theme_font_size_override("normal_font_size", 25)
+		name_label.add_theme_font_size_override("font_size", 30)
 
 
 func set_icon_only(enabled: bool = true) -> void:
@@ -80,6 +90,7 @@ func _apply_icon_only_layout() -> void:
 		icon.custom_minimum_size = Vector2(128, 128)
 		custom_minimum_size = Vector2(0, 0)
 		tooltip_text = ""
+		_tip_text = ""
 
 
 func display_artifact(data: ArtifactsData):
@@ -97,15 +108,13 @@ func display_artifact(data: ArtifactsData):
 
 
 func _refresh_tooltip() -> void:
-	if not artifact_data:
-		tooltip_text = ""
+	tooltip_text = ""
+	_tip_text = ""
+	if not artifact_data or not _icon_only:
 		return
-	if not _icon_only:
-		tooltip_text = ""
-		return
-	tooltip_text = "%s\n%s" % [artifact_data.get_localized_name(), artifact_data.get_formatted_description()]
+	_tip_text = "%s\n%s" % [artifact_data.get_localized_name(), artifact_data.get_formatted_description()]
 	if artifact_data.max_stacks > 1:
-		tooltip_text += "\n" + TranslationHelper.tr_format("artifact.stacks", {
+		_tip_text += "\n" + TranslationHelper.tr_format("artifact.stacks", {
 			"current": artifact_data.current_stacks,
 			"max": artifact_data.max_stacks
 		})
@@ -115,11 +124,28 @@ func set_stack_info(stack_info: String):
 	if not stack_info.is_empty() and name_label and not _icon_only:
 		name_label.text = "%s [%s]" % [name_label.text, stack_info]
 	elif not stack_info.is_empty() and _icon_only and artifact_data:
-		tooltip_text = "%s [%s]\n%s" % [
+		_tip_text = "%s [%s]\n%s" % [
 			artifact_data.get_localized_name(),
 			stack_info,
 			artifact_data.get_formatted_description()
 		]
+		tooltip_text = ""
+
+
+func _on_mouse_entered_tip() -> void:
+	if not _icon_only or _tip_text.is_empty():
+		return
+	ArtifactHoverTooltip.ensure(get_tree()).show_for(_tip_text, self)
+
+
+func _on_mouse_exited_tip() -> void:
+	if is_instance_valid(ArtifactHoverTooltip.instance):
+		ArtifactHoverTooltip.instance.hide_tip()
+
+
+func _exit_tree() -> void:
+	if is_instance_valid(ArtifactHoverTooltip.instance) and ArtifactHoverTooltip.instance.visible:
+		ArtifactHoverTooltip.instance.hide_tip()
 
 
 func get_layout_natural_size() -> Vector2:
