@@ -14,16 +14,14 @@ func on_damage_dealt(ctx: Dictionary = {}) -> void:
 		_apply_status(target, "poison", POISON_VALUE, 99)
 
 
-func on_turn_start(ctx: Dictionary = {}) -> void:
-	super.on_turn_start(ctx)
-	for enemy_v in _get_enemies():
-		var enemy: Node = enemy_v as Node
-		if not is_instance_valid(enemy):
-			continue
-		if not _has_status(enemy, "poison"):
-			continue
-		var poison_val: int = _status_value(enemy, "poison")
-		if poison_val >= POISON_THRESHOLD and enemy.has_method("take_damage"):
-			enemy.call("take_damage", BONUS_DAMAGE, true, false, false)
-			if PlayerData:
-				PlayerData.gain_energy(1)
+func on_enemy_turn_start(ctx: Dictionary = {}) -> void:
+	var enemy: Node = ctx.get("enemy") as Node
+	if not is_instance_valid(enemy):
+		return
+	if not _has_status(enemy, "poison"):
+		return
+	var poison_val: int = _status_value(enemy, "poison")
+	if poison_val >= POISON_THRESHOLD and enemy.has_method("take_damage"):
+		enemy.call("take_damage", BONUS_DAMAGE, true, false, false)
+		if PlayerData:
+			PlayerData.gain_energy(1)

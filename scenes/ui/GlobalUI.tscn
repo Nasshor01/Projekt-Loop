@@ -129,9 +129,9 @@ offset_bottom = 576.0
 grow_horizontal = 2
 mouse_filter = 2
 theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 4
+theme_override_constants/margin_top = 6
 theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_bottom = 6
 
 [node name="PlayerArtifactsUI" parent="ArtifactsStrip" instance=ExtResource("2_z3wfs")]
 layout_mode = 2

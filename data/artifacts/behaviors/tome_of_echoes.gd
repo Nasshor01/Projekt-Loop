@@ -4,6 +4,10 @@ const MIN_ENERGY_COST := 2
 const ECHO_USES_PER_COMBAT := 1
 
 
+func on_combat_start(_ctx: Dictionary = {}) -> void:
+	runtime["echo_uses"] = 0
+
+
 func on_card_played(ctx: Dictionary = {}) -> void:
 	var card: CardData = ctx.get("card") as CardData
 	if card == null or card.cost < MIN_ENERGY_COST:

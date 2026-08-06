@@ -11,7 +11,8 @@ func on_damage_dealt(ctx: Dictionary = {}) -> void:
 	var player := _get_player_unit()
 	if player:
 		_apply_status(player, "monk_blessing", STRENGTH_BONUS, 1)
-	if runtime.get("attacked_this_turn", false) and PlayerData:
+	# After the first melee this turn, the next attack costs -1 (set now; consumed on next play).
+	if not runtime.get("attacked_this_turn", false):
 		runtime["next_attack_discount"] = COST_REDUCTION
 	runtime["attacked_this_turn"] = true
 

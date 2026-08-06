@@ -374,6 +374,9 @@ func _connect_pile_card_clicks():
 func _on_card_right_clicked(card_data: CardData):
 	if not card_tooltip:
 		return
+	# Avoid stacking the hover tip with the detailed CardTooltip.
+	if is_instance_valid(ArtifactHoverTooltip.instance):
+		ArtifactHoverTooltip.instance.hide_tip()
 	if card_tooltip.visible and _current_tooltip_card_data == card_data:
 		card_tooltip.hide_tooltip()
 		_current_tooltip_card_data = null

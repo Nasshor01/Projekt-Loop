@@ -7,12 +7,12 @@ class_name LayoutSlot
 
 enum SlotKind { CARD, ARTIFACT, SHOP_ITEM }
 
-## Suggested sizes (natural card = 192×240):
-##   Reward card ~0.7× → 134×168
-##   Shop card+price ~0.6× → 120×180
+## Suggested sizes (natural card = HAND 240×300):
+##   Reward card → HAND_SIZE
+##   Shop card+price → 240×350
 ##   Artifact icon → 72×72
-const SUGGESTED_CARD := Vector2(134, 168)
-const SUGGESTED_SHOP := Vector2(120, 180)
+const SUGGESTED_CARD := Vector2(240, 300)
+const SUGGESTED_SHOP := Vector2(240, 350)
 const SUGGESTED_ARTIFACT := Vector2(72, 72)
 
 @export var slot_kind: SlotKind = SlotKind.CARD:
@@ -179,6 +179,11 @@ func fit_mounted() -> void:
 	var fit_scale: Vector2
 	if uniform_fit:
 		var s := minf(target.x / natural.x, target.y / natural.y)
+		# Prefer exact 1.0 when nearly matching — avoids mushy non-integer glyph scale.
+		if absf(s - 1.0) <= 0.04:
+			s = 1.0
+		elif absf(s - 0.5) <= 0.03:
+			s = 0.5
 		fit_scale = Vector2(s, s)
 	else:
 		fit_scale = Vector2(target.x / natural.x, target.y / natural.y)
@@ -209,10 +214,14 @@ func _get_natural_size(node: Control) -> Vector2:
 		if n is Vector2 and (n as Vector2).x > 1.0 and (n as Vector2).y > 1.0:
 			return n as Vector2
 	if node is CardUI:
-		return CardUI.DESIGN_SIZE
+		var card := node as CardUI
+		var face := card.custom_minimum_size
+		if face.x > 1.0 and face.y > 1.0:
+			return face
+		return card.get_layout_natural_size()
 	var ms := node.custom_minimum_size
 	if ms.x > 1.0 and ms.y > 1.0:
 		return ms
 	if node.size.x > 1.0 and node.size.y > 1.0:
 		return node.size
-	return CardUI.DESIGN_SIZE
+	return CardUI.HAND_SIZE

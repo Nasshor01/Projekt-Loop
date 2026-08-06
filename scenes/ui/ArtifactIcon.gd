@@ -2,7 +2,7 @@
 extends TextureRect
 class_name ArtifactIcon
 
-const ICON_SIZE := Vector2(48, 48)
+const ICON_SIZE := Vector2(56, 56)
 
 var artifact_data: ArtifactsData
 var _tip_text: String = ""
@@ -42,7 +42,7 @@ func set_artifact(data: ArtifactsData) -> void:
 func _on_mouse_entered() -> void:
 	if _tip_text.is_empty():
 		return
-	ArtifactHoverTooltip.ensure(get_tree()).show_for(_tip_text, self)
+	ArtifactHoverTooltip.ensure(get_tree()).show_for(_tip_text, self, true)
 
 
 func _on_mouse_exited() -> void:

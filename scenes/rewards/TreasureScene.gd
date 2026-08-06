@@ -89,6 +89,7 @@ func _mount_artifact(artifact_data: ArtifactsData, slot_index: int) -> void:
 	var choice_ui = ArtifactChoiceScene.instantiate()
 	slot.mount(choice_ui)
 	choice_ui.set_icon_only(true)
+	choice_ui.set_large_hover_tip(true)
 	choice_ui.display_artifact(artifact_data)
 	choice_ui.artifact_chosen.connect(_on_artifact_chosen)
 	slot.fit_mounted()

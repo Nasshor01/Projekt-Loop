@@ -35,9 +35,12 @@ const EVENT_ARTIFACT_POOL = preload("res://data/artifacts/pool/event_reward_pool
 
 var pending_card_removal: bool = false
 var pending_card_upgrade: bool = false
+## Filled by apply_reward — EventScene shows these as icons in the result panel.
+var granted_artifacts: Array[ArtifactsData] = []
 
 func apply_reward(results_log: Array = []):
 	"""Aplikuje odměnu na hráče"""
+	granted_artifacts.clear()
 	if gold > 0:
 		PlayerData.add_gold(gold)
 		results_log.append("[color=yellow]" + TranslationHelper.tr_format("event.reward.gain_gold", {"value": gold}) + "[/color]")
@@ -96,14 +99,16 @@ func apply_reward(results_log: Array = []):
 	if transform_card:
 		_transform_random_card(results_log)
 	
-	# --- ZMĚNA V SEKCI PRO ARTEFAKTY ---
+	# --- Artefakty ---
 	if add_artifact:
 		if PlayerData.add_artifact(add_artifact):
+			granted_artifacts.append(add_artifact)
 			results_log.append("[color=orange]" + TranslationHelper.tr_format("event.reward.artifact", {"name": add_artifact.get_localized_name()}) + "[/color]")
 	
 	if add_random_basic_artifact:
 		var random_artifact = _get_random_basic_artifact()
 		if random_artifact and PlayerData.add_artifact(random_artifact):
+			granted_artifacts.append(random_artifact)
 			results_log.append("[color=orange]" + TranslationHelper.tr_format("event.reward.random_artifact", {"name": random_artifact.get_localized_name()}) + "[/color]")
 	
 	if add_random_event_artifact:
@@ -111,8 +116,9 @@ func apply_reward(results_log: Array = []):
 		if not available.is_empty():
 			var event_artifact = available.pick_random()
 			if PlayerData.add_artifact(event_artifact):
+				granted_artifacts.append(event_artifact)
 				results_log.append("[color=gold]" + TranslationHelper.tr_format("event.reward.special_artifact", {"name": event_artifact.get_localized_name()}) + "[/color]")
-	# --- KONEC ZMĚN ---
+	# --- Konec artefaktů ---
 	
 	# Speciální akce
 	if buff_next_combat != "":

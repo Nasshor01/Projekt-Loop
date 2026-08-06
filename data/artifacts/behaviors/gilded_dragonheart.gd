@@ -46,9 +46,23 @@ func on_damage_dealt(ctx: Dictionary = {}) -> void:
 
 
 func modify_card_cost(ctx: Dictionary, cost: int) -> int:
+	var card: CardData = ctx.get("card") as CardData
+	if not _card_is_attack(card):
+		return cost
 	var target: Node = ctx.get("target") as Node
-	if target != null and _is_on_active_line(_unit_grid_pos(target)):
-		return maxi(0, cost - COST_REDUCTION)
+	if is_instance_valid(target):
+		if _is_on_active_line(_unit_grid_pos(target)):
+			return maxi(0, cost - COST_REDUCTION)
+		return cost
+	# Cost UI / play path often has no target — discount attacks while any living enemy is on the line.
+	for enemy_v in _get_enemies():
+		var enemy: Node = enemy_v as Node
+		if not is_instance_valid(enemy):
+			continue
+		if int(enemy.get("current_health")) <= 0:
+			continue
+		if _is_on_active_line(_unit_grid_pos(enemy)):
+			return maxi(0, cost - COST_REDUCTION)
 	return cost
 
 

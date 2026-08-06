@@ -43,7 +43,6 @@ const SHAPE_DIAMOND = [
 @onready var player_hand_ui_instance: Control = $CanvasLayer/PlayerHandUI
 @onready var end_turn_button: Button = $CanvasLayer/EndTurnButton
 @onready var victory_label: Label = $CanvasLayer/VictoryLabel
-@onready var energy_label: Label = $CanvasLayer/EnergyLabel
 @onready var win_button: Button = $CanvasLayer/WinButton
 @onready var battle_grid_instance: BattleGrid = $BattleGrid
 @onready var turn_counter_label: Label = $CanvasLayer/TurnCounterLabel
@@ -55,8 +54,8 @@ const SHAPE_DIAMOND = [
 var _artifact_interact_mode: String = "" # "", "alchemist", "chalice", "eye"
 var _artifact_interact_waiting: bool = false
 @onready var _artifact_interact_root: Control = %ArtifactInteractUI
-@onready var _artifact_hand_prompt: VBoxContainer = %HandPrompt
-@onready var _artifact_side_prompt: VBoxContainer = %SidePrompt
+@onready var _artifact_hand_prompt: Control = %HandPrompt
+@onready var _artifact_side_prompt: Control = %SidePrompt
 @onready var _artifact_title_label: Label = %TitleLabel
 @onready var _artifact_body_label: Label = %BodyLabel
 @onready var _artifact_drink_btn: Button = %DrinkButton
@@ -130,6 +129,7 @@ func _ready():
 		printerr("CHYBA: TurnManager není dostupný!")
 
 	PlayerData.reset_battle_stats()
+	PlayerData.energy_changed.connect(_on_energy_changed)
 	player_hand_ui_instance.hand_card_was_clicked.connect(_on_player_hand_card_clicked)
 	player_hand_ui_instance.hand_card_drag_started.connect(_on_player_hand_card_drag_started)
 	player_hand_ui_instance.hand_card_drag_released.connect(_on_player_hand_card_drag_released)
@@ -179,10 +179,8 @@ func _update_ui_texts():
 		victory_label.text = tr("ui.battle.victory")
 	if is_instance_valid(win_button):
 		win_button.text = tr("ui.battle.instant_win")
-	# Energie se zobrazuje v PlayerInfoPanelu (Unit Info Panel), samostatný label skryt
-	if is_instance_valid(energy_label):
-		energy_label.visible = false
 	_update_turn_display()
+	_on_energy_changed(PlayerData.current_energy)
 
 func _process(delta):
 	if not camera_3d: return
@@ -475,7 +473,10 @@ func _start_enemy_initiative_turn(enemy_unit: Unit):
 		await get_tree().create_timer(0.2).timeout
 		TurnManager.next_turn()
 		return
-	
+
+	if has_node("/root/ArtifactManager"):
+		ArtifactManager.on_enemy_turn_start(enemy_unit)
+
 	await get_tree().create_timer(0.4).timeout
 	if is_instance_valid(enemy_unit) and enemy_unit.current_health > 0:
 		await _process_enemy_actions(enemy_unit)
@@ -1011,13 +1012,36 @@ func _run_sts2_artifact_interactions() -> void:
 
 func _begin_artifact_interact(mode: String) -> void:
 	if not is_instance_valid(_artifact_interact_root):
+		_artifact_interact_root = get_node_or_null("%ArtifactInteractUI") as Control
+	if not is_instance_valid(_artifact_interact_root):
+		push_error("BattleScene: ArtifactInteractUI missing — cannot show '%s' prompt" % mode)
 		return
+	if not is_instance_valid(_artifact_hand_prompt):
+		_artifact_hand_prompt = get_node_or_null("%HandPrompt") as Control
+	if not is_instance_valid(_artifact_side_prompt):
+		_artifact_side_prompt = get_node_or_null("%SidePrompt") as Control
+	if not is_instance_valid(_artifact_title_label):
+		_artifact_title_label = get_node_or_null("%TitleLabel") as Label
+	if not is_instance_valid(_artifact_body_label):
+		_artifact_body_label = get_node_or_null("%BodyLabel") as Label
+	if not is_instance_valid(_artifact_drink_btn):
+		_artifact_drink_btn = get_node_or_null("%DrinkButton") as Button
+	if not is_instance_valid(_artifact_skip_btn):
+		_artifact_skip_btn = get_node_or_null("%SkipButton") as Button
+	if not is_instance_valid(_artifact_side_title_label):
+		_artifact_side_title_label = get_node_or_null("%SideTitleLabel") as Label
+	if not is_instance_valid(_artifact_side_body_label):
+		_artifact_side_body_label = get_node_or_null("%SideBodyLabel") as Label
+	if not is_instance_valid(_artifact_side_skip_btn):
+		_artifact_side_skip_btn = get_node_or_null("%SideSkipButton") as Button
+
 	_artifact_interact_mode = mode
 	_artifact_interact_waiting = true
 	end_turn_button.disabled = true
 	if is_instance_valid(win_button):
 		win_button.visible = false
 	_reset_player_selection()
+	DebugLogger.log_info("Showing artifact interact UI: %s" % mode, "ARTIFACTS")
 
 	var use_hand_prompt := mode == "alchemist" or mode == "chalice"
 	if is_instance_valid(_artifact_hand_prompt):
@@ -1028,24 +1052,35 @@ func _begin_artifact_interact(mode: String) -> void:
 	if use_hand_prompt:
 		match mode:
 			"alchemist":
-				_artifact_title_label.text = tr("ui.artifact.alchemist.title")
-				_artifact_body_label.text = tr("ui.artifact.alchemist.body")
-				_artifact_drink_btn.visible = false
+				if is_instance_valid(_artifact_title_label):
+					_artifact_title_label.text = tr("ui.artifact.alchemist.title")
+				if is_instance_valid(_artifact_body_label):
+					_artifact_body_label.text = tr("ui.artifact.alchemist.body")
+				if is_instance_valid(_artifact_drink_btn):
+					_artifact_drink_btn.visible = false
 				_set_hand_drag_enabled(false)
 			"chalice":
-				_artifact_title_label.text = tr("ui.artifact.chalice.title")
-				_artifact_body_label.text = tr("ui.artifact.chalice.body")
-				_artifact_drink_btn.visible = true
-				_artifact_drink_btn.text = tr("ui.artifact.chalice.accept")
-		_artifact_skip_btn.visible = true
-		_artifact_skip_btn.text = tr("ui.common.skip")
+				if is_instance_valid(_artifact_title_label):
+					_artifact_title_label.text = tr("ui.artifact.chalice.title")
+				if is_instance_valid(_artifact_body_label):
+					_artifact_body_label.text = tr("ui.artifact.chalice.body")
+				if is_instance_valid(_artifact_drink_btn):
+					_artifact_drink_btn.visible = true
+					_artifact_drink_btn.text = tr("ui.artifact.chalice.accept")
+		if is_instance_valid(_artifact_skip_btn):
+			_artifact_skip_btn.visible = true
+			_artifact_skip_btn.text = tr("ui.common.skip")
 	else:
-		_artifact_side_title_label.text = tr("ui.artifact.eye.deny_title")
-		_artifact_side_body_label.text = tr("ui.artifact.eye.deny_body")
-		_artifact_side_skip_btn.text = tr("ui.common.skip")
+		if is_instance_valid(_artifact_side_title_label):
+			_artifact_side_title_label.text = tr("ui.artifact.eye.deny_title")
+		if is_instance_valid(_artifact_side_body_label):
+			_artifact_side_body_label.text = tr("ui.artifact.eye.deny_body")
+		if is_instance_valid(_artifact_side_skip_btn):
+			_artifact_side_skip_btn.text = tr("ui.common.skip")
 		ArtifactManager.set_run_flag("artifact_pick_enemy_deny", true)
 
 	_artifact_interact_root.visible = true
+	_artifact_interact_root.move_to_front()
 
 	while _artifact_interact_waiting:
 		await get_tree().process_frame
@@ -1449,7 +1484,7 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 
 	var play_cost: int = card.cost
 	if has_node("/root/ArtifactManager"):
-		play_cost = ArtifactManager.get_card_cost(card)
+		play_cost = ArtifactManager.get_card_cost(card, initial_target)
 	if not PlayerData.spend_energy(play_cost):
 		DebugLogger.log_warning(TranslationHelper.tr_format("ui.battle.not_enough_energy", {"name": card.get_localized_name()}))
 		_card_play_in_progress = false
@@ -1557,7 +1592,17 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 				PlayerData.discard_pile.erase(card)
 				PlayerData.emit_signal("deck_changed")
 			elif has_exhaust_effect:
-				PlayerData.add_card_to_exhaust_pile(card)
+				var exhaust_ctx: Dictionary = {}
+				if has_node("/root/ArtifactManager"):
+					exhaust_ctx = ArtifactManager.on_exhaust(card)
+				if bool(exhaust_ctx.get("cancel_exhaust", false)):
+					# Blade of Infinity: Attack exhaust → bottom of draw pile instead.
+					if bool(exhaust_ctx.get("return_to_deck_bottom", false)):
+						PlayerData.draw_pile.append(card)
+					else:
+						PlayerData.add_card_to_discard_pile(card)
+				else:
+					PlayerData.add_card_to_exhaust_pile(card)
 			else:
 				if card.get_meta("tome_to_bottom", false):
 					card.set_meta("tome_to_bottom", false)
@@ -2004,7 +2049,10 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 					enemy_health_before = target.current_health
 				
 				# Dodge skips damage only; subsequent card effects (APPLY_STATUS etc.) still run.
-				var hit_landed: bool = await target.take_damage(damage_to_deal, true)
+				var pierce_block := false
+				if has_node("/root/ArtifactManager"):
+					pierce_block = ArtifactManager.attacks_ignore_block(target, card_ref)
+				var hit_landed: bool = await target.take_damage(damage_to_deal, true, false, true, false, pierce_block)
 				if not hit_landed:
 					DebugLogger.log_info("DEAL_DAMAGE dodged — další efekty karty se přesto aplikují")
 					return
@@ -2289,6 +2337,12 @@ func _reset_player_selection():
 
 func _on_draw_pile_clicked(): card_pile_viewer.show_cards(PlayerData.draw_pile)
 func _on_discard_pile_clicked(): card_pile_viewer.show_cards(PlayerData.discard_pile)
+
+func _on_energy_changed(_new_amount: int):
+	# Energy display lives on PlayerInfoPanel (standalone CanvasLayer EnergyLabel was removed).
+	if is_instance_valid(player_info_panel) and player_info_panel.has_method("update_energy_display"):
+		player_info_panel.update_energy_display()
+
 func _on_end_turn_button_pressed():
 	if _current_battle_state != BattleState.PLAYER_TURN:
 		return

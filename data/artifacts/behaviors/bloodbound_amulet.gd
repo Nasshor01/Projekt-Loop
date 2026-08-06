@@ -1,6 +1,10 @@
 extends ArtifactBehavior
 
 
+func on_combat_start(_ctx: Dictionary = {}) -> void:
+	runtime["hp_lost_this_combat"] = 0
+
+
 func on_damage_taken(ctx: Dictionary = {}) -> void:
 	super.on_damage_taken(ctx)
 	var amount := int(ctx.get("damage_amount", 0))

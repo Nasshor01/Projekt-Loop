@@ -5,6 +5,24 @@ const POISON_THRESHOLD := 8
 const BONUS_DAMAGE := 3
 
 
+func modify_outgoing_damage(damage: int, ctx: Dictionary = {}) -> int:
+	var target: Node = ctx.get("target") as Node
+	if not is_instance_valid(target):
+		return damage
+	var attacker: Node = ctx.get("attacker") as Node
+	var player: Node = _get_player_unit()
+	if player != null and is_instance_valid(attacker) and attacker != player:
+		return damage
+	if _status_value(target, "poison") >= POISON_THRESHOLD:
+		return damage + BONUS_DAMAGE
+	return damage
+
+
+func should_ignore_block(ctx: Dictionary = {}) -> bool:
+	var target: Node = ctx.get("target") as Node
+	return is_instance_valid(target) and _status_value(target, "poison") >= POISON_THRESHOLD
+
+
 func on_damage_dealt(ctx: Dictionary = {}) -> void:
 	var card: CardData = ctx.get("card") as CardData
 	if not _card_is_attack(card):
@@ -12,8 +30,3 @@ func on_damage_dealt(ctx: Dictionary = {}) -> void:
 	var target: Node = ctx.get("target") as Node
 	if is_instance_valid(target):
 		_apply_status(target, "poison", POISON_VALUE, 99)
-		if _has_status(target, "poison"):
-			var val: int = _status_value(target, "poison")
-			if val >= POISON_THRESHOLD:
-				ctx["ignore_block"] = true
-				ctx["flat_damage_bonus"] = int(ctx.get("flat_damage_bonus", 0)) + BONUS_DAMAGE

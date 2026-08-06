@@ -13,7 +13,7 @@ const SKIP_CARD_GOLD_NORMAL: int = 10
 # --- Přednačtené scény ---
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 const ArtifactChoiceUIScene = preload("res://scenes/ui/ArtifactChoiceUI.tscn")
-const REWARD_CARD_SIZE = CardUI.DESIGN_SIZE
+const REWARD_CARD_SIZE = CardUI.HAND_SIZE
 const REWARD_HOVER_SCALE := 1.06
 
 @onready var title_label: Label = %TitleLabel
@@ -151,6 +151,7 @@ func setup_ui():
 			var artifact_ui = ArtifactChoiceUIScene.instantiate()
 			slot.mount(artifact_ui)
 			artifact_ui.set_icon_only(true)
+			artifact_ui.set_large_hover_tip(true)
 			artifact_ui.display_artifact(artifact_data)
 			artifact_ui.artifact_chosen.connect(_on_artifact_selected)
 			slot.fit_mounted()
@@ -184,6 +185,7 @@ func _on_card_clicked(card_to_add: CardData):
 	# Solo: výběr karty
 	PlayerData.master_deck.append(card_to_add)
 	_card_resolved = true
+	_hide_reward_card_hover_tip()
 	for card_ui in _iter_reward_card_uis():
 		card_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	for slot in card_slots:
@@ -378,6 +380,8 @@ func _hide_untaken_artifacts() -> void:
 		if is_instance_valid(mounted):
 			mounted.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.visible = false
+	if is_instance_valid(ArtifactHoverTooltip.instance):
+		ArtifactHoverTooltip.instance.hide_tip()
 
 func _on_card_right_clicked(card_data: CardData):
 	"""Toggle tooltip při pravém kliknutí na kartu"""
@@ -528,6 +532,7 @@ func _on_reward_card_hover_enter(card_ui: CardUI) -> void:
 		_tween_reward_card_scale(_reward_hovered_card, _reward_card_base_scale(_reward_hovered_card))
 	_reward_hovered_card = card_ui
 	_tween_reward_card_scale(card_ui, _reward_card_base_scale(card_ui) * REWARD_HOVER_SCALE)
+	_show_reward_card_hover_tip(card_ui)
 
 func _on_reward_card_hover_exit(card_ui: CardUI) -> void:
 	if not is_instance_valid(card_ui):
@@ -535,7 +540,19 @@ func _on_reward_card_hover_exit(card_ui: CardUI) -> void:
 	if _reward_hovered_card == card_ui:
 		_reward_hovered_card = null
 	_tween_reward_card_scale(card_ui, _reward_card_base_scale(card_ui))
+	_hide_reward_card_hover_tip()
 	_dismiss_tooltip_if_card(card_ui.card_data)
+
+func _show_reward_card_hover_tip(card_ui: CardUI) -> void:
+	if not is_instance_valid(card_ui) or not is_instance_valid(card_ui.card_data):
+		return
+	var card: CardData = card_ui.card_data
+	var tip := "%s\n%s" % [card.get_localized_name(), card.get_localized_description()]
+	ArtifactHoverTooltip.ensure(get_tree()).show_for(tip, card_ui, true)
+
+func _hide_reward_card_hover_tip() -> void:
+	if is_instance_valid(ArtifactHoverTooltip.instance):
+		ArtifactHoverTooltip.instance.hide_tip()
 
 func _dismiss_tooltip_if_card(card_data: CardData) -> void:
 	"""Zavře tooltip, když myš opustí kartu, ke které patří."""
@@ -549,6 +566,7 @@ func _dismiss_tooltip_if_card(card_data: CardData) -> void:
 		_current_tooltip_card_data = null
 
 func _finish_reward():
+	_hide_reward_card_hover_tip()
 	if _tutorial_final_reward and has_node("/root/GameManager"):
 		SaveManager.set_tutorial_completed(true)
 		GameManager.tutorial_active = false
@@ -562,3 +580,7 @@ func _finish_reward():
 		GameManager.reward_chosen()
 	else:
 		GameManager.reward_chosen()
+
+
+func _exit_tree() -> void:
+	_hide_reward_card_hover_tip()

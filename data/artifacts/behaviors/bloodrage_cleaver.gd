@@ -4,6 +4,12 @@ const HP_PER_STRENGTH := 5
 const COST_REDUCTION := 1
 
 
+func on_combat_start(_ctx: Dictionary = {}) -> void:
+	runtime["hp_lost_this_combat"] = 0
+	runtime["strength_stacks"] = 0
+	runtime["next_attack_discount"] = 0
+
+
 func on_damage_taken(ctx: Dictionary = {}) -> void:
 	super.on_damage_taken(ctx)
 	var lost := int(runtime.get("hp_lost_this_combat", 0))

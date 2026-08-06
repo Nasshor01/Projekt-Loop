@@ -147,10 +147,10 @@ func get_enemy_count() -> int:
 	return _get_enemy_count()
 
 
-func get_card_cost(card: CardData) -> int:
+func get_card_cost(card: CardData, target: Node = null) -> int:
 	if card == null:
 		return 0
-	return modify_card_cost(card, card.cost)
+	return modify_card_cost(card, card.cost, target)
 
 
 func _artifact_key(artifact: ArtifactsData) -> String:
@@ -486,9 +486,11 @@ func on_block_gained(amount: int):
 	return trigger_artifacts(ArtifactsData.TriggerType.ON_BLOCK_GAINED, context)
 
 
-func modify_card_cost(card: CardData, cost: int) -> int:
+func modify_card_cost(card: CardData, cost: int, target: Node = null) -> int:
 	var result := cost
 	var ctx := {"card": card, "cost": cost}
+	if is_instance_valid(target):
+		ctx["target"] = target
 	if not PlayerData:
 		return result
 	for artifact in PlayerData.artifacts:
@@ -500,6 +502,15 @@ func modify_card_cost(card: CardData, cost: int) -> int:
 	if is_card_sealed(card):
 		result = maxi(0, result - SEAL_COST_REDUCTION)
 	return result
+
+
+func on_enemy_turn_start(enemy: Node = null) -> void:
+	var context = _base_ctx()
+	_enrich_battle_ctx(context)
+	if is_instance_valid(enemy):
+		context["enemy"] = enemy
+		context["target"] = enemy
+	_dispatch_behaviors("on_enemy_turn_start", context)
 
 
 func modify_shop_price(price: int, item = null) -> int:
@@ -541,6 +552,23 @@ func modify_outgoing_damage(damage: int, ctx: Dictionary = {}) -> int:
 		if behavior:
 			result = behavior.modify_outgoing_damage(result, ctx)
 	return maxi(0, result)
+
+
+func attacks_ignore_block(target: Node, card: CardData = null) -> bool:
+	if not PlayerData or not is_instance_valid(target):
+		return false
+	var ctx := {
+		"target": target,
+		"card": card,
+		"attacker": _get_player_unit()
+	}
+	for artifact in PlayerData.artifacts:
+		if not _has_behavior(artifact):
+			continue
+		var behavior := _ensure_behavior(artifact)
+		if behavior != null and behavior.has_method("should_ignore_block") and behavior.should_ignore_block(ctx):
+			return true
+	return false
 
 
 func modify_incoming_damage(damage: int, ctx: Dictionary = {}) -> int:

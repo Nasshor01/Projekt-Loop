@@ -11,6 +11,7 @@ signal artifact_chosen(artifact_data: ArtifactsData)
 var artifact_data: ArtifactsData
 var _compact := false
 var _icon_only := false
+var _large_tip := false
 
 const ICON_ONLY_SIZE := Vector2(96, 96)
 
@@ -64,6 +65,11 @@ func set_icon_only(enabled: bool = true) -> void:
 	_apply_icon_only_layout()
 
 
+func set_large_hover_tip(enabled: bool = true) -> void:
+	"""Wider / larger font tip (shop shelf)."""
+	_large_tip = enabled
+
+
 func _apply_icon_only_layout() -> void:
 	if not is_instance_valid(icon):
 		return
@@ -76,6 +82,8 @@ func _apply_icon_only_layout() -> void:
 		icon.size = ICON_ONLY_SIZE
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		# Let PanelContainer receive hover (default TextureRect steals mouse).
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		custom_minimum_size = ICON_ONLY_SIZE
 		size = ICON_ONLY_SIZE
 		# No chrome — just the icon
@@ -88,6 +96,7 @@ func _apply_icon_only_layout() -> void:
 		if description_label:
 			description_label.visible = true
 		icon.custom_minimum_size = Vector2(128, 128)
+		icon.mouse_filter = Control.MOUSE_FILTER_STOP
 		custom_minimum_size = Vector2(0, 0)
 		tooltip_text = ""
 		_tip_text = ""
@@ -135,7 +144,7 @@ func set_stack_info(stack_info: String):
 func _on_mouse_entered_tip() -> void:
 	if not _icon_only or _tip_text.is_empty():
 		return
-	ArtifactHoverTooltip.ensure(get_tree()).show_for(_tip_text, self)
+	ArtifactHoverTooltip.ensure(get_tree()).show_for(_tip_text, self, _large_tip)
 
 
 func _on_mouse_exited_tip() -> void:

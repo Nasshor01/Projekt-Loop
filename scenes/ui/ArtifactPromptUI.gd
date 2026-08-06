@@ -79,13 +79,32 @@ func _populate_cards(cards: Array) -> void:
 		card_ui.load_card(card)
 		card_ui.apply_display_mode(CardUI.DisplayMode.DECK)
 		card_ui.is_draggable = false
-		if not card_ui.card_clicked.is_connected(_on_card_clicked):
-			card_ui.card_clicked.connect(_on_card_clicked)
+		card_ui.card_clicked.connect(_on_card_clicked)
+		card_ui.mouse_entered.connect(_on_prompt_card_hover.bind(card_ui))
+		card_ui.mouse_exited.connect(_on_prompt_card_unhover)
 
 
 func _clear_cards() -> void:
+	_hide_prompt_card_hover_tip()
 	for child in card_row.get_children():
 		child.queue_free()
+
+
+func _on_prompt_card_hover(card_ui: CardUI) -> void:
+	if not is_instance_valid(card_ui) or not is_instance_valid(card_ui.card_data):
+		return
+	var card: CardData = card_ui.card_data
+	var tip := "%s\n%s" % [card.get_localized_name(), card.get_localized_description()]
+	ArtifactHoverTooltip.ensure(get_tree()).show_for(tip, card_ui, true)
+
+
+func _on_prompt_card_unhover() -> void:
+	_hide_prompt_card_hover_tip()
+
+
+func _hide_prompt_card_hover_tip() -> void:
+	if is_instance_valid(ArtifactHoverTooltip.instance):
+		ArtifactHoverTooltip.instance.hide_tip()
 
 
 func _on_card_clicked(card_data: CardData) -> void:

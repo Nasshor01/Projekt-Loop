@@ -24,7 +24,7 @@ const COLOR_NEUTRAL_BORDER := Color(0.72, 0.58, 0.28, 0.95)
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	custom_minimum_size = Vector2(48, 48)
+	custom_minimum_size = Vector2(64, 64)
 	size = custom_minimum_size
 	clip_contents = true
 	if is_instance_valid(portrait):
@@ -111,11 +111,11 @@ func _apply_preview_look() -> void:
 	if is_preview:
 		modulate = Color(1, 1, 1, 0.55)
 		scale = Vector2(0.88, 0.88)
-		custom_minimum_size = Vector2(42, 42)
+		custom_minimum_size = Vector2(56, 56)
 	else:
 		modulate = Color.WHITE
 		scale = Vector2.ONE
-		custom_minimum_size = Vector2(48, 48)
+		custom_minimum_size = Vector2(64, 64)
 
 
 func refresh_initiative() -> void:

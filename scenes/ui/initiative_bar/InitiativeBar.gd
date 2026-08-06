@@ -68,7 +68,7 @@ func _rebuild_from_entries(entries: Array, turn_manager: Node) -> void:
 
 func _add_round_separator() -> void:
 	var sep := PanelContainer.new()
-	sep.custom_minimum_size = Vector2(10, 40)
+	sep.custom_minimum_size = Vector2(12, 56)
 	sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color(0.85, 0.72, 0.35, 0.95)

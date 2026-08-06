@@ -4,17 +4,26 @@ const POISON_DOUBLE_THRESHOLD := 8
 const DOUBLE_USES_PER_COMBAT := 1
 
 
+func on_combat_start(_ctx: Dictionary = {}) -> void:
+	runtime["double_uses"] = 0
+	runtime["spreading"] = false
+
+
 func on_status_applied(ctx: Dictionary = {}) -> void:
+	if runtime.get("spreading", false):
+		return
 	var status_id: String = String(ctx.get("status_id", ""))
 	if status_id != "poison":
 		return
 	var target: Node = ctx.get("target") as Node
 	if not is_instance_valid(target):
 		return
-	var statuses: Variant = target.get("active_statuses")
-	if statuses == null or not (statuses is Dictionary) or not (statuses as Dictionary).has("poison"):
-		return
+	# Spread only when re-applying onto an already-poisoned unit (value before this apply > 0).
 	var amount: int = int(ctx.get("value", 1))
+	var after: int = _status_value(target, "poison")
+	var before: int = after - amount
+	if before <= 0:
+		return
 	_spread_poison_row(target, amount)
 
 
@@ -41,6 +50,7 @@ func _spread_poison_row(source: Node, amount: int) -> void:
 	var grid: Node = _find_battle_grid()
 	if grid == null:
 		return
+	runtime["spreading"] = true
 	var source_pos: Vector2i = source.get("grid_position") as Vector2i
 	var row_y: int = source_pos.y
 	for unit_v in _all_units_on_grid():
@@ -50,6 +60,7 @@ func _spread_poison_row(source: Node, amount: int) -> void:
 		var pos: Vector2i = unit.get("grid_position") as Vector2i
 		if pos.y == row_y:
 			_apply_status(unit, "poison", amount, 99)
+	runtime["spreading"] = false
 
 
 func _double_all_poison() -> void:

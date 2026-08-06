@@ -213,20 +213,20 @@ const ICON_SIZE: int = 16
 ## Active BBCode [img] size for the current shorthand pass (set by generate_compact_description).
 var _shorthand_icon_px: int = ICON_SIZE
 
-## BBCode accents on white-text + black outline.
-const BB_ENERGY := "#9ad4ff"
-const BB_HEAL := "#8fef9a"
-const BB_EXHAUST := "#ffb070"
-const BB_INITIATIVE := "#f0d9a0"
+## BBCode accents on LIGHT description panel (dark ink — RTL outline is unreliable).
+const BB_ENERGY := "#1a4a8c"
+const BB_HEAL := "#1a6a28"
+const BB_EXHAUST := "#8a4010"
+const BB_INITIATIVE := "#5a3a00"
 
-## Face keyword colors for verbal keywords (Exhaust / Retain etc.). EN+CS titles.
+## Face keyword colors for verbal keywords on white description panel.
 const FACE_KEYWORD_COLORS := {
-	"holy": {"color": "#f0d060", "words": ["Holy", "Svaté"]},
-	"exhaust": {"color": "#ffb070", "words": ["Exhaust", "Vyčerpání"]},
-	"retain": {"color": "#7ec8ff", "words": ["Retain", "Ponechání"]},
-	"block": {"color": "#9ad4ff", "words": ["Block", "Blok"]},
-	"vulnerable": {"color": "#d4a0ff", "words": ["Vulnerable", "Zranitelnost"]},
-	"poison": {"color": "#8fef9a", "words": ["Poison", "Jed"]},
+	"holy": {"color": "#8a6810", "words": ["Holy", "Svaté"]},
+	"exhaust": {"color": "#8a4010", "words": ["Exhaust", "Vyčerpání"]},
+	"retain": {"color": "#1a5080", "words": ["Retain", "Ponechání"]},
+	"block": {"color": "#1a4a8c", "words": ["Block", "Blok"]},
+	"vulnerable": {"color": "#5a2080", "words": ["Vulnerable", "Zranitelnost"]},
+	"poison": {"color": "#1a6a28", "words": ["Poison", "Jed"]},
 }
 
 ## Face line order when a card has multiple effects.

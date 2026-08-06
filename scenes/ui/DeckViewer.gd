@@ -16,6 +16,8 @@ var card_scene = preload("res://scenes/ui/CardUI.tscn")
 var _upgrade_preview_mode: bool = false
 var _upgrade_show_as_upgraded: bool = true
 var _upgrade_base_cards: Array[CardData] = []
+## Instant name+desc tip for pick UIs (remove/upgrade/seal). Off for browse display_deck.
+var _pick_hover_tips: bool = false
 
 func _ready():
 	close_button.pressed.connect(hide)
@@ -33,6 +35,7 @@ func _update_ui_texts():
 func show_cards(cards: Array[CardData], _card_scale: Vector2 = Vector2.ZERO):
 	_upgrade_preview_mode = false
 	_upgrade_base_cards.clear()
+	_pick_hover_tips = true
 	_clear_grid()
 	grid_container.columns = 3
 	for card_data in cards:
@@ -47,6 +50,7 @@ func show_cards(cards: Array[CardData], _card_scale: Vector2 = Vector2.ZERO):
 func show_seal_selection(cards: Array[CardData]) -> void:
 	_upgrade_preview_mode = false
 	_upgrade_base_cards.clear()
+	_pick_hover_tips = true
 	_clear_grid()
 	grid_container.columns = 3
 	if title_label:
@@ -65,6 +69,7 @@ func show_upgrade_selection(cards: Array[CardData], show_as_upgraded: bool = tru
 	_upgrade_preview_mode = true
 	_upgrade_show_as_upgraded = show_as_upgraded
 	_upgrade_base_cards = cards.duplicate()
+	_pick_hover_tips = true
 	_clear_grid()
 	grid_container.columns = 3
 	if title_label:
@@ -88,6 +93,8 @@ func set_upgrade_preview_faces(show_as_upgraded: bool) -> void:
 func display_deck(deck: Array[CardData]):
 	_upgrade_preview_mode = false
 	_upgrade_base_cards.clear()
+	_pick_hover_tips = false
+	_hide_pick_hover_tip()
 	_clear_grid()
 	grid_container.columns = 4
 
@@ -165,7 +172,7 @@ func _add_card_to_grid(card_data: CardData, mode: CardUI.DisplayMode) -> CardUI:
 	if not card_ui.card_right_clicked.is_connected(_on_card_right_clicked_in_viewer):
 		card_ui.card_right_clicked.connect(_on_card_right_clicked_in_viewer)
 	card_ui.gui_input.connect(_on_card_selected_input.bind(card_data))
-	card_ui.mouse_entered.connect(_on_grid_card_hovered.bind(card_data))
+	card_ui.mouse_entered.connect(_on_grid_card_hovered.bind(card_data, card_ui))
 	card_ui.mouse_exited.connect(_on_grid_card_unhovered)
 
 	var cell = card_ui.get_scaled_size() + Vector2(12, 16)
@@ -195,7 +202,7 @@ func _add_upgrade_card_to_grid(base_card: CardData, display_data: CardData) -> C
 	card_ui.card_clicked.connect(func(_ignored: CardData): _on_card_clicked_in_viewer(base_card))
 	card_ui.card_right_clicked.connect(func(_ignored: CardData): _on_card_right_clicked_in_viewer(display_data))
 	card_ui.gui_input.connect(_on_card_selected_input.bind(base_card))
-	card_ui.mouse_entered.connect(_on_grid_card_hovered.bind(display_data))
+	card_ui.mouse_entered.connect(_on_grid_card_hovered.bind(display_data, card_ui))
 	card_ui.mouse_exited.connect(_on_grid_card_unhovered)
 	# Preview uses the real upgraded CardData face (green Name+ only) — no extra tint/badge.
 
@@ -205,11 +212,20 @@ func _add_upgrade_card_to_grid(base_card: CardData, display_data: CardData) -> C
 	call_deferred("_sync_deck_card_layout", card_ui)
 	return card_ui
 
-func _on_grid_card_hovered(card_data: CardData) -> void:
+func _on_grid_card_hovered(card_data: CardData, card_ui: Control = null) -> void:
 	card_hovered.emit(card_data)
+	if not _pick_hover_tips or not is_instance_valid(card_data) or not is_instance_valid(card_ui):
+		return
+	var tip := "%s\n%s" % [card_data.get_localized_name(), card_data.get_localized_description()]
+	ArtifactHoverTooltip.ensure(get_tree()).show_for(tip, card_ui, true)
 
 func _on_grid_card_unhovered() -> void:
 	card_unhovered.emit()
+	_hide_pick_hover_tip()
+
+func _hide_pick_hover_tip() -> void:
+	if is_instance_valid(ArtifactHoverTooltip.instance):
+		ArtifactHoverTooltip.instance.hide_tip()
 
 func _on_card_selected_input(event: InputEvent, card_data: CardData):
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.is_pressed():
@@ -224,6 +240,8 @@ func _on_card_gui_input(event: InputEvent, card_data: CardData):
 func hide_and_clear():
 	_upgrade_preview_mode = false
 	_upgrade_base_cards.clear()
+	_pick_hover_tips = false
+	_hide_pick_hover_tip()
 	if close_button:
 		close_button.visible = true
 	if title_label:
@@ -251,6 +269,7 @@ func _on_card_right_clicked_in_viewer(card_data: CardData):
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_VISIBILITY_CHANGED and not visible:
+		_hide_pick_hover_tip()
 		_set_world_hud_dimmed(false)
 
 func _set_world_hud_dimmed(dimmed: bool) -> void:

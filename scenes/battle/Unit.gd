@@ -224,7 +224,7 @@ func attack(target: Node, extra_additive: int = 0, damage_type: int = 0, _is_hol
 ## Returns false if the hit was dodged (no HP/block change). Dodge only applies to attack hits
 ## (allow_dodge=true); DoT / terrain / forced damage should pass allow_dodge=false.
 ## skip_artifacts: used by deferred artifact damage so hooks don't double-fire.
-func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: bool = false, allow_dodge: bool = true, skip_artifacts: bool = false) -> bool:
+func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: bool = false, allow_dodge: bool = true, skip_artifacts: bool = false, ignore_block: bool = false) -> bool:
 	# Dodge: Assassin má 35% šanci na dodge útoku (ne DoT/pastí).
 	# Přeskočit při RPC sync (výsledek už byl rozhodnut na odesílající straně).
 	if allow_dodge and not is_rpc_sync and unit_data.ai_script and unit_data.ai_script.resource_path.contains("AssassinAI"):
@@ -248,7 +248,7 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 		active_statuses.erase("defensive_stance")
 		_update_stats_and_emit_signal()
 	
-	var absorbed_by_block = mini(damage_to_deal, current_block)
+	var absorbed_by_block = 0 if ignore_block else mini(damage_to_deal, current_block)
 	
 	if absorbed_by_block > 0:
 		_show_floating_text(absorbed_by_block, "block_loss")

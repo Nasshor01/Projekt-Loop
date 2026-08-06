@@ -4,13 +4,13 @@
 [ext_resource type="FontFile" uid="uid://t08shflw41tf" path="res://art/fonts/blrrpixs016.ttf" id="2_cardfont"]
 
 [node name="ShopItemUI" type="VBoxContainer"]
-custom_minimum_size = Vector2(200, 300)
+custom_minimum_size = Vector2(240, 350)
 theme_override_constants/separation = 6
 script = ExtResource("1_b06mc")
 
 [node name="ItemContent" type="Control" parent="."]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(320, 400)
+custom_minimum_size = Vector2(240, 300)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 3

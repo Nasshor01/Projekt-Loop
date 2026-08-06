@@ -379,6 +379,10 @@ func on_draw_cards(_ctx: Dictionary = {}) -> void:
 	pass
 
 
+func on_enemy_turn_start(_ctx: Dictionary = {}) -> void:
+	pass
+
+
 func modify_card_cost(_ctx: Dictionary, cost: int) -> int:
 	return cost
 

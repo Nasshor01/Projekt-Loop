@@ -20,7 +20,9 @@ var ui_nodes_ready: bool = false
 var is_purchased: bool = false
 var _can_afford: bool = true
 
-const SHOP_CARD_MIN_SIZE = CardUI.DESIGN_SIZE
+const SHOP_CARD_MIN_SIZE = CardUI.SHOP_SIZE
+## Face + price label / separation — must match ShopScene LayoutSlot.
+const SHOP_ITEM_NATURAL_SIZE := Vector2(240, 350)
 const HOVER_SCALE := 1.05
 
 func _ready():
@@ -47,6 +49,7 @@ func get_item_data() -> Resource:
 
 func mark_purchased() -> void:
 	is_purchased = true
+	_hide_hover_tip()
 	modulate = Color(0.45, 0.45, 0.45, 0.85)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if is_instance_valid(price_label):
@@ -75,12 +78,9 @@ func _set_content_interactive(enabled: bool) -> void:
 		return
 	for child in item_content_container.get_children():
 		if child is Control:
-			# Keep right-click tooltips on cards even when unaffordable
-			if child is CardUI:
+			# Keep hover/tooltips even when unaffordable; purchase is gated in _try_purchase.
+			if child is CardUI or child is ArtifactChoiceUI:
 				child.mouse_filter = Control.MOUSE_FILTER_STOP
-				if not enabled and not is_purchased:
-					# Block left-buy via flag; CardUI still receives clicks — gated in _try_purchase
-					pass
 			else:
 				child.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
 
@@ -123,6 +123,8 @@ func _display_item_content():
 				card_ui.mouse_entered.connect(_on_content_mouse_entered.bind(card_ui))
 			if not card_ui.mouse_exited.is_connected(_on_content_mouse_exited):
 				card_ui.mouse_exited.connect(_on_content_mouse_exited.bind(card_ui))
+		item_content_container.custom_minimum_size = SHOP_CARD_MIN_SIZE
+		custom_minimum_size = SHOP_ITEM_NATURAL_SIZE
 		call_deferred("_center_card_in_slot", card_ui if card_ui is CardUI else null)
 		call_deferred("_notify_parent_slot_refit")
 
@@ -130,6 +132,7 @@ func _display_item_content():
 		var artifact_ui = preload("res://scenes/ui/ArtifactChoiceUI.tscn").instantiate()
 		item_content_container.add_child(artifact_ui)
 		artifact_ui.set_icon_only(true)
+		artifact_ui.set_large_hover_tip(true)
 		artifact_ui.display_artifact(item_data)
 		if artifact_stack_info and not artifact_stack_info.is_empty():
 			artifact_ui.set_stack_info(artifact_stack_info)
@@ -159,6 +162,7 @@ func _on_content_mouse_entered(node: Control) -> void:
 	tween.tween_property(node, "scale", base * HOVER_SCALE, 0.12)
 	if item_data is CardData:
 		emit_signal("card_hovered", item_data)
+		_show_card_hover_tip(node)
 
 func _on_content_mouse_exited(node: Control) -> void:
 	if not is_instance_valid(node):
@@ -170,12 +174,30 @@ func _on_content_mouse_exited(node: Control) -> void:
 	tween.tween_property(node, "scale", base, 0.12)
 	if item_data is CardData:
 		emit_signal("card_hover_exited", item_data)
+		_hide_hover_tip()
+
+
+func _show_card_hover_tip(anchor: Control) -> void:
+	if not (item_data is CardData) or not is_instance_valid(anchor):
+		return
+	var card := item_data as CardData
+	var tip := "%s\n%s" % [card.get_localized_name(), card.get_localized_description()]
+	ArtifactHoverTooltip.ensure(get_tree()).show_for(tip, anchor, true)
+
+
+func _hide_hover_tip() -> void:
+	if is_instance_valid(ArtifactHoverTooltip.instance):
+		ArtifactHoverTooltip.instance.hide_tip()
+
+
+func _exit_tree() -> void:
+	_hide_hover_tip()
 
 func get_layout_natural_size() -> Vector2:
 	var ms := custom_minimum_size
 	if ms.x > 1.0 and ms.y > 1.0:
 		return ms
-	return Vector2(200, 300)
+	return SHOP_ITEM_NATURAL_SIZE
 
 
 func set_slot_fit_scale(fit_scale: Vector2) -> void:

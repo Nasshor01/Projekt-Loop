@@ -19,8 +19,10 @@ const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 @export var hand_arc: float = 36.0
 
 @export_group("Interakce")
-@export var hover_y_offset: float = -8.0
-@export var hover_scale: float = 1.12
+## Extra lift on hover (px, negative = up). Keep small — scale already grows upward from the hand baseline.
+@export var hover_y_offset: float = -16.0
+## Hand rest → hover size multiplier (hand face is already 1.0 / 240×300).
+@export var hover_scale: float = 1.2
 
 @onready var _arrange_timer: Timer = $ArrangeTimer
 
@@ -214,7 +216,10 @@ func _arrange_cards():
 		var is_dragging = card is CardUI and card.is_dragging
 		
 		if (card == _selected_card or card == _hovered_card) and not is_dragging:
-			target_pos.y = size.y - (card.custom_minimum_size.y * hover_scale) + hover_y_offset
+			# Bottom-align so scale grows UP (not off-screen below), then a light extra lift.
+			# Must include original_scale — DESIGN_SIZE alone caused a huge jump.
+			var hover_h: float = card.custom_minimum_size.y * card.original_scale.y * hover_scale
+			target_pos.y = size.y - hover_h + (x_arc * x_arc) * hand_arc + hover_y_offset
 			target_scale = card.original_scale * hover_scale
 			target_z_index = num_cards + 1
 		elif is_dragging:

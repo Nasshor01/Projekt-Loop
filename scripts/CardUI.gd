@@ -4,45 +4,83 @@
 class_name CardUI
 extends Control
 
-## Design size in CardUI.tscn — contexts scale from this, don't crush below ~0.8 for readable text.
-## Warrior frames are 64×80 → displayed at 5× = 320×400 (1920×1080 design; was 3× at 1152×648).
+## Shop / editor face — CardUI.tscn source of truth (320×400).
 const DESIGN_SIZE: Vector2 = Vector2(320, 400)
+## Battle hand + reward/deck — native 1.0 in matching slots (no Control.scale of glyphs).
+const HAND_SIZE: Vector2 = Vector2(240, 300)
+## Shop card face — same as hand; ShopScene LayoutSlot must fit face+price (~240×350).
+const SHOP_SIZE: Vector2 = Vector2(240, 300)
 
 ## How the card is presented. Data still comes from CardData (.tres).
 enum DisplayMode {
-	FULL,    ## Hand — animated, ~0.88 scale
-	SHOP,    ## Shop slot — 1.0 scale, full face
-	REWARD,  ## Reward / rest pick — ~0.95 scale
-	DECK,    ## Deck / pile viewer — ~0.85 scale, still full face
-	COMPACT, ## Tiny grid tile: cost + name + short line (no art crush)
+	FULL,    ## Hand — HAND_SIZE @ 1.0
+	SHOP,    ## Shop — SHOP_SIZE @ 1.0 (slot must not downscale)
+	REWARD,  ## Reward — HAND_SIZE @ 1.0
+	DECK,    ## Deck viewer — HAND_SIZE @ 1.0
+	COMPACT, ## Tiny grid tile
 }
 
-const SCALE_HAND := Vector2(0.88, 0.88)
+const SCALE_HAND := Vector2(1.0, 1.0)
 const SCALE_SHOP := Vector2(1.0, 1.0)
-const SCALE_REWARD := Vector2(0.95, 0.95)
-const SCALE_DECK := Vector2(0.85, 0.85)
+const SCALE_REWARD := Vector2(1.0, 1.0)
+const SCALE_DECK := Vector2(1.0, 1.0)
 const SCALE_COMPACT := Vector2(1.0, 1.0)
 const COMPACT_SIZE := Vector2(280, 350)
 
 ## StS-style face: fixed text slot, clamp lines.
-## Name + description sizes: edit @export on CardUI root (not child Theme Overrides).
-## Dense cards pack trailing keyword lines (Holy · Exhaust) before clamping.
 const DESC_MAX_LINES_FULL := 5
 const DESC_MAX_LINES_COMPACT := 4
-## Shrink font when tall; pack keywords first so 5-line cards still fit the slot.
 const DESC_DENSE_LINE_THRESHOLD := 3
 const DESC_VERY_DENSE_LINE_THRESHOLD := 5
 const DESC_DENSE_SHRINK := 1
 const DESC_VERY_DENSE_SHRINK := 2
-const DESC_FONT_MIN := 17
-const DESC_LINE_SEP_NORMAL := 2
+
+## Hand / reward / deck (240×300 @ 1.0) — Ithaca (same family as tooltip).
+const HAND_NAME_FONT := 22
+const HAND_DESC_FONT := 19
+const HAND_COST_FONT := 28
+const HAND_USAGE_FONT := 17
+const HAND_DESC_MIN := 16
+const HAND_NAME_MIN := 16
+const HAND_OUTLINE_NAME := 4
+const HAND_OUTLINE_COST := 4
+const HAND_OUTLINE_DESC := 0 ## dark ink on white panel
+const HAND_OUTLINE_USAGE := 3
+const HAND_LINE_SEP := 2
+## Wider letter spacing on card titles only (positive = apart).
+const NAME_GLYPH_SPACING := 2
+const HAND_GLYPH_SPACING := 0
+
+## Shop (240×300 @ 1.0) — match hand face metrics.
+const SHOP_NAME_FONT := 22
+const SHOP_DESC_FONT := 19
+const SHOP_COST_FONT := 28
+const SHOP_USAGE_FONT := 17
+const SHOP_DESC_MIN := 16
+const SHOP_NAME_MIN := 16
+const SHOP_OUTLINE_NAME := 4
+const SHOP_OUTLINE_COST := 4
+const SHOP_OUTLINE_DESC := 0
+const SHOP_OUTLINE_USAGE := 3
+const SHOP_LINE_SEP := 2
+const SHOP_GLYPH_SPACING := 0
+
+## Dark body text on white description panel (RichTextLabel outline is flaky).
+const DESC_BODY_COLOR := Color(0.12, 0.1, 0.08, 1)
+## Curse frame is dark gray/red — need light ink (same idea as tooltip).
+const DESC_BODY_COLOR_CURSE := Color(0.95, 0.92, 0.88, 1)
+const NAME_COLOR_CURSE := Color(1.0, 0.55, 0.55, 1)
+const COST_COLOR_CURSE := Color(1.0, 0.85, 0.85, 1)
+
+## Compact face only.
+const NAME_FONT_COMPACT := 25
+const COST_FONT_SIZE := SHOP_COST_FONT ## legacy alias
+const USAGE_FONT_SIZE := SHOP_USAGE_FONT
+const DESC_FONT_MIN := SHOP_DESC_MIN
+const NAME_FONT_MIN := SHOP_NAME_MIN
+const DESC_LINE_SEP_NORMAL := SHOP_LINE_SEP
 const DESC_LINE_SEP_DENSE := 0
 const DESC_LINE_SEP_VERY_DENSE := -2
-const COST_FONT_SIZE := 37
-## Compact face only — full face uses name_font_size export.
-const NAME_FONT_COMPACT := 23
-const NAME_FONT_MIN := 17
-const USAGE_FONT_SIZE := 20
 
 ## Modular Warrior frames by rarity (curses use curse.png).
 ## Live set: Basic / Common / Rare / Epic / Legendary. Uncommon cancelled.
@@ -57,19 +95,16 @@ const FRAME_PATHS := {
 }
 const NAME_COLOR_NORMAL := Color(1, 1, 1, 1)
 const NAME_COLOR_UPGRADED := Color(0.45, 1.0, 0.45, 1)
-## Name/cost keep stronger outline (sit on colored banner/orb).
-## Description outline comes from DescriptionLabel in CardUI.tscn — do not hardcode here.
-const OUTLINE_NAME := 6
-const OUTLINE_COST := 6
-const OUTLINE_USAGE := 4
-## Cost sits on blue energy orb — cream is fine there.
 const COST_COLOR := Color(1.0, 0.95, 0.75, 1.0)
-## Usage badge on frame edge — avoid pure yellow; use dark amber.
 const USAGE_COLOR := Color(0.45, 0.28, 0.05, 1.0)
 const PATH_SEAL_BADGE := "res://art/icons/artifact_fx/seal_badge.png"
 const PATH_RETAIN_BADGE := "res://art/icons/artifact_fx/retain_badge.png"
+const PATH_CARD_FONT := "res://art/fonts/Ithaca-LVB75.ttf"
 static var _frame_texture_cache: Dictionary = {}
 static var _badge_texture_cache: Dictionary = {}
+static var _card_font_spaced: Font = null
+static var _card_font_name: Font = null
+static var _card_font_path_cached: String = ""
 
 @export var card_data: CardData:
 	set(new_card_data):
@@ -79,13 +114,13 @@ static var _badge_texture_cache: Dictionary = {}
 
 @export var placeholder_artwork: Texture2D
 @export var static_layout: bool = false
-## Font sizes: CardUI ROOT in Inspector. Outline/colors: DescriptionLabel Theme Overrides (script does not overwrite them).
-@export_range(8, 80, 1) var name_font_size: int = 23:
+## Inspector defaults = shop face. Hand mode uses HAND_* constants (ignores these).
+@export_range(8, 80, 1) var name_font_size: int = SHOP_NAME_FONT:
 	set(value):
 		name_font_size = value
 		if is_inside_tree() and _ui_nodes_ready and card_data:
 			update_display()
-@export_range(8, 80, 1) var description_font_size: int = 23:
+@export_range(8, 80, 1) var description_font_size: int = SHOP_DESC_FONT:
 	set(value):
 		description_font_size = value
 		if is_inside_tree() and _ui_nodes_ready and card_data:
@@ -136,8 +171,13 @@ func _ready():
 	_set_child_mouse_filters()
 	target_position = position
 	set_process(true)
-	custom_minimum_size = DESIGN_SIZE
-	size = DESIGN_SIZE
+	# Prefer apply_display_mode() from parent; default to hand face if already FULL.
+	if display_mode == DisplayMode.FULL and not static_layout:
+		_layout_full()
+		_set_visual_scale(SCALE_HAND)
+	else:
+		custom_minimum_size = DESIGN_SIZE
+		size = DESIGN_SIZE
 
 	if not static_layout and display_mode == DisplayMode.FULL:
 		if initial_scale != Vector2.ZERO:
@@ -186,48 +226,195 @@ func _apply_rect(node: Control, rect: Rect2) -> void:
 	node.position = rect.position
 	node.size = rect.size
 
+func _scale_rect(rect: Rect2, s: float) -> Rect2:
+	return Rect2(rect.position * s, rect.size * s)
+
+func _is_hand_face() -> bool:
+	## Native small face (no LayoutSlot downscale) — hand, reward, deck.
+	return display_mode == DisplayMode.FULL \
+		or display_mode == DisplayMode.REWARD \
+		or display_mode == DisplayMode.DECK
+
+func _is_shop_face() -> bool:
+	return display_mode == DisplayMode.SHOP
+
+func _face_size() -> Vector2:
+	if _is_hand_face():
+		return HAND_SIZE
+	if _is_shop_face():
+		return SHOP_SIZE
+	return DESIGN_SIZE
+
+func _layout_scale_factor() -> float:
+	## Map CardUI.tscn (DESIGN_SIZE) slots onto current face size.
+	return _face_size().x / DESIGN_SIZE.x
+
 func _restore_scene_layout() -> void:
 	_cache_scene_layout()
-	_apply_rect(artwork_texture_rect, _scene_art_rect)
-	_apply_rect(name_label, _scene_name_rect)
-	_apply_rect(cost_label, _scene_cost_rect)
-	_apply_rect(description_label, _scene_desc_rect)
-	_apply_rect(_usage_label, _scene_usage_rect)
+	var s := _layout_scale_factor()
+	_apply_rect(artwork_texture_rect, _scale_rect(_scene_art_rect, s))
+	_apply_rect(name_label, _scale_rect(_scene_name_rect, s))
+	_apply_rect(cost_label, _scale_rect(_scene_cost_rect, s))
+	_apply_rect(description_label, _scale_rect(_scene_desc_rect, s))
+	_apply_rect(_usage_label, _scale_rect(_scene_usage_rect, s))
+	_update_badge_row_layout()
+
+func _update_badge_row_layout() -> void:
+	if not is_instance_valid(_state_badge_row):
+		return
+	var s := _layout_scale_factor()
+	_state_badge_row.offset_left = -120.0 * s
+	_state_badge_row.offset_top = 47.0 * s
+	_state_badge_row.offset_right = -10.0 * s
+	_state_badge_row.offset_bottom = 87.0 * s
+
+func _name_font_base() -> int:
+	if display_mode == DisplayMode.COMPACT:
+		return NAME_FONT_COMPACT
+	if _is_hand_face():
+		return HAND_NAME_FONT
+	if _is_shop_face():
+		return SHOP_NAME_FONT
+	return name_font_size if name_font_size > 0 else SHOP_NAME_FONT
+
+func _desc_font_base() -> int:
+	if _is_hand_face():
+		return HAND_DESC_FONT
+	if _is_shop_face():
+		return SHOP_DESC_FONT
+	return description_font_size if description_font_size > 0 else SHOP_DESC_FONT
+
+func _desc_font_min() -> int:
+	if _is_hand_face():
+		return HAND_DESC_MIN
+	return SHOP_DESC_MIN
+
+func _name_font_min() -> int:
+	if _is_hand_face():
+		return HAND_NAME_MIN
+	return SHOP_NAME_MIN
+
+func _cost_font_size() -> int:
+	if _is_hand_face():
+		return HAND_COST_FONT
+	return SHOP_COST_FONT
+
+func _usage_font_size() -> int:
+	if _is_hand_face():
+		return HAND_USAGE_FONT
+	return SHOP_USAGE_FONT
+
+func _outline_name() -> int:
+	if _is_hand_face():
+		return HAND_OUTLINE_NAME
+	return SHOP_OUTLINE_NAME
+
+func _outline_cost() -> int:
+	if _is_hand_face():
+		return HAND_OUTLINE_COST
+	return SHOP_OUTLINE_COST
+
+func _outline_desc() -> int:
+	if _is_curse_card():
+		return 3
+	if _is_hand_face():
+		return HAND_OUTLINE_DESC
+	return SHOP_OUTLINE_DESC
+
+func _outline_usage() -> int:
+	if _is_hand_face():
+		return HAND_OUTLINE_USAGE
+	return SHOP_OUTLINE_USAGE
+
+func _line_sep_normal() -> int:
+	if _is_hand_face():
+		return HAND_LINE_SEP
+	return SHOP_LINE_SEP
+
+func _glyph_spacing() -> int:
+	return HAND_GLYPH_SPACING if _is_hand_face() else SHOP_GLYPH_SPACING
+
+func _get_card_font_spaced() -> Font:
+	## Body / cost / usage — plain Ithaca (same as tooltip).
+	if _card_font_spaced != null and _card_font_path_cached == PATH_CARD_FONT:
+		return _card_font_spaced
+	var base := load(PATH_CARD_FONT) as Font
+	if base == null:
+		return null
+	_card_font_spaced = base
+	_card_font_path_cached = PATH_CARD_FONT
+	_card_font_name = null ## force rebuild name variant when base path changes
+	return _card_font_spaced
+
+func _get_card_font_name() -> Font:
+	## Titles only — positive glyph spacing = letters farther apart.
+	## Rebuild each apply so Inspector/hot-reload picks up NAME_GLYPH_SPACING changes.
+	var base := _get_card_font_spaced()
+	if base == null:
+		return null
+	if _card_font_name != null and _card_font_path_cached == PATH_CARD_FONT:
+		if _card_font_name is FontVariation:
+			(_card_font_name as FontVariation).set_spacing(TextServer.SPACING_GLYPH, NAME_GLYPH_SPACING)
+			return _card_font_name
+	var fv := FontVariation.new()
+	fv.base_font = base
+	fv.set_spacing(TextServer.SPACING_GLYPH, NAME_GLYPH_SPACING)
+	_card_font_name = fv
+	return _card_font_name
+
+func _apply_card_font_to_labels() -> void:
+	var body := _get_card_font_spaced()
+	var title := _get_card_font_name()
+	if body == null:
+		return
+	if name_label:
+		name_label.add_theme_font_override("font", title if title else body)
+	if cost_label:
+		cost_label.add_theme_font_override("font", body)
+	if _usage_label:
+		_usage_label.add_theme_font_override("font", body)
+	if description_label:
+		description_label.add_theme_font_override("normal_font", body)
+		description_label.add_theme_font_override("bold_font", body)
+		description_label.add_theme_font_override("italics_font", body)
+		description_label.add_theme_font_override("bold_italics_font", body)
+		description_label.add_theme_font_override("mono_font", body)
 
 func _apply_readability_theme() -> void:
+	_apply_card_font_to_labels()
+	clip_contents = false
 	if description_label:
-		# Keep text inside the fixed face slot (fit_content grows past the frame).
 		description_label.fit_content = false
 		description_label.scroll_active = false
-		description_label.clip_contents = true
-		# Manual push_color / add_image — BBCode engine must stay OFF or it eats [/img] tags.
+		description_label.clip_contents = false
 		description_label.bbcode_enabled = false
 		description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		# Do NOT override outline_size / font_outline_color — use DescriptionLabel from CardUI.tscn.
-		var desc_font := description_label.get_theme_font("normal_font")
-		if desc_font:
-			description_label.add_theme_font_override("bold_font", desc_font)
-			description_label.add_theme_font_override("italics_font", desc_font)
-			description_label.add_theme_font_override("bold_italics_font", desc_font)
-			description_label.add_theme_font_override("mono_font", desc_font)
-		# horizontal/vertical_alignment: leave DescriptionLabel values from CardUI.tscn
+		description_label.add_theme_color_override("default_color", _face_body_color())
+		description_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		description_label.add_theme_constant_override("outline_size", _outline_desc())
 	if name_label:
 		name_label.clip_text = true
 		name_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-		name_label.add_theme_constant_override("outline_size", OUTLINE_NAME)
+		name_label.add_theme_constant_override("outline_size", _outline_name())
+		name_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		name_label.add_theme_constant_override("shadow_offset_x", 1)
+		name_label.add_theme_constant_override("shadow_offset_y", 1)
+		name_label.add_theme_constant_override("shadow_outline_size", 2)
 	if cost_label:
-		# Fixed gem slot: always centered, never wraps.
 		cost_label.clip_text = true
 		cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		cost_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		cost_label.add_theme_color_override("font_color", COST_COLOR)
+		cost_label.add_theme_color_override("font_color", _face_cost_color())
 		cost_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-		cost_label.add_theme_constant_override("outline_size", OUTLINE_COST)
+		cost_label.add_theme_constant_override("outline_size", _outline_cost())
+		cost_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.95))
+		cost_label.add_theme_constant_override("shadow_offset_x", 1)
+		cost_label.add_theme_constant_override("shadow_offset_y", 1)
 	if _usage_label:
 		_usage_label.add_theme_color_override("font_color", USAGE_COLOR)
 		_usage_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
-		_usage_label.add_theme_constant_override("outline_size", OUTLINE_USAGE)
-		_usage_label.add_theme_font_size_override("font_size", USAGE_FONT_SIZE)
+		_usage_label.add_theme_constant_override("outline_size", _outline_usage())
+		_usage_label.add_theme_font_size_override("font_size", _usage_font_size())
 
 ## Call after instantiate / before or after add_child. Sets scale + layout for context.
 func apply_display_mode(mode: DisplayMode) -> void:
@@ -262,6 +449,12 @@ func apply_display_mode(mode: DisplayMode) -> void:
 func get_scaled_size() -> Vector2:
 	return custom_minimum_size * scale
 
+func get_layout_natural_size() -> Vector2:
+	## LayoutSlot must fit the active face, not always DESIGN_SIZE (320×400).
+	if custom_minimum_size.x > 1.0 and custom_minimum_size.y > 1.0:
+		return custom_minimum_size
+	return _face_size()
+
 func _set_visual_scale(s: Vector2) -> void:
 	original_scale = s
 	base_scale = s
@@ -269,23 +462,25 @@ func _set_visual_scale(s: Vector2) -> void:
 	scale = s
 
 func _layout_full() -> void:
-	"""Full face uses ONLY positions from CardUI.tscn — edit the scene, not this script."""
-	custom_minimum_size = DESIGN_SIZE
-	size = DESIGN_SIZE
+	"""Full face: shop/hand use SHOP_SIZE / HAND_SIZE with scaled scene slots @ scale 1.0."""
+	var face := _face_size()
+	custom_minimum_size = face
+	size = face
 	if card_template:
-		card_template.custom_minimum_size = DESIGN_SIZE
-		card_template.size = DESIGN_SIZE
+		card_template.custom_minimum_size = face
+		card_template.size = face
 		card_template.visible = true
 	if artwork_texture_rect:
 		artwork_texture_rect.visible = true
 	if name_label:
-		name_label.add_theme_font_size_override("font_size", name_font_size)
+		name_label.add_theme_font_size_override("font_size", _name_font_base())
 		name_label.autowrap_mode = TextServer.AUTOWRAP_OFF
 	if cost_label:
-		cost_label.add_theme_font_size_override("font_size", COST_FONT_SIZE)
+		cost_label.add_theme_font_size_override("font_size", _cost_font_size())
 	if description_label:
 		description_label.visible = true
 	_restore_scene_layout()
+	_apply_readability_theme()
 
 func _layout_compact() -> void:
 	"""Readable tile without scaling text to mush: no art, bigger name + short effects."""
@@ -368,39 +563,63 @@ func _pack_face_description(desc: String, max_lines: int) -> String:
 func _fit_name_font() -> void:
 	if not name_label:
 		return
-	var base := NAME_FONT_COMPACT if display_mode == DisplayMode.COMPACT else name_font_size
-	var n := name_label.text.length()
+	var base := _name_font_base()
+	var min_sz := _name_font_min()
 	var name_size := base
-	if n > 16:
-		name_size = maxi(base - 2, NAME_FONT_MIN + 1)
-	if n > 22:
-		name_size = maxi(base - 4, NAME_FONT_MIN)
+	var n := name_label.text.length()
+	# Longer titles (Impenetrable Shield…) need more shrink than short ones.
+	if n > 11:
+		name_size = maxi(base - 1, min_sz)
+	if n > 14:
+		name_size = maxi(base - 2, min_sz)
+	if n > 17:
+		name_size = maxi(base - 3, min_sz)
+	if n > 20:
+		name_size = maxi(base - 4, min_sz)
+	name_label.add_theme_font_size_override("font_size", name_size)
+	# Hard fit against banner width so long names never clip mid-glyph.
+	var font: Font = name_label.get_theme_font("font")
+	if font == null:
+		return
+	var max_w := name_label.size.x - 6.0
+	if max_w < 8.0:
+		return
+	while name_size > min_sz:
+		var text_w := font.get_string_size(
+			name_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, name_size
+		).x
+		if text_w <= max_w:
+			break
+		name_size -= 1
 	name_label.add_theme_font_size_override("font_size", name_size)
 
 func _apply_description_font(line_count: int) -> int:
-	"""Effective face font size from description_font_size export (dense cards shrink more)."""
-	var font_size := description_font_size
+	"""Effective face font size — hand uses HAND_DESC_*; shop uses export / SHOP_*."""
+	var base := _desc_font_base()
+	var min_sz := _desc_font_min()
+	var font_size := base
 	if line_count >= DESC_VERY_DENSE_LINE_THRESHOLD:
-		font_size = maxi(description_font_size - DESC_VERY_DENSE_SHRINK, DESC_FONT_MIN)
+		font_size = maxi(base - DESC_VERY_DENSE_SHRINK, min_sz)
 	elif line_count > DESC_DENSE_LINE_THRESHOLD:
-		font_size = maxi(description_font_size - DESC_DENSE_SHRINK, DESC_FONT_MIN)
+		font_size = maxi(base - DESC_DENSE_SHRINK, min_sz)
 	return font_size
 
 func _description_icon_px(font_size: int) -> int:
 	"""BBCode [img] height ≈ glyph height so number + icon stay on one line."""
-	return maxi(font_size, DESC_FONT_MIN)
+	return maxi(font_size, _desc_font_min())
 
 func _set_description_text(desc: String, font_size: int) -> void:
-	"""Render face description via push_font + add_text/add_image.
-	Outline / colors from DescriptionLabel in CardUI.tscn; dense cards tighten line_separation."""
+	"""Render face description via push_font + add_text/add_image."""
 	if not description_label:
 		return
-	# Manual push_color / add_image — keep BBCode engine off (it mangles [/img] into [/]).
 	description_label.bbcode_enabled = false
 	description_label.fit_content = false
 	description_label.scroll_active = false
-	description_label.clip_contents = true
+	description_label.clip_contents = false
 	description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	description_label.add_theme_color_override("default_color", _face_body_color())
+	description_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	description_label.add_theme_constant_override("outline_size", _outline_desc())
 	description_label.add_theme_font_size_override("normal_font_size", font_size)
 	description_label.add_theme_font_size_override("bold_font_size", font_size)
 	description_label.add_theme_font_size_override("italics_font_size", font_size)
@@ -409,7 +628,7 @@ func _set_description_text(desc: String, font_size: int) -> void:
 
 	var lines: PackedStringArray = PackedStringArray() if desc.is_empty() else desc.split("\n")
 	var line_count := lines.size()
-	var sep := DESC_LINE_SEP_NORMAL
+	var sep := _line_sep_normal()
 	if line_count >= DESC_VERY_DENSE_LINE_THRESHOLD:
 		sep = DESC_LINE_SEP_VERY_DENSE
 	elif line_count >= DESC_DENSE_LINE_THRESHOLD:
@@ -422,6 +641,8 @@ func _set_description_text(desc: String, font_size: int) -> void:
 		description_label.push_font(font, font_size)
 	else:
 		description_label.push_font_size(font_size)
+	# Dark ink on white panel; light ink on curse frame.
+	description_label.push_color(_face_body_color())
 
 	if desc.is_empty():
 		return
@@ -603,6 +824,22 @@ func _is_curse_card() -> bool:
 		return false
 	return "curse" in card_data.card_id.to_lower()
 
+
+func _face_body_color() -> Color:
+	return DESC_BODY_COLOR_CURSE if _is_curse_card() else DESC_BODY_COLOR
+
+
+func _face_name_color() -> Color:
+	if _is_curse_card():
+		return NAME_COLOR_CURSE
+	if card_data and card_data.is_upgraded:
+		return NAME_COLOR_UPGRADED
+	return NAME_COLOR_NORMAL
+
+
+func _face_cost_color() -> Color:
+	return COST_COLOR_CURSE if _is_curse_card() else COST_COLOR
+
 func _frame_path_for_card() -> String:
 	if _is_curse_card():
 		return FRAME_CURSE_PATH
@@ -633,10 +870,7 @@ func _update_card_frame():
 func _apply_upgrade_name_style() -> void:
 	if not name_label or not card_data:
 		return
-	if card_data.is_upgraded:
-		name_label.add_theme_color_override("font_color", NAME_COLOR_UPGRADED)
-	else:
-		name_label.add_theme_color_override("font_color", NAME_COLOR_NORMAL)
+	name_label.add_theme_color_override("font_color", _face_name_color())
 
 func load_card(new_card_data: CardData):
 	self.card_data = new_card_data

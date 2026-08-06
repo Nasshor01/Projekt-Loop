@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://drcylmyjefmn0"]
+[gd_scene load_steps=18 format=3 uid="uid://drcylmyjefmn0"]
 
 [ext_resource type="Script" uid="uid://d3ytuwmimqlg4" path="res://scenes/battle/BattleScene.gd" id="1_vd1me"]
 [ext_resource type="Resource" uid="uid://d118t8olbc47a" path="res://data/encounters/first_battle.tres" id="2_q8wks"]
@@ -23,6 +23,25 @@ shader_parameter/albedo_texture = ExtResource("space_tex")
 shader_parameter/scroll_speed_x = 0.015
 shader_parameter/scroll_speed_y = 0.008
 shader_parameter/brightness = 0.85
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_artifact_dim"]
+bg_color = Color(0, 0, 0, 0.35)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_artifact_prompt"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0.06, 0.07, 0.1, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.85, 0.7, 0.35, 0.95)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="BattleScene" type="Node3D" node_paths=PackedStringArray("camera_3d")]
 script = ExtResource("1_vd1me")
@@ -100,15 +119,13 @@ danger_zone_color = Color(0.8, 0.2, 0.2, 0.588235)
 layer = 2
 
 [node name="InitiativeBar" parent="CanvasLayer" instance=ExtResource("9_abcde")]
-offset_left = -448.0
-offset_top = 128.0
-offset_right = 448.0
-offset_bottom = 196.0
+offset_top = 80.0
+offset_bottom = 172.0
 
 [node name="PlayerHandUI" parent="CanvasLayer" instance=ExtResource("3_rjp4h")]
-offset_left = 560.0
-offset_top = 952.0
-offset_right = 1368.0
+offset_left = 400.0
+offset_top = 900.0
+offset_right = 1520.0
 offset_bottom = 1080.0
 
 [node name="EndTurnButton" type="Button" parent="CanvasLayer"]
@@ -205,10 +222,12 @@ offset_top = 192.0
 offset_right = 1920.0
 offset_bottom = 640.0
 
-[node name="ArtifactInteractUI" type="Control" parent="CanvasLayer"]
+[node name="ArtifactInteractLayer" type="CanvasLayer" parent="."]
+layer = 50
+
+[node name="ArtifactInteractUI" type="Control" parent="ArtifactInteractLayer"]
 unique_name_in_owner = true
 visible = false
-z_index = 40
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -217,99 +236,108 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="HandPrompt" type="VBoxContainer" parent="CanvasLayer/ArtifactInteractUI"]
+[node name="Dim" type="Panel" parent="ArtifactInteractLayer/ArtifactInteractUI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_artifact_dim")
+
+[node name="HandPrompt" type="PanelContainer" parent="ArtifactInteractLayer/ArtifactInteractUI"]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
-offset_left = 360.0
-offset_top = 296.0
-offset_right = 860.0
-offset_bottom = 416.0
+offset_left = 610.0
+offset_top = 680.0
+offset_right = 1310.0
+offset_bottom = 880.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_artifact_prompt")
+
+[node name="HandPromptVBox" type="VBoxContainer" parent="ArtifactInteractLayer/ArtifactInteractUI/HandPrompt"]
+layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="TitleLabel" type="Label" parent="CanvasLayer/ArtifactInteractUI/HandPrompt"]
+[node name="TitleLabel" type="Label" parent="ArtifactInteractLayer/ArtifactInteractUI/HandPrompt/HandPromptVBox"]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
-theme_override_font_sizes/font_size = 43
-text = "Alchemists Tools"
+theme_override_font_sizes/font_size = 36
+text = "Crimson Chalice"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="BodyLabel" type="Label" parent="CanvasLayer/ArtifactInteractUI/HandPrompt"]
+[node name="BodyLabel" type="Label" parent="ArtifactInteractLayer/ArtifactInteractUI/HandPrompt/HandPromptVBox"]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.92, 0.85, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 30
-text = "Discard 1 card from your hand to gain a temporary alchemy card."
+theme_override_font_sizes/font_size = 26
+text = "Lose 3 HP. Discard 1 random card, then draw 2."
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="ButtonsRow" type="HBoxContainer" parent="CanvasLayer/ArtifactInteractUI/HandPrompt"]
-visible = false
+[node name="ButtonsRow" type="HBoxContainer" parent="ArtifactInteractLayer/ArtifactInteractUI/HandPrompt/HandPromptVBox"]
 layout_mode = 2
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="DrinkButton" type="Button" parent="CanvasLayer/ArtifactInteractUI/HandPrompt/ButtonsRow"]
+[node name="DrinkButton" type="Button" parent="ArtifactInteractLayer/ArtifactInteractUI/HandPrompt/HandPromptVBox/ButtonsRow"]
 unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(140, 40)
+custom_minimum_size = Vector2(160, 44)
 layout_mode = 2
 text = "Drink"
 
-[node name="SkipButton" type="Button" parent="CanvasLayer/ArtifactInteractUI/HandPrompt/ButtonsRow"]
+[node name="SkipButton" type="Button" parent="ArtifactInteractLayer/ArtifactInteractUI/HandPrompt/HandPromptVBox/ButtonsRow"]
 unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(140, 40)
+custom_minimum_size = Vector2(160, 44)
 layout_mode = 2
 text = "Skip"
 
-[node name="SidePrompt" type="VBoxContainer" parent="CanvasLayer/ArtifactInteractUI"]
+[node name="SidePrompt" type="PanelContainer" parent="ArtifactInteractLayer/ArtifactInteractUI"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
-offset_left = 1128.0
-offset_top = 488.0
-offset_right = 1268.0
-offset_bottom = 628.0
+offset_left = 1480.0
+offset_top = 220.0
+offset_right = 1860.0
+offset_bottom = 420.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_artifact_prompt")
+
+[node name="SidePromptVBox" type="VBoxContainer" parent="ArtifactInteractLayer/ArtifactInteractUI/SidePrompt"]
+layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="SideTitleLabel" type="Label" parent="CanvasLayer/ArtifactInteractUI/SidePrompt"]
+[node name="SideTitleLabel" type="Label" parent="ArtifactInteractLayer/ArtifactInteractUI/SidePrompt/SidePromptVBox"]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 5
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 28
 text = "All-Seeing Eye"
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="SideBodyLabel" type="Label" parent="CanvasLayer/ArtifactInteractUI/SidePrompt"]
+[node name="SideBodyLabel" type="Label" parent="ArtifactInteractLayer/ArtifactInteractUI/SidePrompt/SidePromptVBox"]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.92, 0.85, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 23
+theme_override_font_sizes/font_size = 22
 text = "Click an enemy to deny their next move."
 horizontal_alignment = 1
 autowrap_mode = 3
 
-[node name="SideSkipButton" type="Button" parent="CanvasLayer/ArtifactInteractUI/SidePrompt"]
+[node name="SideSkipButton" type="Button" parent="ArtifactInteractLayer/ArtifactInteractUI/SidePrompt/SidePromptVBox"]
 unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(120, 36)
+custom_minimum_size = Vector2(140, 40)
 layout_mode = 2
 text = "Skip"
 

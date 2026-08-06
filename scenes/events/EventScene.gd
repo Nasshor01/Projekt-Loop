@@ -2,7 +2,9 @@
 extends Node2D
 
 const ChoiceButtonScene = preload("res://scenes/events/EventChoiceButton.tscn")
-const CardPileViewerScene = preload("res://scenes/ui/CardPileViewer.tscn")
+const CardPileViewerScene = preload("res://scenes/ui/DeckViewer.tscn")
+const ArtifactIconScene = preload("res://scenes/ui/ArtifactIcon.tscn")
+const RESULT_ARTIFACT_ICON_SIZE := Vector2(96, 96)
 
 # Načteme si náš pool eventů stejně jako v ShopScene nebo RewardScene
 const EVENT_POOL = preload("res://data/events/all_events_pool.tres")
@@ -16,6 +18,7 @@ const EVENT_POOL = preload("res://data/events/all_events_pool.tres")
 @onready var result_panel: Panel = $UI/ResultPanel
 @onready var result_text: RichTextLabel = $UI/ResultPanel/MarginContainer/VBoxContainer/ResultText
 @onready var continue_button: Button = $UI/ResultPanel/MarginContainer/VBoxContainer/ContinueButton
+@onready var reward_icons: HBoxContainer = %RewardIcons
 
 @onready var card_removal_viewer: PanelContainer = $UI/CardPileViewer
 @onready var card_tooltip: CardTooltip = $UI/CardTooltip
@@ -31,6 +34,10 @@ var pending_card_upgrade: bool = false
 var cards_to_remove_count: int = 0
 var _preview_upgraded_faces: bool = true
 var _upgrade_preview_toggle: Button = null
+## Artifacts granted by the latest choice — shown as icons in the result panel.
+var _result_granted_artifacts: Array[ArtifactsData] = []
+## Curse card granted as cost (optional artwork icon in result panel).
+var _result_granted_curse: CardData = null
 
 var _is_coop: bool = false
 var _is_host: bool = true
@@ -41,14 +48,16 @@ func _ready():
 	rng = RandomNumberGenerator.new()
 	rng.randomize()
 	
-	# Above GlobalUI (layer 20) so upgrade toggle / deck viewer stay clickable.
+	# Same as Shop/Reward: UI below GlobalUI (layer 20) so HP/gold/floor/deck strip stays visible.
 	if has_node("UI") and $UI is CanvasLayer:
-		($UI as CanvasLayer).layer = 25
+		($UI as CanvasLayer).layer = 1
+	_ensure_global_ui_visible()
 	
 	result_panel.visible = false
 	event_panel.visible = true
 	if continue_button:
 		continue_button.text = tr("ui.common.continue")
+	_clear_reward_icons()
 	
 	# Skryj card removal viewer na začátku
 	if card_removal_viewer:
@@ -91,6 +100,21 @@ func _ready():
 	# Coop host: pošli event klientovi přes autoload
 	if _is_coop and _is_host and is_instance_valid(current_event):
 		MultiplayerManager.rpc("receive_go_to_event", current_event.resource_path)
+
+func _ensure_global_ui_visible() -> void:
+	"""Keep run HUD visible during events (same importance as map/shop). Menu scenes stay hidden via GameManager."""
+	if not has_node("/root/GameManager"):
+		return
+	var ui = GameManager.global_ui_instance
+	if is_instance_valid(ui):
+		ui.show()
+
+func _clear_reward_icons() -> void:
+	if not is_instance_valid(reward_icons):
+		return
+	for child in reward_icons.get_children():
+		child.queue_free()
+	reward_icons.visible = false
 
 func _wait_for_event_data():
 	"""Klient: čeká na event data od hosta."""
@@ -232,6 +256,8 @@ func _rpc_event_choice_made(choice_index: int):
 
 func _process_choice_new(choice: EventChoice):
 	var results_log = []
+	_result_granted_artifacts.clear()
+	_result_granted_curse = null
 	
 	# 1. Aplikuj cenu
 	if choice.cost:
@@ -239,6 +265,8 @@ func _process_choice_new(choice: EventChoice):
 		var cost_desc = choice.cost.get_cost_description()
 		if cost_desc != "":
 			results_log.append(tr("event.result.paid") + " " + cost_desc)
+		if is_instance_valid(choice.cost.last_added_curse):
+			_result_granted_curse = choice.cost.last_added_curse
 	
 	# 2. Risk/Reward check
 	var success = true
@@ -259,6 +287,7 @@ func _process_choice_new(choice: EventChoice):
 	if success:
 		if choice.reward:
 			choice.reward.apply_reward(results_log)
+			_collect_granted_artifacts(choice.reward)
 			# Zkontroluj pending akce
 			if choice.reward.pending_card_removal:
 				pending_card_removal = true
@@ -269,11 +298,21 @@ func _process_choice_new(choice: EventChoice):
 		if choice.failure_cost:
 			choice.failure_cost.apply_cost()
 			results_log.append(tr("event.result.additional_cost") + " " + choice.failure_cost.get_cost_description())
+			if is_instance_valid(choice.failure_cost.last_added_curse):
+				_result_granted_curse = choice.failure_cost.last_added_curse
 		if choice.failure_reward:
 			choice.failure_reward.apply_reward(results_log)
+			_collect_granted_artifacts(choice.failure_reward)
 	
 	# 4. Zobraz výsledky
 	show_result(results_log)
+
+func _collect_granted_artifacts(reward: EventReward) -> void:
+	if not reward:
+		return
+	for art in reward.granted_artifacts:
+		if is_instance_valid(art):
+			_result_granted_artifacts.append(art)
 
 func show_result(result_lines: Array):
 	event_panel.visible = false
@@ -287,6 +326,47 @@ func show_result(result_lines: Array):
 	else:
 		for line in result_lines:
 			result_text.append_text(line + "\n")
+	
+	_populate_reward_icons()
+
+func _populate_reward_icons() -> void:
+	_clear_reward_icons()
+	if not is_instance_valid(reward_icons):
+		return
+	
+	for artifact in _result_granted_artifacts:
+		if not is_instance_valid(artifact):
+			continue
+		var icon: ArtifactIcon = ArtifactIconScene.instantiate()
+		reward_icons.add_child(icon)
+		icon.set_artifact(artifact)
+		icon.custom_minimum_size = RESULT_ARTIFACT_ICON_SIZE
+		icon.size = RESULT_ARTIFACT_ICON_SIZE
+	
+	# Nice-to-have: small curse art next to artifact icons when a curse was gained.
+	if is_instance_valid(_result_granted_curse) and _result_granted_curse.artwork:
+		var curse_icon := TextureRect.new()
+		curse_icon.custom_minimum_size = RESULT_ARTIFACT_ICON_SIZE
+		curse_icon.size = RESULT_ARTIFACT_ICON_SIZE
+		curse_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		curse_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		curse_icon.texture = _result_granted_curse.artwork
+		curse_icon.mouse_filter = Control.MOUSE_FILTER_STOP
+		curse_icon.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		var tip := "%s\n%s" % [
+			_result_granted_curse.get_localized_name(),
+			_result_granted_curse.get_display_description()
+		]
+		curse_icon.mouse_entered.connect(func():
+			ArtifactHoverTooltip.ensure(get_tree()).show_for(tip, curse_icon, true)
+		)
+		curse_icon.mouse_exited.connect(func():
+			if is_instance_valid(ArtifactHoverTooltip.instance):
+				ArtifactHoverTooltip.instance.hide_tip()
+		)
+		reward_icons.add_child(curse_icon)
+	
+	reward_icons.visible = reward_icons.get_child_count() > 0
 
 func _on_continue_pressed():
 	# Coop: jen host může pokračovat

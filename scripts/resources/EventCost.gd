@@ -17,6 +17,9 @@ extends Resource
 @export_group("Artefakty")
 @export var remove_artifact: ArtifactsData = null
 
+## Set by apply_cost when a curse card is added (for EventScene result visuals).
+var last_added_curse: CardData = null
+
 func can_afford() -> bool:
 	"""Zkontroluje, jestli hráč může zaplatit tuto cenu"""
 	if gold > 0 and PlayerData.gold < gold:
@@ -40,6 +43,7 @@ func can_afford() -> bool:
 
 func apply_cost():
 	"""Aplikuje cenu na hráče"""
+	last_added_curse = null
 	if gold > 0:
 		PlayerData.spend_gold(gold)
 	if hp > 0:
@@ -65,6 +69,7 @@ func apply_cost():
 			curse_card = load("res://data/cards/curse/curse_basic.tres")
 		if curse_card:
 			PlayerData.master_deck.append(curse_card)
+			last_added_curse = curse_card
 			print(TranslationHelper.tr_format("event.cost.added_curse", {"name": curse_card.get_localized_name()}))
 	
 	# Odstranění artefaktu

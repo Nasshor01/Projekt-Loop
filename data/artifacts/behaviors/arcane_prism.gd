@@ -16,7 +16,9 @@ func on_turn_start(ctx: Dictionary = {}) -> void:
 		"aura_devotion":
 			_apply_status(player, "aura_devotion", 1, 1)
 		"draw_plus_one":
-			_apply_status(player, "draw_plus_one", 1, 1)
+			# Duration 2: EOT ticks to 1 so next turn's process_turn_start_statuses can consume it.
+			# (Artifacts run after start-of-turn status processing, so duration 1 never draws.)
+			_apply_status(player, "draw_plus_one", 1, 2)
 	var distinct: int = _count_distinct_statuses(player)
 	if distinct >= ENERGY_THRESHOLD_STATUSES and PlayerData:
 		PlayerData.gain_energy(1)

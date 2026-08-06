@@ -3,9 +3,9 @@
 [ext_resource type="Script" uid="uid://l7leyj0xjmnh" path="res://scenes/ui/ArtifactIcon.gd" id="1_6f0wl"]
 
 [node name="ArtefactIcon" type="TextureRect"]
-custom_minimum_size = Vector2(48, 48)
-offset_right = 48.0
-offset_bottom = 48.0
+custom_minimum_size = Vector2(56, 56)
+offset_right = 56.0
+offset_bottom = 56.0
 mouse_filter = 0
 size_flags_horizontal = 4
 size_flags_vertical = 4
