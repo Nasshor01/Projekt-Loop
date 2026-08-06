@@ -1122,6 +1122,7 @@ func _on_artifact_drink_pressed() -> void:
 	if not _artifact_interact_waiting or _artifact_interact_mode != "chalice":
 		return
 	ArtifactManager.apply_prompt_result({"prompt_id": "crimson_chalice", "accepted": true})
+	_sync_hand_ui_after_artifacts()
 	_finish_artifact_interact()
 
 

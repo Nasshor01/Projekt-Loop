@@ -474,8 +474,14 @@ func draw_cards(amount: int) -> int:
 	
 	for _i in range(amount):
 		if draw_pile.is_empty():
-			DebugLogger.log_debug("Draw pile empty, cannot draw more", "CARDS")
-			break
+			# STS-style: reshuffle discard mid-draw when the draw pile runs out.
+			if discard_pile.is_empty():
+				DebugLogger.log_debug("Draw pile empty, cannot draw more", "CARDS")
+				break
+			reshuffle_discard_into_draw_pile()
+			if draw_pile.is_empty():
+				DebugLogger.log_debug("Still empty after reshuffle", "CARDS")
+				break
 		
 		var drawn_card = draw_pile.pop_front()
 		if drawn_card is CardData:
