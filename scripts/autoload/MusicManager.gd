@@ -76,27 +76,33 @@ func _ensure_player() -> AudioStreamPlayer:
 
 func _build_playlist() -> void:
 	_playlist.clear()
-	var found: Dictionary = {} # basename -> full path
+	# Prefer explicit paths — DirAccess.list_dir on res:// is empty in many exported builds.
+	var added: Dictionary = {} # basename -> true
+	for preferred in PREFERRED_ORDER:
+		var path: String = SOUNDTRACK_DIR.path_join(preferred)
+		if ResourceLoader.exists(path):
+			_playlist.append(path)
+			added[preferred] = true
+		else:
+			push_warning("MusicManager: preferred track missing: %s" % path)
+	# Optional extras when the folder is listable (editor / loose export).
 	var dir := DirAccess.open(SOUNDTRACK_DIR)
 	if dir != null:
 		dir.list_dir_begin()
 		var file_name: String = dir.get_next()
+		var leftovers: Array[String] = []
 		while file_name != "":
 			if not dir.current_is_dir():
 				var lower := file_name.to_lower()
 				if lower.ends_with(".wav") or lower.ends_with(".ogg") or lower.ends_with(".mp3"):
-					found[file_name] = SOUNDTRACK_DIR.path_join(file_name)
+					if not added.has(file_name):
+						leftovers.append(SOUNDTRACK_DIR.path_join(file_name))
 			file_name = dir.get_next()
 		dir.list_dir_end()
-	for preferred in PREFERRED_ORDER:
-		if found.has(preferred):
-			_playlist.append(str(found[preferred]))
-			found.erase(preferred)
-	# Any leftovers (new drops) go at the end, sorted for stability.
-	var leftovers: Array = found.values()
-	leftovers.sort()
-	for path in leftovers:
-		_playlist.append(str(path))
+		leftovers.sort()
+		for path in leftovers:
+			if ResourceLoader.exists(path):
+				_playlist.append(path)
 	if _playlist.is_empty():
 		push_error("MusicManager: no tracks in %s" % SOUNDTRACK_DIR)
 	_playlist_index = 0
