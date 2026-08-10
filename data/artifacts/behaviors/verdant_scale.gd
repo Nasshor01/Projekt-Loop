@@ -6,6 +6,10 @@ func on_move(ctx: Dictionary = {}) -> void:
 	var player: Node = _get_player_unit()
 	if player != null and player.has_method("add_block"):
 		player.call("add_block", steps)
+
+
+func on_turn_end(_ctx: Dictionary = {}) -> void:
+	var player: Node = _get_player_unit()
 	var grid: Node = _find_battle_grid()
 	if player == null or grid == null:
 		return

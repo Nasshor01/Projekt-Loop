@@ -62,13 +62,13 @@ func apply_reward(results_log: Array = []):
 	
 	# Přidání karty
 	if add_card:
-		PlayerData.master_deck.append(add_card)
+		PlayerData.master_deck.append(PlayerData.duplicate_card_for_deck(add_card))
 		results_log.append("[color=cyan]" + TranslationHelper.tr_format("event.reward.card", {"name": add_card.get_localized_name()}) + "[/color]")
 	
 	if add_random_card:
 		var random_card = _get_random_card_by_rarity(card_rarity)
 		if random_card:
-			PlayerData.master_deck.append(random_card)
+			PlayerData.master_deck.append(PlayerData.duplicate_card_for_deck(random_card))
 			results_log.append("[color=cyan]" + TranslationHelper.tr_format("event.reward.random_card", {"name": random_card.get_localized_name()}) + "[/color]")
 	
 	# Upgrade karet
@@ -142,8 +142,10 @@ func _upgrade_random_card(results_log: Array):
 	var card_to_upgrade = upgradeable_cards.pick_random()
 	var index = PlayerData.master_deck.find(card_to_upgrade)
 	if index != -1:
-		PlayerData.master_deck[index] = card_to_upgrade.upgraded_version
-		results_log.append("[color=cyan]" + TranslationHelper.tr_format("event.reward.upgraded_card", {"from": card_to_upgrade.get_localized_name(), "to": card_to_upgrade.upgraded_version.get_localized_name()}) + "[/color]")
+		var upgraded = PlayerData.duplicate_card_for_deck(card_to_upgrade.upgraded_version)
+		PlayerData.transfer_seal_on_upgrade(card_to_upgrade, upgraded)
+		PlayerData.master_deck[index] = upgraded
+		results_log.append("[color=cyan]" + TranslationHelper.tr_format("event.reward.upgraded_card", {"from": card_to_upgrade.get_localized_name(), "to": upgraded.get_localized_name()}) + "[/color]")
 
 func _upgrade_specific_card(card: CardData, results_log: Array):
 	"""Vylepší konkrétní kartu"""
@@ -152,8 +154,10 @@ func _upgrade_specific_card(card: CardData, results_log: Array):
 	
 	var index = PlayerData.master_deck.find(card)
 	if index != -1:
-		PlayerData.master_deck[index] = card.upgraded_version
-		results_log.append("[color=cyan]" + TranslationHelper.tr_format("event.reward.upgraded_card", {"from": card.get_localized_name(), "to": card.upgraded_version.get_localized_name()}) + "[/color]")
+		var upgraded = PlayerData.duplicate_card_for_deck(card.upgraded_version)
+		PlayerData.transfer_seal_on_upgrade(card, upgraded)
+		PlayerData.master_deck[index] = upgraded
+		results_log.append("[color=cyan]" + TranslationHelper.tr_format("event.reward.upgraded_card", {"from": card.get_localized_name(), "to": upgraded.get_localized_name()}) + "[/color]")
 
 func _upgrade_all_cards(results_log: Array):
 	"""Vylepší všechny karty v balíčku"""
@@ -161,7 +165,9 @@ func _upgrade_all_cards(results_log: Array):
 	for i in range(PlayerData.master_deck.size()):
 		var card = PlayerData.master_deck[i]
 		if card and not card.is_upgraded and card.upgraded_version:
-			PlayerData.master_deck[i] = card.upgraded_version
+			var upgraded = PlayerData.duplicate_card_for_deck(card.upgraded_version)
+			PlayerData.transfer_seal_on_upgrade(card, upgraded)
+			PlayerData.master_deck[i] = upgraded
 			upgraded_count += 1
 	
 	if upgraded_count > 0:
@@ -180,8 +186,10 @@ func _transform_random_card(results_log: Array):
 	if new_card and new_card != card_to_transform:
 		var index = PlayerData.master_deck.find(card_to_transform)
 		if index != -1:
-			PlayerData.master_deck[index] = new_card
-			results_log.append("[color=purple]" + TranslationHelper.tr_format("event.reward.transformed_card", {"from": card_to_transform.get_localized_name(), "to": new_card.get_localized_name()}) + "[/color]")
+			var transformed = PlayerData.duplicate_card_for_deck(new_card)
+			PlayerData.transfer_seal_on_upgrade(card_to_transform, transformed)
+			PlayerData.master_deck[index] = transformed
+			results_log.append("[color=purple]" + TranslationHelper.tr_format("event.reward.transformed_card", {"from": card_to_transform.get_localized_name(), "to": transformed.get_localized_name()}) + "[/color]")
 
 func _get_random_card_by_rarity(rarity: CardData.CardRarity) -> CardData:
 	"""Získá náhodnou kartu podle rarity"""

@@ -88,6 +88,7 @@ var _is_action_processing: bool = false
 var _card_play_in_progress: bool = false  # blokuje druhý vstup do _try_play_selected_card_at_cell (např. dvojí signál)
 var _cards_to_draw_queue: int = 0
 var _is_drawing_cards: bool = false
+var _drawing_turn_start_hand: bool = false  # true jen při normálním dorbírání na začátku tahu (ne mid-turn DRAW_CARDS)
 var _is_first_turn: bool = true
 var _current_turn_number: int = 0
 var _is_extra_turn: bool = false
@@ -451,6 +452,7 @@ func _start_player_initiative_turn(_player_unit: Unit, extra_draw: int = 0):
 		rpc("_rpc_coop_sync_my_unit_state", my_idx, _player_unit_node.current_health, _player_unit_node.current_block)
 	
 	# Dober karty
+	_drawing_turn_start_hand = true
 	_cards_to_draw_queue = starting_hand_size + extra_draw
 	_draw_next_card_in_queue()
 	
@@ -484,7 +486,7 @@ func _start_enemy_initiative_turn(enemy_unit: Unit):
 	
 	# Jednotka mohla zemřít během akce (např. past DAMAGE_ON_ENTER)
 	if is_instance_valid(enemy_unit) and enemy_unit.current_health > 0:
-		enemy_unit.end_turn()
+		await enemy_unit.end_turn()
 	
 	# Coop: host přepočte intenty a pošle klientovi kompletní stav
 	if _is_coop_run() and has_node("/root/MultiplayerManager") and MultiplayerManager.is_server():
@@ -892,6 +894,7 @@ func start_extra_turn():
 		_player_unit_node.reset_for_new_turn() # Toto resetuje pohyb!
 	
 	# 4. DOBÍREJ NOVÉ KARTY (normální množství)
+	_drawing_turn_start_hand = true
 	_cards_to_draw_queue = starting_hand_size
 	_draw_next_card_in_queue()
 	
@@ -959,6 +962,12 @@ func _finish_drawing_hand():
 	DebugLogger.log_debug("Dobírání dokončeno.")
 	_is_drawing_cards = false
 	player_hand_ui_instance._request_arrange()
+	_update_pile_counts()
+	# Mid-turn DRAW_CARDS: only refresh hand/piles — do not re-enter turn-start finish
+	# (PLAYER_TURN / End Turn / on_hand_ready / Chalice modal).
+	if not _drawing_turn_start_hand:
+		return
+	_drawing_turn_start_hand = false
 	_current_battle_state = BattleState.PLAYER_TURN
 	end_turn_button.disabled = false
 	if has_node("/root/ArtifactManager"):
@@ -1551,7 +1560,7 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 			if _try_place_terrain_effect(effect_data, resolved_cell, card):
 				card_played_successfully = true
 			continue
-		var targets = _get_targets_for_effect(effect_data, initial_target, card)
+		var targets = _get_targets_for_effect(effect_data, initial_target, card, resolved_cell)
 		if not targets.is_empty():
 			card_played_successfully = true
 			for target_unit in targets:
@@ -1625,7 +1634,7 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 				rpc("_rpc_apply_card_result", payload)
 	else:
 		DebugLogger.log_warning(TranslationHelper.tr_format("ui.battle.no_valid_target", {"name": card.get_localized_name()}))
-		PlayerData.gain_energy(card.cost)
+		PlayerData.gain_energy(play_cost)
 		_card_play_in_progress = false
 
 	_is_action_processing = false
@@ -1996,6 +2005,9 @@ func _check_condition(effect: CardEffectData, target: Node3D) -> bool:
 			return false
 		"took_damage_last_turn":
 			return _took_damage_last_turn
+		"damage_per_block":
+			# Handled specially in DEAL_DAMAGE (block * bonus); do not treat as condition_met bonus.
+			return false
 		_:
 			return true
 
@@ -2139,8 +2151,8 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 			_draw_next_card_in_queue()
 			
 		CardEffectData.EffectType.GAIN_ENERGY: 
-			# Speciální případ: gods_lightning - energie se získává pouze při zabití nepřítele
-			if is_instance_valid(card_ref) and card_ref.card_id == "gods_lightning":
+			# Speciální případ: gods_lightning / gods_lightning+ — energie jen při zabití (viz DEAL_DAMAGE)
+			if is_instance_valid(card_ref) and card_ref.card_id.begins_with("gods_lightning"):
 				pass  # Energie se přidá v damage efektu, pokud byl nepřítel zabit
 			else:
 				PlayerData.gain_energy(effect.value)
@@ -2226,9 +2238,12 @@ func can_attack_target(attacker: Unit, target: Unit, battle_grid: BattleGrid) ->
 
 # OPRAVA: Návratový typ Node2D změněn na Node3D (nebo Array[Unit])
 # card_being_played: karta, která se právě hraje (potřeba pro range; _selected_card_data je už vynulovaná)
-func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D, card_being_played: CardData) -> Array:
+func _get_targets_for_effect(effect: CardEffectData, initial_target_node: Node3D, card_being_played: CardData, resolved_cell: Vector2i = Vector2i(-999, -999)) -> Array:
 	var targets: Array = []
-	var clicked_grid_cell = get_grid_cell_under_mouse() # OPRAVA: Použití 3D Raycast funkce místo get_global_mouse_position
+	# Prefer play-time resolved cell (mouse can move during await / animation)
+	var clicked_grid_cell := resolved_cell
+	if clicked_grid_cell.x <= -900:
+		clicked_grid_cell = get_grid_cell_under_mouse()
 	var grid_ref = battle_grid_instance
 	if not grid_ref and has_node("BattleGrid"):
 		grid_ref = get_node("BattleGrid")
@@ -2356,9 +2371,9 @@ func _on_end_turn_button_pressed():
 	# Toto zajistí, že v dalším tahu hráče bude tracking správně nastaven
 	_took_damage_last_turn = false
 	
-	# Zavolej end_turn na hráči
+	# Zavolej end_turn na hráči (await burning DoT / death before artifacts)
 	if is_instance_valid(_player_unit_node):
-		_player_unit_node.end_turn()
+		await _player_unit_node.end_turn()
 	
 	# END_OF_TURN artefakty
 	if has_node("/root/ArtifactManager"):
@@ -3018,7 +3033,7 @@ func _rpc_apply_enemy_turn_result(payload: Dictionary):
 	if enemy_turn_idx >= 0 and enemy_turn_idx < _all_enemy_units_ordered.size():
 		var e = _all_enemy_units_ordered[enemy_turn_idx]
 		if is_instance_valid(e) and e.has_method("end_turn"):
-			e.end_turn()
+			await e.end_turn()
 	if has_node("/root/TurnManager"):
 		TurnManager.next_turn()
 

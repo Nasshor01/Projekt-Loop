@@ -740,18 +740,34 @@ func load_and_start_saved_run():
 		DebugLogger.log_error("No class or subclass data in save file.", "SAVE")
 		return
 
+	# Clear run-only fields so abandoned in-session state cannot leak, then restore from save.
+	# (initialize_player does not wipe these — explicit reset is required before Continue.)
+	PlayerData.sealed_card_id = ""
+	PlayerData.sealed_card_source_path = ""
+	PlayerData.card_usage_count.clear()
+	PlayerData.shop_card_removals_count = 0
+	PlayerData.global_shield = 0
+
 	# Restore PlayerData state (kromě HP - to načteme až po aplikaci pasivních skillů)
 	PlayerData.gold = loaded_data.get("gold", 0)
 	PlayerData.floors_cleared = loaded_data.get("floors_cleared", 0)
-	PlayerData.loop_level = loaded_data.get("ng_plus_level", 0)  # Migrace: staré save soubory mají "ng_plus_level"
+	PlayerData.loop_level = loaded_data.get("loop_level", loaded_data.get("ng_plus_level", 0))
 	PlayerData.current_run_xp = loaded_data.get("current_run_xp", 0)
+	PlayerData.sealed_card_id = str(loaded_data.get("sealed_card_id", ""))
+	PlayerData.sealed_card_source_path = str(loaded_data.get("sealed_card_source_path", ""))
+	PlayerData.shop_card_removals_count = int(loaded_data.get("shop_card_removals_count", 0))
+	PlayerData.global_shield = int(loaded_data.get("global_shield", 0))
+	var usage_raw = loaded_data.get("card_usage_count", {})
+	if usage_raw is Dictionary:
+		for usage_key in usage_raw:
+			PlayerData.card_usage_count[str(usage_key)] = int(usage_raw[usage_key])
 
-	# Obnovíme balíček
+	# Obnovíme balíček (duplicates lose resource_path — SaveManager resolves source_path)
 	PlayerData.master_deck = []
-	for card_path in loaded_data.get("master_deck", []):
-		var card = load(card_path)
-		if card:
-			PlayerData.master_deck.append(card)
+	var loaded_cards: Array[CardData] = SaveManager.load_card_instances(loaded_data.get("master_deck", []))
+	for card in loaded_cards:
+		PlayerData.master_deck.append(card)
+	DebugLogger.log_info("Deck restored: %d cards" % PlayerData.master_deck.size(), "GAME_FLOW")
 
 	# Obnovíme artefakty (duplicates lose resource_path — SaveManager resolves source_path)
 	PlayerData.artifacts.clear()
@@ -762,6 +778,42 @@ func load_and_start_saved_run():
 	if has_node("/root/ArtifactManager"):
 		ArtifactManager._refresh_artifact_cache()
 	DebugLogger.log_info("Artifacts restored: %d" % PlayerData.artifacts.size(), "GAME_FLOW")
+
+	# Tablet seal + Oathbreaker: sync PlayerData / behavior runtime from restored card metas.
+	# Do NOT call on_acquired (would re-pick seal / re-roll oathbroken cards).
+	var sealed_from_deck: CardData = null
+	var oathbroken_ids: Array = []
+	for card in PlayerData.master_deck:
+		if not is_instance_valid(card):
+			continue
+		if card.has_meta("artifact_sealed") and bool(card.get_meta("artifact_sealed")):
+			sealed_from_deck = card
+		if card.has_meta("artifact_oathbroken") and bool(card.get_meta("artifact_oathbroken")):
+			oathbroken_ids.append(str(card.card_id))
+
+	if sealed_from_deck != null:
+		var saved_seal_id := str(loaded_data.get("sealed_card_id", ""))
+		var saved_seal_path := str(loaded_data.get("sealed_card_source_path", ""))
+		PlayerData.sealed_card_id = saved_seal_id if not saved_seal_id.is_empty() else str(sealed_from_deck.card_id)
+		if not saved_seal_path.is_empty():
+			PlayerData.sealed_card_source_path = saved_seal_path
+		else:
+			var seal_src: String = sealed_from_deck.resource_path
+			if seal_src.is_empty() and sealed_from_deck.has_meta("source_path"):
+				seal_src = str(sealed_from_deck.get_meta("source_path"))
+			PlayerData.sealed_card_source_path = seal_src
+
+	if not oathbroken_ids.is_empty() and has_node("/root/ArtifactManager"):
+		var has_oathbreaker := false
+		for art in PlayerData.artifacts:
+			if is_instance_valid(art) and str(art.artifact_id) == "oathbreaker_seal":
+				has_oathbreaker = true
+				break
+		if has_oathbreaker:
+			ArtifactManager.restore_behavior_runtime("oathbreaker_seal", {
+				"applied": true,
+				"oathbroken_card_ids": oathbroken_ids,
+			})
 
 	# Regenerujeme mapu se stejným seedem, aby se uzly shodovaly
 	# Vytvoříme dočasnou instanci MapGeneratoru pro regeneraci

@@ -108,9 +108,9 @@ func _start_next_unit_turn():
 	
 	var current_unit = _turn_order[_current_turn_index]
 	
-	# Ověř že jednotka je stále validní
-	if not is_instance_valid(current_unit):
-		print("TurnManager: Jednotka na indexu %d není validní, skipping..." % _current_turn_index)
+	# Ověř že jednotka je stále validní a živá (mrtvé nesmí dostat tah)
+	if not is_instance_valid(current_unit) or current_unit.current_health <= 0:
+		print("TurnManager: Jednotka na indexu %d není validní/živá, skipping..." % _current_turn_index)
 		_current_turn_index += 1
 		_start_next_unit_turn()
 		return
@@ -172,14 +172,13 @@ func unregister_unit(unit: Unit):
 	_check_combat_end()
 
 func _check_combat_end() -> bool:
-	"""Zkontroluje, zda má souboj skončit"""
+	"""Zkontroluje, zda má souboj skončit (jen živé jednotky)."""
 	var player_count = 0
 	var enemy_count = 0
 	
-	for unit in _combatants:
-		if not is_instance_valid(unit):
+	for unit in _living_combatants():
+		if not unit.unit_data:
 			continue
-		
 		if unit.unit_data.faction == UnitData.Faction.PLAYER:
 			player_count += 1
 		elif unit.unit_data.faction == UnitData.Faction.ENEMY:

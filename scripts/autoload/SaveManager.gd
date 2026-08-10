@@ -213,7 +213,7 @@ func save_run(player_data: PlayerData):
 		"current_hp": player_data.current_hp,
 		"max_hp": player_data.max_hp,
 		"gold": player_data.gold,
-		"master_deck": player_data.master_deck.map(func(card): return card.resource_path),
+		"master_deck": _serialize_master_deck(player_data.master_deck),
 		"artifacts": _serialize_artifacts(player_data.artifacts),
 		"floors_cleared": player_data.floors_cleared,
 		"loop_level": player_data.loop_level,  # Ukládáme jako loop_level, ale načítáme i staré "ng_plus_level" pro kompatibilitu
@@ -222,6 +222,11 @@ func save_run(player_data: PlayerData):
 		"selected_subclass_path": subclass_path,
 		"current_seed": GameManager.current_seed,
 		"path_taken": path_taken_data,
+		"sealed_card_id": player_data.sealed_card_id,
+		"sealed_card_source_path": player_data.sealed_card_source_path,
+		"card_usage_count": player_data.card_usage_count.duplicate(),
+		"shop_card_removals_count": player_data.shop_card_removals_count,
+		"global_shield": player_data.global_shield,
 	}
 
 	var json_string = JSON.stringify(data_to_save, "\t")
@@ -263,6 +268,109 @@ func delete_saved_run():
 		DebugLogger.log_error("Failed to delete saved run file! Error: %d" % error, "SAVE")
 	else:
 		DebugLogger.log_save_load("delete_saved_run", true, "Saved run deleted.")
+
+#==============================================================================
+# Card save helpers (duplicates lose resource_path — same as artifacts)
+#==============================================================================
+
+func _serialize_master_deck(deck: Array) -> Array:
+	"""Serialize deck as dict entries (path + metas/cost). Legacy load still accepts plain path strings."""
+	var out: Array = []
+	for card in deck:
+		if not is_instance_valid(card):
+			continue
+		var path: String = get_card_source_path(card)
+		if path.is_empty():
+			var label: String = str(card.card_id) if "card_id" in card else str(card)
+			DebugLogger.log_warning("Save: card '%s' has no source path — skipped" % label, "SAVE")
+			continue
+		out.append({
+			"path": path,
+			"sealed": card.has_meta("artifact_sealed") and bool(card.get_meta("artifact_sealed")),
+			"oathbroken": card.has_meta("artifact_oathbroken") and bool(card.get_meta("artifact_oathbroken")),
+			"retain": card.has_meta("artifact_retain") and bool(card.get_meta("artifact_retain")),
+			"cost": int(card.cost),
+		})
+	return out
+
+func get_card_source_path(card: CardData) -> String:
+	if not is_instance_valid(card):
+		return ""
+	var path: String = card.resource_path
+	if _is_valid_res_path(path):
+		return path
+	if card.has_meta("source_path"):
+		path = str(card.get_meta("source_path"))
+		if _is_valid_res_path(path):
+			return path
+	return _find_card_path_by_id(str(card.card_id))
+
+func _find_card_path_by_id(card_id: String) -> String:
+	if card_id.is_empty() or card_id == "unique_card_id":
+		return ""
+	var roots: Array[String] = [
+		"res://data/cards/everyone",
+		"res://data/cards/paladin",
+		"res://data/cards/trapper",
+		"res://data/cards/alchemy",
+		"res://data/cards/curse",
+		"res://data/cards/curses",
+	]
+	for root in roots:
+		var dir := DirAccess.open(root)
+		if dir == null:
+			continue
+		dir.list_dir_begin()
+		var file_name: String = dir.get_next()
+		while file_name != "":
+			if not dir.current_is_dir() and file_name.ends_with(".tres"):
+				var full: String = root.path_join(file_name)
+				var res = load(full)
+				if res is CardData and res.card_id == card_id:
+					return full
+			file_name = dir.get_next()
+		dir.list_dir_end()
+	return ""
+
+func load_card_instances(raw_list: Array) -> Array[CardData]:
+	"""Load deck into unique CardData instances. Supports legacy path strings and dict entries."""
+	var out: Array[CardData] = []
+	for entry in raw_list:
+		var path: String = ""
+		var sealed := false
+		var oathbroken := false
+		var retain := false
+		var has_cost := false
+		var cost := 0
+		if entry is Dictionary:
+			path = str(entry.get("path", ""))
+			sealed = bool(entry.get("sealed", false))
+			oathbroken = bool(entry.get("oathbroken", false))
+			retain = bool(entry.get("retain", false))
+			if entry.has("cost"):
+				has_cost = true
+				cost = int(entry.get("cost", 0))
+		elif entry != null:
+			path = str(entry)
+		if not _is_valid_res_path(path):
+			DebugLogger.log_warning("Load: skipping invalid card path '%s'" % path, "SAVE")
+			continue
+		var base = load(path) as CardData
+		if not is_instance_valid(base):
+			DebugLogger.log_warning("Load: failed to load card '%s'" % path, "SAVE")
+			continue
+		var inst: CardData = base.duplicate(true)
+		inst.set_meta("source_path", path)
+		if sealed:
+			inst.set_meta("artifact_sealed", true)
+		if oathbroken:
+			inst.set_meta("artifact_oathbroken", true)
+		if retain:
+			inst.set_meta("artifact_retain", true)
+		if has_cost:
+			inst.cost = cost
+		out.append(inst)
+	return out
 
 #==============================================================================
 # Artifact save helpers (duplicates lose resource_path)

@@ -454,7 +454,7 @@ func _tick_poison_status() -> void:
 			DebugLogger.log_info("Poison on %s: %d dmg, %d turns left" % [unit_label, poison_dmg, remaining])
 	_update_stats_and_emit_signal()
 
-func process_turn_end_statuses():
+func process_turn_end_statuses() -> void:
 	if active_statuses.is_empty():
 		return
 
@@ -473,12 +473,14 @@ func process_turn_end_statuses():
 			continue
 		# Regeneration heals at start of turn (see process_turn_start_statuses), only tick duration here
 		
-		# Burning - poškození na konci tahu (DoT nelze vyhnout)
+		# Burning - poškození na konci tahu (DoT nelze vyhnout; already_calculated → block applies normally, no defensive_stance halving)
 		if status_id == "burning":
 			var status_data = active_statuses[status_id]
 			var damage = status_data.value
-			take_damage(damage, false, false, false)
-			_show_floating_text(damage, "damage")
+			# take_damage already shows the damage float — do not double-float here
+			await take_damage(damage, true, false, false)
+			if not is_instance_valid(self) or current_health <= 0:
+				return
 			# Snížíme hodnotu nebo duration
 			status_data.value = max(0, status_data.value - 1)  # Snížíme poškození každé kolo
 			if status_data.value <= 0:
@@ -1278,9 +1280,9 @@ func start_turn() -> int:
 	var extra_draw = await process_turn_start_statuses()
 	return extra_draw
 
-func end_turn():
+func end_turn() -> void:
 	print(TranslationHelper.tr_format("log.unit.turn_end", {"name": unit_data.get_localized_name()}))
-	process_turn_end_statuses()
+	await process_turn_end_statuses()
 
 func can_act() -> bool:
 	return not _has_acted_this_turn

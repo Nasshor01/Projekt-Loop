@@ -68,9 +68,10 @@ func apply_cost():
 			# Pokud není specifikována, použij základní curse
 			curse_card = load("res://data/cards/curse/curse_basic.tres")
 		if curse_card:
-			PlayerData.master_deck.append(curse_card)
-			last_added_curse = curse_card
-			print(TranslationHelper.tr_format("event.cost.added_curse", {"name": curse_card.get_localized_name()}))
+			var curse_copy = PlayerData.duplicate_card_for_deck(curse_card)
+			PlayerData.master_deck.append(curse_copy)
+			last_added_curse = curse_copy
+			print(TranslationHelper.tr_format("event.cost.added_curse", {"name": curse_copy.get_localized_name()}))
 	
 	# Odstranění artefaktu
 	if remove_artifact:

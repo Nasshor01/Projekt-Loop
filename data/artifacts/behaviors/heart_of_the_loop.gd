@@ -9,14 +9,27 @@ func on_combat_start(_ctx: Dictionary = {}) -> void:
 	if PlayerData:
 		PlayerData.gain_energy(1)
 	runtime["skip_enemy_uses"] = 0
+	runtime["echo_this_turn"] = false
+	runtime["last_attack_card_id"] = ""
+	runtime["last_attack_base_damage"] = 0
 
 
 func on_turn_start(ctx: Dictionary = {}) -> void:
 	super.on_turn_start(ctx)
 	var turn := _get_turn_number(ctx)
-	if turn > 0 and turn % LOOP_INTERVAL == 0:
-		_repeat_last_attack(ctx)
+	runtime["echo_this_turn"] = turn > 0 and turn % LOOP_INTERVAL == 0
+	# Clear trackers so echo uses an attack played during this echo turn only.
+	if runtime["echo_this_turn"]:
+		runtime["last_attack_card_id"] = ""
+		runtime["last_attack_base_damage"] = 0
 	_check_low_hp_skip(ctx)
+
+
+func on_turn_end(ctx: Dictionary = {}) -> void:
+	if not runtime.get("echo_this_turn", false):
+		return
+	runtime["echo_this_turn"] = false
+	_repeat_last_attack(ctx)
 
 
 func on_card_played(ctx: Dictionary = {}) -> void:

@@ -153,7 +153,8 @@ func start_new_run_state():
 				if entry is DeckEntry and is_instance_valid(entry.card):
 					for i in range(entry.count):
 						# Unique instance per slot — shared .tres refs would make Seal/meta apply to all copies.
-						master_deck.append(entry.card.duplicate(true))
+						# duplicate() clears resource_path; keep source_path for run save/load.
+						master_deck.append(duplicate_card_for_deck(entry.card))
 		
 		global_shield = 0
 	# 2. Nejdřív vyčisti artefakty z minulého runu, pak přepočítej startovní staty
@@ -369,6 +370,20 @@ func should_heal_enhanced(amount: int) -> int:
 	return amount
 
 # Zbytek funkcí zůstává stejný...
+func duplicate_card_for_deck(template: CardData) -> CardData:
+	"""Duplicate a card for master_deck and preserve .tres path (duplicate clears resource_path)."""
+	if not is_instance_valid(template):
+		return null
+	var src: String = ""
+	if not template.resource_path.is_empty() and template.resource_path != "res://":
+		src = template.resource_path
+	elif template.has_meta("source_path"):
+		src = str(template.get_meta("source_path"))
+	var copy: CardData = template.duplicate(true)
+	if not src.is_empty() and src != "res://":
+		copy.set_meta("source_path", src)
+	return copy
+
 func ensure_unique_master_deck_instances() -> void:
 	"""Split shared CardData refs so Seal/meta/upgrades apply to one physical card only."""
 	var seen_ids: Dictionary = {}
@@ -378,11 +393,14 @@ func ensure_unique_master_deck_instances() -> void:
 			continue
 		var iid: int = card.get_instance_id()
 		if seen_ids.has(iid):
-			var copy: CardData = card.duplicate(true)
+			var copy: CardData = duplicate_card_for_deck(card)
 			if copy.has_meta("artifact_sealed"):
 				copy.remove_meta("artifact_sealed")
 			master_deck[i] = copy
 		else:
+			# Stamp source_path on shared .tres refs before any later duplicate clears path.
+			if not card.resource_path.is_empty() and card.resource_path != "res://" and not card.has_meta("source_path"):
+				card.set_meta("source_path", card.resource_path)
 			seen_ids[iid] = true
 
 
@@ -622,6 +640,8 @@ func transfer_seal_on_upgrade(old_card: CardData, new_card: CardData) -> void:
 	var src := new_card.resource_path
 	if src.is_empty() and new_card.has_meta("source_path"):
 		src = str(new_card.get_meta("source_path"))
+	if not src.is_empty():
+		new_card.set_meta("source_path", src)
 	sealed_card_source_path = src
 
 func add_gold(amount: int):
@@ -646,21 +666,21 @@ func heal(amount: int):
 
 func add_curse(curse_type: String = "basic"):
 	"""Přidá curse kartu do balíčku"""
-	var curse_path = "res://data/cards/curses/"
+	var curse_path = "res://data/cards/curse/"
 	var curse_card: CardData
 	
 	match curse_type:
 		"basic":
-			curse_card = load(curse_path + "basic_curse.tres")
+			curse_card = load(curse_path + "curse_basic.tres")
 		"weakness":
 			curse_card = load(curse_path + "curse_weakness.tres")
 		"pain":
 			curse_card = load(curse_path + "curse_pain.tres")
 		_:
-			curse_card = load(curse_path + "basic_curse.tres")
+			curse_card = load(curse_path + "curse_basic.tres")
 	
 	if curse_card:
-		master_deck.append(curse_card)
+		master_deck.append(duplicate_card_for_deck(curse_card))
 		DebugLogger.log_info("Added curse: %s" % curse_card.card_name, "CARDS")
 		emit_signal("deck_changed")
 

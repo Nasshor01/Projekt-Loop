@@ -104,6 +104,25 @@ func get_behavior_runtime(artifact_id: String) -> Dictionary:
 	return {}
 
 
+## Patch live behavior.runtime after Continue (e.g. Oathbreaker applied). Does not call on_acquired.
+func restore_behavior_runtime(artifact_id: String, runtime_values: Dictionary) -> bool:
+	if artifact_id.is_empty() or runtime_values.is_empty():
+		return false
+	if not _behavior_instances.has(artifact_id) and PlayerData:
+		for artifact in PlayerData.artifacts:
+			if _artifact_key(artifact) == artifact_id:
+				_ensure_behavior(artifact)
+				break
+	if not _behavior_instances.has(artifact_id):
+		return false
+	var behavior: ArtifactBehavior = _behavior_instances[artifact_id]
+	if behavior == null:
+		return false
+	for k in runtime_values.keys():
+		behavior.runtime[k] = runtime_values[k]
+	return true
+
+
 func card_has_retain(card: CardData) -> bool:
 	return card != null and card.has_meta("artifact_retain") and bool(card.get_meta("artifact_retain"))
 

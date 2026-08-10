@@ -183,7 +183,7 @@ func _on_card_clicked(card_to_add: CardData):
 		_coop_on_card_clicked(card_to_add)
 		return
 	# Solo: výběr karty
-	PlayerData.master_deck.append(card_to_add)
+	PlayerData.master_deck.append(PlayerData.duplicate_card_for_deck(card_to_add))
 	_card_resolved = true
 	_hide_reward_card_hover_tip()
 	for card_ui in _iter_reward_card_uis():
@@ -243,15 +243,28 @@ func _on_skip_pressed():
 
 # ===== COOP sdílený reward =====
 
+func _card_matches_source_path(card: CardData, path: String) -> bool:
+	"""Match deck card to pool path after duplicate_card_for_deck (resource_path cleared)."""
+	if card == null or path.is_empty():
+		return false
+	if has_node("/root/SaveManager"):
+		return SaveManager.get_card_source_path(card) == path
+	if card.resource_path == path:
+		return true
+	return card.has_meta("source_path") and str(card.get_meta("source_path")) == path
+
 func _coop_on_card_clicked(card_to_add: CardData):
 	"""Lokální hráč klikl na kartu v coop reward – toggle (klik znovu = odznačení)."""
 	if _coop_my_skipped:
 		return
+	var choice_path: String = card_to_add.resource_path
+	if choice_path.is_empty() and card_to_add.has_meta("source_path"):
+		choice_path = str(card_to_add.get_meta("source_path"))
 	# Toggle: kliknutí na STEJNOU kartu = odznačit
-	if _coop_my_choice_path == card_to_add.resource_path:
+	if _coop_my_choice_path == choice_path:
 		# Odebrat kartu z decku
 		for i in range(PlayerData.master_deck.size() - 1, -1, -1):
-			if PlayerData.master_deck[i].resource_path == _coop_my_choice_path:
+			if _card_matches_source_path(PlayerData.master_deck[i], _coop_my_choice_path):
 				PlayerData.master_deck.remove_at(i)
 				break
 		_coop_my_choice_path = ""
@@ -260,19 +273,19 @@ func _coop_on_card_clicked(card_to_add: CardData):
 		rpc("_rpc_coop_reward_card_deselected")
 		return
 	# Nelze vzít kartu, kterou má druhý hráč
-	if card_to_add.resource_path == _coop_other_choice_path:
+	if choice_path == _coop_other_choice_path:
 		return
 	# Pokud už mám jinou kartu vybranou, nejdřív ji odeberu
 	if not _coop_my_choice_path.is_empty():
 		for i in range(PlayerData.master_deck.size() - 1, -1, -1):
-			if PlayerData.master_deck[i].resource_path == _coop_my_choice_path:
+			if _card_matches_source_path(PlayerData.master_deck[i], _coop_my_choice_path):
 				PlayerData.master_deck.remove_at(i)
 				break
-	_coop_my_choice_path = card_to_add.resource_path
-	PlayerData.master_deck.append(card_to_add)
+	_coop_my_choice_path = choice_path
+	PlayerData.master_deck.append(PlayerData.duplicate_card_for_deck(card_to_add))
 	_coop_update_card_visuals()
 	skip_button.disabled = true
-	rpc("_rpc_coop_reward_card_chosen", card_to_add.resource_path)
+	rpc("_rpc_coop_reward_card_chosen", choice_path)
 	_coop_check_both_done()
 
 func _coop_on_skip():

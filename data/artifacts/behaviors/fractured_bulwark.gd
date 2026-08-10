@@ -60,4 +60,5 @@ func _resolve_delayed_damage() -> void:
 		return
 	var player := _get_player_unit()
 	if player and player.has_method("take_damage"):
-		player.take_damage(amount, false, false, true, true)
+		# already_calculated + ignore_block: deferred unblocked HP must hit, not re-block.
+		player.take_damage(amount, true, false, false, true, true)

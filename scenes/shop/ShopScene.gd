@@ -295,7 +295,7 @@ func _on_item_purchased(item_data: Resource, shop_item: ShopItemUI):
 		var item_name = ""
 		if item_data is CardData:
 			item_name = item_data.card_name
-			PlayerData.master_deck.append(item_data)
+			PlayerData.master_deck.append(PlayerData.duplicate_card_for_deck(item_data))
 			shop_item.mark_purchased()
 		elif item_data is ArtifactsData:
 			item_name = item_data.artifact_name

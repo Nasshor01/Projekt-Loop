@@ -499,7 +499,7 @@ func _on_upgrade_card_clicked(card_data: CardData):
 	# Vylepši kartu (card_data je vždy base, i když face ukazuje upgraded)
 	var index = PlayerData.master_deck.find(card_data)
 	if index != -1 and is_instance_valid(card_data.upgraded_version):
-		var upgraded = card_data.upgraded_version.duplicate(true)
+		var upgraded = PlayerData.duplicate_card_for_deck(card_data.upgraded_version)
 		PlayerData.transfer_seal_on_upgrade(card_data, upgraded)
 		PlayerData.master_deck[index] = upgraded
 		print(TranslationHelper.tr_format("event.card_upgraded", {"from": card_data.get_localized_name(), "to": upgraded.get_localized_name()}))
