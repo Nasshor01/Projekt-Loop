@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3 uid="uid://00glyipfysfc"]
+
+[ext_resource type="Script" uid="uid://cq8intentrowscr01" path="res://scenes/ui/IntentIconsRow.gd" id="1_row"]
+
+[node name="IntentIconsRow" type="Control"]
+z_index = -10
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("1_row")

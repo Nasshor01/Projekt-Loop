@@ -148,6 +148,102 @@ func find_attack_move_position(unit: Unit, target: Unit, battle_grid: BattleGrid
 	
 	return best_cell
 
+## Pure preview helper for intent UI — no meta/state mutation.
+## True when this turn's plan can be MOVE then ATTACK (same helper Fighter/Berserker/Boss use).
+func can_move_then_attack_this_turn(unit: Unit, target: Unit, battle_grid: BattleGrid) -> bool:
+	if not is_instance_valid(unit) or not is_instance_valid(target):
+		return false
+	if can_attack_target(unit, target, battle_grid):
+		return true
+	var attack_pos = find_attack_move_position(unit, target, battle_grid)
+	if attack_pos == Vector2i(-1, -1):
+		return false
+	var path = find_path(unit, attack_pos, battle_grid)
+	return not path.is_empty()
+
+# Setup-only specials that are not player-facing combat intents (Boss barrier/aura, heals, buffs…).
+const _NON_PLAYER_FACING_SPECIAL_TYPES: Array[String] = [
+	"dark_barrier",
+	"demon_aura",
+	"arcane_shield",
+	"protection",
+	"heal_ally",
+	"holy_nova",
+	"meditate",
+	"buff_ally",
+	"war_cry",
+	"howl",
+]
+
+## Drops setup-only SPECIAL actions (dark_barrier, demon_aura, …) and PASS.
+## Caps at 2 player-facing actions for intent UI (Boss may plan 3–4 including barrier/aura).
+## Accepts AIAction objects or intent dicts with "special_type" / special_data.type.
+## For future safe action-list previews — does not call get_actions or mutate state.
+func filter_player_facing_actions(actions: Array) -> Array:
+	var facing: Array = []
+	for action in actions:
+		if action == null:
+			continue
+		if action is AIAction:
+			if action.type == AIAction.ActionType.PASS:
+				continue
+			if action.type == AIAction.ActionType.SPECIAL:
+				var st := str(action.special_data.get("type", ""))
+				if st in _NON_PLAYER_FACING_SPECIAL_TYPES:
+					continue
+			facing.append(action)
+		elif action is Dictionary:
+			var st2 := str(action.get("special_type", ""))
+			if st2.is_empty() and action.has("special_data") and action["special_data"] is Dictionary:
+				st2 = str(action["special_data"].get("type", ""))
+			if st2 in _NON_PLAYER_FACING_SPECIAL_TYPES:
+				continue
+			var id := str(action.get("id", ""))
+			if id == "pass":
+				continue
+			facing.append(action)
+		else:
+			facing.append(action)
+		if facing.size() >= 2:
+			break
+	return facing
+
+func _make_combat_intent(id: String, short_key: String, text_key: String, special_type: String = "") -> Dictionary:
+	return {
+		"id": id,
+		"short_text": tr(short_key),
+		"text": tr(text_key),
+		"special_type": special_type,
+	}
+
+## Returns Array of combat intent dicts for UI, max 2.
+## Each: { "id": String, "short_text": String, "text": String, "special_type": String }
+## Pure — no mutation of unit meta/state, no show_status_text, never calls get_actions().
+## Default = Fighter-like melee approach truth (MOVE then ATTACK when that is the plan).
+## Subclasses MAY override later for Archer/Monk specials; keep overrides pure.
+func preview_combat_intents(unit: Unit, player: Unit, battle_grid: BattleGrid) -> Array:
+	if not is_instance_valid(unit) or not is_instance_valid(player) or battle_grid == null:
+		return []
+
+	# 1) Already in range → single ATTACK
+	if can_attack_target(unit, player, battle_grid):
+		return [_make_combat_intent("attack", "ATTACK", "Next Move: Attack")]
+
+	# 2) Can MOVE into range then ATTACK this turn → dual intents (execution order)
+	if can_move_then_attack_this_turn(unit, player, battle_grid):
+		return [
+			_make_combat_intent("move", "MOVE", "Next Move: Move"),
+			_make_combat_intent("attack", "ATTACK", "Next Move: Attack"),
+		]
+
+	# 3) Approach only — path toward an adjacent cell exists
+	var approach_path := find_path_to_adjacent(unit, player, battle_grid)
+	if not approach_path.is_empty():
+		return [_make_combat_intent("move", "MOVE", "Next Move: Move")]
+
+	# 4) No combat plan to telegraph
+	return []
+
 # Najde pozici pro útok z bezpečné vzdálenosti (pro ranged)
 func find_safe_attack_position(unit: Unit, target: Unit, battle_grid: BattleGrid, min_safe_distance: int = 2) -> Vector2i:
 	var reachable = get_reachable_cells(unit, battle_grid)

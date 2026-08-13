@@ -7,6 +7,7 @@ extends Control
 @onready var multiplayer_button: Button = $VBoxContainer/MultiplayerButton
 @onready var tutorial_button: Button = $VBoxContainer/TutorialButton
 @onready var settings_button: Button = $VBoxContainer/SettingsButton
+@onready var credits_button: Button = %CreditsButton
 @onready var exit_button: Button = $VBoxContainer/ExitButton
 @onready var version_label: Label = $VersionLabel
 
@@ -20,6 +21,20 @@ extends Control
 @onready var mp_join_button: Button = $MultiplayerPanel/MarginContainer/VBoxContainer/ButtonsHBox/JoinButton
 @onready var mp_back_button: Button = $MultiplayerPanel/MarginContainer/VBoxContainer/BackButton
 
+# Credits panel — easy to extend with more sections/names later
+const CREDITS_SECTIONS := [
+	{
+		"title_key": "ui.credits.trapper_challenge",
+		"names": ["TheMoonIsFurious"],
+	},
+]
+
+@onready var credits_panel: PanelContainer = %CreditsPanel
+@onready var credits_title_label: Label = %CreditsTitleLabel
+@onready var credits_special_thanks_label: Label = %CreditsSpecialThanksLabel
+@onready var credits_body_label: Label = %CreditsBodyLabel
+@onready var credits_back_button: Button = %CreditsBackButton
+
 func _enter_tree():
 	add_to_group("main_menu")
 
@@ -31,6 +46,8 @@ func _ready():
 	multiplayer_button.pressed.connect(_on_multiplayer_pressed)
 	tutorial_button.pressed.connect(GameManager.go_to_tutorial)
 	settings_button.pressed.connect(GameManager.go_to_settings)
+	if credits_button:
+		credits_button.pressed.connect(_on_credits_pressed)
 	exit_button.pressed.connect(func():
 		if has_node("/root/DebugLogger"):
 			DebugLogger.mark_quitting_legally()
@@ -40,6 +57,8 @@ func _ready():
 	mp_host_button.pressed.connect(_on_mp_host_pressed)
 	mp_join_button.pressed.connect(_on_mp_join_pressed)
 	mp_back_button.pressed.connect(_on_mp_back_pressed)
+	if credits_back_button:
+		credits_back_button.pressed.connect(_on_credits_back_pressed)
 
 	if has_node("/root/MultiplayerManager"):
 		MultiplayerManager.connection_succeeded.connect(_on_multiplayer_connection_succeeded)
@@ -61,12 +80,15 @@ func _update_ui_texts():
 		tutorial_button.text = tr("ui.main_menu.tutorial")
 	if settings_button:
 		settings_button.text = tr("ui.main_menu.settings")
+	if credits_button:
+		credits_button.text = tr("ui.main_menu.credits")
 	if exit_button:
 		exit_button.text = tr("ui.main_menu.exit")
 	if load_run_button:
 		load_run_button.text = tr("ui.main_menu.load_run")
 	if multiplayer_button:
 		multiplayer_button.text = tr("ui.main_menu.multiplayer")
+	_update_credits_texts()
 
 func _update_tutorial_gate():
 	var completed = SaveManager.is_tutorial_completed()
@@ -89,9 +111,48 @@ func _update_load_button_state():
 		return
 	load_run_button.disabled = not SaveManager.has_saved_run()
 
+# ==================== CREDITS PANEL ====================
+
+func _on_credits_pressed():
+	if mp_panel:
+		mp_panel.visible = false
+	_update_credits_texts()
+	if credits_panel:
+		credits_panel.visible = true
+
+func _on_credits_back_pressed():
+	if credits_panel:
+		credits_panel.visible = false
+
+func _update_credits_texts():
+	if credits_title_label:
+		credits_title_label.text = tr("ui.credits.title")
+	if credits_special_thanks_label:
+		credits_special_thanks_label.text = tr("ui.credits.special_thanks")
+	if credits_back_button:
+		credits_back_button.text = tr("ui.common.back")
+	if credits_body_label:
+		credits_body_label.text = _build_credits_body()
+
+func _build_credits_body() -> String:
+	var lines: PackedStringArray = PackedStringArray()
+	for section in CREDITS_SECTIONS:
+		var title_key: String = str(section.get("title_key", ""))
+		if not title_key.is_empty():
+			lines.append(tr(title_key))
+		var names: Array = section.get("names", [])
+		for name in names:
+			lines.append("• %s" % str(name))
+		lines.append("")
+	while lines.size() > 0 and str(lines[lines.size() - 1]).is_empty():
+		lines.remove_at(lines.size() - 1)
+	return "\n".join(lines)
+
 # ==================== MULTIPLAYER PANEL ====================
 
 func _on_multiplayer_pressed():
+	if credits_panel:
+		credits_panel.visible = false
 	mp_panel.visible = true
 	mp_status_label.text = ""
 	mp_host_button.disabled = false

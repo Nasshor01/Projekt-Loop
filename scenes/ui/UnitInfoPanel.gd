@@ -209,20 +209,9 @@ func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
 		return
 	enemy_section.visible = true
 
-	var short_txt := ""
-	var detail_txt := ""
-	if unit_node.has_method("get_intent_short_text"):
-		short_txt = str(unit_node.get_intent_short_text()).strip_edges()
-	if unit_node.has_method("get_intent_detail_text"):
-		detail_txt = str(unit_node.get_intent_detail_text()).strip_edges()
-	elif unit_node.has_method("get_intent_display_text"):
-		detail_txt = str(unit_node.get_intent_display_text()).strip_edges()
-
-	# Strip redundant "Next Move:" — section header already says NEXT.
-	for prefix in ["Next Move: ", "Další tah: ", "Next: "]:
-		if detail_txt.begins_with(prefix):
-			detail_txt = detail_txt.substr(prefix.length()).strip_edges()
-			break
+	var intent_pair := _resolve_intent_texts(unit_node)
+	var short_txt: String = intent_pair.short_text
+	var detail_txt: String = intent_pair.detail_text
 
 	if short_txt.is_empty() and detail_txt.is_empty():
 		intent_title_label.text = tr("ui.unit_info.intent_unknown")
@@ -262,6 +251,82 @@ func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
 		alerts_section.visible = true
 		for alert_text in alerts:
 			alerts_flow.add_child(_make_chip(alert_text, COLOR_CHIP_ALERT_BG, COLOR_CHIP_ALERT_FG))
+
+## Resolves up to 2 intents for the panel.
+## Preferred Unit API: get_intent_entries() -> Array of {short_text, text} (max 2 used).
+## Fallback: primary get_intent_* + optional get_secondary_intent_* methods.
+func _resolve_intent_texts(unit_node: Node) -> Dictionary:
+	var entries: Array = _collect_intent_entries(unit_node)
+	var shorts: PackedStringArray = PackedStringArray()
+	var details: PackedStringArray = PackedStringArray()
+	for entry in entries:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var short_txt := str(entry.get("short_text", "")).strip_edges()
+		var detail_txt := _strip_intent_detail_prefix(str(entry.get("text", "")).strip_edges())
+		if short_txt.is_empty() and detail_txt.is_empty():
+			continue
+		if not short_txt.is_empty():
+			shorts.append(short_txt)
+		if not detail_txt.is_empty():
+			details.append(detail_txt)
+	return {
+		"short_text": " → ".join(shorts),
+		"detail_text": " → ".join(details),
+	}
+
+func _collect_intent_entries(unit_node: Node) -> Array:
+	if unit_node.has_method("get_intent_entries"):
+		var raw = unit_node.get_intent_entries()
+		if typeof(raw) == TYPE_ARRAY and not raw.is_empty():
+			var capped: Array = []
+			for i in mini(raw.size(), 2):
+				capped.append(raw[i])
+			return capped
+
+	var primary := _read_primary_intent_entry(unit_node)
+	var secondary := _read_secondary_intent_entry(unit_node)
+	var out: Array = []
+	if not primary.is_empty():
+		out.append(primary)
+	if not secondary.is_empty():
+		out.append(secondary)
+	return out
+
+func _read_primary_intent_entry(unit_node: Node) -> Dictionary:
+	var short_txt := ""
+	var detail_txt := ""
+	if unit_node.has_method("get_intent_short_text"):
+		short_txt = str(unit_node.get_intent_short_text()).strip_edges()
+	if unit_node.has_method("get_intent_detail_text"):
+		detail_txt = str(unit_node.get_intent_detail_text()).strip_edges()
+	elif unit_node.has_method("get_intent_display_text"):
+		detail_txt = str(unit_node.get_intent_display_text()).strip_edges()
+	if short_txt.is_empty() and detail_txt.is_empty():
+		return {}
+	return {"short_text": short_txt, "text": detail_txt}
+
+func _read_secondary_intent_entry(unit_node: Node) -> Dictionary:
+	var short_txt := ""
+	var detail_txt := ""
+	if unit_node.has_method("get_secondary_intent_short_text"):
+		short_txt = str(unit_node.get_secondary_intent_short_text()).strip_edges()
+	if unit_node.has_method("get_secondary_intent_detail_text"):
+		detail_txt = str(unit_node.get_secondary_intent_detail_text()).strip_edges()
+	elif unit_node.has_method("get_secondary_intent_display_text"):
+		detail_txt = str(unit_node.get_secondary_intent_display_text()).strip_edges()
+	elif unit_node.has_method("get_secondary_intent_text"):
+		detail_txt = str(unit_node.get_secondary_intent_text()).strip_edges()
+	if short_txt.is_empty() and detail_txt.is_empty():
+		return {}
+	return {"short_text": short_txt, "text": detail_txt}
+
+func _strip_intent_detail_prefix(detail_txt: String) -> String:
+	# Strip redundant "Next Move:" — section header already says NEXT.
+	for prefix in ["Next Move: ", "Další tah: ", "Next: "]:
+		if detail_txt.begins_with(prefix):
+			return detail_txt.substr(prefix.length()).strip_edges()
+	return detail_txt
 
 func _update_status_display(unit_node: Node) -> void:
 	_clear_container(status_effects_list)
@@ -450,12 +515,9 @@ func _build_fingerprint(unit_node: Node) -> String:
 	parts.append(str(unit_node.current_health))
 	parts.append(str(unit_node.current_block))
 	parts.append(str(unit_node.retained_block))
-	if unit_node.has_method("get_intent_short_text"):
-		parts.append(str(unit_node.get_intent_short_text()))
-	if unit_node.has_method("get_intent_detail_text"):
-		parts.append(str(unit_node.get_intent_detail_text()))
-	elif unit_node is Unit:
-		parts.append(str(unit_node.current_intent_text))
+	var intent_pair := _resolve_intent_texts(unit_node)
+	parts.append(intent_pair.short_text)
+	parts.append(intent_pair.detail_text)
 	if unit_node is Unit:
 		parts.append(str(unit_node.active_statuses))
 	if unit_node.has_method("get_status_counters_list"):

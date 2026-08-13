@@ -2,7 +2,7 @@ class_name Unit
 extends Node3D
 
 const FloatingTextScene = preload("res://scenes/ui/FloatingText.tscn")
-const IntentIconScene = preload("res://scenes/ui/IntentIcon.tscn")
+const IntentIconsRowScene = preload("res://scenes/ui/IntentIconsRow.tscn")
 const UnitHealthBarScene = preload("res://scenes/ui/UnitHealthBar.tscn")
 const INTENT_ICON_AIMING = preload("res://art/icons/status/Aim.png")
 const INTENT_ICON_RUSH = preload("res://art/icons/status/Rage_rush.png")
@@ -51,6 +51,8 @@ var last_attacker: Unit = null
 var current_intent_id: String = ""
 var current_intent_text: String = ""
 var current_intent_short: String = ""
+## Up to 2 player-facing intents: [{id, short_text, text, countdown}]. Primary aliases above = [0].
+var current_intents: Array = []
 var _intent_visibility_allowed: bool = false
 
 # Elementární status efekty
@@ -65,7 +67,7 @@ var is_permanently_enraged: bool = false
 #---------------------------------------------
 
 @onready var _sprite_node: Sprite3D = $Sprite3D
-var _intent_icon: Control = null
+var _intent_row: Control = null
 var _health_bar: Control = null
 var _intent_world_padding_ratio: float = 0.08
 
@@ -120,9 +122,9 @@ func _ready():
 		world_ui.add_child(_health_bar)
 		_refresh_health_bar()
 		if unit_data and unit_data.faction == UnitData.Faction.ENEMY:
-			_intent_icon = IntentIconScene.instantiate()
-			world_ui.add_child(_intent_icon)
-			_intent_icon.visible = false
+			_intent_row = IntentIconsRowScene.instantiate()
+			world_ui.add_child(_intent_row)
+			_intent_row.visible = false
 	
 	# Pozice ve 3D - zarovnání na zem
 	position.y = 0
@@ -146,9 +148,9 @@ func _get_unit_world_ui_layer() -> CanvasLayer:
 func _exit_tree() -> void:
 	if _initiative_bar_hovered:
 		set_initiative_hover_visual(false)
-	if _intent_icon and is_instance_valid(_intent_icon):
-		_intent_icon.queue_free()
-		_intent_icon = null
+	if _intent_row and is_instance_valid(_intent_row):
+		_intent_row.queue_free()
+		_intent_row = null
 	if _health_bar and is_instance_valid(_health_bar):
 		_health_bar.queue_free()
 		_health_bar = null
@@ -183,7 +185,7 @@ func _apply_ng_plus_scaling():
 func _process(_delta: float) -> void:
 	if _health_bar and is_instance_valid(_health_bar):
 		_update_health_bar_screen_position()
-	if _intent_icon and _intent_icon.visible:
+	if _intent_row and _intent_row.visible:
 		_update_intent_icon_screen_position()
 		_update_intent_icon_scale()
 
@@ -573,9 +575,9 @@ func heal_to_full():
 func _die():
 	hide_intent()
 	_intent_visibility_allowed = false
-	if _intent_icon and is_instance_valid(_intent_icon):
-		_intent_icon.queue_free()
-		_intent_icon = null
+	if _intent_row and is_instance_valid(_intent_row):
+		_intent_row.queue_free()
+		_intent_row = null
 	if _health_bar and is_instance_valid(_health_bar):
 		_health_bar.queue_free()
 		_health_bar = null
@@ -730,18 +732,24 @@ func set_initiative_hover_visual(hovered: bool) -> void:
 			battle_grid.hide_initiative_hover_cell(grid_position)
 
 func show_intent(attack_damage: int = 0):
-	if not _intent_icon or not _intent_visibility_allowed:
+	if not _intent_row or not _intent_visibility_allowed:
 		return
-	if _intent_icon.has_method("set_intent"):
-		var label_text = str(attack_damage) if attack_damage > 0 else ""
-		_intent_icon.set_intent(_get_intent_icon_for_id(current_intent_id), label_text)
-	_intent_icon.visible = true
-	_update_intent_icon_screen_position()
-	_update_intent_icon_scale()
+	if attack_damage > 0 and not current_intents.is_empty():
+		# ArcherAI may stamp damage onto the attack telegraph during its turn setup.
+		for i in range(current_intents.size()):
+			var entry: Dictionary = current_intents[i]
+			if str(entry.get("id", "")) == "attack":
+				entry["short_text"] = str(attack_damage)
+				current_intents[i] = entry
+				break
+		_sync_primary_intent_aliases()
+	_refresh_intent_row_ui()
 
 func hide_intent():
-	if _intent_icon:
-		_intent_icon.visible = false
+	if _intent_row and _intent_row.has_method("hide_row"):
+		_intent_row.hide_row()
+	elif _intent_row:
+		_intent_row.visible = false
 
 func set_intent_visibility_allowed(allowed: bool) -> void:
 	_intent_visibility_allowed = allowed
@@ -753,23 +761,48 @@ func update_intent(player_unit: Unit, battle_grid: BattleGrid) -> void:
 		return
 	if not is_instance_valid(battle_grid):
 		return
-	var intent_data = _calculate_intent(player_unit, battle_grid)
-	current_intent_id = intent_data.id
-	current_intent_text = intent_data.text
-	current_intent_short = intent_data.get("short_text", "")
-	if _intent_icon and _intent_icon.has_method("set_intent"):
-		_intent_icon.set_intent(intent_data.icon, intent_data.short_text)
-		# Odpočet kol na ikoně
-		var countdown = intent_data.get("countdown", 0)
-		if _intent_icon.has_method("set_countdown"):
-			_intent_icon.set_countdown(countdown)
-		if _intent_visibility_allowed and intent_data.id != "":
-			_intent_icon.show_intent()
+	current_intents = _calculate_intent_list(player_unit, battle_grid)
+	_sync_primary_intent_aliases()
+	_refresh_intent_row_ui()
+
+func _sync_primary_intent_aliases() -> void:
+	if current_intents.is_empty():
+		current_intent_id = ""
+		current_intent_text = ""
+		current_intent_short = ""
+		return
+	var primary: Dictionary = current_intents[0]
+	current_intent_id = str(primary.get("id", ""))
+	current_intent_text = str(primary.get("text", ""))
+	current_intent_short = str(primary.get("short_text", ""))
+
+func _refresh_intent_row_ui() -> void:
+	if not _intent_row:
+		return
+	var row_payload: Array = []
+	for entry in current_intents:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var intent_id := str(entry.get("id", ""))
+		row_payload.append({
+			"icon": _get_intent_icon_for_id(intent_id),
+			"short_text": str(entry.get("short_text", "")),
+			"countdown": int(entry.get("countdown", 0)),
+		})
+	if _intent_row.has_method("set_intents"):
+		_intent_row.set_intents(row_payload)
+	if _intent_visibility_allowed and not row_payload.is_empty():
+		if _intent_row.has_method("show_row"):
+			_intent_row.show_row()
 		else:
-			_intent_icon.hide_intent()
+			_intent_row.visible = true
+		_update_intent_icon_screen_position()
+		_update_intent_icon_scale()
+	else:
+		hide_intent()
 
 func _update_intent_icon_screen_position() -> void:
-	if not _intent_icon:
+	if not _intent_row:
 		return
 	var camera = get_viewport().get_camera_3d()
 	if not camera:
@@ -778,15 +811,15 @@ func _update_intent_icon_screen_position() -> void:
 	var half_height = _get_sprite_world_height() * 0.5
 	var world_pos = center + Vector3(0, half_height + (_get_sprite_world_height() * _intent_world_padding_ratio), 0)
 	var screen_pos = camera.unproject_position(world_pos)
-	if _intent_icon.has_method("set_screen_position"):
-		_intent_icon.set_screen_position(screen_pos)
+	if _intent_row.has_method("set_screen_position"):
+		_intent_row.set_screen_position(screen_pos)
 	else:
-		_intent_icon.position = screen_pos
+		_intent_row.position = screen_pos
 
 func _update_intent_icon_scale() -> void:
-	if not _intent_icon:
+	if not _intent_row:
 		return
-	if not _intent_icon.has_method("get_icon_texture_size") or not _intent_icon.has_method("set_icon_scale"):
+	if not _intent_row.has_method("get_icon_texture_size"):
 		return
 	var camera = get_viewport().get_camera_3d()
 	if not camera:
@@ -795,11 +828,14 @@ func _update_intent_icon_scale() -> void:
 	if sprite_screen_height <= 0:
 		return
 	var target_icon_height = clamp(sprite_screen_height * 0.25, 18.0, 48.0)
-	var icon_size: Vector2 = _intent_icon.get_icon_texture_size()
+	var icon_size: Vector2 = _intent_row.get_icon_texture_size()
 	if icon_size.y <= 0:
 		return
 	var scale_value = target_icon_height / icon_size.y
-	_intent_icon.set_icon_scale(scale_value)
+	if _intent_row.has_method("set_row_scale"):
+		_intent_row.set_row_scale(scale_value)
+	elif _intent_row.has_method("set_icon_scale"):
+		_intent_row.set_icon_scale(scale_value)
 
 func _get_sprite_world_height() -> float:
 	if not is_instance_valid(_sprite_node) or not is_instance_valid(unit_data) or not unit_data.sprite_texture:
@@ -844,8 +880,24 @@ func get_intent_detail_text() -> String:
 			return text.substr(prefix.length()).strip_edges()
 	return text
 
+func get_intent_entries() -> Array:
+	"""Up to 2 intents for UnitInfoPanel: [{short_text, text}, ...]."""
+	var entries: Array = []
+	for item in current_intents:
+		if typeof(item) != TYPE_DICTIONARY:
+			continue
+		entries.append({
+			"short_text": str(item.get("short_text", "")),
+			"text": str(item.get("text", "")),
+		})
+		if entries.size() >= 2:
+			break
+	return entries
+
 func get_intent_ui() -> Control:
-	return _intent_icon
+	if _intent_row and _intent_row.has_method("get_primary_intent_ui"):
+		return _intent_row.get_primary_intent_ui()
+	return _intent_row
 
 func get_enemy_class_display() -> String:
 	if not is_instance_valid(unit_data) or not is_instance_valid(unit_data.ai_script):
@@ -922,171 +974,193 @@ func get_status_counters_list() -> PackedStringArray:
 		counters.append(tr("enemy.counter.howled"))
 	return counters
 
-func _calculate_intent(player_unit: Unit, battle_grid: BattleGrid) -> Dictionary:
-	var intent_id = "move"
-	var intent_short = tr("MOVE")
-	var intent_text = tr("Next Move: Move")
-	var icon = INTENT_ICON_MOVE
-	var countdown = 0  # Odpočet kol (0 = nezobrazovat)
+## Returns up to 2 player-facing intent dicts: {id, short_text, text, countdown}.
+## Exclusive specials (Rush/Meteor/Aiming/…) = 1 icon.
+## Default melee plan uses EnemyAIBase.preview_combat_intents (MOVE / MOVE+ATTACK / ATTACK).
+## Never calls get_actions() — that mutates Boss/Mage/Monk/Druid meta.
+func _calculate_intent_list(player_unit: Unit, battle_grid: BattleGrid) -> Array:
 	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data.ai_script) else ""
-	
-	# === BERSERKER RAGE ===
+	var countdown := 0
+
+	# === BERSERKER RAGE (exclusive) ===
 	var berserker_rage = ai_path.contains("BerserkerAI") and is_permanently_enraged
 	if active_statuses.has("rage") or berserker_rage:
-		return {
-			"id": "rush", "short_text": tr("RUSH"),
-			"text": tr("Next Move: Rush (%d%% DMG)") % BERSERKER_RUSH_DAMAGE_PERCENT,
-			"icon": INTENT_ICON_RUSH, "countdown": 0
-		}
-	
-	# === BOSS AI ===
+		return [_make_intent_entry(
+			"rush", tr("RUSH"),
+			tr("Next Move: Rush (%d%% DMG)") % BERSERKER_RUSH_DAMAGE_PERCENT
+		)]
+
+	# === BOSS AI (exclusive specials; otherwise fall through to preview + slash countdown) ===
 	if ai_path.contains("BossAI"):
 		var boss_phase = int(get_meta("boss_phase")) if has_meta("boss_phase") else 1
 		var btc = int(get_meta("boss_turn_count")) if has_meta("boss_turn_count") else 0
-		
 		if boss_phase == 2:
-			var next_hellfire = 4 - ((btc) % 4)
+			var next_hellfire = 4 - (btc % 4)
 			if next_hellfire == 4:
-				next_hellfire = 0  # Nastane tento tah
+				next_hellfire = 0
 			if btc > 0 and (btc + 1) % 4 == 0:
-				return {"id": "attack", "short_text": tr("HELLFIRE"), "text": tr("Next Move: Hellfire AoE"), "icon": INTENT_ICON_ATTACK, "countdown": 0}
-			else:
-				return {"id": "attack", "short_text": tr("ENRAGED"), "text": tr("Next Move: Enraged Attack"), "icon": INTENT_ICON_RUSH, "countdown": next_hellfire}
+				return [_make_intent_entry("attack", tr("HELLFIRE"), tr("Next Move: Hellfire AoE"))]
+			return [_make_intent_entry(
+				"attack", tr("ENRAGED"), tr("Next Move: Enraged Attack"), next_hellfire
+			)]
 		else:
-			var next_slash = 3 - ((btc) % 3)
+			var next_slash = 3 - (btc % 3)
 			if next_slash == 3:
 				next_slash = 0
 			if btc > 0 and (btc + 1) % 3 == 0:
-				return {"id": "attack", "short_text": tr("SLASH"), "text": tr("Next Move: Dark Slash"), "icon": INTENT_ICON_ATTACK, "countdown": 0}
-			else:
-				# Ukaž odpočet do dark slash
-				countdown = next_slash
-	
-	# === DARK BEAST AI ===
+				return [_make_intent_entry("attack", tr("SLASH"), tr("Next Move: Dark Slash"))]
+			countdown = next_slash
+
+	# === DARK BEAST AI (exclusive) ===
 	if ai_path.contains("DarkBeastAI"):
 		var health_pct = float(current_health) / float(unit_data.max_health) if unit_data.max_health > 0 else 1.0
 		if health_pct <= 0.3 and has_meta("has_howled") and not get_meta("has_howled"):
-			return {"id": "attack", "short_text": tr("HOWL"), "text": tr("Next Move: Howl (buff allies)"), "icon": INTENT_ICON_RUSH, "countdown": 0}
+			return [_make_intent_entry("attack", tr("HOWL"), tr("Next Move: Howl (buff allies)"))]
 		var dist = battle_grid.get_distance(grid_position, player_unit.grid_position) if is_instance_valid(player_unit) else 0
 		if dist >= 3:
-			return {"id": "attack", "short_text": tr("POUNCE"), "text": tr("Next Move: Pounce (+50% DMG)"), "icon": INTENT_ICON_ATTACK, "countdown": 0}
-	
-	# === ARCHER AIMING ===
+			return [_make_intent_entry("attack", tr("POUNCE"), tr("Next Move: Pounce (+50% DMG)"))]
+
+	# === ARCHER AIMING (exclusive) ===
 	if ai_path.contains("ArcherAI") and is_aiming:
-		intent_id = "aiming"
-		intent_short = tr("AIMING")
-		intent_text = tr("Next Move: Aimed Shot (%d%% DMG)") % ARCHER_AIM_DAMAGE_PERCENT
-		icon = INTENT_ICON_AIMING
-	# === BERSERKER RUSH / TREMOR ===
-	elif ai_path.contains("BerserkerAI"):
+		return [_make_intent_entry(
+			"aiming", tr("AIMING"),
+			tr("Next Move: Aimed Shot (%d%% DMG)") % ARCHER_AIM_DAMAGE_PERCENT
+		)]
+
+	# === BERSERKER lined rush / tremor (exclusive when labeled) ===
+	if ai_path.contains("BerserkerAI"):
 		if _is_aligned_with_player(player_unit) and berserker_frustration >= BERSERKER_RAGE_TURNS_REQUIRED:
-			intent_id = "rush"
-			intent_short = tr("RUSH")
-			intent_text = tr("Next Move: Rush (%d%% DMG)") % BERSERKER_RUSH_DAMAGE_PERCENT
-			icon = INTENT_ICON_RUSH
-		elif berserker_frustration >= 2:
-			var dist = battle_grid.get_distance(grid_position, player_unit.grid_position) if is_instance_valid(player_unit) else 0
-			if dist <= 4:
-				intent_id = "attack"
-				intent_short = tr("TREMOR")
-				intent_text = tr("Next Move: Tremor AoE")
-				icon = INTENT_ICON_ATTACK
-		# Odpočet do rage
+			return [_make_intent_entry(
+				"rush", tr("RUSH"),
+				tr("Next Move: Rush (%d%% DMG)") % BERSERKER_RUSH_DAMAGE_PERCENT
+			)]
+		if berserker_frustration >= 2:
+			var b_dist = battle_grid.get_distance(grid_position, player_unit.grid_position) if is_instance_valid(player_unit) else 0
+			if b_dist <= 4 and not _can_attack_player(player_unit, battle_grid) and not _can_move_then_attack_this_turn(player_unit, battle_grid):
+				var tremor_cd := 0
+				if berserker_frustration < BERSERKER_RAGE_TURNS_REQUIRED:
+					tremor_cd = BERSERKER_RAGE_TURNS_REQUIRED - berserker_frustration
+				return [_make_intent_entry("attack", tr("TREMOR"), tr("Next Move: Tremor AoE"), tremor_cd)]
 		if berserker_frustration < BERSERKER_RAGE_TURNS_REQUIRED:
 			countdown = BERSERKER_RAGE_TURNS_REQUIRED - berserker_frustration
-	# === MAGE METEOR COUNTDOWN ===
-	elif ai_path.contains("MageAI"):
+
+	# === MAGE METEOR (exclusive when casting; else spell label + countdown on preview) ===
+	if ai_path.contains("MageAI"):
 		var turn_count = int(get_meta("mage_turn_count")) if has_meta("mage_turn_count") else 0
 		var turns_left = MAGE_METEOR_TURNS_REQUIRED - turn_count
-		
 		if turn_count + 1 >= MAGE_METEOR_TURNS_REQUIRED:
-			intent_id = "meteor"
-			intent_short = tr("METEOR")
-			intent_text = tr("Next Move: Meteor (%d%% DMG to ALL)") % MAGE_METEOR_DAMAGE_PERCENT
-			icon = INTENT_ICON_METEOR4
-		else:
-			# Meteor countdown číslo
-			countdown = turns_left
-			
-			if turns_left >= 5:
-				icon = INTENT_ICON_METEOR1
-			elif turns_left >= 3:
-				icon = INTENT_ICON_METEOR2
-			elif turns_left >= 2:
-				icon = INTENT_ICON_METEOR3
-			elif turns_left >= 1:
-				icon = INTENT_ICON_METEOR4
-			
-			# Zobraz jaký spell bude další
-			if has_meta("spell_index"):
-				var spell_names = ["FIRE", "ICE", "LIGHTNING", "SHIELD"]
-				var idx = int(get_meta("spell_index")) % 4
-				intent_short = tr(spell_names[idx])
-				intent_text = tr("Next Spell: %s (Meteor in %d)") % [spell_names[idx], turns_left]
-	# === ASSASSIN ===
-	elif ai_path.contains("AssassinAI"):
-		var dist = battle_grid.get_distance(grid_position, player_unit.grid_position) if is_instance_valid(player_unit) else 0
-		if dist >= 4:
-			intent_id = "attack"
-			intent_short = tr("SHADOW")
-			intent_text = tr("Next Move: Shadow Strike (+50% DMG)")
-			icon = INTENT_ICON_ATTACK
-	# === HEALER ===
-	elif ai_path.contains("HealerAI"):
+			return [_make_intent_entry(
+				"meteor", tr("METEOR"),
+				tr("Next Move: Meteor (%d%% DMG to ALL)") % MAGE_METEOR_DAMAGE_PERCENT
+			)]
+		countdown = turns_left
+		if has_meta("spell_index"):
+			var spell_names = ["FIRE", "ICE", "LIGHTNING", "SHIELD"]
+			var idx = int(get_meta("spell_index")) % 4
+			return [_make_intent_entry(
+				"attack", tr(spell_names[idx]),
+				tr("Next Spell: %s (Meteor in %d)") % [spell_names[idx], turns_left],
+				countdown
+			)]
+
+	# === ASSASSIN shadow (exclusive) ===
+	if ai_path.contains("AssassinAI"):
+		var a_dist = battle_grid.get_distance(grid_position, player_unit.grid_position) if is_instance_valid(player_unit) else 0
+		if a_dist >= 4:
+			return [_make_intent_entry("attack", tr("SHADOW"), tr("Next Move: Shadow Strike (+50% DMG)"))]
+
+	# === HEALER ally heal (exclusive) ===
+	if ai_path.contains("HealerAI"):
 		var all_units = battle_grid.get_all_objects_on_grid()
 		for u in all_units:
 			if u is Unit and u != self and is_instance_valid(u):
 				if u.unit_data.faction == unit_data.faction:
 					var hp_pct = float(u.current_health) / float(u.unit_data.max_health)
 					if hp_pct < 0.5:
-						intent_id = "heal"
-						intent_short = tr("HEAL")
-						intent_text = tr("Next Move: Heal Ally")
-						icon = INTENT_ICON_MOVE
-						break
-	# === DRUID ===
-	elif ai_path.contains("DruidAI"):
+						return [_make_intent_entry("heal", tr("HEAL"), tr("Next Move: Heal Ally"))]
+
+	# === DRUID entangle (exclusive when ready) ===
+	if ai_path.contains("DruidAI"):
 		var entangle_cd = int(get_meta("entangle_cooldown")) if has_meta("entangle_cooldown") else 0
-		var dist = battle_grid.get_distance(grid_position, player_unit.grid_position) if is_instance_valid(player_unit) else 0
-		if entangle_cd <= 0 and dist <= 3:
-			intent_id = "attack"
-			intent_short = tr("ENTANGLE")
-			intent_text = tr("Next Move: Entangle (root)")
-			icon = INTENT_ICON_ATTACK
+		var d_dist = battle_grid.get_distance(grid_position, player_unit.grid_position) if is_instance_valid(player_unit) else 0
+		if entangle_cd <= 0 and d_dist <= 3:
+			return [_make_intent_entry("attack", tr("ENTANGLE"), tr("Next Move: Entangle (root)"))]
 		elif entangle_cd > 0:
-			countdown = entangle_cd  # Odpočet do entangle
-	# === MONK ===
-	elif ai_path.contains("MonkAI"):
+			countdown = entangle_cd
+
+	# === MONK war cry (exclusive when ready) ===
+	if ai_path.contains("MonkAI"):
 		var wc_cd = int(get_meta("war_cry_cooldown")) if has_meta("war_cry_cooldown") else 0
 		if wc_cd <= 0:
-			intent_id = "buff"
-			intent_short = tr("BUFF")
-			intent_text = tr("Next Move: Blessing/War Cry")
-			icon = INTENT_ICON_MOVE
-		else:
-			countdown = wc_cd  # Odpočet do war cry
-	
-	# Fallback: pokud jsme stále na "move", zkontroluj útok
-	if intent_id == "move":
-		if _can_attack_player(player_unit, battle_grid):
-			intent_id = "attack"
-			intent_short = tr("ATTACK")
-			intent_text = tr("Next Move: Attack")
-			icon = INTENT_ICON_ATTACK
-	
+			return [_make_intent_entry("buff", tr("BUFF"), tr("Next Move: Blessing/War Cry"))]
+		countdown = wc_cd
+
+	# === Default: pure AI preview (1 or 2 combat intents) ===
+	var preview := _preview_combat_intents_from_ai(player_unit, battle_grid)
+	if preview.is_empty():
+		preview = [_make_intent_entry("move", tr("MOVE"), tr("Next Move: Move"), countdown)]
+	elif countdown > 0:
+		var first: Dictionary = preview[0]
+		first["countdown"] = countdown
+		preview[0] = first
+	return preview
+
+func _make_intent_entry(id: String, short_text: String, text: String, countdown: int = 0) -> Dictionary:
 	return {
-		"id": intent_id,
-		"short_text": intent_short,
-		"text": intent_text,
-		"icon": icon,
-		"countdown": countdown
+		"id": id,
+		"short_text": short_text,
+		"text": text,
+		"countdown": countdown,
 	}
+
+func _preview_combat_intents_from_ai(player_unit: Unit, battle_grid: BattleGrid) -> Array:
+	# Tutorial dummy / missing AI: still telegraph ATTACK when in range.
+	if not is_instance_valid(unit_data) or not is_instance_valid(unit_data.ai_script):
+		if _can_attack_player(player_unit, battle_grid):
+			return [_make_intent_entry("attack", tr("ATTACK"), tr("Next Move: Attack"))]
+		return [_make_intent_entry("move", tr("MOVE"), tr("Next Move: Move"))]
+
+	var ai = unit_data.ai_script.new()
+	if ai == null or not ai.has_method("preview_combat_intents"):
+		if _can_attack_player(player_unit, battle_grid):
+			return [_make_intent_entry("attack", tr("ATTACK"), tr("Next Move: Attack"))]
+		if _can_move_then_attack_this_turn(player_unit, battle_grid):
+			return [
+				_make_intent_entry("move", tr("MOVE"), tr("Next Move: Move")),
+				_make_intent_entry("attack", tr("ATTACK"), tr("Next Move: Attack")),
+			]
+		return [_make_intent_entry("move", tr("MOVE"), tr("Next Move: Move"))]
+
+	var raw: Array = ai.preview_combat_intents(self, player_unit, battle_grid)
+	var out: Array = []
+	for item in raw:
+		if typeof(item) != TYPE_DICTIONARY:
+			continue
+		out.append(_make_intent_entry(
+			str(item.get("id", "move")),
+			str(item.get("short_text", tr("MOVE"))),
+			str(item.get("text", tr("Next Move: Move"))),
+			int(item.get("countdown", 0))
+		))
+		if out.size() >= 2:
+			break
+	return out
 
 func _can_attack_player(player_unit: Unit, battle_grid: BattleGrid) -> bool:
 	if not is_instance_valid(player_unit):
 		return false
 	var distance = battle_grid.get_distance(grid_position, player_unit.grid_position)
 	return distance <= unit_data.attack_range
+
+func _can_move_then_attack_this_turn(player_unit: Unit, battle_grid: BattleGrid) -> bool:
+	if not is_instance_valid(player_unit):
+		return false
+	if not is_instance_valid(unit_data) or not is_instance_valid(unit_data.ai_script):
+		return false
+	var ai = unit_data.ai_script.new()
+	if ai == null or not ai.has_method("can_move_then_attack_this_turn"):
+		return false
+	return ai.can_move_then_attack_this_turn(self, player_unit, battle_grid)
 
 func _is_aligned_with_player(player_unit: Unit) -> bool:
 	if not is_instance_valid(player_unit):
@@ -1146,6 +1220,7 @@ func _get_intent_icon_for_id(intent_id: String) -> Texture2D:
 		"rush": return INTENT_ICON_RUSH
 		"meteor": return INTENT_ICON_METEOR4
 		"attack": return INTENT_ICON_ATTACK
+		"heal", "buff": return INTENT_ICON_MOVE
 		"move": return INTENT_ICON_MOVE
 	return INTENT_ICON_MOVE
 
@@ -1316,20 +1391,50 @@ func deserialize_statuses(data: Array):
 	_update_stats_and_emit_signal()
 
 func serialize_intent() -> Dictionary:
-	"""Serializuje aktuální intent pro RPC."""
-	return {"id": current_intent_id, "text": current_intent_text, "short_text": current_intent_short}
+	"""Serializuje aktuální intent(y) pro RPC."""
+	var intents_payload: Array = []
+	for item in current_intents:
+		if typeof(item) != TYPE_DICTIONARY:
+			continue
+		intents_payload.append({
+			"id": str(item.get("id", "")),
+			"text": str(item.get("text", "")),
+			"short_text": str(item.get("short_text", "")),
+			"countdown": int(item.get("countdown", 0)),
+		})
+	return {
+		"id": current_intent_id,
+		"text": current_intent_text,
+		"short_text": current_intent_short,
+		"intents": intents_payload,
+	}
 
 func apply_intent_from_data(data: Dictionary):
-	"""Aplikuje intent přijatý od hosta."""
-	current_intent_id = data.get("id", "")
-	current_intent_text = data.get("text", "")
-	current_intent_short = data.get("short_text", "")
-	if _intent_icon and _intent_icon.has_method("set_intent"):
-		_intent_icon.set_intent(_get_intent_icon_for_id(current_intent_id), current_intent_short)
-		if _intent_visibility_allowed and current_intent_id != "":
-			_intent_icon.show_intent()
-		else:
-			_intent_icon.hide_intent()
+	"""Aplikuje intent přijatý od hosta (1 nebo 2 ikony)."""
+	current_intents.clear()
+	var raw_intents = data.get("intents", [])
+	if typeof(raw_intents) == TYPE_ARRAY and not raw_intents.is_empty():
+		for item in raw_intents:
+			if typeof(item) != TYPE_DICTIONARY:
+				continue
+			current_intents.append(_make_intent_entry(
+				str(item.get("id", "")),
+				str(item.get("short_text", "")),
+				str(item.get("text", "")),
+				int(item.get("countdown", 0))
+			))
+			if current_intents.size() >= 2:
+				break
+	else:
+		var single_id := str(data.get("id", ""))
+		if not single_id.is_empty():
+			current_intents.append(_make_intent_entry(
+				single_id,
+				str(data.get("short_text", "")),
+				str(data.get("text", ""))
+			))
+	_sync_primary_intent_aliases()
+	_refresh_intent_row_ui()
 
 func serialize_ai_meta() -> Dictionary:
 	"""Serializuje AI meta data pro RPC (berserker, mage, boss stav)."""
