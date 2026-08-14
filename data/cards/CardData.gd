@@ -99,6 +99,10 @@ func get_localized_description() -> String:
 	"""Full tooltip description from translations. Holy is a keyword, not rewritten prose."""
 	return tr(card_description)
 
+## STS-style unplayable (curses): cost 99 is the data convention, never shown as "99".
+func is_unplayable() -> bool:
+	return cost >= 99
+
 ## Vrátí klíče keywordů odvozené z efektů karty (pro tooltip – Holy, Block, Heal, Exhaust, atd.).
 ## Slouží k zobrazení tagů/ikon v tooltipu i když v textu popisu slovo není.
 func get_keywords_from_effects() -> Array[String]:
@@ -243,7 +247,12 @@ func generate_compact_description(icon_px: int = ICON_SIZE) -> String:
 	var has_holy_damage := false
 	for i in range(effects.size()):
 		var effect: CardEffectData = effects[i]
-		if effect != null and effect.effect_type == CardEffectData.EffectType.DEAL_DAMAGE \
+		if effect == null:
+			continue
+		# ON_DRAW / END_OF_TURN curses must not look like playable face damage.
+		if effect.trigger != CardEffectData.EffectTrigger.ON_PLAY:
+			continue
+		if effect.effect_type == CardEffectData.EffectType.DEAL_DAMAGE \
 				and effect.damage_type == CardEffectData.DamageType.HOLY:
 			has_holy_damage = true
 		var line := _format_effect_shorthand(effect)
@@ -341,6 +350,24 @@ func _energy(x: int) -> String:
 	"""Energy shorthand — light cyan accent (readable on white text + outline)."""
 	return "[b][color=%s]%d %s[/color][/b]" % [BB_ENERGY, x, tr("card.effect.energy")]
 
+func _aoe_face_prefix(effect: CardEffectData) -> String:
+	if effect == null:
+		return ""
+	match effect.area_of_effect_type:
+		CardEffectData.AreaOfEffectType.ALL_ON_GRID:
+			return tr("card.effect.to_all") + " "
+		CardEffectData.AreaOfEffectType.ROW:
+			return tr("card.effect.aoe_row") + " "
+		CardEffectData.AreaOfEffectType.COLUMN:
+			return tr("card.effect.aoe_column") + " "
+		CardEffectData.AreaOfEffectType.SQUARE_X_BY_Y:
+			return TranslationHelper.tr_format("card.effect.aoe_square", {
+				"x": effect.aoe_param_x,
+				"y": effect.aoe_param_y,
+			}) + " "
+		_:
+			return ""
+
 func _turns(x: int) -> String:
 	"""Turns: [b]X turns[/b] - NO icon."""
 	return "[b]%d %s[/b]" % [x, tr("card.effect.turns")]
@@ -377,9 +404,7 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 				dmg_val = effect.value
 			else:
 				dmg_val = DamageCalculator.get_display_damage(effect.value) if not Engine.is_editor_hint() else effect.value
-			var prefix := ""
-			if effect.area_of_effect_type == CardEffectData.AreaOfEffectType.ALL_ON_GRID:
-				prefix = tr("card.effect.to_all") + " "
+			var prefix := _aoe_face_prefix(effect)
 			var cond := _get_condition_shorthand(effect, "dmg")
 			if cond != "":
 				return prefix + _num(dmg_val) + " " + _img("damage") + " " + cond

@@ -129,6 +129,7 @@ func _update_initiative_value() -> void:
 	elif not is_instance_valid(unit) or not is_instance_valid(unit.unit_data):
 		_initiative_value = 0
 		initiative_label.text = "?"
+		tooltip_text = tr("ui.initiative.unknown_unit")
 		return
 	elif is_preview and _turn_manager and _turn_manager.has_method("get_projected_initiative_for_unit"):
 		_initiative_value = int(_turn_manager.get_projected_initiative_for_unit(unit))
@@ -147,6 +148,14 @@ func _update_initiative_value() -> void:
 	else:
 		initiative_label.text = str(_initiative_value)
 		initiative_label.add_theme_color_override("font_color", Color(1, 0.95, 0.7, 1))
+
+	var unit_name := tr("ui.initiative.unknown_unit")
+	if is_instance_valid(unit) and is_instance_valid(unit.unit_data):
+		unit_name = unit.unit_data.get_localized_name()
+	tooltip_text = TranslationHelper.tr_format("ui.initiative.tooltip", {
+		"name": unit_name,
+		"value": _initiative_value,
+	})
 
 
 func set_active(is_active: bool) -> void:

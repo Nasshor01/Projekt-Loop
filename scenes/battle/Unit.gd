@@ -70,6 +70,9 @@ var is_permanently_enraged: bool = false
 var _intent_row: Control = null
 var _health_bar: Control = null
 var _intent_world_padding_ratio: float = 0.08
+var _intent_head_trim_ratio: float = 0.14
+var _intent_screen_gap_min: float = 2.0
+var _intent_screen_gap_max: float = 6.0
 
 func _is_local_player() -> bool:
 	"""Vrátí true jen pokud je tato jednotka LOKÁLNÍHO hráče (ne coop spoluhráče).
@@ -772,6 +775,14 @@ func _sync_primary_intent_aliases() -> void:
 		current_intent_short = ""
 		return
 	var primary: Dictionary = current_intents[0]
+	# Threat-first: if they will hit this turn, panel / coop snapshot must not read as MOVE.
+	for entry in current_intents:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var intent_id := str(entry.get("id", ""))
+		if intent_id == "attack" or intent_id == "rush" or intent_id == "meteor" or intent_id == "aiming":
+			primary = entry
+			break
 	current_intent_id = str(primary.get("id", ""))
 	current_intent_text = str(primary.get("text", ""))
 	current_intent_short = str(primary.get("short_text", ""))
@@ -809,8 +820,26 @@ func _update_intent_icon_screen_position() -> void:
 		return
 	var center = global_position + Vector3(0, _get_sprite_world_center_offset_y(), 0)
 	var half_height = _get_sprite_world_height() * 0.5
-	var world_pos = center + Vector3(0, half_height + (_get_sprite_world_height() * _intent_world_padding_ratio), 0)
-	var screen_pos = camera.unproject_position(world_pos)
+	var world_top = center + Vector3(0, half_height, 0)
+	var screen_top = camera.unproject_position(world_top)
+	var screen_center_x = screen_top.x
+	var sprite_screen_h := _get_sprite_screen_height(camera)
+	# Texture tops often include transparent padding — anchor slightly lower.
+	var head_top_y: float = screen_top.y + sprite_screen_h * _intent_head_trim_ratio
+
+	var gap_px: float = _intent_screen_gap_min
+	if camera.projection == Camera3D.PROJECTION_ORTHOGONAL:
+		var zoom_t: float = inverse_lerp(5.0, 30.0, camera.size)
+		gap_px = lerpf(_intent_screen_gap_min, _intent_screen_gap_max, clampf(zoom_t, 0.0, 1.0))
+
+	var screen_pos := Vector2(screen_center_x, head_top_y)
+	if _intent_row.has_method("get_anchor_offset_below_center"):
+		var below: float = float(_intent_row.get_anchor_offset_below_center()) * 0.78
+		screen_pos.y = head_top_y - gap_px - below
+	else:
+		var world_pos = world_top + Vector3(0, _get_sprite_world_height() * _intent_world_padding_ratio, 0)
+		screen_pos = camera.unproject_position(world_pos)
+
 	if _intent_row.has_method("set_screen_position"):
 		_intent_row.set_screen_position(screen_pos)
 	else:
@@ -903,7 +932,8 @@ func get_enemy_class_display() -> String:
 	if not is_instance_valid(unit_data) or not is_instance_valid(unit_data.ai_script):
 		return tr("Class: Unknown")
 	var class_name_text = _get_ai_class_name(unit_data.ai_script.resource_path)
-	return tr("Class: ") + class_name_text
+	var range_txt := tr("enemy.label.melee") if unit_data.attack_range <= 1 else tr("enemy.label.ranged")
+	return tr("Class: ") + class_name_text + " · " + range_txt
 
 func get_enemy_class_name_only() -> String:
 	if not is_instance_valid(unit_data) or not is_instance_valid(unit_data.ai_script):
@@ -976,7 +1006,7 @@ func get_status_counters_list() -> PackedStringArray:
 
 ## Returns up to 2 player-facing intent dicts: {id, short_text, text, countdown}.
 ## Exclusive specials (Rush/Meteor/Aiming/…) = 1 icon.
-## Default melee plan uses EnemyAIBase.preview_combat_intents (MOVE / MOVE+ATTACK / ATTACK).
+## Default melee plan uses EnemyAIBase.preview_combat_intents (ATTACK / ATTACK+MOVE / MOVE).
 ## Never calls get_actions() — that mutates Boss/Mage/Monk/Druid meta.
 func _calculate_intent_list(player_unit: Unit, battle_grid: BattleGrid) -> Array:
 	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data.ai_script) else ""
@@ -1098,8 +1128,8 @@ func _calculate_intent_list(player_unit: Unit, battle_grid: BattleGrid) -> Array
 	# === Default: pure AI preview (1 or 2 combat intents) ===
 	var preview := _preview_combat_intents_from_ai(player_unit, battle_grid)
 	if preview.is_empty():
-		preview = [_make_intent_entry("move", tr("MOVE"), tr("Next Move: Move"), countdown)]
-	elif countdown > 0:
+		return []
+	if countdown > 0:
 		var first: Dictionary = preview[0]
 		first["countdown"] = countdown
 		preview[0] = first
@@ -1114,11 +1144,11 @@ func _make_intent_entry(id: String, short_text: String, text: String, countdown:
 	}
 
 func _preview_combat_intents_from_ai(player_unit: Unit, battle_grid: BattleGrid) -> Array:
-	# Tutorial dummy / missing AI: still telegraph ATTACK when in range.
+	# Tutorial dummy / missing AI: telegraph ATTACK in range, never invent MOVE.
 	if not is_instance_valid(unit_data) or not is_instance_valid(unit_data.ai_script):
 		if _can_attack_player(player_unit, battle_grid):
 			return [_make_intent_entry("attack", tr("ATTACK"), tr("Next Move: Attack"))]
-		return [_make_intent_entry("move", tr("MOVE"), tr("Next Move: Move"))]
+		return []
 
 	var ai = unit_data.ai_script.new()
 	if ai == null or not ai.has_method("preview_combat_intents"):
@@ -1126,10 +1156,10 @@ func _preview_combat_intents_from_ai(player_unit: Unit, battle_grid: BattleGrid)
 			return [_make_intent_entry("attack", tr("ATTACK"), tr("Next Move: Attack"))]
 		if _can_move_then_attack_this_turn(player_unit, battle_grid):
 			return [
-				_make_intent_entry("move", tr("MOVE"), tr("Next Move: Move")),
 				_make_intent_entry("attack", tr("ATTACK"), tr("Next Move: Attack")),
+				_make_intent_entry("move", tr("MOVE"), tr("Next Move: Move")),
 			]
-		return [_make_intent_entry("move", tr("MOVE"), tr("Next Move: Move"))]
+		return []
 
 	var raw: Array = ai.preview_combat_intents(self, player_unit, battle_grid)
 	var out: Array = []

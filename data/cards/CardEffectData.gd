@@ -62,6 +62,13 @@ enum DamageType {
 }
 @export var damage_type: DamageType = DamageType.NORMAL
 
+enum EffectTrigger {
+	ON_PLAY,
+	ON_DRAW,
+	END_OF_TURN,
+}
+@export var trigger: EffectTrigger = EffectTrigger.ON_PLAY
+
 # Podmíněné efekty
 @export var has_condition: bool = false
 @export var condition_type: String = ""  # "block_above", "block_below", "health_below_percent", "health_above_percent", "target_has_debuff", "damage_per_block", "took_damage_last_turn", "target_health_above_percent"

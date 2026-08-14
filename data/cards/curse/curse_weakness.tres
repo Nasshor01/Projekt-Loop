@@ -1,18 +1,20 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://dlfw005bwoljq"]
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://dlfw005bwoljq"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_boxx2"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_bglw1"]
 
-[sub_resource type="Resource" id="Resource_boxx2"]
+[sub_resource type="Resource" id="Resource_energy"]
+script = ExtResource("1_boxx2")
+effect_type = 4
+value = -1
+target_type = 0
+trigger = 1
+
+[sub_resource type="Resource" id="Resource_exhaust"]
 script = ExtResource("1_boxx2")
 effect_type = 9
-value = 0
-string_value = ""
 target_type = 0
-area_of_effect_type = 0
-aoe_param_x = 1
-aoe_param_y = 1
-metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+trigger = 1
 
 [resource]
 script = ExtResource("2_bglw1")
@@ -20,11 +22,10 @@ card_id = "curse_weakness"
 card_name = "card.curse_weakness"
 card_description = "card.curse_weakness.desc"
 editor_description = "Exhausts. When drawn, lose 1 energy."
-cost = 0
+cost = 99
 range_type = 0
 range_value = 1
 tags = Array[int]([4])
 rarity = 5
-effects = Array[ExtResource("1_boxx2")]([SubResource("Resource_boxx2")])
+effects = Array[ExtResource("1_boxx2")]([SubResource("Resource_energy"), SubResource("Resource_exhaust")])
 is_upgraded = false
-metadata/_custom_type_script = "uid://uk53klqs1ti4"

@@ -38,6 +38,8 @@ extends Node3D
 @export var artifact_crown_color: Color = Color(0.82, 0.35, 1.0, 0.85)
 @export var artifact_line_color: Color = Color(1.0, 0.88, 0.15, 0.72)
 @export var artifact_grove_color: Color = Color(0.25, 0.85, 0.35, 0.7)
+@export var terrain_impassable_color: Color = Color(0.40, 0.38, 0.36, 0.55)
+@export var terrain_slow_color: Color = Color(0.52, 0.38, 0.16, 0.48)
 
 @onready var units_container: Node3D = $UnitsContainer
 var _terrain_container: Node3D
@@ -356,10 +358,17 @@ func update_visual_highlights():
 			_:
 				put.call(cell, artifact_throne_color, 1.5)
 	# Living Grove roots share mud/stone terrain path — tint their cells too.
+	# Impassable rock / movement-stopping mud stay readable when no combat overlay.
 	for cell in terrain_layer.keys():
 		var td: TerrainData = terrain_layer[cell] as TerrainData
-		if td != null and td.terrain_id == "living_grove_root":
+		if td == null:
+			continue
+		if td.terrain_id == "living_grove_root":
 			put.call(cell, artifact_grove_color, 1.6)
+		elif not td.is_walkable:
+			put.call(cell, terrain_impassable_color, 0.45)
+		elif td.stops_movement_on_enter:
+			put.call(cell, terrain_slow_color, 0.5)
 
 	for cell in _danger_cells:
 		put.call(cell, danger_zone_color, 1.0)

@@ -157,15 +157,20 @@ func start_new_run_state():
 						master_deck.append(duplicate_card_for_deck(entry.card))
 		
 		global_shield = 0
-	# 2. Nejdřív vyčisti artefakty z minulého runu, pak přepočítej startovní staty
+	# 2. Nejdřív vyčisti artefakty z minulého runu, pak přepočítej startovní staty.
+	# apply_passive_skills() by jinak zachovalo HP 0 / leftover gold z mrtvého runu
+	# a emitovalo health_changed(0) (falešný game-over log).
 	artifacts.clear()
 	if has_node("/root/ArtifactManager"):
 		ArtifactManager._refresh_artifact_cache()
-	apply_passive_skills()
+	var starting_gold: int = 50 + VillageBonuses.get_starting_gold_bonus()
+	gold = starting_gold
+	apply_passive_skills(false)
 	
-	# 2.5 Nový run: plné HP + startovní zlato (Market)
+	# 2.5 Nový run: plné HP + startovní zlato (Market) + plná energie
 	current_hp = max_hp
-	gold = 50 + VillageBonuses.get_starting_gold_bonus()
+	gold = starting_gold
+	reset_energy()
 
 	# 3. Připravíme bojové balíčky a zbytek
 	reset_battle_stats()
@@ -186,6 +191,7 @@ func start_new_run_state():
 
 func start_loop_state():
 	current_hp = max_hp
+	reset_energy()
 	path_taken.clear()
 	floors_cleared = 0
 	current_run_xp = 0
@@ -199,9 +205,10 @@ func start_loop_state():
 	self.gold = gold
 	self.loop_level = loop_level # re-emit loop level
 
-func apply_passive_skills():
+func apply_passive_skills(preserve_run_vitals: bool = true):
 	# Skill tree vypnutý — base stats + Loop Vesnice + artefakty.
 	# Nesmí fullhealovat ani resetovat gold mid-run (Apple / continue).
+	# preserve_run_vitals=false jen pro start_new_run_state (nepoužívat leftover HP 0).
 	DebugLogger.log_info("=== APPLYING RUN BONUSES (village + artifacts) ===", "SKILLS")
 	DebugLogger.start_performance_timer("apply_passive_skills")
 	
@@ -292,17 +299,19 @@ func apply_passive_skills():
 		critical_chance += ArtifactManager.get_critical_chance()
 		thorns_damage += ArtifactManager.get_thorns_damage()
 	
-	# Max HP změna: heal jen o delta (20/50 + Apple → 25/55), ne fullheal na max.
-	var max_hp_delta: int = max_hp - old_max_hp
-	if max_hp_delta > 0:
-		current_hp = mini(preserved_hp + max_hp_delta, max_hp)
+	if preserve_run_vitals:
+		# Max HP změna: heal jen o delta (20/50 + Apple → 25/55), ne fullheal na max.
+		var max_hp_delta: int = max_hp - old_max_hp
+		if max_hp_delta > 0:
+			current_hp = mini(preserved_hp + max_hp_delta, max_hp)
+		else:
+			current_hp = clampi(preserved_hp, 0, max_hp)
+		# Gold mid-run nesmí přepsat Market bonus / výdělek.
+		gold = preserved_gold
 	else:
-		current_hp = clampi(preserved_hp, 0, max_hp)
+		current_hp = max_hp
 	
-	# Gold mid-run nesmí přepsat Market bonus / výdělek.
-	gold = preserved_gold
-	
-	DebugLogger.log_info("Finální staty: HP %d/%d, Gold %d, Energy %d, StartBlock %d" % [current_hp, max_hp, gold, max_energy, starting_retained_block], "SKILLS")
+	DebugLogger.log_info("Finální staty: HP %d/%d, Gold %d, Energy %d/%d, StartBlock %d" % [current_hp, max_hp, gold, current_energy, max_energy, starting_retained_block], "SKILLS")
 	DebugLogger.end_performance_timer("apply_passive_skills")
 	emit_signal("health_changed", current_hp, max_hp)
 

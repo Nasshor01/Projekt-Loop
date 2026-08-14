@@ -87,6 +87,7 @@ var _all_enemy_units_ordered: Array[Unit] = []
 var _is_action_processing: bool = false
 var _card_play_in_progress: bool = false  # blokuje druhý vstup do _try_play_selected_card_at_cell (např. dvojí signál)
 var _cards_to_draw_queue: int = 0
+var _last_drawn_card: CardData = null
 var _is_drawing_cards: bool = false
 var _drawing_turn_start_hand: bool = false  # true jen při normálním dorbírání na začátku tahu (ne mid-turn DRAW_CARDS)
 var _is_first_turn: bool = true
@@ -95,6 +96,9 @@ var _is_extra_turn: bool = false
 var _cards_played_this_turn: Dictionary = {}  # Tracking karet za tah pro limit použití
 var _took_damage_last_turn: bool = false  # Tracking poškození pro consecrated_barrier
 var _current_tooltip_card_data: CardData = null
+var _terrain_hover_panel: PanelContainer
+var _terrain_hover_label: Label
+var _terrain_hover_cell: Vector2i = Vector2i(-999, -999)
 # Coop: true = můj tah, false = tah spoluhráče (pouze když _is_coop_run())
 var _coop_my_turn: bool = true
 var _coop_spectator_mode: bool = false  # Coop: můj paladin zemřel, jsem divák
@@ -225,6 +229,7 @@ func _process(delta):
 	
 	var unit_under_mouse = battle_grid_instance.get_object_on_cell(grid_cell)
 	_refresh_enemy_info_hover(unit_under_mouse, true)
+	_refresh_terrain_hover(grid_cell, unit_under_mouse)
 		
 	if _player_action_state == PlayerActionState.CARD_SELECTED:
 		if _selected_card_data and not PlayerData.current_hand.has(_selected_card_data):
@@ -925,6 +930,7 @@ func _draw_next_card_in_queue():
 	
 	if cards_drawn > 0:
 		var new_card = PlayerData.current_hand.back()
+		_last_drawn_card = new_card
 		player_hand_ui_instance.add_card_animated(new_card, draw_pile_button.global_position)
 		_update_pile_counts()
 	else:
@@ -936,6 +942,9 @@ func _draw_next_card_in_queue():
 func _on_card_draw_animation_finished():
 	_cards_to_draw_queue -= 1
 	_is_drawing_cards = false
+	if _last_drawn_card:
+		_process_card_trigger_effects(_last_drawn_card, CardEffectData.EffectTrigger.ON_DRAW)
+		_last_drawn_card = null
 	_draw_next_card_in_queue()
 
 func _reshuffle_and_continue_drawing():
@@ -1239,6 +1248,9 @@ func _on_unit_died(unit_node: Unit):
 				unit_node.heal(heal_amount)
 			return
 	
+	if unit_node.unit_data.faction == UnitData.Faction.ENEMY and _unit_may_have_summons(unit_node):
+		await _dismiss_summoned_units(unit_node)
+	
 	# Coop: když zemře JEDEN z hráčů, druhý pokračuje
 	if _is_coop_run() and unit_node.unit_data.faction == UnitData.Faction.PLAYER:
 		_handle_coop_player_death(unit_node)
@@ -1481,6 +1493,12 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 		_clear_card_selection_state_before_play()
 		return
 
+	if card.is_unplayable():
+		_show_floating_notification(tr("card.unplayable"), Color(0.75, 0.55, 0.55))
+		_card_play_in_progress = false
+		_reset_player_selection()
+		return
+
 	# Hned na začátku skrýt targetable/movable highlight, aby nezůstal po odehrání ani při dvojím signálu
 	_clear_card_selection_state_before_play()
 
@@ -1546,6 +1564,8 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 	for effect_data in card.effects:
 		if effect_data == null:
 			continue
+		if effect_data.trigger != CardEffectData.EffectTrigger.ON_PLAY:
+			continue
 		var is_damage := effect_data.effect_type == CardEffectData.EffectType.DEAL_DAMAGE \
 			or effect_data.effect_type == CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK \
 			or effect_data.effect_type == CardEffectData.EffectType.DEAL_DOUBLE_DAMAGE_FROM_BLOCK
@@ -1556,6 +1576,8 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 	ordered_effects.append_array(damage_effects)
 	
 	for effect_data in ordered_effects:
+		if effect_data.trigger != CardEffectData.EffectTrigger.ON_PLAY:
+			continue
 		if effect_data.effect_type == CardEffectData.EffectType.PLACE_TERRAIN:
 			if _try_place_terrain_effect(effect_data, resolved_cell, card):
 				card_played_successfully = true
@@ -1581,7 +1603,7 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 			for result in artifact_results:
 				DebugLogger.log_debug("Card play artefakt aktivován: %s" % result.description)
 		
-		var has_exhaust_effect = card.effects.any(func(e): return e.effect_type == CardEffectData.EffectType.EXHAUST)
+		var has_exhaust_effect = card.effects.any(func(e): return e != null and e.effect_type == CardEffectData.EffectType.EXHAUST and e.trigger == CardEffectData.EffectTrigger.ON_PLAY)
 		var max_uses = card.max_uses_before_removal if card.max_uses_before_removal > 0 else -1
 		var usage_reached_limit := false
 		if max_uses > 0:
@@ -2387,6 +2409,9 @@ func _on_end_turn_button_pressed():
 		var my_idx = _coop_get_player_unit_index(_player_unit_node)
 		rpc("_rpc_coop_sync_my_unit_state", my_idx, _player_unit_node.current_health, _player_unit_node.current_block)
 	
+	# END_OF_TURN karty (např. curse_pain) před odhozením ruky
+	_process_end_of_turn_hand_effects()
+	
 	# Odhoď karty
 	player_hand_ui_instance.discard_hand_animated(discard_pile_button.global_position)
 	# ============================================
@@ -2402,6 +2427,95 @@ func _is_mouse_over_enemy_info_panel() -> bool:
 		return false
 	return enemy_info_panel.get_global_rect().has_point(enemy_info_panel.get_global_mouse_position())
 
+func _effect_is_play_target(effect: CardEffectData) -> bool:
+	if effect == null:
+		return false
+	if effect.effect_type == CardEffectData.EffectType.EXHAUST:
+		return false
+	if effect.trigger != CardEffectData.EffectTrigger.ON_PLAY:
+		return false
+	return true
+
+func _card_has_self_play_target(card: CardData) -> bool:
+	return card.effects.any(func(e): return _effect_is_play_target(e) and e.target_type == CardEffectData.TargetType.SELF_UNIT)
+
+func _card_has_enemy_play_target(card: CardData) -> bool:
+	return card.effects.any(func(e): return _effect_is_play_target(e) and (e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT or e.target_type == CardEffectData.TargetType.ALL_ENEMY_UNITS))
+
+func _card_has_empty_cell_play_target(card: CardData) -> bool:
+	return card.effects.any(func(e): return _effect_is_play_target(e) and (e.target_type == CardEffectData.TargetType.EMPTY_GRID_CELL or e.effect_type == CardEffectData.EffectType.PLACE_TERRAIN))
+
+func _process_end_of_turn_hand_effects() -> void:
+	if not is_instance_valid(_player_unit_node):
+		return
+	for card in PlayerData.current_hand.duplicate():
+		if card is CardData:
+			_process_card_trigger_effects(card, CardEffectData.EffectTrigger.END_OF_TURN)
+
+func _process_card_trigger_effects(card: CardData, trigger: CardEffectData.EffectTrigger) -> void:
+	if not is_instance_valid(card):
+		return
+	var should_exhaust := false
+	for effect in card.effects:
+		if effect == null or effect.trigger != trigger:
+			continue
+		if effect.effect_type == CardEffectData.EffectType.EXHAUST:
+			should_exhaust = true
+			continue
+		if is_instance_valid(_player_unit_node):
+			_apply_single_effect(effect, _player_unit_node, card)
+			if effect.effect_type == CardEffectData.EffectType.GAIN_ENERGY:
+				PlayerData.current_energy = maxi(0, PlayerData.current_energy)
+				PlayerData.emit_signal("energy_changed", PlayerData.current_energy)
+	if should_exhaust:
+		_exhaust_card_from_hand(card)
+
+func _exhaust_card_from_hand(card: CardData) -> void:
+	if not PlayerData.current_hand.has(card):
+		return
+	PlayerData.current_hand.erase(card)
+	PlayerData.add_card_to_exhaust_pile(card)
+	if is_instance_valid(player_hand_ui_instance):
+		for child in player_hand_ui_instance.get_children():
+			if child is CardUI and child.card_data == card:
+				child.queue_free()
+				break
+		player_hand_ui_instance._request_arrange()
+	_update_pile_counts()
+
+func _unit_may_have_summons(unit: Unit) -> bool:
+	if not is_instance_valid(unit):
+		return false
+	if unit.has_meta("summoned_units"):
+		return true
+	for enemy in _enemy_units:
+		if not is_instance_valid(enemy) or enemy == unit:
+			continue
+		if enemy.has_meta("summoner") and enemy.get_meta("summoner") == unit:
+			return true
+	return false
+
+func _dismiss_summoned_units(summoner: Unit) -> void:
+	if not is_instance_valid(summoner):
+		return
+	var to_kill: Array[Unit] = []
+	if summoner.has_meta("summoned_units"):
+		for unit in summoner.get_meta("summoned_units"):
+			if unit is Unit and is_instance_valid(unit) and unit.current_health > 0:
+				to_kill.append(unit)
+	for enemy in _enemy_units:
+		if not is_instance_valid(enemy) or enemy.current_health <= 0:
+			continue
+		if not enemy.has_meta("summoner"):
+			continue
+		if enemy.get_meta("summoner") == summoner and not to_kill.has(enemy):
+			to_kill.append(enemy)
+	if to_kill.is_empty():
+		return
+	for unit in to_kill:
+		if is_instance_valid(unit) and unit.current_health > 0:
+			await unit.take_damage(unit.current_health, true, false, false, true, true)
+
 func _refresh_enemy_info_hover(unit_under_mouse: Node, show_range: bool) -> void:
 	"""Enemy info při hoveru; zůstane otevřené i když myš přejede na panel (scroll)."""
 	if is_instance_valid(unit_under_mouse) and unit_under_mouse.get_unit_data().faction == UnitData.Faction.ENEMY:
@@ -2414,10 +2528,115 @@ func _refresh_enemy_info_hover(unit_under_mouse: Node, show_range: bool) -> void
 	enemy_info_panel.hide_panel()
 	_clear_enemy_hover_highlights()
 
+func _refresh_terrain_hover(grid_cell: Vector2i, unit_under_mouse: Node) -> void:
+	if _is_mouse_over_battle_hud() \
+			or is_instance_valid(unit_under_mouse) \
+			or not is_instance_valid(battle_grid_instance) \
+			or not battle_grid_instance.is_cell_active(grid_cell):
+		_hide_terrain_hover()
+		return
+	var terrain: TerrainData = battle_grid_instance.get_terrain_on_cell(grid_cell)
+	if terrain == null:
+		_hide_terrain_hover()
+		return
+	_ensure_terrain_hover_ui()
+	if not is_instance_valid(_terrain_hover_panel) or not is_instance_valid(_terrain_hover_label):
+		return
+	if _terrain_hover_cell != grid_cell or not _terrain_hover_panel.visible:
+		var title := terrain.get_localized_name()
+		var desc := terrain.get_localized_description()
+		if desc.is_empty() or desc == terrain.description:
+			_terrain_hover_label.text = title
+		else:
+			_terrain_hover_label.text = "%s\n%s" % [title, desc]
+		_terrain_hover_panel.visible = true
+		_terrain_hover_panel.reset_size()
+		_terrain_hover_cell = grid_cell
+	var mouse := get_viewport().get_mouse_position()
+	var vp := get_viewport().get_visible_rect().size
+	var pos := mouse + Vector2(18, 18)
+	pos.x = minf(pos.x, vp.x - _terrain_hover_panel.size.x - 8.0)
+	pos.y = minf(pos.y, vp.y - _terrain_hover_panel.size.y - 8.0)
+	pos.x = maxf(pos.x, 8.0)
+	pos.y = maxf(pos.y, 8.0)
+	_terrain_hover_panel.global_position = pos
+
+func _is_mouse_over_battle_hud() -> bool:
+	if _is_mouse_over_enemy_info_panel():
+		return true
+	var mouse := get_viewport().get_mouse_position()
+	if _control_has_mouse(player_hand_ui_instance, mouse):
+		return true
+	if _control_has_mouse(initiative_bar, mouse):
+		return true
+	if _control_has_mouse(end_turn_button, mouse):
+		return true
+	if _control_has_mouse(draw_pile_button, mouse):
+		return true
+	if _control_has_mouse(discard_pile_button, mouse):
+		return true
+	if _control_has_mouse(player_info_panel, mouse):
+		return true
+	if is_instance_valid(card_tooltip) and card_tooltip.visible:
+		return true
+	return false
+
+func _control_has_mouse(ctrl: Variant, mouse: Vector2) -> bool:
+	if not is_instance_valid(ctrl) or not (ctrl is Control):
+		return false
+	var c: Control = ctrl
+	if not c.visible:
+		return false
+	return c.get_global_rect().has_point(mouse)
+
+func _ensure_terrain_hover_ui() -> void:
+	if is_instance_valid(_terrain_hover_panel):
+		return
+	var layer: Node = get_node_or_null("CanvasLayer")
+	if layer == null:
+		return
+	_terrain_hover_panel = PanelContainer.new()
+	_terrain_hover_panel.name = "TerrainHoverTooltip"
+	_terrain_hover_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_terrain_hover_panel.visible = false
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.06, 0.07, 0.1, 0.92)
+	style.border_color = Color(0.72, 0.62, 0.38, 0.9)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(6)
+	style.content_margin_left = 12
+	style.content_margin_right = 12
+	style.content_margin_top = 8
+	style.content_margin_bottom = 8
+	_terrain_hover_panel.add_theme_stylebox_override("panel", style)
+	_terrain_hover_label = Label.new()
+	_terrain_hover_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_terrain_hover_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_terrain_hover_label.custom_minimum_size = Vector2(220, 0)
+	_terrain_hover_label.add_theme_color_override("font_color", Color(0.95, 0.93, 0.88))
+	_terrain_hover_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	_terrain_hover_label.add_theme_constant_override("outline_size", 3)
+	_terrain_hover_panel.add_child(_terrain_hover_label)
+	layer.add_child(_terrain_hover_panel)
+
+func _hide_terrain_hover() -> void:
+	_terrain_hover_cell = Vector2i(-999, -999)
+	if is_instance_valid(_terrain_hover_panel):
+		_terrain_hover_panel.visible = false
+
 func _show_valid_targets_for_card(card: CardData):
 	var valid_target_cells: Array[Vector2i] = []
 	var is_attack = true
 	var needs_los = card.range_type == CardData.EffectRangeType.RANGED_FIXED or card.range_type == CardData.EffectRangeType.RANGED_LINE
+	
+	if card.range_type == CardData.EffectRangeType.FULL_BOARD and is_instance_valid(_player_unit_node):
+		is_attack = _card_has_enemy_play_target(card)
+		valid_target_cells.append(_player_unit_node.grid_position)
+		for enemy in _enemy_units:
+			if is_instance_valid(enemy):
+				valid_target_cells.append(enemy.grid_position)
+		battle_grid_instance.show_targetable_cells(valid_target_cells, is_attack)
+		return
 	
 	# PLAYER_CENTERED_AOE: zobrazit AOE preview kolem hráče, hráčova buňka jako cíl
 	if card.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE and is_instance_valid(_player_unit_node):
@@ -2426,6 +2645,8 @@ func _show_valid_targets_for_card(card: CardData):
 		# Okamžitě zobrazit AOE highlight kolem hráče
 		var aoe_cells: Array[Vector2i] = []
 		for effect in card.effects:
+			if effect == null or effect.trigger != CardEffectData.EffectTrigger.ON_PLAY:
+				continue
 			if effect.area_of_effect_type == CardEffectData.AreaOfEffectType.SINGLE_TARGET:
 				continue
 			var cells = battle_grid_instance.get_cells_for_centered_aoe(
@@ -2440,6 +2661,8 @@ func _show_valid_targets_for_card(card: CardData):
 		return
 	
 	for effect in card.effects:
+		if not _effect_is_play_target(effect):
+			continue
 		match effect.target_type:
 			CardEffectData.TargetType.SELECTED_ENEMY_UNIT:
 				is_attack = true
@@ -2450,6 +2673,11 @@ func _show_valid_targets_for_card(card: CardData):
 							if needs_los and not battle_grid_instance.has_line_of_sight(_player_unit_node.grid_position, enemy.grid_position, enemy):
 								continue
 							valid_target_cells.append(enemy.grid_position)
+			CardEffectData.TargetType.ALL_ENEMY_UNITS:
+				is_attack = true
+				for enemy in _enemy_units:
+					if is_instance_valid(enemy):
+						valid_target_cells.append(enemy.grid_position)
 			CardEffectData.TargetType.SELF_UNIT:
 				is_attack = false
 				if not valid_target_cells.has(_player_unit_node.grid_position): valid_target_cells.append(_player_unit_node.grid_position)
@@ -2604,8 +2832,9 @@ func _update_card_target_preview():
 		_reset_player_selection()
 		return
 	
-	# PLAYER_CENTERED_AOE: AOE je statické kolem hráče, už nastavené v _show_valid_targets_for_card
-	if _selected_card_data.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE:
+	# PLAYER_CENTERED_AOE / FULL_BOARD: AOE je statické, už nastavené v _show_valid_targets_for_card
+	if _selected_card_data.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE \
+			or _selected_card_data.range_type == CardData.EffectRangeType.FULL_BOARD:
 		return
 	
 	# OPRAVA: Použití 3D Raycast funkce místo get_global_mouse_position
@@ -2617,7 +2846,10 @@ func _update_card_target_preview():
 		
 	var final_aoe_cells: Array[Vector2i] = []
 	for effect in _selected_card_data.effects:
-		if effect.area_of_effect_type == CardEffectData.AreaOfEffectType.SINGLE_TARGET: continue
+		if effect == null or effect.trigger != CardEffectData.EffectTrigger.ON_PLAY:
+			continue
+		if effect.area_of_effect_type == CardEffectData.AreaOfEffectType.SINGLE_TARGET:
+			continue
 		var potential_cells = battle_grid_instance.get_cells_for_aoe(mouse_grid_pos, effect.area_of_effect_type, effect.aoe_param_x, effect.aoe_param_y)
 		for cell in potential_cells:
 			if battle_grid_instance.is_cell_active(cell): final_aoe_cells.append(cell)
@@ -2640,8 +2872,9 @@ func _try_play_selected_card_at_cell(clicked_grid_cell: Vector2i) -> bool:
 
 	var card_to_play: CardData = _selected_card_data
 	
-	# PLAYER_CENTERED_AOE: auto-play z pozice hráče (nepotřebuje kliknutý cíl)
-	if card_to_play.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE:
+	# PLAYER_CENTERED_AOE / FULL_BOARD: auto-play z pozice hráče (nepotřebuje kliknutý cíl)
+	if card_to_play.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE \
+			or card_to_play.range_type == CardData.EffectRangeType.FULL_BOARD:
 		if is_instance_valid(_player_unit_node):
 			_card_play_in_progress = true
 			_clear_card_selection_state_before_play()
@@ -2649,9 +2882,9 @@ func _try_play_selected_card_at_cell(clicked_grid_cell: Vector2i) -> bool:
 			return true
 		return false
 	
-	var has_self_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
-	var has_enemy_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
-	var has_empty_cell_effect = _selected_card_data.effects.any(func(e): return e.target_type == CardEffectData.TargetType.EMPTY_GRID_CELL or e.effect_type == CardEffectData.EffectType.PLACE_TERRAIN)
+	var has_self_effect = _card_has_self_play_target(_selected_card_data)
+	var has_enemy_effect = _card_has_enemy_play_target(_selected_card_data)
+	var has_empty_cell_effect = _card_has_empty_cell_play_target(_selected_card_data)
 
 	# Pokud karta má pouze SELF efekty (bez ENEMY efektů), použij hráče jako cíl
 	if has_self_effect and not has_enemy_effect and not has_empty_cell_effect:
@@ -2705,16 +2938,17 @@ func _execute_card_play_at_cell(card: CardData, clicked_grid_cell: Vector2i) -> 
 		return false
 	if not is_instance_valid(card) or not PlayerData.current_hand.has(card):
 		return false
-	# PLAYER_CENTERED_AOE: auto-play z pozice hráče
-	if card.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE:
+	# PLAYER_CENTERED_AOE / FULL_BOARD: auto-play z pozice hráče
+	if card.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE \
+			or card.range_type == CardData.EffectRangeType.FULL_BOARD:
 		if is_instance_valid(_player_unit_node):
 			_card_play_in_progress = true
 			try_play_card(card, _player_unit_node)
 			return true
 		return false
-	var has_self_effect = card.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELF_UNIT)
-	var has_enemy_effect = card.effects.any(func(e): return e.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT)
-	var has_empty_cell_effect = card.effects.any(func(e): return e.target_type == CardEffectData.TargetType.EMPTY_GRID_CELL or e.effect_type == CardEffectData.EffectType.PLACE_TERRAIN)
+	var has_self_effect = _card_has_self_play_target(card)
+	var has_enemy_effect = _card_has_enemy_play_target(card)
+	var has_empty_cell_effect = _card_has_empty_cell_play_target(card)
 	if has_self_effect and not has_enemy_effect and not has_empty_cell_effect:
 		if is_instance_valid(_player_unit_node):
 			_card_play_in_progress = true
@@ -3161,6 +3395,12 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 				if is_instance_valid(spirit_node):
 					if spirit_node.unit_data:
 						spirit_node.unit_data.faction = UnitData.Faction.ENEMY
+					spirit_node.set_meta("summoner", enemy_unit)
+					if not enemy_unit.has_meta("summoned_units"):
+						enemy_unit.set_meta("summoned_units", [])
+					var summoned: Array = enemy_unit.get_meta("summoned_units")
+					summoned.append(spirit_node)
+					enemy_unit.set_meta("summoned_units", summoned)
 					_enemy_units.append(spirit_node)
 					_all_enemy_units_ordered.append(spirit_node)
 					spirit_node.died.connect(_on_unit_died)

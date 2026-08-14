@@ -120,6 +120,19 @@ func set_intents(intents: Array) -> void:
 	_refresh_combined_label()
 
 
+func get_anchor_offset_below_center() -> float:
+	if _active_count <= 0:
+		return 32.0
+	var s := _effective_icon_scale()
+	var tex := get_icon_texture_size()
+	var icon_half := tex.y * s * 0.5
+	if _active_count >= 2 and is_instance_valid(_combined_label) and _combined_label.visible:
+		return maxf(icon_half, _combined_label.position.y + _combined_label.size.y)
+	if _icons.size() > 0 and _icons[0].has_method("get_extent_below_center"):
+		return _icons[0].get_extent_below_center(s)
+	return icon_half + 44.0 * s
+
+
 func set_screen_position(pos: Vector2) -> void:
 	_screen_position = pos
 	# Anchor the row; children use absolute screen coords via IntentIcon.set_screen_position.

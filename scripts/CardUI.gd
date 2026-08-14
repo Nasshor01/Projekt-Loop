@@ -735,7 +735,7 @@ func update_display():
 	name_label.text = card_data.get_localized_name()
 	_fit_name_font()
 	_apply_upgrade_name_style()
-	cost_label.text = str(_display_energy_cost())
+	cost_label.text = "—" if card_data.is_unplayable() else str(_display_energy_cost())
 
 	# Pack keyword lines first, then scale icons to the dense font size.
 	var max_lines := DESC_MAX_LINES_COMPACT if display_mode == DisplayMode.COMPACT else DESC_MAX_LINES_FULL

@@ -102,6 +102,13 @@ func _layout_labels_for_scale(s: float) -> void:
 		countdown_label.position = _BASE_COUNTDOWN_POS * s
 		countdown_label.size = cd_size
 
+func get_extent_below_center(scale_value: float) -> float:
+	var tex_h := get_icon_texture_size().y * scale_value
+	var below := tex_h * 0.5
+	if _show_intent_label and is_instance_valid(intent_label) and intent_label.visible and intent_label.text != "":
+		below += _BASE_INTENT_TOP * scale_value + _BASE_INTENT_SIZE.y * scale_value
+	return below
+
 func set_screen_position(new_position: Vector2) -> void:
 	_screen_position = new_position
 	global_position = _screen_position + Vector2(0, _bob_offset)

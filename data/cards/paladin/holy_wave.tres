@@ -15,6 +15,7 @@ area_of_effect_type = 1
 aoe_param_x = 1
 aoe_param_y = 1
 damage_type = 1
+trigger = 0
 has_condition = false
 condition_type = ""
 condition_value = 0

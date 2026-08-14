@@ -15,6 +15,7 @@ area_of_effect_type = 0
 aoe_param_x = 1
 aoe_param_y = 1
 damage_type = 0
+trigger = 0
 has_condition = true
 condition_type = "health_below_percent"
 condition_value = 30

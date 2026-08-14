@@ -219,7 +219,7 @@ func _make_combat_intent(id: String, short_key: String, text_key: String, specia
 ## Returns Array of combat intent dicts for UI, max 2.
 ## Each: { "id": String, "short_text": String, "text": String, "special_type": String }
 ## Pure — no mutation of unit meta/state, no show_status_text, never calls get_actions().
-## Default = Fighter-like melee approach truth (MOVE then ATTACK when that is the plan).
+## Default = Fighter-like melee approach truth (ATTACK then MOVE when they can hit this turn).
 ## Subclasses MAY override later for Archer/Monk specials; keep overrides pure.
 func preview_combat_intents(unit: Unit, player: Unit, battle_grid: BattleGrid) -> Array:
 	if not is_instance_valid(unit) or not is_instance_valid(player) or battle_grid == null:
@@ -229,11 +229,11 @@ func preview_combat_intents(unit: Unit, player: Unit, battle_grid: BattleGrid) -
 	if can_attack_target(unit, player, battle_grid):
 		return [_make_combat_intent("attack", "ATTACK", "Next Move: Attack")]
 
-	# 2) Can MOVE into range then ATTACK this turn → dual intents (execution order)
+	# 2) Can MOVE into range then ATTACK this turn → threat-first (ATTACK is primary)
 	if can_move_then_attack_this_turn(unit, player, battle_grid):
 		return [
-			_make_combat_intent("move", "MOVE", "Next Move: Move"),
 			_make_combat_intent("attack", "ATTACK", "Next Move: Attack"),
+			_make_combat_intent("move", "MOVE", "Next Move: Move"),
 		]
 
 	# 3) Approach only — path toward an adjacent cell exists
