@@ -63,6 +63,39 @@ static func try_upgrade(building_id: String) -> bool:
 	SaveManager.save_meta_progress()
 	return true
 
+static func has_any_upgrades() -> bool:
+	for building_id in BUILDING_ORDER:
+		if get_level(building_id) > 0:
+			return true
+	return false
+
+static func get_spent_shards_for_building(building_id: String) -> int:
+	var level := get_level(building_id)
+	if level <= 0:
+		return 0
+	var base_cost := int(get_def(building_id).get("base_cost", 10))
+	return base_cost * level * (level + 1) / 2
+
+static func get_total_spent_shards() -> int:
+	var total := 0
+	for building_id in BUILDING_ORDER:
+		total += get_spent_shards_for_building(building_id)
+	return total
+
+static func try_reset_all_upgrades() -> int:
+	if not has_any_upgrades():
+		return 0
+	if not SaveManager or not SaveManager.meta_progress:
+		return 0
+	var refund := get_total_spent_shards()
+	for building_id in BUILDING_ORDER:
+		SaveManager.meta_progress.set_building_level(building_id, 0)
+	if refund > 0:
+		SaveManager.add_shards(refund)
+	else:
+		SaveManager.save_meta_progress()
+	return refund
+
 static func get_max_hp_bonus() -> int:
 	return get_level(WELL) * int(get_def(WELL).get("hp_per_level", 4))
 
@@ -132,6 +165,35 @@ static func shards_for_encounter(encounter_type: int) -> int:
 			return 8
 		_:
 			return 1
+
+static func is_shop_stock_below_max() -> bool:
+	return get_shop_card_count() < 6 or get_shop_artifact_count() < 3
+
+static func is_reward_choices_below_max() -> bool:
+	return get_reward_card_count() < 4
+
+static func get_shop_village_hint_text() -> String:
+	if not is_shop_stock_below_max():
+		return ""
+	var lib_level := get_level(LIBRARY)
+	var market_level := get_level(MARKET)
+	var needs_library := lib_level < get_max_level(LIBRARY)
+	var needs_market := market_level < get_max_level(MARKET)
+	if needs_library and needs_market:
+		return _tr("ui.shop.village_hint_both")
+	if needs_market:
+		return _tr("ui.shop.village_hint_market")
+	if needs_library:
+		return _tr("ui.shop.village_hint_library")
+	return ""
+
+static func get_shop_empty_hint_text() -> String:
+	return _tr("ui.shop.empty_stock")
+
+static func get_reward_village_hint_text() -> String:
+	if not is_reward_choices_below_max():
+		return ""
+	return _tr("ui.reward.village_hint_library")
 
 static func _tr(key: String) -> String:
 	return TranslationServer.translate(key)

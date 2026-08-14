@@ -108,8 +108,20 @@ custom_minimum_size = Vector2(160, 40)
 layout_mode = 2
 text = "Back"
 
+[node name="ResetUpgradesButton" type="Button" parent="Center/MainPanel/Margin/VBox/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 40)
+layout_mode = 2
+text = "Reset upgrades"
+
 [node name="NewRunButton" type="Button" parent="Center/MainPanel/Margin/VBox/Buttons"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(160, 40)
 layout_mode = 2
 text = "New Run"
+
+[node name="ResetUpgradesDialog" type="ConfirmationDialog" parent="."]
+unique_name_in_owner = true
+title = "Reset village upgrades"
+ok_button_text = "Confirm"
+cancel_button_text = "Back"

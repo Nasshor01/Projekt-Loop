@@ -147,3 +147,7 @@ res://scenes/shop/ShopScene.tscn
 res://scenes/map/Map.tscn
 res://scenes/ui/LayoutSlot.tscn
 res://scenes/ui/VillageScene.tscn
+res://translations.en.translation
+res://translations.cs.translation
+res://scenes/ui/VillageScene.gd
+res://scripts/data/VillageBonuses.gd

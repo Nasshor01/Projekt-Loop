@@ -22,6 +22,7 @@ const REWARD_HOVER_SCALE := 1.06
 @onready var skip_button: Button = %SkipButton
 @onready var card_tooltip: CardTooltip = %CardTooltip
 @onready var tutorial_hint_label: Label = %TutorialHintLabel
+@onready var village_hint_label: Label = %VillageHintLabel
 @onready var tutorial_card_added_label: Label = %TutorialCardAddedLabel
 
 var card_slots: Array[LayoutSlot] = []
@@ -174,6 +175,24 @@ func setup_ui():
 	
 	if has_node("/root/GameManager") and GameManager.tutorial_active and GameManager.tutorial_step == GameManager.TUTORIAL_STEP_REWARD_1:
 		skip_button.visible = false
+
+	_refresh_village_reward_hint()
+
+func _refresh_village_reward_hint() -> void:
+	if not is_instance_valid(village_hint_label):
+		return
+	if _tutorial_hint_text != "":
+		village_hint_label.visible = false
+		return
+	if has_node("/root/GameManager") and GameManager.tutorial_active:
+		village_hint_label.visible = false
+		return
+	var hint := VillageBonuses.get_reward_village_hint_text()
+	if hint.is_empty():
+		village_hint_label.visible = false
+		return
+	village_hint_label.text = hint
+	village_hint_label.visible = true
 
 func _is_coop() -> bool:
 	return has_node("/root/GameManager") and GameManager.is_coop_run and has_node("/root/MultiplayerManager") and MultiplayerManager.has_active_connection()

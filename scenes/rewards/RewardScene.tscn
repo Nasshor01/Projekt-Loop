@@ -35,8 +35,8 @@ color = Color(0, 0, 0, 0.55)
 layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 96.0
-offset_bottom = 180.0
+offset_top = 118.0
+offset_bottom = 248.0
 grow_horizontal = 2
 mouse_filter = 2
 
@@ -51,7 +51,7 @@ mouse_filter = 2
 
 [node name="HeaderVBox" type="VBoxContainer" parent="HeaderBand/HeaderCenter"]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 10
 
 [node name="TitleLabel" type="Label" parent="HeaderBand/HeaderCenter/HeaderVBox"]
 unique_name_in_owner = true
@@ -95,6 +95,19 @@ text = "Tutorial hint"
 horizontal_alignment = 1
 autowrap_mode = 3
 
+[node name="VillageHintLabel" type="Label" parent="HeaderBand/HeaderCenter/HeaderVBox"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(820, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.85, 0.92, 1, 0.95)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 28
+horizontal_alignment = 1
+autowrap_mode = 3
+
 [node name="TutorialCardAddedLabel" type="Label" parent="HeaderBand/HeaderCenter/HeaderVBox"]
 unique_name_in_owner = true
 visible = false
@@ -119,9 +132,9 @@ mouse_filter = 2
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 360.0
-offset_top = 320.0
+offset_top = 348.0
 offset_right = 600.0
-offset_bottom = 620.0
+offset_bottom = 648.0
 preview_label = "Card 0"
 slot_size = Vector2(240, 300)
 
@@ -129,9 +142,9 @@ slot_size = Vector2(240, 300)
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 680.0
-offset_top = 320.0
+offset_top = 348.0
 offset_right = 920.0
-offset_bottom = 620.0
+offset_bottom = 648.0
 preview_label = "Card 1"
 slot_size = Vector2(240, 300)
 
@@ -139,9 +152,9 @@ slot_size = Vector2(240, 300)
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 1000.0
-offset_top = 320.0
+offset_top = 348.0
 offset_right = 1240.0
-offset_bottom = 620.0
+offset_bottom = 648.0
 preview_label = "Card 2"
 slot_size = Vector2(240, 300)
 
@@ -149,9 +162,9 @@ slot_size = Vector2(240, 300)
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 1320.0
-offset_top = 320.0
+offset_top = 348.0
 offset_right = 1560.0
-offset_bottom = 620.0
+offset_bottom = 648.0
 preview_label = "Card 3"
 slot_size = Vector2(240, 300)
 

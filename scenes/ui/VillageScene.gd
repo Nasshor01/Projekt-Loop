@@ -15,7 +15,9 @@ const TEX_BACKGROUND = preload("res://art/sprites/village/pozadí-Sheet-export.p
 @onready var shards_label: Label = %ShardsLabel
 @onready var buildings_list: VBoxContainer = %BuildingsList
 @onready var back_button: Button = %BackButton
+@onready var reset_upgrades_button: Button = %ResetUpgradesButton
 @onready var new_run_button: Button = %NewRunButton
+@onready var reset_upgrades_dialog: ConfirmationDialog = %ResetUpgradesDialog
 
 func _ready() -> void:
 	if background:
@@ -23,6 +25,8 @@ func _ready() -> void:
 	if shard_icon:
 		shard_icon.texture = ICON_SHARD
 	back_button.pressed.connect(GameManager.go_to_main_menu)
+	reset_upgrades_button.pressed.connect(_on_reset_upgrades_pressed)
+	reset_upgrades_dialog.confirmed.connect(_on_reset_upgrades_confirmed)
 	new_run_button.pressed.connect(_on_new_run_pressed)
 	if SaveManager:
 		SaveManager.meta_progress_changed.connect(_refresh)
@@ -32,15 +36,39 @@ func _ready() -> void:
 func _update_static_texts() -> void:
 	title_label.text = tr("village.title")
 	back_button.text = tr("village.back")
+	reset_upgrades_button.text = tr("village.reset_upgrades")
+	reset_upgrades_dialog.title = tr("village.reset_upgrades_title")
+	reset_upgrades_dialog.ok_button_text = tr("ui.common.confirm")
+	reset_upgrades_dialog.cancel_button_text = tr("ui.common.back")
 	new_run_button.text = tr("village.new_run")
 	var completed = SaveManager.is_tutorial_completed() if SaveManager else false
 	new_run_button.disabled = not completed
+
+func _on_reset_upgrades_pressed() -> void:
+	var refund := VillageBonuses.get_total_spent_shards()
+	if refund <= 0:
+		return
+	reset_upgrades_dialog.dialog_text = TranslationHelper.tr_format(
+		"village.reset_upgrades_confirm",
+		{"value": refund}
+	)
+	reset_upgrades_dialog.popup_centered()
+
+func _on_reset_upgrades_confirmed() -> void:
+	VillageBonuses.try_reset_all_upgrades()
+	_refresh()
 
 func _on_new_run_pressed() -> void:
 	GameManager.go_to_character_select()
 
 func _refresh() -> void:
 	shards_label.text = TranslationHelper.tr_format("village.shards", {"value": SaveManager.get_shards()})
+	reset_upgrades_button.disabled = not VillageBonuses.has_any_upgrades()
+	if VillageBonuses.has_any_upgrades():
+		var refund := VillageBonuses.get_total_spent_shards()
+		reset_upgrades_button.text = TranslationHelper.tr_format("village.reset_upgrades_refund", {"value": refund})
+	else:
+		reset_upgrades_button.text = tr("village.reset_upgrades")
 	_rebuild_building_rows()
 
 func _rebuild_building_rows() -> void:

@@ -9,6 +9,7 @@ const SHOP_ARTIFACT_POOL = preload("res://data/artifacts/basic_artifact_pool.tre
 var rare_card_chance: float = 0.3
 
 @onready var title_label: Label = %TitleLabel
+@onready var village_hint_label: Label = %VillageHintLabel
 @onready var remove_card_button: Button = %RemoveCardButton
 @onready var leave_button: Button = %LeaveButton
 @onready var card_pile_viewer = %CardPileViewer
@@ -92,6 +93,21 @@ func _update_ui_texts():
 		remove_card_button.text = TranslationHelper.tr_format("ui.shop.remove_card", {"value": get_card_removal_cost()})
 	if leave_button:
 		leave_button.text = tr("ui.shop.leave")
+	_refresh_village_hint()
+
+func _refresh_village_hint() -> void:
+	if not is_instance_valid(village_hint_label):
+		return
+	var hint := ""
+	if _all_shop_items().is_empty():
+		hint = VillageBonuses.get_shop_empty_hint_text()
+	elif VillageBonuses.is_shop_stock_below_max():
+		hint = VillageBonuses.get_shop_village_hint_text()
+	if hint.is_empty():
+		village_hint_label.visible = false
+		return
+	village_hint_label.text = hint
+	village_hint_label.visible = true
 
 func _clear_shop_slots() -> void:
 	for slot in card_slots:
@@ -160,6 +176,7 @@ func _generate_shop_inventory():
 	)
 	if cards_to_sell.is_empty():
 		print(tr("log.shop.no_cards"))
+		_refresh_village_hint()
 		return
 
 	var sale_card = cards_to_sell.pick_random()
@@ -185,6 +202,7 @@ func _generate_shop_inventory():
 	_offer_shop_artifacts()
 
 	_refresh_all_affordability()
+	_refresh_village_hint()
 
 
 func _offer_shop_artifacts() -> void:
@@ -269,6 +287,7 @@ func _generate_shop_from_host_data(data: Array):
 			_attach_shop_item(shop_item_ui, true)
 
 	_refresh_all_affordability()
+	_refresh_village_hint()
 
 func _on_gold_changed(_new_amount: int = 0) -> void:
 	_refresh_all_affordability()
