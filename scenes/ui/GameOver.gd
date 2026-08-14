@@ -17,4 +17,7 @@ func _ready():
 		restart_button.text = tr("ui.game_over.restart")
 
 func _on_restart_button_pressed():
+	if GameManager.tutorial_active:
+		GameManager.restart_tutorial()
+		return
 	GameManager.start_new_run()

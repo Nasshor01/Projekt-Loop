@@ -187,6 +187,9 @@ func recalculate_skill_points():
 #==============================================================================
 
 func save_run(player_data: PlayerData):
+	if has_node("/root/GameManager") and GameManager.tutorial_active:
+		DebugLogger.log_info("Skipping save during tutorial.", "SAVE")
+		return
 	var file = FileAccess.open(RUN_SAVE_PATH, FileAccess.WRITE)
 	if file == null:
 		DebugLogger.log_error("Failed to open save file for writing.", "SAVE")

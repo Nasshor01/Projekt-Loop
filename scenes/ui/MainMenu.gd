@@ -13,8 +13,12 @@ extends Control
 
 # Multiplayer panel
 @onready var mp_panel: PanelContainer = $MultiplayerPanel
+@onready var mp_title_label: Label = $MultiplayerPanel/MarginContainer/VBoxContainer/TitleLabel
+@onready var mp_nickname_label: Label = $MultiplayerPanel/MarginContainer/VBoxContainer/NicknameLabel
 @onready var mp_nickname_edit: LineEdit = $MultiplayerPanel/MarginContainer/VBoxContainer/NicknameEdit
+@onready var mp_ip_label: Label = $MultiplayerPanel/MarginContainer/VBoxContainer/IPLabel
 @onready var mp_ip_edit: LineEdit = $MultiplayerPanel/MarginContainer/VBoxContainer/IPEdit
+@onready var mp_port_label: Label = $MultiplayerPanel/MarginContainer/VBoxContainer/PortLabel
 @onready var mp_port_edit: LineEdit = $MultiplayerPanel/MarginContainer/VBoxContainer/PortEdit
 @onready var mp_status_label: Label = $MultiplayerPanel/MarginContainer/VBoxContainer/StatusLabel
 @onready var mp_host_button: Button = $MultiplayerPanel/MarginContainer/VBoxContainer/ButtonsHBox/HostButton
@@ -88,7 +92,28 @@ func _update_ui_texts():
 		load_run_button.text = tr("ui.main_menu.load_run")
 	if multiplayer_button:
 		multiplayer_button.text = tr("ui.main_menu.multiplayer")
+	_update_mp_panel_texts()
 	_update_credits_texts()
+
+func _update_mp_panel_texts() -> void:
+	if mp_title_label:
+		mp_title_label.text = tr("ui.main_menu.mp.title")
+	if mp_nickname_label:
+		mp_nickname_label.text = tr("ui.main_menu.mp.nickname")
+	if mp_nickname_edit:
+		mp_nickname_edit.placeholder_text = tr("ui.main_menu.mp.nickname_placeholder")
+	if mp_ip_label:
+		mp_ip_label.text = tr("ui.main_menu.mp.ip")
+	if mp_ip_edit:
+		mp_ip_edit.placeholder_text = tr("ui.main_menu.mp.ip_placeholder")
+	if mp_port_label:
+		mp_port_label.text = tr("ui.main_menu.mp.port")
+	if mp_host_button:
+		mp_host_button.text = tr("ui.main_menu.mp.host")
+	if mp_join_button:
+		mp_join_button.text = tr("ui.main_menu.mp.join")
+	if mp_back_button:
+		mp_back_button.text = tr("ui.common.back")
 
 func _update_tutorial_gate():
 	var completed = SaveManager.is_tutorial_completed()
@@ -168,7 +193,7 @@ func _on_mp_back_pressed():
 func _on_mp_host_pressed():
 	var port = mp_port_edit.text.to_int()
 	if port <= 0 or port > 65535:
-		mp_status_label.text = "Invalid port (1–65535)."
+		mp_status_label.text = tr("ui.main_menu.mp.invalid_port")
 		mp_status_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
 		return
 	
@@ -178,7 +203,7 @@ func _on_mp_host_pressed():
 	GameManager.coop_my_nickname = nickname
 	
 	if MultiplayerManager.start_host(port):
-		mp_status_label.text = "Hosting on port %d... Waiting for player." % port
+		mp_status_label.text = TranslationHelper.tr_format("ui.main_menu.mp.hosting", {"port": port})
 		mp_status_label.add_theme_color_override("font_color", Color(0.3, 1, 0.3))
 		mp_host_button.disabled = true
 		mp_join_button.disabled = true
@@ -187,18 +212,18 @@ func _on_mp_host_pressed():
 			if not MultiplayerManager.peer_connected.is_connected(_on_mp_peer_connected):
 				MultiplayerManager.peer_connected.connect(_on_mp_peer_connected)
 	else:
-		mp_status_label.text = "Failed to host (port %d may be in use)." % port
+		mp_status_label.text = TranslationHelper.tr_format("ui.main_menu.mp.host_failed", {"port": port})
 		mp_status_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
 
 func _on_mp_join_pressed():
 	var ip = mp_ip_edit.text.strip_edges()
 	var port = mp_port_edit.text.to_int()
 	if ip.is_empty():
-		mp_status_label.text = "Enter IP address."
+		mp_status_label.text = tr("ui.main_menu.mp.enter_ip")
 		mp_status_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
 		return
 	if port <= 0 or port > 65535:
-		mp_status_label.text = "Invalid port (1–65535)."
+		mp_status_label.text = tr("ui.main_menu.mp.invalid_port")
 		mp_status_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
 		return
 	
@@ -207,7 +232,7 @@ func _on_mp_join_pressed():
 		nickname = "Client"
 	GameManager.coop_my_nickname = nickname
 	
-	mp_status_label.text = "Connecting to %s:%d..." % [ip, port]
+	mp_status_label.text = TranslationHelper.tr_format("ui.main_menu.mp.connecting", {"ip": ip, "port": port})
 	mp_status_label.add_theme_color_override("font_color", Color(1, 0.8, 0.3))
 	mp_host_button.disabled = true
 	mp_join_button.disabled = true
@@ -222,7 +247,7 @@ func _on_multiplayer_connection_succeeded():
 	GameManager.go_to_lobby()
 
 func _on_multiplayer_connection_failed():
-	mp_status_label.text = "Connection failed. Check IP, port, and VPN."
+	mp_status_label.text = tr("ui.main_menu.mp.connection_failed")
 	mp_status_label.add_theme_color_override("font_color", Color(1, 0.3, 0.3))
 	mp_host_button.disabled = false
 	mp_join_button.disabled = false

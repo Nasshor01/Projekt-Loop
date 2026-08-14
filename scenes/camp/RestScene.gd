@@ -82,11 +82,18 @@ func _on_upgrade_pressed():
 			upgradeable_cards.append(card)
 	
 	if has_node("/root/GameManager") and GameManager.tutorial_active and GameManager.tutorial_step == GameManager.TUTORIAL_STEP_CAMP_UPGRADE:
-		upgradeable_cards = []
-		for card in PlayerData.master_deck:
-			if card.resource_path == HEAVY_STRIKE_CARD.resource_path and not card.is_upgraded and is_instance_valid(card.upgraded_version):
-				upgradeable_cards.append(card)
+		upgradeable_cards = _filter_tutorial_heavy_strike_upgrades()
 		_highlight_upgrade_button(false)
+		if upgradeable_cards.is_empty():
+			push_error("Tutorial camp upgrade: Heavy Strike not found — injecting template.")
+			var injected := PlayerData.duplicate_card_for_deck(HEAVY_STRIKE_CARD)
+			if is_instance_valid(injected):
+				PlayerData.master_deck.append(injected)
+				upgradeable_cards.append(injected)
+	
+	if upgradeable_cards.is_empty():
+		_restore_rest_options_after_empty_upgrade()
+		return
 
 	if card_pile_viewer.has_method("show_upgrade_selection"):
 		card_pile_viewer.show_upgrade_selection(upgradeable_cards, _preview_upgraded_faces)
@@ -101,6 +108,36 @@ func _on_preview_toggle_pressed() -> void:
 	_upgrade_preview_toggle.text = tr("ui.rest.preview_upgrades_on") if _preview_upgraded_faces else tr("ui.rest.preview_upgrades_off")
 	if card_pile_viewer.has_method("set_upgrade_preview_faces"):
 		card_pile_viewer.set_upgrade_preview_faces(_preview_upgraded_faces)
+
+func _filter_tutorial_heavy_strike_upgrades() -> Array[CardData]:
+	var result: Array[CardData] = []
+	var heavy_path := HEAVY_STRIKE_CARD.resource_path
+	for card in PlayerData.master_deck:
+		if card.is_upgraded or not is_instance_valid(card.upgraded_version):
+			continue
+		if _card_is_heavy_strike(card, heavy_path):
+			result.append(card)
+	return result
+
+func _card_is_heavy_strike(card: CardData, heavy_path: String) -> bool:
+	if card == null:
+		return false
+	if card.card_id == "heavy_strike":
+		return true
+	if has_node("/root/SaveManager"):
+		return SaveManager.get_card_source_path(card) == heavy_path
+	if card.resource_path == heavy_path:
+		return true
+	return card.has_meta("source_path") and str(card.get_meta("source_path")) == heavy_path
+
+func _restore_rest_options_after_empty_upgrade() -> void:
+	options_container.show()
+	if is_instance_valid(_upgrade_preview_toggle):
+		_upgrade_preview_toggle.visible = false
+	title_label.text = tr("ui.rest.title")
+	if has_node("/root/GameManager") and GameManager.tutorial_active and GameManager.tutorial_step == GameManager.TUTORIAL_STEP_CAMP_UPGRADE:
+		title_label.text = tr("ui.tutorial.camp_upgrade_prompt")
+		_apply_tutorial_lock()
 
 func _on_card_selected_for_upgrade(card_to_upgrade: CardData):
 	var card_index = PlayerData.master_deck.find(card_to_upgrade)

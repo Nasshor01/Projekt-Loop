@@ -53,10 +53,10 @@ func _ready():
 		if MultiplayerManager.is_server():
 			continue_button.disabled = true
 			if title_label:
-				title_label.text = tr("ui.char_select.title") + " — Čekám na výběr druhého hráče."
+				title_label.text = tr("ui.char_select.title") + " — " + tr("ui.char_select.waiting_partner")
 		else:
 			if title_label:
-				title_label.text = tr("ui.char_select.title") + " — Vyber postavu a pokračuj."
+				title_label.text = tr("ui.char_select.title") + " — " + tr("ui.char_select.choose_and_continue")
 
 func _is_coop() -> bool:
 	return has_node("/root/GameManager") and GameManager.is_coop_run and has_node("/root/MultiplayerManager") and MultiplayerManager.has_active_connection()
@@ -118,4 +118,4 @@ func _rpc_client_character_ready(class_path: String = "", subclass_path: String 
 		_coop_client_ready = true
 		continue_button.disabled = false
 		if title_label:
-			title_label.text = tr("ui.char_select.title") + " — Druhý hráč vybral. Můžeš pokračovat."
+			title_label.text = tr("ui.char_select.title") + " — " + tr("ui.char_select.partner_ready")

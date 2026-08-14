@@ -46,6 +46,9 @@ func _ready():
 	pass
 
 func _on_play_again_pressed():
+	if GameManager.tutorial_active:
+		GameManager.restart_tutorial()
+		return
 	# Podle výsledku běhu zavoláme správnou funkci
 	if run_was_a_victory:
 		GameManager.start_new_game_plus()

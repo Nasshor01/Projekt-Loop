@@ -799,7 +799,7 @@ func _add_coop_unit_label(unit: Unit, is_mine: bool):
 	if not is_instance_valid(unit):
 		return
 	var label = Label3D.new()
-	label.text = "Ty" if is_mine else "Spoluhráč"
+	label.text = tr("ui.battle.coop_you") if is_mine else tr("ui.battle.coop_teammate")
 	label.position = Vector3(0, 1.6, 0)
 	label.font_size = 63
 	label.outline_size = 12

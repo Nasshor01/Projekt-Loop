@@ -31,6 +31,10 @@ var _player_spawn_pos := Vector2i(2, 5)
 var _dummy_spawn_pos := Vector2i(12, 5)
 
 func _ready():
+	if has_node("/root/GameManager"):
+		GameManager.tutorial_active = true
+		if GameManager.tutorial_step.is_empty():
+			GameManager.tutorial_step = GameManager.TUTORIAL_STEP_BATTLE_1
 	_setup_player_data()
 	starting_hand_size = 0
 	super._ready()
@@ -83,6 +87,8 @@ func spawn_enemy_units():
 		_dummy_unit.unit_data.attack_damage = 10
 		_dummy_unit.unit_data.max_health = 4
 		_dummy_unit.current_health = 4
+		_dummy_unit.unit_data.movement_range = 3
+		_dummy_unit.unit_data.attack_range = 1
 		_enemy_units.append(dummy_node)
 		dummy_node.died.connect(_on_unit_died)
 		dummy_node.stats_changed.connect(_on_unit_stats_changed)
@@ -193,17 +199,22 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 		_update_tutorial_hint()
 		_highlight_end_turn(true)
 
-func _on_combat_ended(_player_won: bool):
+func _on_combat_ended(player_won: bool):
 	_current_battle_state = BattleState.BATTLE_OVER
-	if _player_won:
-		_go_to_tutorial_reward()
+	if is_instance_valid(end_turn_button):
+		end_turn_button.disabled = true
+	if not player_won:
+		return
+	if is_instance_valid(victory_label):
+		victory_label.visible = true
+	# Same beat as normal battles — let death anim + last hit read before reward
+	await get_tree().create_timer(1.8).timeout
+	_go_to_tutorial_reward()
 
 func _on_unit_died(unit_node: Unit):
-	var was_dummy = unit_node == _dummy_unit
-	await super._on_unit_died(unit_node)
-	if was_dummy:
+	if unit_node == _dummy_unit:
 		_dummy_unit = null
-		_go_to_tutorial_reward()
+	await super._on_unit_died(unit_node)
 
 func _update_tutorial_hint():
 	if not is_instance_valid(tutorial_hint_label):
@@ -263,6 +274,14 @@ func _unhandled_input(event: InputEvent):
 	if did_camera_action:
 		_tutorial_stage = TutorialStage.MOVE_PROMPT
 		_update_tutorial_hint()
+
+func _refresh_enemy_info_hover(unit_under_mouse: Node, show_range: bool) -> void:
+	# Tutorial dummy used to have huge move range — skip move highlight on hover (panel only)
+	if is_instance_valid(unit_under_mouse) and unit_under_mouse == _dummy_unit:
+		if unit_under_mouse.get_unit_data().faction == UnitData.Faction.ENEMY:
+			enemy_info_panel.update_stats(unit_under_mouse)
+		return
+	super._refresh_enemy_info_hover(unit_under_mouse, show_range)
 
 func _is_card_target_in_range(card: CardData, target: Node3D) -> bool:
 	if not is_instance_valid(card) or not is_instance_valid(target):

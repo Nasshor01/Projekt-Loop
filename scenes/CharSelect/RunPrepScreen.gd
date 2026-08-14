@@ -42,7 +42,7 @@ func _ready():
 	# Coop: Start smí zmáčknout jen host; klient čeká na přechod na mapu
 	if GameManager.is_coop_run and has_node("/root/MultiplayerManager") and not MultiplayerManager.is_server():
 		start_button.disabled = true
-		start_button.text = "Čekám na hostitele…"
+		start_button.text = tr("ui.run_prep.waiting_host")
 	
 	_update_ui_texts()
 	update_display()

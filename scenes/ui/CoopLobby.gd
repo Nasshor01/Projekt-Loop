@@ -16,17 +16,24 @@ func _ready():
 	MultiplayerManager.server_disconnected.connect(_on_server_disconnected)
 
 	_update_status()
+	_update_ui_texts()
+
+func _update_ui_texts() -> void:
+	if start_button:
+		start_button.text = tr("ui.coop.start")
+	if back_button:
+		back_button.text = tr("ui.common.back")
 
 func _update_status():
 	if MultiplayerManager.is_server():
 		var peers = MultiplayerManager.get_connected_peers()
 		if peers.is_empty():
-			status_label.text = "Čekám na hráče…"
+			status_label.text = tr("ui.coop.waiting_players")
 		else:
-			status_label.text = "Hráč 2 připojen."
+			status_label.text = tr("ui.coop.player2_connected")
 		start_button.disabled = peers.is_empty()
 	else:
-		status_label.text = "Připojeno. Čekej na start."
+		status_label.text = tr("ui.coop.waiting_start")
 
 func _on_peer_connected(_peer_id: int, _name: String):
 	_update_status()

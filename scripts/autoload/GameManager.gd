@@ -65,16 +65,15 @@ var tutorial_active: bool = false
 var tutorial_step: String = ""
 
 func _ready():
-	_setup_crash_recovery()
-
 	if has_node("/root/DebugLogger"):
 		DebugLogger.log_info("=== GAME MANAGER STARTED ===")
 	else:
 		print("=== GAME MANAGER STARTED ===")
 	DebugLogger.log_system_info() # Zaloguje system info
 	
-	# Načteme preferenci jazyka při startu
+	# Načteme preferenci jazyka při startu (před crash dialogem a UI)
 	_load_language_preference()
+	_setup_crash_recovery()
 	# Aplikujeme uloženou preferenci fullscreen
 	_apply_saved_fullscreen()
 	
@@ -121,7 +120,9 @@ func _remove_session_lock():
 
 func _show_crash_recovery_dialog():
 	crash_recovery_dialog = ConfirmationDialog.new()
-	crash_recovery_dialog.dialog_text = "Vypadá to, že hra minule spadla. Chceš odeslat diagnostická data vývojáři?"
+	crash_recovery_dialog.dialog_text = tr("ui.crash_recovery.message")
+	crash_recovery_dialog.ok_button_text = tr("ui.crash_recovery.yes")
+	crash_recovery_dialog.cancel_button_text = tr("ui.crash_recovery.no")
 	crash_recovery_dialog.confirmed.connect(_on_crash_recovery_confirmed)
 	get_tree().root.call_deferred("add_child", crash_recovery_dialog)
 	crash_recovery_dialog.call_deferred("popup_centered")
@@ -130,8 +131,19 @@ func _on_crash_recovery_confirmed():
 	if has_node("/root/DebugLogger"):
 		DebugLogger.log_critical("AUTOMATIC_CRASH_REPORT", "SYSTEM")
 
+func reset_tutorial_state() -> void:
+	tutorial_active = false
+	tutorial_step = ""
+
+func restart_tutorial() -> void:
+	"""Restart from battle 1 — used when player hits Restart during tutorial."""
+	SaveManager.delete_saved_run()
+	reset_tutorial_state()
+	go_to_tutorial()
+
 func start_new_run(rng_seed = null):
 	SaveManager.delete_saved_run()
+	reset_tutorial_state()
 	if is_coop_run:
 		# Coop: seed už byl nastaven v start_coop_run(), nepřepisujeme
 		pass
@@ -166,6 +178,7 @@ func _notification(what):
 		_remove_session_lock()
 
 func start_new_game_plus(rng_seed = null):
+	reset_tutorial_state()
 	if rng_seed == null:
 		randomize()
 		current_seed = randi()
@@ -256,6 +269,7 @@ func battle_finished(player_won: bool, final_hp: int = -1, final_shield: int = -
 		_change_scene(end_of_run_scene)
 
 func go_to_main_menu():
+	reset_tutorial_state()
 	is_coop_run = false
 	coop_client_class_path = ""
 	coop_client_subclass_path = ""
@@ -268,9 +282,12 @@ func go_to_character_select():
 	_change_scene(character_select_scene)
 
 func go_to_tutorial():
+	SaveManager.delete_saved_run()
 	tutorial_active = true
 	tutorial_step = TUTORIAL_STEP_BATTLE_1
 	current_map_data = null
+	last_battle_rewards.clear()
+	_is_post_boss_reward = false
 	PlayerData.path_taken.clear()
 	_change_scene(tutorial_scene)
 
@@ -685,6 +702,9 @@ func _get_random_elite_artifact() -> ArtifactsData:
 #==============================================================================
 
 func _on_popup_restart_run():
+	if tutorial_active:
+		restart_tutorial()
+		return
 	SaveManager.delete_saved_run()
 	start_new_run()
 
@@ -695,6 +715,7 @@ func _on_popup_save_run():
 
 func _on_popup_back_to_char_select():
 	SaveManager.delete_saved_run()
+	reset_tutorial_state()
 	go_to_character_select()
 
 func _on_popup_save_and_quit():
@@ -709,6 +730,7 @@ func _on_popup_back_to_menu():
 	go_to_main_menu()
 
 func load_and_start_saved_run():
+	reset_tutorial_state()
 	var loaded_data = SaveManager.load_run()
 	if loaded_data.is_empty():
 		DebugLogger.log_error("Failed to load run data or no save file found.", "SAVE")
