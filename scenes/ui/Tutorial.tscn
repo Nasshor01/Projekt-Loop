@@ -1,7 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://tutorialscene018"]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="PackedScene" uid="uid://drcylmyjefmn0" path="res://scenes/battle/BattleScene.tscn" id="1_5fb6q"]
-[ext_resource type="Script" uid="uid://b40v0y5l2r6jw" path="res://scenes/ui/Tutorial.gd" id="2_5xbk1"]
+[ext_resource type="Script" uid="uid://b5lsor8qtipno" path="res://scenes/ui/Tutorial.gd" id="2_5xbk1"]
 
 [node name="Tutorial" instance=ExtResource("1_5fb6q")]
 script = ExtResource("2_5xbk1")

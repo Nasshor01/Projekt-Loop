@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3]
 
-[ext_resource type="Script" path="res://scenes/ui/TutorialSpeech.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://ckewuacxtip5q" path="res://scenes/ui/TutorialSpeech.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://c6jgiqq6bv3ip" path="res://art/sprites/units/statue_spirit.png" id="2_portrait"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
