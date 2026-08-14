@@ -748,6 +748,14 @@ func show_intent(attack_damage: int = 0):
 		_sync_primary_intent_aliases()
 	_refresh_intent_row_ui()
 
+func force_show_attack_intent(damage: int = 0) -> void:
+	"""Tutorial / scripted telegraph: show Attack even when AI script is missing."""
+	var short := str(damage) if damage > 0 else tr("ATTACK")
+	current_intents = [_make_intent_entry("attack", short, tr("Next Move: Attack"))]
+	_sync_primary_intent_aliases()
+	_intent_visibility_allowed = true
+	_refresh_intent_row_ui()
+
 func hide_intent():
 	if _intent_row and _intent_row.has_method("hide_row"):
 		_intent_row.hide_row()

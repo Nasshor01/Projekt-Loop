@@ -15,6 +15,7 @@ offset_top = 19.0
 offset_right = 340.0
 offset_bottom = 59.0
 grow_horizontal = 2
+visible = false
 theme_override_font_sizes/font_size = 28
 horizontal_alignment = 1
 text = "Welcome! First, click on the highlighted tile to deploy your hero."

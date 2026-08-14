@@ -11,6 +11,7 @@ extends PanelContainer
 @onready var card_tooltip: CardTooltip = $CanvasLayer/CardTooltip
 
 const HEAVY_STRIKE_CARD = preload("res://data/cards/everyone/heavy_strike.tres")
+const TutorialSpeechClass = preload("res://scenes/ui/TutorialSpeech.gd")
 
 var _current_tooltip_card_data: CardData = null
 var _preview_upgraded_faces: bool = true
@@ -52,6 +53,9 @@ func _apply_tutorial_lock():
 	leave_button.disabled = true
 	title_label.text = tr("ui.tutorial.camp_upgrade_prompt")
 	_highlight_upgrade_button(true)
+	var canvas := get_node_or_null("CanvasLayer")
+	if canvas:
+		TutorialSpeechClass.mount_line(canvas, "tutorial.camp_upgrade", true)
 
 func _update_ui_texts():
 	var heal_amount = int(PlayerData.max_hp * 0.3)

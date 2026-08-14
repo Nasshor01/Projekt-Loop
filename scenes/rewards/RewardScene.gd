@@ -13,6 +13,7 @@ const SKIP_CARD_GOLD_NORMAL: int = 10
 # --- Přednačtené scény ---
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 const ArtifactChoiceUIScene = preload("res://scenes/ui/ArtifactChoiceUI.tscn")
+const TutorialSpeechClass = preload("res://scenes/ui/TutorialSpeech.gd")
 const REWARD_CARD_SIZE = CardUI.HAND_SIZE
 const REWARD_HOVER_SCALE := 1.06
 
@@ -31,7 +32,7 @@ var artifact_slots: Array[LayoutSlot] = []
 # Tooltip management
 var _current_tooltip_card_data: CardData = null
 var _tutorial_return_to_menu := false
-var _tutorial_hint_text := ""
+var _tutorial_line_id := ""
 var _tutorial_final_reward := false
 # Combo reward (elite): artifact + card — can take both, or card/skip without artifact
 var _combo_mode: bool = false
@@ -181,7 +182,7 @@ func setup_ui():
 func _refresh_village_reward_hint() -> void:
 	if not is_instance_valid(village_hint_label):
 		return
-	if _tutorial_hint_text != "":
+	if _tutorial_line_id != "":
 		village_hint_label.visible = false
 		return
 	if has_node("/root/GameManager") and GameManager.tutorial_active:
@@ -500,14 +501,15 @@ func _apply_tutorial_overrides():
 		var rewards = GameManager.last_battle_rewards
 		if rewards.has("tutorial_return_to_menu"):
 			_tutorial_return_to_menu = bool(rewards.get("tutorial_return_to_menu", false))
-		if rewards.has("tutorial_hint_text"):
-			_tutorial_hint_text = str(rewards.get("tutorial_hint_text", ""))
+		if rewards.has("tutorial_line_id"):
+			_tutorial_line_id = str(rewards.get("tutorial_line_id", ""))
 		if GameManager.tutorial_active and GameManager.tutorial_step == GameManager.TUTORIAL_STEP_FINAL_REWARD:
 			_tutorial_final_reward = true
 	
-	if is_instance_valid(tutorial_hint_label) and _tutorial_hint_text != "":
-		tutorial_hint_label.visible = true
-		tutorial_hint_label.text = _tutorial_hint_text
+	if is_instance_valid(tutorial_hint_label):
+		tutorial_hint_label.visible = false
+	if _tutorial_line_id != "":
+		TutorialSpeechClass.mount_line(self, _tutorial_line_id, true)
 
 func _show_tutorial_card_added():
 	if is_instance_valid(tutorial_card_added_label):

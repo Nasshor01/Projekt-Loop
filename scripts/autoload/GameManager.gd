@@ -599,7 +599,7 @@ func _prepare_battle_rewards():
 		last_battle_rewards["gold"] = 0
 		last_battle_rewards["cards"] = available_cards
 		last_battle_rewards["artifacts"] = []
-		last_battle_rewards["tutorial_hint_text"] = tr("ui.tutorial.complete_hint")
+		last_battle_rewards["tutorial_line_id"] = "tutorial.complete"
 		tutorial_step = TUTORIAL_STEP_FINAL_REWARD
 		return
 

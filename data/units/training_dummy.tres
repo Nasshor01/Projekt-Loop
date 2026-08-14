@@ -6,8 +6,8 @@
 [resource]
 script = ExtResource("1_4tfyj")
 unit_id = "training_dummy"
-unit_name = "Training Dummy"
-description = "Passive target that does not attack."
+unit_name = "unit.training_dummy"
+description = "unit.training_dummy.desc"
 faction = 1
 unit_type = 5
 max_health = 4

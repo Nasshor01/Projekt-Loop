@@ -4,6 +4,7 @@ extends Node2D
 
 const MapNodeScene = preload("res://scenes/map/MapNode.tscn")
 const ConnectionLineScene = preload("res://scenes/map/ConnectionLine.tscn")
+const TutorialSpeechClass = preload("res://scenes/ui/TutorialSpeech.gd")
 
 const VISITED_PATH_COLOR = Color.GOLD
 const REACHABLE_PATH_COLOR = Color.WHITE
@@ -165,6 +166,7 @@ func initialize_map():
 	_render_map_visuals()
 	_update_highlighting()
 	_setup_camera()
+	_show_tutorial_coach()
 
 func _clear_map():
 	for child in get_children():
@@ -345,6 +347,14 @@ func _trigger_node_action(node_data: MapNodeResource):
 		else:
 			printerr("Nepodařilo se načíst data souboje pro typ: ", MapNodeResource.NodeType.keys()[node_data.type])
 		_update_highlighting()
+
+func _show_tutorial_coach() -> void:
+	if not _is_tutorial_map():
+		return
+	var line_id := "tutorial.map_camp"
+	if GameManager.tutorial_step == GameManager.TUTORIAL_STEP_MAP_FINAL:
+		line_id = "tutorial.map_final"
+	TutorialSpeechClass.mount_line($CanvasLayer, line_id, true)
 
 func _is_tutorial_map() -> bool:
 	if not has_node("/root/GameManager"):

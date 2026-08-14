@@ -1,5 +1,6 @@
 extends Node
 
+## UI / labels. Spoken dialogue lives in DialogueCatalog (data/dialogue/dialogue.csv).
 const CSV_PATH := "res://translations.csv"
 
 func _ready() -> void:
