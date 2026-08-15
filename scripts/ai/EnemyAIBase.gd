@@ -373,6 +373,12 @@ func update_astar_grid(astar_grid: AStar2D, moving_unit: Unit, battle_grid: Batt
 			if astar_grid.has_point(from_id) and not astar_grid.is_point_disabled(from_id):
 				for offset in [Vector2i(1,0), Vector2i(-1,0), Vector2i(0,1), Vector2i(0,-1)]:
 					var to_cell = from_cell + offset
+					# CRITICAL: out-of-bounds neighbors share point IDs with real cells
+					# (e.g. (-1,y) → id of (cols-1,y)) and create wrap/teleport edges.
+					if not battle_grid.is_valid_grid_position(to_cell):
+						continue
+					if not battle_grid.is_cell_active(to_cell):
+						continue
 					var to_id = get_point_id(to_cell, battle_grid)
 					if astar_grid.has_point(to_id) and not astar_grid.is_point_disabled(to_id): 
 						astar_grid.connect_points(from_id, to_id)

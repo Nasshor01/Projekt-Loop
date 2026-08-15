@@ -27,14 +27,15 @@ Core se má brzy zmrazit; dál hlavně obsah, balance, postavy, terén, artefakt
 | Nové postavy | mechaniky *uvnitř* existujícího jádra (Trapper pasti) |
 | Enemy / encounter / layouty | obsah |
 | UI polish, SFX, VFX, animace | polish / artist později |
-| Jeden malý EffectType (např. PUSH) | jen pokud odemkne content vrstvu; pak znovu freeze |
+| Displacement micro-engine (PUSH / PULL / TAUNT) | **Alpha gate MUST** (#53) — výjimka ze soft-freeze „až po 0.4“ |
+| Další EffectType po gate | jen pokud odemkne content; pak znovu freeze |
 
 ### Soft Freeze bod
 
 **Po dropu Alpha 0.4.0** = Core Soft Freeze.
 
-- Do 0.4: jen gate issues (#34) + bugy.
-- **0.4.x–0.5:** obsah + max **jedna** systémová mikro-rozšíření (např. PUSH), pak znovu freeze.
+- Do 0.4: gate issues (#34) + bugy + **#53 displacement** (Taunt / push / pull — owner must před Alphou).
+- **0.4.x–0.5:** obsah; další systémové mikro-addy jen výjimečně, pak znovu freeze.
 - **1.0 / Steam:** feature freeze → jen crash / blocker + texty.
 
 ### Skill tree (#38) — NECOMMITTED
@@ -43,11 +44,11 @@ Core se má brzy zmrazit; dál hlavně obsah, balance, postavy, terén, artefakt
 - Zůstává „maybe někdy / uvážení“ — klidně **nikdy**.
 - Hra musí stát bez skill tree (karty + artefakty + vesnice + postavy stačí).
 
-### Holy Push (backlog designu)
+### Holy Push + displacement (#53 — gate)
 
-- Až **po 0.4 gate** (0.4.x).
-- V 0.4 zůstává #40: Paladin holy *ground* / grid taktika jako **content only** (`PLACE_TERRAIN`) — **bez** knockback.
-- Návrh karty (až později): čistý HOLY 5; adjacent push 2 buňky, 8 směrů pryč od hráče; kolize unit↔unit max 5 NORMAL; do rock/impassable max 7.
+- **Před Alphou:** PUSH / PULL / TAUNT EffectTypes + starter Taunt (0E) + pool push/pull (0E) + Holy Push v poolu.
+- #40 holy *ground* zůstává content (`PLACE_TERRAIN`); displacement je oddělený micro-engine v #53.
+- Holy Push návrh: HOLY dmg + adjacent push (kolize unit↔unit / rock — tune later).
 
 ---
 
@@ -58,7 +59,8 @@ Core se má brzy zmrazit; dál hlavně obsah, balance, postavy, terén, artefakt
 | Issue | Stav | Poznámka |
 |-------|------|----------|
 | #39 Artefakty rarity ladder | OPEN | musí před 0.4 |
-| #40 Paladin holy ground (content) | OPEN | `PLACE_TERRAIN`, ne knockback |
+| #40 Paladin holy ground (content) | OPEN | `PLACE_TERRAIN` (ground); push je #53 |
+| #53 Taunt / PUSH / PULL | OPEN | **gate MUST** — displacement micro-engine |
 | #31 3 GIFy itch/social | OPEN | marketing lite |
 | #32 Branding „Alpha“ | OPEN | až při 0.4 dropu |
 | #33 QA 3× Paladin run | OPEN | gate |
@@ -74,7 +76,7 @@ Milestone: [Alpha 0.4 gate](https://github.com/Nasshor01/Projekt-Loop/milestone/
 | #35 Village resource ekonomika | 0.4.5 |
 | #36 Village companion | 0.4.5 |
 | #37 Trapper plně hratelný + unlock | **0.5** |
-| Holy Push + displacement mikro-engine | 0.4.x (po gate) |
+| Holy Push + displacement mikro-engine | **přesunuto do gate** (#53) |
 | Barrel / quicksand / víc arena terénu | 0.4.x–0.5 |
 | Další artefakty / enemy packy | průběžně 0.4.x |
 
@@ -121,7 +123,7 @@ flowchart LR
 | Verze | Cíl hráče |
 |-------|-----------|
 | **0.4.0** | Stabilní Paladin Alpha + GIFy + itch |
-| **0.4.x** | Obsah; volitelně 1× PUSH |
+| **0.4.x** | Obsah (displacement už v gate přes #53) |
 | **0.4.5** | Vesnice hloubka |
 | **0.5** | Trapper plně hratelný |
 | **Beta** | Demo, balance, wishlist — **bez** skill tree musí fungovat |

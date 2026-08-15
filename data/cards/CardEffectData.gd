@@ -22,6 +22,9 @@ enum EffectType {
 	DEAL_DOUBLE_DAMAGE_FROM_BLOCK,  #způsobí double požkození z aktuálního bloku
 	MODIFY_INITIATIVE_NEXT_ROUND,
 	PLACE_TERRAIN,            # Položí TerrainData na prázdné políčko (string_value = resource path)
+	PUSH,                     # Odstrčí cíl o `value` polí pryč od castera (hráče)
+	PULL,                     # Přitáhne cíl o `value` polí k casterovi (pathing / closest step)
+	TAUNT,                    # Pull `value` (min 1) + status "taunted" (duration = aoe_param_x, default 1)
 }
 
 enum TargetType {

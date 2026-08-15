@@ -386,11 +386,12 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 			return "[b][color=%s]" % BB_HEAL + tr("card.effect.full_heal") + "[/color][/b]"
 		
 		CardEffectData.EffectType.GAIN_BLOCK:
+			# Dynamic block sources: show formula on face (like "Dmg = Block"), not a bare number.
+			if effect.string_value == "current_hp":
+				return "[b]%s[/b]" % tr("card.effect.block_equal_current_hp")
+			if effect.string_value == "max_hp":
+				return "[b]%s[/b]" % tr("card.effect.block_equal_max_hp")
 			var block_val := effect.value
-			if effect.string_value == "max_hp" and not Engine.is_editor_hint():
-				block_val = PlayerData.max_hp
-			elif effect.string_value == "current_hp" and not Engine.is_editor_hint():
-				block_val = PlayerData.current_hp
 			var cond := _get_condition_shorthand(effect, "block")
 			if cond != "":
 				return _num(block_val) + " " + _img("block") + " " + cond
@@ -399,6 +400,8 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 		CardEffectData.EffectType.DEAL_DAMAGE:
 			# HOLY: base value + normal damage icon; keyword "Holy" is a separate face line.
 			# +5 vs Undead/Demon stays in tooltip / combat math.
+			if effect.string_value == "holy_bonus_only":
+				return "[b]%s[/b]" % tr("card.effect.holy_bonus_only")
 			var dmg_val: int
 			if effect.damage_type == CardEffectData.DamageType.HOLY:
 				dmg_val = effect.value
@@ -411,6 +414,8 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 			return prefix + _num(dmg_val) + " " + _img("damage")
 		
 		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK:
+			if effect.string_value == "half_block":
+				return "[b]%s[/b]" % tr("card.effect.half_block_damage")
 			return "[b]" + tr("card.effect.deal_damage_from_block") + "[/b]"
 		
 		CardEffectData.EffectType.DEAL_DOUBLE_DAMAGE_FROM_BLOCK:
@@ -442,6 +447,22 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 		
 		CardEffectData.EffectType.PLACE_TERRAIN:
 			return _format_place_terrain_shorthand(effect)
+
+		CardEffectData.EffectType.PUSH:
+			return "[b]%s %d[/b]" % [tr("card.effect.push"), maxi(1, effect.value)]
+
+		CardEffectData.EffectType.PULL:
+			return "[b]%s %d[/b]" % [tr("card.effect.pull"), maxi(1, effect.value)]
+
+		CardEffectData.EffectType.TAUNT:
+			var steps := maxi(1, effect.value)
+			var dur := effect.aoe_param_x if effect.aoe_param_x > 0 else 1
+			return "[b]%s %d · %s %s[/b]" % [
+				tr("card.effect.pull"),
+				steps,
+				tr("card.effect.taunt_keyword"),
+				_turns(dur),
+			]
 		
 		_:
 			return ""

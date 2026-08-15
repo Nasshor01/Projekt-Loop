@@ -7,7 +7,8 @@ const BAR_HEIGHT := 10.0
 @onready var _hp_fill: ColorRect = $BarRoot/HpTrack/HpFill
 @onready var _hp_track: ColorRect = $BarRoot/HpTrack
 @onready var _hp_label: Label = $BarRoot/HpLabel
-@onready var _block_label: Label = $BarRoot/BlockLabel
+@onready var _block_row: HBoxContainer = $BarRoot/BlockRow
+@onready var _block_label: Label = $BarRoot/BlockRow/BlockLabel
 
 var _screen_position: Vector2 = Vector2.ZERO
 
@@ -35,11 +36,11 @@ func update_values(current_hp: int, max_hp: int, block: int = 0) -> void:
 	_hp_fill.color = _hp_color_for_ratio(ratio)
 	_hp_label.text = "%d/%d" % [current_hp, max_hp]
 	if block > 0:
-		_block_label.text = "🛡 %d" % block
-		_block_label.visible = true
+		_block_label.text = str(block)
+		_block_row.visible = true
 	else:
 		_block_label.text = ""
-		_block_label.visible = false
+		_block_row.visible = false
 
 func _hp_color_for_ratio(ratio: float) -> Color:
 	if ratio > 0.55:

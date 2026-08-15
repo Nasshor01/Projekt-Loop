@@ -522,8 +522,16 @@ func _process_enemy_actions(enemy_unit: Unit):
 	else:
 		return
 	
-	# Získáme POLE akcí z nového multi-action systému
-	var actions: Array = ai_instance.get_actions(enemy_unit, player_units_array, battle_grid_instance)
+	# Taunt: force Fighter-style approach (overrides kite/root AI for this turn)
+	var actions: Array
+	if enemy_unit.active_statuses.has("taunted"):
+		var approach_ai = load("res://scripts/ai/FighterAI.gd").new()
+		actions = approach_ai.get_actions(enemy_unit, player_units_array, battle_grid_instance)
+		DebugLogger.log_info("Taunt: %s forced to approach" % [
+			String(enemy_unit.unit_data.unit_id) if enemy_unit.unit_data else String(enemy_unit.name)
+		])
+	else:
+		actions = ai_instance.get_actions(enemy_unit, player_units_array, battle_grid_instance)
 
 	# All-Seeing Eye (and similar): deny MOVE/RUSH for one turn
 	if enemy_unit.has_meta("artifact_deny_move_next_turn") and bool(enemy_unit.get_meta("artifact_deny_move_next_turn")):
@@ -642,9 +650,18 @@ func _execute_single_action(enemy_unit: Unit, action: EnemyAIBase.AIAction):
 				if path.size() > 1:
 					var move_dist = min(path.size() - 1, enemy_unit.get_current_movement_range())
 					var truncated: Array[Vector2i] = []
-					for i in range(move_dist + 1):
+					truncated.append(path[0])
+					for i in range(1, move_dist + 1):
+						# Guard: never allow non-adjacent jumps (A* wrap bug / bad path data).
+						if battle_grid_instance.get_distance(truncated[truncated.size() - 1], path[i]) != 1:
+							DebugLogger.log_error("MOVE path jump blocked: %s -> %s (unit=%s)" % [
+								str(truncated[truncated.size() - 1]), str(path[i]),
+								String(enemy_unit.unit_data.unit_id) if enemy_unit.unit_data else "?"
+							])
+							break
 						truncated.append(path[i])
-					await _move_unit_along_path(enemy_unit, truncated)
+					if truncated.size() > 1:
+						await _move_unit_along_path(enemy_unit, truncated)
 					if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
 						return
 		
@@ -1341,20 +1358,63 @@ func spawn_enemy_units():
 	if is_instance_valid(_coop_other_player_unit):
 		player_cells.append(_coop_other_player_unit.grid_position)
 
+	# Opposite side of the map from the player — use the FAR edge of that half,
+	# not the midfield front (legacy remap put x=6→8 and goblins looked "in the middle").
+	var mid_x: float = battle_grid_instance.grid_columns / 2.0
+	var cols: int = battle_grid_instance.grid_columns
+	var player_avg_x: float = mid_x - 1.0
+	if not player_cells.is_empty():
+		var sum_x := 0
+		for pc in player_cells:
+			sum_x += pc.x
+		player_avg_x = float(sum_x) / float(player_cells.size())
+	var enemies_on_right: bool = player_avg_x < mid_x
+	# Far band ≈ last ~40% of the opposite half (keeps gap after their move 2–3).
+	var opposite_min: int = int(ceil(mid_x)) if enemies_on_right else 0
+	var opposite_max: int = (cols - 1) if enemies_on_right else int(floor(mid_x)) - 1
+	var opposite_width: int = maxi(1, opposite_max - opposite_min + 1)
+	var far_depth: int = maxi(3, int(ceil(float(opposite_width) * 0.45)))
+	var enemy_band_min_x: int
+	var enemy_band_max_x: int
+	if enemies_on_right:
+		enemy_band_max_x = opposite_max
+		enemy_band_min_x = maxi(opposite_min, opposite_max - far_depth + 1)
+	else:
+		enemy_band_min_x = opposite_min
+		enemy_band_max_x = mini(opposite_max, opposite_min + far_depth - 1)
+
 	var available_spawn_cells: Array[Vector2i] = []
-	
 	for cell in all_active_cells:
-		if cell.x < battle_grid_instance.grid_columns / 2.0: continue
-		if cell in player_cells: continue
-			
+		if cell.x < enemy_band_min_x or cell.x > enemy_band_max_x:
+			continue
+		if cell in player_cells:
+			continue
 		var terrain = battle_grid_instance.get_terrain_on_cell(cell)
 		var is_walkable = not terrain or terrain.is_walkable
 		var is_occupied = battle_grid_instance.get_object_on_cell(cell) != null
-		
 		if is_walkable and not is_occupied:
 			available_spawn_cells.append(cell)
 
-	DebugLogger.log_debug("Dostupných spawn pozic: %d" % available_spawn_cells.size())
+	# Fallback: if far band empty (weird shape), use full opposite half.
+	if available_spawn_cells.is_empty():
+		for cell in all_active_cells:
+			if enemies_on_right:
+				if cell.x < mid_x:
+					continue
+			else:
+				if cell.x >= mid_x:
+					continue
+			if cell in player_cells:
+				continue
+			var terrain2 = battle_grid_instance.get_terrain_on_cell(cell)
+			if (not terrain2 or terrain2.is_walkable) and battle_grid_instance.get_object_on_cell(cell) == null:
+				available_spawn_cells.append(cell)
+		enemy_band_min_x = opposite_min
+		enemy_band_max_x = opposite_max
+
+	DebugLogger.log_debug("Enemy FAR spawn band x=%d..%d (player_avg_x=%.1f, enemies_on_right=%s), cells=%d" % [
+		enemy_band_min_x, enemy_band_max_x, player_avg_x, str(enemies_on_right), available_spawn_cells.size()
+	])
 
 	for i in range(encounter_data.enemies.size()):
 		var enemy_entry = encounter_data.enemies[i]
@@ -1373,13 +1433,15 @@ func spawn_enemy_units():
 			printerr("Nedostatek spawn pozic!")
 			break
 
-		# Prefer EncounterEntry.grid_position when it's a valid enemy-side cell.
-		var spawn_pos: Vector2i = enemy_entry.grid_position
-		var use_scripted := spawn_pos != Vector2i.ZERO and available_spawn_cells.has(spawn_pos)
-		if not use_scripted:
-			spawn_pos = available_spawn_cells.pick_random()
+		var spawn_pos: Vector2i = _resolve_enemy_spawn_cell(
+			enemy_entry.grid_position,
+			available_spawn_cells,
+			enemy_band_min_x,
+			enemy_band_max_x,
+			enemies_on_right
+		)
 		available_spawn_cells.erase(spawn_pos)
-		DebugLogger.log_debug("  - spawn pozice: %s (scripted=%s)" % [str(spawn_pos), str(use_scripted)])
+		DebugLogger.log_debug("  - spawn pozice: %s (scripted=%s)" % [str(spawn_pos), str(enemy_entry.grid_position)])
 
 		var enemy_node = _spawn_unit(enemy_entry.unit_data, spawn_pos)
 		if is_instance_valid(enemy_node):
@@ -1394,6 +1456,50 @@ func spawn_enemy_units():
 	_all_enemy_units_ordered = _enemy_units.duplicate()
 	DebugLogger.log_debug("=== SPAWN DOKONČEN ===")
 	DebugLogger.log_debug("Celkem nepřátel: %d" % _enemy_units.size())
+
+
+func _resolve_enemy_spawn_cell(
+	scripted: Vector2i,
+	available: Array[Vector2i],
+	band_min_x: int,
+	band_max_x: int,
+	enemies_on_right: bool
+) -> Vector2i:
+	"""Prefer scripted Y/formation; X always stays in the FAR opposite-side band.
+	Legacy .tres x=6..8 → depth from the far edge (6 = farthest back)."""
+	if available.is_empty():
+		return Vector2i.ZERO
+	if scripted == Vector2i.ZERO:
+		return available.pick_random()
+	if available.has(scripted) and scripted.x >= band_min_x and scripted.x <= band_max_x:
+		return scripted
+
+	const AUTHORING_ENEMY_FRONT_X := 6
+	var local_x: int = maxi(0, scripted.x - AUTHORING_ENEMY_FRONT_X)
+	# local 0 = far edge; higher local = one step closer to midfield (still in far band).
+	var remapped_x: int
+	if enemies_on_right:
+		remapped_x = clampi(band_max_x - local_x, band_min_x, band_max_x)
+	else:
+		remapped_x = clampi(band_min_x + local_x, band_min_x, band_max_x)
+	var remapped := Vector2i(remapped_x, scripted.y)
+	if available.has(remapped):
+		return remapped
+
+	var best: Vector2i = Vector2i.ZERO
+	var best_dist := INF
+	for cell in available:
+		if cell.y != scripted.y:
+			continue
+		var d: int = absi(cell.x - remapped_x)
+		if d < best_dist:
+			best_dist = d
+			best = cell
+	if best_dist < INF:
+		return best
+
+	return available.pick_random()
+
 
 func _on_player_hand_card_clicked(card_ui_node: Control, card_data_resource: CardData):
 	if _artifact_interact_mode == "alchemist" and _artifact_interact_waiting:
@@ -1561,6 +1667,7 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 	
 	var ordered_effects: Array = []
 	var damage_effects: Array = []
+	var displace_effects: Array = []
 	for effect_data in card.effects:
 		if effect_data == null:
 			continue
@@ -1569,11 +1676,46 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 		var is_damage := effect_data.effect_type == CardEffectData.EffectType.DEAL_DAMAGE \
 			or effect_data.effect_type == CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK \
 			or effect_data.effect_type == CardEffectData.EffectType.DEAL_DOUBLE_DAMAGE_FROM_BLOCK
+		var is_displace := effect_data.effect_type == CardEffectData.EffectType.PUSH \
+			or effect_data.effect_type == CardEffectData.EffectType.PULL \
+			or effect_data.effect_type == CardEffectData.EffectType.TAUNT
 		if is_damage:
 			damage_effects.append(effect_data)
+		elif is_displace:
+			displace_effects.append(effect_data)
 		else:
 			ordered_effects.append(effect_data)
-	ordered_effects.append_array(damage_effects)
+	# Pull-then-smite (Divine Pull): displace before damage.
+	# Hit-then-knockback (Holy/Shield Push): damage before displace.
+	var has_pull := false
+	for e in displace_effects:
+		if e.effect_type == CardEffectData.EffectType.PULL:
+			has_pull = true
+			break
+	if has_pull:
+		ordered_effects.append_array(displace_effects)
+		ordered_effects.append_array(damage_effects)
+	else:
+		ordered_effects.append_array(damage_effects)
+		ordered_effects.append_array(displace_effects)
+
+	# Shield Push: rush into a 1-tile gap before hit + push.
+	if card.card_id.begins_with("shield_push"):
+		if not is_instance_valid(initial_target) or not (initial_target is Unit):
+			PlayerData.gain_energy(play_cost)
+			_is_action_processing = false
+			_card_play_in_progress = false
+			_reset_player_selection()
+			return
+		var rushed := await _try_shield_push_rush(initial_target as Unit)
+		if not rushed:
+			DebugLogger.log_warning("Shield Push: cannot rush / not in range")
+			PlayerData.gain_energy(play_cost)
+			_is_action_processing = false
+			_card_play_in_progress = false
+			_reset_player_selection()
+			return
+
 	
 	for effect_data in ordered_effects:
 		if effect_data.trigger != CardEffectData.EffectTrigger.ON_PLAY:
@@ -2045,6 +2187,10 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 	match effect.effect_type:
 		CardEffectData.EffectType.DEAL_DAMAGE:
 			if target.has_method("take_damage"):
+				# Divine/Holy displacement cards: only the Undead/Demon holy type bonus (no base hit).
+				if effect.string_value == "holy_bonus_only":
+					await _deal_holy_bonus_only_damage(target)
+					return
 				var base_value = effect.value
 				base_value += bonus_value
 				if effect.condition_type == "damage_per_block" and is_instance_valid(_player_unit_node):
@@ -2154,19 +2300,26 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 			
 		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK:
 			if is_instance_valid(_player_unit_node) and target.has_method("take_damage"):
-				var block_damage = DamageCalculator.get_final_damage(
-					_player_unit_node.current_block,
-					_player_unit_node,
-					target,
-					CardEffectData.DamageType.NORMAL,
-					false,
-					true,
-					0
-				)
-				# Shield Bash: cap 15 (balance audit)
-				if is_instance_valid(card_ref) and card_ref.card_id == "shield_bash":
-					block_damage = mini(block_damage, 15)
-				target.take_damage(block_damage, true)
+				var block_base: int = _player_unit_node.current_block
+				# Shield Push: deal half current block (10 block → 5 dmg).
+				if effect.string_value == "half_block" or (is_instance_valid(card_ref) and card_ref.card_id.begins_with("shield_push")):
+					block_base = block_base / 2
+				if block_base <= 0:
+					DebugLogger.log_info("Shield Push / block dmg: 0 block → no damage")
+				else:
+					var block_damage = DamageCalculator.get_final_damage(
+						block_base,
+						_player_unit_node,
+						target,
+						CardEffectData.DamageType.NORMAL,
+						false,
+						true,
+						0
+					)
+					# Shield Bash: cap 15 (balance audit)
+					if is_instance_valid(card_ref) and card_ref.card_id == "shield_bash":
+						block_damage = mini(block_damage, 15)
+					target.take_damage(block_damage, true)
 				
 		CardEffectData.EffectType.DRAW_CARDS:
 			_cards_to_draw_queue += effect.value
@@ -2248,6 +2401,146 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 				TurnManager.modify_initiative_next_round(target, effect.value)
 			else:
 				printerr("Efekt MODIFY_INITIATIVE nelze aplikovat na ", target)
+
+		CardEffectData.EffectType.PUSH:
+			if target is Unit:
+				await _force_displace_unit(target as Unit, false, maxi(1, effect.value))
+
+		CardEffectData.EffectType.PULL:
+			if target is Unit:
+				await _force_displace_unit(target as Unit, true, maxi(1, effect.value))
+
+		CardEffectData.EffectType.TAUNT:
+			if target is Unit:
+				var pull_steps := maxi(1, effect.value)
+				await _force_displace_unit(target as Unit, true, pull_steps)
+				if is_instance_valid(target) and target.has_method("apply_status"):
+					var taunt_duration := effect.aoe_param_x if effect.aoe_param_x > 0 else 1
+					target.apply_status("taunted", 1, taunt_duration)
+					if target.has_method("show_status_text"):
+						target.show_status_text(tr("card.effect.taunt_keyword"), "critical", preload("res://art/icons/status/Aim.png"))
+
+
+func _deal_holy_bonus_only_damage(target: Node3D) -> void:
+	"""Deal only Undead/Demon holy type bonus (+5 and PlayerData.holy_damage_bonus). Else 0 — no floor."""
+	if not is_instance_valid(target) or not (target is Unit):
+		return
+	var unit := target as Unit
+	if not is_instance_valid(unit.unit_data):
+		return
+	var ut: int = unit.unit_data.unit_type
+	if ut != UnitData.UnitType.UNDEAD and ut != UnitData.UnitType.DEMON:
+		DebugLogger.log_info("Holy bonus-only: target is not Undead/Demon — 0 dmg")
+		return
+	var dmg: int = UnitData.get_holy_damage_bonus(CardEffectData.DamageType.HOLY, ut)
+	if has_node("/root/PlayerData"):
+		dmg += PlayerData.holy_damage_bonus
+	if dmg <= 0:
+		return
+	DebugLogger.log_info("✨ Holy bonus-only: %d vs Undead/Demon" % dmg)
+	if unit.has_method("_show_floating_text"):
+		unit._show_floating_text(dmg, "holy_effective")
+	await unit.take_damage(dmg, true, false, true, false, false)
+
+
+func _try_shield_push_rush(enemy: Unit) -> bool:
+	"""Shield Push: already adjacent OK; if exactly 1 tile gap, rush into the empty cell between."""
+	if not is_instance_valid(enemy) or not is_instance_valid(_player_unit_node):
+		return false
+	if not is_instance_valid(battle_grid_instance):
+		return false
+	var from: Vector2i = _player_unit_node.grid_position
+	var to: Vector2i = enemy.grid_position
+	var dist: int = battle_grid_instance.get_distance(from, to)
+	if dist == 1:
+		return true
+	if dist != 2:
+		return false
+	# Prefer the cell that lies on a short path toward the enemy.
+	var hop: Vector2i = _pick_displace_step(_player_unit_node, to, true)
+	if hop.x <= -900:
+		return false
+	if battle_grid_instance.get_distance(hop, to) != 1:
+		# Fallback: any empty neighbor of enemy that is adjacent to player.
+		hop = Vector2i(-999, -999)
+		for offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+			var cell: Vector2i = to + offset
+			if not _is_displace_cell_free(cell, _player_unit_node):
+				continue
+			if battle_grid_instance.get_distance(from, cell) == 1:
+				hop = cell
+				break
+		if hop.x <= -900:
+			return false
+	var path_step: Array[Vector2i] = [from, hop]
+	await _rush_unit_along_path(_player_unit_node, path_step)
+	if not is_instance_valid(_player_unit_node) or not is_instance_valid(enemy):
+		return false
+	return battle_grid_instance.get_distance(_player_unit_node.grid_position, enemy.grid_position) == 1
+
+
+func _force_displace_unit(unit: Unit, toward_player: bool, steps: int) -> void:
+	"""Forced grid step(s) toward/away from the local player. Stops on blocked / no progress."""
+	if not is_instance_valid(unit) or not is_instance_valid(_player_unit_node):
+		return
+	if not is_instance_valid(battle_grid_instance):
+		return
+	var anchor: Vector2i = _player_unit_node.grid_position
+	for _i in range(maxi(0, steps)):
+		if not is_instance_valid(unit) or unit.current_health <= 0:
+			return
+		var next_cell: Vector2i = (
+			_pick_displace_step(unit, anchor, true) if toward_player
+			else _pick_displace_step(unit, anchor, false)
+		)
+		if next_cell.x <= -900:
+			break
+		if next_cell == unit.grid_position:
+			break
+		var path_step: Array[Vector2i] = [unit.grid_position, next_cell]
+		await _move_unit_along_path(unit, path_step, 0.18)
+
+
+func _pick_displace_step(unit: Unit, anchor: Vector2i, toward: bool) -> Vector2i:
+	"""Pick one walkable empty neighbor that decreases (toward) or increases (away) Manhattan distance.
+	Pull/Taunt must NEVER step sideways/away (A* detours felt like a push)."""
+	var invalid := Vector2i(-999, -999)
+	if not is_instance_valid(unit) or not is_instance_valid(battle_grid_instance):
+		return invalid
+	var from: Vector2i = unit.grid_position
+	var best: Vector2i = invalid
+	var best_dist: int = battle_grid_instance.get_distance(from, anchor)
+	# Already adjacent: pull/taunt does not shove — stay put (status still applies).
+	if toward and best_dist <= 1:
+		return invalid
+	for offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+		var cell: Vector2i = from + offset
+		if not _is_displace_cell_free(cell, unit):
+			continue
+		if cell == anchor:
+			continue
+		var dist: int = battle_grid_instance.get_distance(cell, anchor)
+		if toward:
+			if dist < best_dist:
+				best_dist = dist
+				best = cell
+		else:
+			if dist > best_dist:
+				best_dist = dist
+				best = cell
+	return best
+
+
+func _is_displace_cell_free(cell: Vector2i, moving_unit: Unit) -> bool:
+	if not is_instance_valid(battle_grid_instance) or not battle_grid_instance.is_cell_active(cell):
+		return false
+	var obj = battle_grid_instance.get_object_on_cell(cell)
+	if is_instance_valid(obj) and obj != moving_unit:
+		return false
+	var terrain = battle_grid_instance.get_terrain_on_cell(cell)
+	if terrain and not terrain.is_walkable:
+		return false
+	return true
 
 
 # Pomocná funkce pro kontrolu útočného dosahu (přidej ji do BattleScene)

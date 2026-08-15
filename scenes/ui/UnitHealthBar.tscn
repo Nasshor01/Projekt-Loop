@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://bfih7cmugedgi"]
+[gd_scene load_steps=4 format=3 uid="uid://bfih7cmugedgi"]
 
 [ext_resource type="Script" path="res://scenes/ui/UnitHealthBar.gd" id="1_script"]
 [ext_resource type="FontFile" uid="uid://bhj8pjkqc1umb" path="res://art/fonts/Ithaca-LVB75.ttf" id="2_font"]
+[ext_resource type="Texture2D" uid="uid://cjjf2x0eoxuuv" path="res://art/icons/status/block.png" id="3_block"]
 
 [node name="UnitHealthBar" type="Control"]
 z_index = -10
@@ -41,8 +42,22 @@ text = "50/50"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="BlockLabel" type="Label" parent="BarRoot"]
+[node name="BlockRow" type="HBoxContainer" parent="BarRoot"]
 visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="BlockIcon" type="TextureRect" parent="BarRoot/BlockRow"]
+custom_minimum_size = Vector2(18, 18)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("3_block")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BlockLabel" type="Label" parent="BarRoot/BlockRow"]
 layout_mode = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.55, 0.85, 1, 1)
@@ -52,3 +67,4 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "0"
 horizontal_alignment = 1
+vertical_alignment = 1

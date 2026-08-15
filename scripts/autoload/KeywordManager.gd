@@ -49,7 +49,7 @@ const KEYWORDS: Dictionary = {
 		"icon": "res://art/icons/status/attack.png",  # ICON_MAP["damage"]
 		"description": "keyword.burning.description",
 		"color": "#E67E22",
-		"search_terms": ["burning", "hoření", "hoří"]
+		"search_terms": ["burn", "burning", "hoření", "hoří"]
 	},
 	"chilled": {
 		"title": "keyword.chilled.title",
@@ -99,6 +99,13 @@ const KEYWORDS: Dictionary = {
 		"description": "keyword.poison.description",
 		"color": "#9B59B6",
 		"search_terms": ["poison", "jed"]
+	},
+	"taunted": {
+		"title": "keyword.taunted.title",
+		"icon": "res://art/icons/status/Aim.png",
+		"description": "keyword.taunted.description",
+		"color": "#E67E22",
+		"search_terms": ["taunt", "taunted", "výzva", "provokace"]
 	},
 	"exhaust": {
 		"title": "keyword.exhaust.title",

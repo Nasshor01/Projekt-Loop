@@ -12,6 +12,10 @@ const INTENT_ICON_METEOR3 = preload("res://art/icons/status/Meteor3.png")
 const INTENT_ICON_METEOR4 = preload("res://art/icons/status/Meteor4.png")
 const INTENT_ICON_ATTACK = preload("res://art/icons/status/attack.png")
 const INTENT_ICON_MOVE = preload("res://art/icons/status/move.png")
+const INTENT_ICON_BLOCK = preload("res://art/icons/status/block.png")
+const INTENT_ICON_HEAL = preload("res://art/icons/status/Heal.png")
+const INTENT_ICON_HOLY = preload("res://art/icons/status/holy_damage.png")
+const FLOAT_ICON_CRIT = preload("res://art/icons/status/Attack_Heavy.png")
 
 const ARCHER_AIM_DAMAGE_MULTIPLIER = 2.5
 const ARCHER_AIM_DAMAGE_PERCENT = int(ARCHER_AIM_DAMAGE_MULTIPLIER * 100) # 250%
@@ -464,6 +468,7 @@ func process_turn_end_statuses() -> void:
 		return
 
 	var statuses_to_remove = []
+	var stats_dirty := false
 	for status_id in active_statuses.keys():
 		if status_id == "aura_devotion" or status_id == "aura_devotion_plus":
 			continue
@@ -478,7 +483,7 @@ func process_turn_end_statuses() -> void:
 			continue
 		# Regeneration heals at start of turn (see process_turn_start_statuses), only tick duration here
 		
-		# Burning - poškození na konci tahu (DoT nelze vyhnout; already_calculated → block applies normally, no defensive_stance halving)
+		# Burning is a stack: deal current value at end of turn, then value -= 1. Lifetime is the stack, not duration.
 		if status_id == "burning":
 			var status_data = active_statuses[status_id]
 			var damage = status_data.value
@@ -486,16 +491,23 @@ func process_turn_end_statuses() -> void:
 			await take_damage(damage, true, false, false)
 			if not is_instance_valid(self) or current_health <= 0:
 				return
-			# Snížíme hodnotu nebo duration
-			status_data.value = max(0, status_data.value - 1)  # Snížíme poškození každé kolo
+			status_data.value = max(0, status_data.value - 1)
+			stats_dirty = true
 			if status_data.value <= 0:
 				statuses_to_remove.append(status_id)
+			if has_node("/root/DebugLogger"):
+				var unit_label = String(unit_data.unit_id) if unit_data else String(name)
+				if status_data.value <= 0:
+					DebugLogger.log_info("Burning expired on %s after %d dmg" % [unit_label, damage])
+				else:
+					DebugLogger.log_info("Burning on %s: %d dmg, %d left" % [unit_label, damage, status_data.value])
+			continue
 
 		active_statuses[status_id].duration -= 1
 		if active_statuses[status_id].duration <= 0:
 			statuses_to_remove.append(status_id)
 
-	if statuses_to_remove.is_empty():
+	if statuses_to_remove.is_empty() and not stats_dirty:
 		return
 
 	for status_id in statuses_to_remove:
@@ -1258,7 +1270,8 @@ func _get_intent_icon_for_id(intent_id: String) -> Texture2D:
 		"rush": return INTENT_ICON_RUSH
 		"meteor": return INTENT_ICON_METEOR4
 		"attack": return INTENT_ICON_ATTACK
-		"heal", "buff": return INTENT_ICON_MOVE
+		"heal": return INTENT_ICON_HEAL
+		"buff", "block", "defend": return INTENT_ICON_BLOCK
 		"move": return INTENT_ICON_MOVE
 	return INTENT_ICON_MOVE
 
@@ -1268,121 +1281,114 @@ func _show_floating_text(amount: int, type: String):
 	var instance = FloatingTextScene.instantiate()
 	var text_to_display: String
 	var color: Color
+	var icon: Texture2D = null
 
 	match type:
 		"damage":
 			text_to_display = "-" + str(amount)
 			color = Color(1.0, 0.25, 0.25)
+			icon = INTENT_ICON_ATTACK
 		"heal":
 			text_to_display = "+" + str(amount)
 			color = Color(0.35, 1.0, 0.45)
+			icon = INTENT_ICON_HEAL
 		"block_gain":
 			text_to_display = "+" + str(amount)
 			color = Color(0.45, 0.85, 1.0)
+			icon = INTENT_ICON_BLOCK
 		"block_loss":
 			text_to_display = "-" + str(amount)
 			color = Color(0.7, 0.8, 0.95)
+			icon = INTENT_ICON_BLOCK
 		"critical":
 			text_to_display = "CRIT! -" + str(amount)
 			color = Color(1.0, 0.7, 0.15)
+			icon = FLOAT_ICON_CRIT
 		"holy_effective":
-			text_to_display = "✨ -" + str(amount)
+			text_to_display = "-" + str(amount)
 			color = Color(1.0, 0.9, 0.3)
+			icon = INTENT_ICON_HOLY
 
 	var canvas = get_tree().root.find_child("CanvasLayer", true, false)
 	if canvas:
 		canvas.add_child(instance)
+		var float_size: Vector2 = await instance.prepare(text_to_display, color, icon)
 		var camera = get_viewport().get_camera_3d()
 		if camera:
-			# Použijeme přímo global_position jednotky (střed buňky na mřížce)
-			# a přidáme offset pouze nahoru - žádný horizontální offset
-			# global_position jednotky je přesně na středu grid cell
-			var world_pos_above_unit = global_position + Vector3(0, 1.5, 0)  # 1.5 metru nad zemí (nad hlavou)
+			var world_pos_above_unit = global_position + Vector3(0, 1.5, 0)
 			var screen_pos = camera.unproject_position(world_pos_above_unit)
-			
-			# Kontrola, jestli je pozice před kamerou (ne za kamerou)
 			var camera_forward = -camera.global_transform.basis.z
 			var to_unit = (world_pos_above_unit - camera.global_position).normalized()
 			var is_in_front = camera_forward.dot(to_unit) > 0
-			
-			# Kontrola, jestli je pozice viditelná na obrazovce
 			var viewport_size = get_viewport().get_visible_rect().size
-			var margin = 50  # Povolíme malý okraj mimo obrazovku
+			var margin = 50
 			if is_in_front and \
 			   screen_pos.x >= -margin and screen_pos.x <= viewport_size.x + margin and \
 			   screen_pos.y >= -margin and screen_pos.y <= viewport_size.y + margin:
-				# Text je viditelný - použijeme pozici s offsetem nahoru
-				# Nastavíme text nejdřív, abychom mohli získat jeho šířku
-				instance.text = text_to_display
-				# Získáme šířku textu pro zarovnání na střed
-				var font = instance.get_theme_font("font")
-				var font_size = instance.get_theme_font_size("font_size")
-				var text_size = font.get_string_size(text_to_display, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
-				# Odečteme polovinu šířky, aby byl text zarovnaný na střed postavy
-				instance.position = screen_pos + Vector2(-text_size.x * 0.5, -40)
+				instance.position = screen_pos + Vector2(-float_size.x * 0.5, -40)
 			else:
-				# Pozice není viditelná - použijeme fallback pozici uprostřed obrazovky
 				instance.position = viewport_size * 0.5 + Vector2(0, -100)
 		else:
 			var viewport_size = get_viewport().get_visible_rect().size
 			instance.position = viewport_size * 0.5
-			
-		instance.start(text_to_display, color)
+		instance.animate()
 	else:
 		instance.queue_free()
 
-func show_status_text(text_to_show: String, color_type: String):
+func show_status_text(text_to_show: String, color_type: String, icon: Texture2D = null):
 	var instance = FloatingTextScene.instantiate()
 	var color: Color
+	var status_icon: Texture2D = icon
 
 	match color_type:
-		"damage": color = Color(1.0, 0.25, 0.25)
-		"heal": color = Color(0.35, 1.0, 0.45)
-		"block_gain": color = Color(0.45, 0.85, 1.0)
-		"block_loss": color = Color(0.7, 0.8, 0.95)
-		"critical": color = Color(1.0, 0.7, 0.15)
-		"curse": color = Color(0.85, 0.35, 1.0)
-		_: color = Color.WHITE
+		"damage":
+			color = Color(1.0, 0.25, 0.25)
+			if status_icon == null:
+				status_icon = INTENT_ICON_ATTACK
+		"heal":
+			color = Color(0.35, 1.0, 0.45)
+			if status_icon == null:
+				status_icon = INTENT_ICON_HEAL
+		"block_gain":
+			color = Color(0.45, 0.85, 1.0)
+			if status_icon == null:
+				status_icon = INTENT_ICON_BLOCK
+		"block_loss":
+			color = Color(0.7, 0.8, 0.95)
+			if status_icon == null:
+				status_icon = INTENT_ICON_BLOCK
+		"critical":
+			color = Color(1.0, 0.7, 0.15)
+			if status_icon == null:
+				status_icon = FLOAT_ICON_CRIT
+		"curse":
+			color = Color(0.85, 0.35, 1.0)
+		_:
+			color = Color.WHITE
 
 	var canvas = get_tree().root.find_child("CanvasLayer", true, false)
 	if canvas:
 		canvas.add_child(instance)
+		var float_size: Vector2 = await instance.prepare(text_to_show, color, status_icon)
 		var camera = get_viewport().get_camera_3d()
 		if camera:
-			# Použijeme přímo global_position jednotky (střed buňky na mřížce)
-			# a přidáme offset pouze nahoru - žádný horizontální offset
-			# global_position jednotky je přesně na středu grid cell
-			var world_pos_above_unit = global_position + Vector3(0, 1.5, 0)  # 1.5 metru nad zemí (nad hlavou)
+			var world_pos_above_unit = global_position + Vector3(0, 1.5, 0)
 			var screen_pos = camera.unproject_position(world_pos_above_unit)
-			
-			# Kontrola, jestli je pozice před kamerou (ne za kamerou)
 			var camera_forward = -camera.global_transform.basis.z
 			var to_unit = (world_pos_above_unit - camera.global_position).normalized()
 			var is_in_front = camera_forward.dot(to_unit) > 0
-			
-			# Kontrola, jestli je pozice viditelná na obrazovce
 			var viewport_size = get_viewport().get_visible_rect().size
-			var margin = 50  # Povolíme malý okraj mimo obrazovku
+			var margin = 50
 			if is_in_front and \
 			   screen_pos.x >= -margin and screen_pos.x <= viewport_size.x + margin and \
 			   screen_pos.y >= -margin and screen_pos.y <= viewport_size.y + margin:
-				# Text je viditelný - použijeme pozici s offsetem nahoru
-				# Nastavíme text nejdřív, abychom mohli získat jeho šířku
-				instance.text = text_to_show
-				# Získáme šířku textu pro zarovnání na střed
-				var font = instance.get_theme_font("font")
-				var font_size = instance.get_theme_font_size("font_size")
-				var text_size = font.get_string_size(text_to_show, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
-				# Odečteme polovinu šířky, aby byl text zarovnaný na střed postavy
-				instance.position = screen_pos + Vector2(-text_size.x * 0.5, -40)
+				instance.position = screen_pos + Vector2(-float_size.x * 0.5, -40)
 			else:
-				# Pozice není viditelná - použijeme fallback pozici uprostřed obrazovky
 				instance.position = viewport_size * 0.5 + Vector2(0, -100)
 		else:
 			var viewport_size = get_viewport().get_visible_rect().size
 			instance.position = viewport_size * 0.5
-
-		instance.start(text_to_show, color)
+		instance.animate()
 	else:
 		instance.queue_free()
 

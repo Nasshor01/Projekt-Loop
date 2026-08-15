@@ -348,6 +348,7 @@ func _create_status_row(status_id: String, status_data: Dictionary) -> HBoxConta
 	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon_rect.texture = _get_status_icon(status_id)
+	icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(icon_rect)
 
 	var label = Label.new()
@@ -357,7 +358,13 @@ func _create_status_row(status_id: String, status_data: Dictionary) -> HBoxConta
 	var info = _get_status_display_info(status_id, status_data)
 	label.text = info.text
 	label.add_theme_color_override("font_color", info.color)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	row.add_child(label)
+	if status_id == "burning" and has_node("/root/KeywordManager"):
+		row.tooltip_text = "%s\n%s" % [
+			KeywordManager.get_keyword_title("burning"),
+			KeywordManager.get_keyword_description("burning")
+		]
 	return row
 
 func _make_chip(text: String, bg: Color, fg: Color) -> PanelContainer:
@@ -435,7 +442,7 @@ func _get_status_display_info(status_id: String, status_data: Dictionary) -> Dic
 		"aura_devotion_plus":
 			return {"text": TranslationHelper.tr_format("status.label.aura_devotion_plus", {"value": val}), "color": Color.CYAN}
 		"burning":
-			return {"text": "%d DMG (%d t)" % [val, dur], "color": Color.ORANGE_RED}
+			return {"text": TranslationHelper.tr_format("status.label.burning", {"value": val}), "color": Color.ORANGE_RED}
 		"chilled":
 			return {"text": "-%d Move (%d t)" % [val, dur], "color": Color.LIGHT_BLUE}
 		"shocked":
