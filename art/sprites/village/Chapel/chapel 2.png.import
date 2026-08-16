@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dtfg42tf2x7kj"
-path="res://.godot/imported/chapel 0.png-44ad225833bfe5a6bc2ff5d38df8c165.ctex"
+uid="uid://blw01q71rdsvl"
+path="res://.godot/imported/chapel 2.png-7f1dff6e0db884ef6e2b0e93d77b4118.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/sprites/village_new/chapel 0.png"
-dest_files=["res://.godot/imported/chapel 0.png-44ad225833bfe5a6bc2ff5d38df8c165.ctex"]
+source_file="res://art/sprites/village/Chapel/chapel 2.png"
+dest_files=["res://.godot/imported/chapel 2.png-7f1dff6e0db884ef6e2b0e93d77b4118.ctex"]
 
 [params]
 

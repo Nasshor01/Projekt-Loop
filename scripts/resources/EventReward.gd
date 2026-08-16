@@ -161,6 +161,10 @@ func _upgrade_specific_card(card: CardData, results_log: Array):
 
 func _upgrade_all_cards(results_log: Array):
 	"""Vylepší všechny karty v balíčku"""
+	if EventManager.upgrade_all_used_this_run:
+		results_log.append("[color=gray]" + tr("event.upgrade_all.already_used") + "[/color]")
+		return
+	EventManager.mark_upgrade_all_used()
 	var upgraded_count = 0
 	for i in range(PlayerData.master_deck.size()):
 		var card = PlayerData.master_deck[i]

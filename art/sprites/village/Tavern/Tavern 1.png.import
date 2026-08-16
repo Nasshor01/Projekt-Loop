@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ddbvrters10dq"
-path="res://.godot/imported/chapel 3.png-d212c994dcead38a6ec30a7184ab9c34.ctex"
+uid="uid://5wgx6eqlnlhd"
+path="res://.godot/imported/Tavern 1.png-83b876a43995478291d0366c264b904b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/sprites/village_new/chapel 3.png"
-dest_files=["res://.godot/imported/chapel 3.png-d212c994dcead38a6ec30a7184ab9c34.ctex"]
+source_file="res://art/sprites/village/Tavern/Tavern 1.png"
+dest_files=["res://.godot/imported/Tavern 1.png-83b876a43995478291d0366c264b904b.ctex"]
 
 [params]
 

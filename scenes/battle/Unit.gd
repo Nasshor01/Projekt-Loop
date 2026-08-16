@@ -68,6 +68,8 @@ var movement_penalty: int = 0  # Chilled - snížení pohybu
 var is_aiming: bool = false
 var berserker_frustration: int = 0
 var is_permanently_enraged: bool = false
+# Extra attack damage if the fight is stalled / last enemy leftover.
+var desperation_bonus: int = 0
 #---------------------------------------------
 
 @onready var _sprite_node: Sprite3D = $Sprite3D
@@ -222,7 +224,7 @@ func attack(target: Node, extra_additive: int = 0, damage_type: int = 0, _is_hol
 		is_critical = total_crit_chance > 0 and randi_range(1, 100) <= total_crit_chance
 	
 	var damage = DamageCalculator.get_final_damage(
-		base_value, self, target, damage_type, is_critical, include_card_bonuses, extra_additive
+		base_value, self, target, damage_type, is_critical, include_card_bonuses, extra_additive + desperation_bonus
 	)
 	if is_critical:
 		_show_floating_text(damage, "critical")
@@ -993,6 +995,8 @@ func get_status_counters_list() -> PackedStringArray:
 		counters.append(TranslationHelper.tr_format("enemy.counter.rage", {"current": berserker_frustration, "max": BERSERKER_RAGE_TURNS_REQUIRED}))
 	if is_permanently_enraged:
 		counters.append(tr("enemy.counter.enraged"))
+	if desperation_bonus > 0:
+		counters.append(TranslationHelper.tr_format("enemy.counter.desperation", {"value": desperation_bonus}))
 	if has_meta("mage_turn_count"):
 		var turn_count = int(get_meta("mage_turn_count"))
 		if turn_count > 0:
@@ -1149,6 +1153,13 @@ func _calculate_intent_list(player_unit: Unit, battle_grid: BattleGrid) -> Array
 	var preview := _preview_combat_intents_from_ai(player_unit, battle_grid)
 	if preview.is_empty():
 		return []
+	if desperation_bonus > 0 and is_instance_valid(unit_data):
+		var shown := unit_data.attack_damage + desperation_bonus
+		for i in preview.size():
+			var entry: Dictionary = preview[i]
+			if str(entry.get("id", "")) == "attack":
+				entry["short_text"] = str(shown)
+				preview[i] = entry
 	if countdown > 0:
 		var first: Dictionary = preview[0]
 		first["countdown"] = countdown

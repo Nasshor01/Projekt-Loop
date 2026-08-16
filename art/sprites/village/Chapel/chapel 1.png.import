@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://wbbfu26ymttr"
-path="res://.godot/imported/chapel 1.png-af3d2e24ed3ba7499c1be7ba6d1c8944.ctex"
+path="res://.godot/imported/chapel 1.png-c3cb364778ba7881180d0c419c23b497.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/sprites/village_new/chapel 1.png"
-dest_files=["res://.godot/imported/chapel 1.png-af3d2e24ed3ba7499c1be7ba6d1c8944.ctex"]
+source_file="res://art/sprites/village/Chapel/chapel 1.png"
+dest_files=["res://.godot/imported/chapel 1.png-c3cb364778ba7881180d0c419c23b497.ctex"]
 
 [params]
 

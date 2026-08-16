@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://blw01q71rdsvl"
-path="res://.godot/imported/chapel 2.png-89cfdc1fd61434ec2be370d944574c01.ctex"
+uid="uid://clfx6tp51cmxa"
+path="res://.godot/imported/Hunter’s Lodge 2.png-666f6e74efa7b6641c0e0e0bf2c5b58f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/sprites/village_new/chapel 2.png"
-dest_files=["res://.godot/imported/chapel 2.png-89cfdc1fd61434ec2be370d944574c01.ctex"]
+source_file="res://art/sprites/village/Hunter’s Lodge/Hunter’s Lodge 2.png"
+dest_files=["res://.godot/imported/Hunter’s Lodge 2.png-666f6e74efa7b6641c0e0e0bf2c5b58f.ctex"]
 
 [params]
 

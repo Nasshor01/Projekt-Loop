@@ -141,18 +141,11 @@ func _get_random_event_for_floor(floor_number: int) -> EventData:
 		printerr("EventScene: Event pool neexistuje nebo je prázdný!")
 		return null
 	
-	# Použij EventManager pro filtrování
-	var available_events = EventManager.filter_events_for_floor(EVENT_POOL.events, floor_number)
-	
-	if available_events.is_empty():
+	var chosen_event = EventManager.pick_event_for_floor(EVENT_POOL.events, floor_number)
+	if chosen_event == null:
 		printerr("EventScene: Pro patro %d nebyly nalezeny žádné dostupné eventy!" % floor_number)
 		EventManager.debug_available_events(EVENT_POOL.events, floor_number)
 		return null
-	
-	var chosen_event = available_events.pick_random()
-	
-	# Označ event jako použitý
-	EventManager.mark_event_as_used(chosen_event)
 	
 	print(TranslationHelper.tr_format("log.event.selected", {"name": chosen_event.get_localized_name(), "floor": floor_number}))
 	return chosen_event
@@ -212,7 +205,10 @@ func display_event():
 		button_instance.set_choice_data_new(choice)
 		
 		# Zkontroluj dostupnost
-		button_instance.disabled = not choice.can_afford()
+		var upgrade_all_locked: bool = choice.reward != null and choice.reward.upgrade_all_cards and EventManager.upgrade_all_used_this_run
+		button_instance.disabled = (not choice.can_afford()) or upgrade_all_locked
+		if upgrade_all_locked:
+			button_instance.tooltip_text = tr("event.upgrade_all.already_used")
 		
 		# Connect signal
 		button_instance.pressed.connect(_on_choice_made.bind(i))
