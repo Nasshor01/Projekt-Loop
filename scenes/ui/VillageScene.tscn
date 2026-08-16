@@ -1,127 +1,48 @@
-[gd_scene load_steps=3 format=3 uid="uid://beve0nixxhrfc"]
+[gd_scene load_steps=4 format=3 uid="uid://beve0nixxhrfc"]
 
 [ext_resource type="Script" uid="uid://bwwgchjhycuk8" path="res://scenes/ui/VillageScene.gd" id="1_village"]
-[ext_resource type="Texture2D" uid="uid://b8g4jtw6su0ty" path="res://art/sprites/village/pozadí-Sheet-export.png" id="2_vahq2"]
+[ext_resource type="PackedScene" path="res://scenes/village/VillageWorld.tscn" id="2_world"]
+[ext_resource type="PackedScene" path="res://scenes/village/VillageHUD.tscn" id="3_hud"]
 
-[node name="VillageScene" type="Control"]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="VillageScene" type="Node"]
+editor_description = "World (VillageWorld + Camera2D) and always-on HUD (VillageHUD CanvasLayer). Place buildings under Plateau/Buildings — coordinates are layout pixels."
 script = ExtResource("1_village")
 
-[node name="Background" type="TextureRect" parent="."]
-unique_name_in_owner = true
-layout_mode = 1
+[node name="Backdrop" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="ColorRect" type="ColorRect" parent="Backdrop"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("2_vahq2")
-expand_mode = 1
-stretch_mode = 6
+color = Color(0.05, 0.06, 0.08, 1)
 
-[node name="DimOverlay" type="ColorRect" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-color = Color(0.04, 0.05, 0.08, 0.45)
+[node name="VillageWorld" parent="." instance=ExtResource("2_world")]
 
-[node name="Center" type="CenterContainer" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="SlotWell" parent="VillageWorld/Plateau/Buildings" index="0"]
+position = Vector2(266.5, 183.25)
 
-[node name="MainPanel" type="PanelContainer" parent="Center"]
-custom_minimum_size = Vector2(680, 540)
-layout_mode = 2
+[node name="SlotMarket" parent="VillageWorld/Plateau/Buildings" index="1"]
+position = Vector2(326.5, 182)
 
-[node name="Margin" type="MarginContainer" parent="Center/MainPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 16
+[node name="SlotLibrary" parent="VillageWorld/Plateau/Buildings" index="2"]
+position = Vector2(133.5, 184.75)
 
-[node name="VBox" type="VBoxContainer" parent="Center/MainPanel/Margin"]
-layout_mode = 2
-theme_override_constants/separation = 12
+[node name="SlotChapel" parent="VillageWorld/Plateau/Buildings" index="3"]
+position = Vector2(249.5, 124)
 
-[node name="Header" type="HBoxContainer" parent="Center/MainPanel/Margin/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 8
+[node name="SlotTavern" parent="VillageWorld/Plateau/Buildings" index="4"]
+position = Vector2(201.75, 183.5)
 
-[node name="TitleLabel" type="Label" parent="Center/MainPanel/Margin/VBox/Header"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 40
-text = "Village"
+[node name="SlotHuntersLodge" parent="VillageWorld/Plateau/Buildings" index="5"]
+position = Vector2(306.25, 263)
 
-[node name="ShardIcon" type="TextureRect" parent="Center/MainPanel/Margin/VBox/Header"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(28, 28)
-layout_mode = 2
-expand_mode = 1
-stretch_mode = 5
+[node name="Camera2D" parent="VillageWorld" index="1"]
+position = Vector2(1067, 733)
 
-[node name="ShardsLabel" type="Label" parent="Center/MainPanel/Margin/VBox/Header"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.95, 0.85, 0.4, 1)
-theme_override_font_sizes/font_size = 28
-text = "Shards: 0"
-horizontal_alignment = 2
-vertical_alignment = 1
+[node name="VillageHUD" parent="." instance=ExtResource("3_hud")]
 
-[node name="Scroll" type="ScrollContainer" parent="Center/MainPanel/Margin/VBox"]
-custom_minimum_size = Vector2(0, 380)
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="BuildingsList" type="VBoxContainer" parent="Center/MainPanel/Margin/VBox/Scroll"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 10
-
-[node name="Buttons" type="HBoxContainer" parent="Center/MainPanel/Margin/VBox"]
-layout_mode = 2
-theme_override_constants/separation = 16
-alignment = 1
-
-[node name="BackButton" type="Button" parent="Center/MainPanel/Margin/VBox/Buttons"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 40)
-layout_mode = 2
-text = "Back"
-
-[node name="ResetUpgradesButton" type="Button" parent="Center/MainPanel/Margin/VBox/Buttons"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(200, 40)
-layout_mode = 2
-text = "Reset upgrades"
-
-[node name="NewRunButton" type="Button" parent="Center/MainPanel/Margin/VBox/Buttons"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(160, 40)
-layout_mode = 2
-text = "New Run"
-
-[node name="ResetUpgradesDialog" type="ConfirmationDialog" parent="."]
-unique_name_in_owner = true
-title = "Reset village upgrades"
-ok_button_text = "Confirm"
-cancel_button_text = "Back"
+[editable path="VillageWorld"]

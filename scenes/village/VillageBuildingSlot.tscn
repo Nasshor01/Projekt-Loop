@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" uid="uid://c7queo01ue2cw" path="res://scenes/ui/VillageBuildingSlot.gd" id="1_slot"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
+resource_local_to_scene = true
+size = Vector2(64, 64)
+
+[node name="VillageBuildingSlot" type="Area2D"]
+collision_mask = 0
+monitoring = true
+monitorable = false
+input_pickable = true
+script = ExtResource("1_slot")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_hit")

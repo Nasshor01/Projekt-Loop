@@ -17,6 +17,8 @@ func get_available_cards(player_class: ClassData = null, player_subclass: Subcla
 			continue
 		if card.rarity == CardData.CardRarity.BASIC:
 			continue
+		if VillageBonuses.is_reward_gated_card(card.card_id) and not VillageBonuses.is_gated_card_unlocked(card.card_id):
+			continue
 		available.append(card)
 	return available
 

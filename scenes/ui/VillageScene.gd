@@ -1,158 +1,143 @@
-# Soubor: scenes/ui/VillageScene.gd
-# Loop Vesnice — seznam budov (shop-style), bez skill tree grafu.
-extends Control
+# Spatial village hub: world plateau + always-visible CanvasLayer HUD.
+extends Node
 
-const ICON_WELL = preload("res://art/sprites/village/well.png")
-const ICON_MARKET = preload("res://art/sprites/village/market.png")
-const ICON_LIBRARY = preload("res://art/sprites/village/library.png")
-const ICON_CHAPEL = preload("res://art/sprites/village/chapel.png")
-const ICON_SHARD = preload("res://art/sprites/village/shard.png")
-const TEX_BACKGROUND = preload("res://art/sprites/village/pozadí-Sheet-export.png")
+@onready var world: VillageWorld = $VillageWorld
+@onready var hud: VillageHUD = $VillageHUD
 
-@onready var background: TextureRect = %Background
-@onready var title_label: Label = %TitleLabel
-@onready var shard_icon: TextureRect = %ShardIcon
-@onready var shards_label: Label = %ShardsLabel
-@onready var buildings_list: VBoxContainer = %BuildingsList
-@onready var back_button: Button = %BackButton
-@onready var reset_upgrades_button: Button = %ResetUpgradesButton
-@onready var new_run_button: Button = %NewRunButton
-@onready var reset_upgrades_dialog: ConfirmationDialog = %ResetUpgradesDialog
+var _open_building_id: String = ""
+
 
 func _ready() -> void:
-	if background:
-		background.texture = TEX_BACKGROUND
-	if shard_icon:
-		shard_icon.texture = ICON_SHARD
-	back_button.pressed.connect(GameManager.go_to_main_menu)
-	reset_upgrades_button.pressed.connect(_on_reset_upgrades_pressed)
-	reset_upgrades_dialog.confirmed.connect(_on_reset_upgrades_confirmed)
-	new_run_button.pressed.connect(_on_new_run_pressed)
+	hud.back_pressed.connect(GameManager.go_to_main_menu)
+	hud.reset_pressed.connect(_on_reset_upgrades_pressed)
+	hud.bind_reset_confirmed(_on_reset_upgrades_confirmed)
+	hud.new_run_pressed.connect(_on_new_run_pressed)
+	hud.detail_closed.connect(_hide_detail)
+	hud.upgrade_pressed.connect(_on_detail_upgrade_pressed)
 	if SaveManager:
 		SaveManager.meta_progress_changed.connect(_refresh)
-	_update_static_texts()
+	for slot in world.get_building_slots():
+		if not slot.slot_clicked.is_connected(_on_slot_clicked):
+			slot.slot_clicked.connect(_on_slot_clicked)
+		if not slot.slot_hovered.is_connected(_on_slot_hovered):
+			slot.slot_hovered.connect(_on_slot_hovered)
+		if not slot.slot_unhovered.is_connected(_on_slot_unhovered):
+			slot.slot_unhovered.connect(_on_slot_unhovered)
+	_hide_detail()
 	_refresh()
 
-func _update_static_texts() -> void:
-	title_label.text = tr("village.title")
-	back_button.text = tr("village.back")
-	reset_upgrades_button.text = tr("village.reset_upgrades")
-	reset_upgrades_dialog.title = tr("village.reset_upgrades_title")
-	reset_upgrades_dialog.ok_button_text = tr("ui.common.confirm")
-	reset_upgrades_dialog.cancel_button_text = tr("ui.common.back")
-	new_run_button.text = tr("village.new_run")
-	var completed = SaveManager.is_tutorial_completed() if SaveManager else false
-	new_run_button.disabled = not completed
+
+func _on_slot_hovered(building_id: String) -> void:
+	if not _open_building_id.is_empty():
+		return
+	var slot := _slot_for(building_id)
+	if slot == null:
+		return
+	hud.show_world_tooltip(VillageBonuses.format_building_bbcode(building_id, false), slot.get_screen_rect())
+
+
+func _on_slot_unhovered() -> void:
+	hud.hide_world_tooltip()
+
+
+func _slot_for(building_id: String) -> VillageBuildingSlot:
+	for slot in world.get_building_slots():
+		if slot.building_id == building_id:
+			return slot
+	return null
+
+
+func _on_slot_clicked(building_id: String) -> void:
+	_on_slot_unhovered()
+	_open_building_id = building_id
+	_fill_detail(building_id)
+
+
+func _fill_detail(building_id: String) -> void:
+	world.camera_locked = true
+	var name := VillageBonuses.get_building_name(building_id)
+	if not VillageBonuses.is_line_unlocked(building_id):
+		hud.show_detail(name, VillageBonuses.format_building_bbcode(building_id, true), "", false, false)
+		return
+	if not VillageBonuses.is_meta_building(building_id):
+		hud.show_detail(name, VillageBonuses.format_building_bbcode(building_id, true), "", false, false)
+		return
+	var level := VillageBonuses.get_level(building_id)
+	var max_lv := VillageBonuses.get_max_level(building_id)
+	var title := "%s  —  %s" % [
+		name,
+		TranslationHelper.tr_format("village.level", {"current": level, "max": max_lv})
+	]
+	var upgrade_label := tr("village.maxed")
+	var can_upgrade := false
+	var show_upgrade := true
+	if level < max_lv:
+		if not VillageBonuses.meets_hero_level_gate(building_id):
+			var hero_id := VillageBonuses.get_required_hero_id(building_id)
+			upgrade_label = TranslationHelper.tr_format("village.requires_hero_level", {
+				"hero": _hero_label(hero_id),
+				"level": VillageBonuses.get_required_hero_level_for_next(building_id)
+			})
+			can_upgrade = false
+		else:
+			var cost := VillageBonuses.get_upgrade_cost(building_id)
+			upgrade_label = TranslationHelper.tr_format("village.upgrade", {"cost": cost})
+			can_upgrade = VillageBonuses.can_upgrade(building_id)
+	hud.show_detail(title, VillageBonuses.format_building_bbcode(building_id, true), upgrade_label, can_upgrade, show_upgrade)
+
+
+func _hero_label(hero_id: String) -> String:
+	var key := "class.%s" % hero_id
+	var name := tr(key)
+	if name == key:
+		return hero_id.capitalize()
+	return name
+
+
+func _hide_detail() -> void:
+	_open_building_id = ""
+	world.camera_locked = false
+	hud.hide_detail()
+
+
+func _on_detail_upgrade_pressed() -> void:
+	if _open_building_id.is_empty():
+		return
+	if VillageBonuses.try_upgrade(_open_building_id):
+		_refresh()
+
 
 func _on_reset_upgrades_pressed() -> void:
 	var refund := VillageBonuses.get_total_spent_shards()
 	if refund <= 0:
 		return
-	reset_upgrades_dialog.dialog_text = TranslationHelper.tr_format(
+	hud.popup_reset_confirm(TranslationHelper.tr_format(
 		"village.reset_upgrades_confirm",
 		{"value": refund}
-	)
-	reset_upgrades_dialog.popup_centered()
+	))
+
 
 func _on_reset_upgrades_confirmed() -> void:
 	VillageBonuses.try_reset_all_upgrades()
 	_refresh()
 
+
 func _on_new_run_pressed() -> void:
 	GameManager.go_to_character_select()
 
+
 func _refresh() -> void:
-	shards_label.text = TranslationHelper.tr_format("village.shards", {"value": SaveManager.get_shards()})
-	reset_upgrades_button.disabled = not VillageBonuses.has_any_upgrades()
+	hud.set_shards_value(SaveManager.get_shards())
 	if VillageBonuses.has_any_upgrades():
 		var refund := VillageBonuses.get_total_spent_shards()
-		reset_upgrades_button.text = TranslationHelper.tr_format("village.reset_upgrades_refund", {"value": refund})
+		hud.set_reset_enabled(true, TranslationHelper.tr_format("village.reset_upgrades_refund", {"value": refund}))
 	else:
-		reset_upgrades_button.text = tr("village.reset_upgrades")
-	_rebuild_building_rows()
-
-func _rebuild_building_rows() -> void:
-	for child in buildings_list.get_children():
-		child.queue_free()
-	for building_id in VillageBonuses.BUILDING_ORDER:
-		buildings_list.add_child(_make_building_row(building_id))
-
-func _make_building_row(building_id: String) -> PanelContainer:
-	var level := VillageBonuses.get_level(building_id)
-	var max_lv := VillageBonuses.get_max_level(building_id)
-	var cost := VillageBonuses.get_upgrade_cost(building_id)
-	var can_up := VillageBonuses.can_upgrade(building_id)
-
-	var panel := PanelContainer.new()
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.08, 0.1, 0.14, 0.88)
-	style.set_corner_radius_all(6)
-	style.content_margin_left = 12
-	style.content_margin_right = 12
-	style.content_margin_top = 10
-	style.content_margin_bottom = 10
-	panel.add_theme_stylebox_override("panel", style)
-
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 12)
-	panel.add_child(row)
-
-	var icon := TextureRect.new()
-	icon.custom_minimum_size = Vector2(64, 64)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icon.texture = _building_icon(building_id)
-	row.add_child(icon)
-
-	var text_col := VBoxContainer.new()
-	text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.add_child(text_col)
-
-	var name_label := Label.new()
-	name_label.text = "%s  —  %s" % [
-		VillageBonuses.get_building_name(building_id),
-		TranslationHelper.tr_format("village.level", {"current": level, "max": max_lv})
-	]
-	name_label.add_theme_font_size_override("font_size", 27)
-	text_col.add_child(name_label)
-
-	var current_label := Label.new()
-	current_label.text = VillageBonuses.get_current_effect_text(building_id)
-	current_label.add_theme_color_override("font_color", Color(0.75, 0.8, 0.88))
-	current_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text_col.add_child(current_label)
-
-	var next_label := Label.new()
-	next_label.text = VillageBonuses.get_next_effect_text(building_id)
-	next_label.add_theme_color_override("font_color", Color(0.55, 0.85, 0.7))
-	next_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	text_col.add_child(next_label)
-
-	var upgrade_btn := Button.new()
-	upgrade_btn.custom_minimum_size = Vector2(140, 40)
-	if level >= max_lv:
-		upgrade_btn.text = tr("village.maxed")
-		upgrade_btn.disabled = true
-	else:
-		upgrade_btn.text = TranslationHelper.tr_format("village.upgrade", {"cost": cost})
-		upgrade_btn.disabled = not can_up
-	upgrade_btn.pressed.connect(_on_upgrade_pressed.bind(building_id))
-	row.add_child(upgrade_btn)
-
-	return panel
-
-func _building_icon(building_id: String) -> Texture2D:
-	match building_id:
-		VillageBonuses.WELL:
-			return ICON_WELL
-		VillageBonuses.MARKET:
-			return ICON_MARKET
-		VillageBonuses.LIBRARY:
-			return ICON_LIBRARY
-		VillageBonuses.CHAPEL:
-			return ICON_CHAPEL
-	return null
-
-func _on_upgrade_pressed(building_id: String) -> void:
-	if VillageBonuses.try_upgrade(building_id):
-		_refresh()
+		hud.set_reset_enabled(false, tr("village.reset_upgrades"))
+	for slot in world.get_building_slots():
+		var lv := 0
+		if VillageBonuses.is_meta_building(slot.building_id):
+			lv = VillageBonuses.get_level(slot.building_id)
+		slot.set_display_level(lv)
+		slot.set_locked_visual(not VillageBonuses.is_line_unlocked(slot.building_id))
+	if not _open_building_id.is_empty():
+		_fill_detail(_open_building_id)

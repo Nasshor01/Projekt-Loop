@@ -757,8 +757,15 @@ func _coop_spawn_two_players_and_start():
 		return
 	_coop_spawn_two_players_at_positions(spawn_points[0], spawn_points[1])
 
+func _apply_battle_start_heal() -> void:
+	var start_heal := VillageBonuses.get_battle_start_heal()
+	if start_heal > 0:
+		PlayerData.heal(start_heal)
+
+
 func _coop_spawn_two_players_at_positions(host_cell: Vector2i, client_cell: Vector2i):
 	"""Coop: spawn na zadaných buňkách + barevné odlišení host/klient."""
+	_apply_battle_start_heal()
 	battle_grid_instance.hide_player_spawn_points()
 	var host_id = 1
 	var client_id = MultiplayerManager.get_other_peer_id() if MultiplayerManager.is_server() else multiplayer.get_unique_id()
@@ -881,6 +888,7 @@ func confirm_player_spawn(at_position: Vector2i):
 
 
 func spawn_player_unit_at(grid_pos: Vector2i):
+	_apply_battle_start_heal()
 	if PlayerData.selected_subclass and PlayerData.selected_subclass.specific_unit_data:
 		_player_unit_node = _spawn_unit(PlayerData.selected_subclass.specific_unit_data, grid_pos)
 		if is_instance_valid(_player_unit_node):

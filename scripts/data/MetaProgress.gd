@@ -21,6 +21,12 @@ extends Resource
 ## building_id -> level (int)
 @export var building_levels: Dictionary = {}
 
+## Hero ids that may be dispatched. Paladin is always treated as unlocked.
+@export var unlocked_heroes: Array[String] = ["paladin"]
+
+## 0 = legacy save (před village splitem). Musí sedět se SaveManager.META_SCHEMA_VERSION.
+@export var schema_version: int = 0
+
 const DEFAULT_HERO_IDS: PackedStringArray = ["paladin", "trapper"]
 
 func clear_skill_tree_progress() -> bool:
@@ -37,6 +43,12 @@ func migrate_legacy_hero_progress() -> bool:
 		return false
 	for hero_id in DEFAULT_HERO_IDS:
 		hero_progress[hero_id] = {"level": player_level, "xp": total_xp}
+	return true
+
+func migrate_unlocked_heroes() -> bool:
+	if "paladin" in unlocked_heroes:
+		return false
+	unlocked_heroes.insert(0, "paladin")
 	return true
 
 func get_hero_entry(hero_id: String) -> Dictionary:
@@ -57,6 +69,16 @@ func get_hero_level(hero_id: String) -> int:
 
 func get_hero_xp(hero_id: String) -> int:
 	return int(get_hero_entry(hero_id).get("xp", 0))
+
+func is_hero_unlocked(hero_id: String) -> bool:
+	if hero_id.is_empty() or hero_id == "paladin":
+		return true
+	return hero_id in unlocked_heroes
+
+func unlock_hero(hero_id: String) -> void:
+	if hero_id.is_empty() or is_hero_unlocked(hero_id):
+		return
+	unlocked_heroes.append(hero_id)
 
 func set_hero_progress(hero_id: String, level: int, xp: int) -> void:
 	hero_progress[hero_id] = {"level": max(1, level), "xp": max(0, xp)}

@@ -182,10 +182,14 @@ Vylepšují **předpis a provoz**, ze kterého vyjede další nositelka.
 
 | Budova (EN / CS) | Herní efekt (stručně) | Lore |
 |------------------|------------------------|------|
-| **Well / Studna** | + max HP | Obnova těla / nádrž pro inkarnace |
+| **Well / Studna** | malý heal na začátku bitvy (ne strop HP) | Doušek před výdejem — léčí rány, nenafukuje tělo |
 | **Market / Tržiště** | startovní zlato, lepší shop | Logistika desátku a výdeje materiálu |
 | **Library / Knihovna** | lepší card offers / rarity | Archivy, předpisy, záznamy o moci a nasazeních |
-| **Chapel / Kaple** | block na začátku bitvy | Přísaha, pečeť, stabilizace před výdejem |
+| **Chapel / Kaple** | Paladin řada: HP, start block, karty, move | Přísaha a pečeť řady — stabilizace před výdejem |
+| **Hunter’s Lodge** | Trapper řada (až unlock; zatím ruina) | Průzkum / lovci pro další výdej |
+| **Tavern / Hospoda** | později unlock řad / companion — ne rest mezi Acty | Síň pro další výdejní řady |
+
+Plán a pořadí dalších fází: [`docs/VILLAGE_PLAN.md`](VILLAGE_PLAN.md).
 
 > Budovy se upgradují střepy, protože základna pořád umí **recyklovat desátek** do provozu oddělení.
 

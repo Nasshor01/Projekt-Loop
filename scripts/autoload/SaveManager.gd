@@ -9,7 +9,8 @@ const VERSION_FILE_PATH = "user://last_version.cfg"
 
 ## Bump JEN když se mění formát / pravidla levelů nebo village (střepy, budovy).
 ## Bumpnutí game version (0.3.x) meta NEmaže.
-const META_SCHEMA_VERSION: int = 1
+## 2 = vesnice split (Chapel/Lodge HP, Well heal, hero-level gates) — starý meta save se maže.
+const META_SCHEMA_VERSION: int = 2
 
 var meta_progress: MetaProgress
 
@@ -27,22 +28,32 @@ func _check_version_migration():
 	var config = ConfigFile.new()
 	var had_config := config.load(VERSION_FILE_PATH) == OK
 	var saved_version: String = config.get_value("version", "game_version", "") if had_config else ""
-	# Chybějící klíč = starý save z éry „wipe při každé verzi“ → ber jako aktuální schema (nemazat).
-	var saved_meta_schema: int = int(config.get_value("version", "meta_schema", META_SCHEMA_VERSION)) if had_config else META_SCHEMA_VERSION
+	var saved_meta_schema := _read_saved_meta_schema(config, had_config)
 
 	if saved_version != "" and saved_version != current_version:
 		print("=== VERSION UPDATE ===")
-		print("Old version: %s -> New version: %s (meta kept)" % [saved_version, current_version])
+		print("Old version: %s -> New version: %s (meta kept unless schema changed)" % [saved_version, current_version])
 	elif saved_version == "":
 		print("First launch detected (version %s)." % current_version)
 
 	if saved_meta_schema != META_SCHEMA_VERSION:
 		print("=== META SCHEMA MIGRATION ===")
 		print("Old meta schema: %d -> New: %d" % [saved_meta_schema, META_SCHEMA_VERSION])
-		print("Wiping meta progress (levels / village) only...")
+		print("Wiping meta progress + leftover run save...")
 		_wipe_meta_progress()
+		delete_saved_run()
 
 	_save_version_config(current_version)
+
+
+func _read_saved_meta_schema(config: ConfigFile, had_config: bool) -> int:
+	## Chybějící klíč / chybějící cfg = schema 0, ať staré savy z předchozí verze dostanou čistý restart.
+	## První spuštění (žádný cfg a žádný meta soubor) bereme jako aktuální schema — není co mazat.
+	if had_config:
+		return int(config.get_value("version", "meta_schema", 0))
+	if FileAccess.file_exists(META_SAVE_PATH) or FileAccess.file_exists(RUN_SAVE_PATH):
+		return 0
+	return META_SCHEMA_VERSION
 
 func _save_version_config(version: String):
 	"""Uloží game version + meta schema (settings / run save se nemění)."""
@@ -54,7 +65,7 @@ func _save_version_config(version: String):
 	config.save(VERSION_FILE_PATH)
 
 func _wipe_meta_progress():
-	"""Smaže jen meta (levely, XP, střepy, village). Run save a settings nechá."""
+	"""Smaže meta (levely, XP, střepy, village). Settings / jazyk / tutorial nechá."""
 	if not FileAccess.file_exists(META_SAVE_PATH):
 		print("  No meta_progress.res to delete.")
 		return
@@ -120,17 +131,34 @@ func save_meta_progress():
 	emit_signal("meta_progress_changed")
 
 func load_meta_progress():
+	var dirty := false
 	if ResourceLoader.exists(META_SAVE_PATH):
 		meta_progress = ResourceLoader.load(META_SAVE_PATH)
 	else:
 		meta_progress = MetaProgress.new()
 		print("Žádná uložená data nenalezena, vytvářím nová.")
-	var dirty := false
-	if meta_progress and meta_progress.clear_skill_tree_progress():
+		dirty = true
+	if meta_progress == null:
+		meta_progress = MetaProgress.new()
+		dirty = true
+	## Starý .res (schema 0 / 1) nesmí přejít do nového village splitu.
+	if meta_progress.schema_version != META_SCHEMA_VERSION:
+		print("=== META RESOURCE SCHEMA MISMATCH ===")
+		print("Resource schema: %d -> %d (fresh meta)" % [meta_progress.schema_version, META_SCHEMA_VERSION])
+		_wipe_meta_progress()
+		delete_saved_run()
+		meta_progress = MetaProgress.new()
+		dirty = true
+	if meta_progress.schema_version != META_SCHEMA_VERSION:
+		meta_progress.schema_version = META_SCHEMA_VERSION
+		dirty = true
+	if meta_progress.clear_skill_tree_progress():
 		print("SaveManager: vyčištěn legacy skill tree progress.")
 		dirty = true
-	if meta_progress and meta_progress.migrate_legacy_hero_progress():
+	if meta_progress.migrate_legacy_hero_progress():
 		print("SaveManager: migrován shared level na per-hero progress.")
+		dirty = true
+	if meta_progress.migrate_unlocked_heroes():
 		dirty = true
 	if dirty:
 		save_meta_progress()

@@ -155,6 +155,7 @@ func start_new_run_state():
 						# Unique instance per slot — shared .tres refs would make Seal/meta apply to all copies.
 						# duplicate() clears resource_path; keep source_path for run save/load.
 						master_deck.append(duplicate_card_for_deck(entry.card))
+		VillageBonuses.apply_starting_deck_bonuses(master_deck)
 		
 		global_shield = 0
 	# 2. Nejdřív vyčisti artefakty z minulého runu, pak přepočítej startovní staty.
@@ -269,7 +270,7 @@ func apply_passive_skills(preserve_run_vitals: bool = true):
 	
 	allied_defense_bonus_percent = 0
 	force_enemy_movement_uses = 0
-	movement_bonus = 0
+	movement_bonus = VillageBonuses.get_movement_bonus()
 	
 	first_spell_element_free = false
 	used_free_elements.clear()

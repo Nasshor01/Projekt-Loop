@@ -1,0 +1,68 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://scenes/village/VillageWorld.gd" id="1_world"]
+[ext_resource type="Texture2D" uid="uid://cuv4inq634csn" path="res://art/sprites/village/village layout-Sheet.png" id="2_layout"]
+[ext_resource type="PackedScene" path="res://scenes/village/VillageBuildingSlot.tscn" id="3_slot"]
+[ext_resource type="Texture2D" uid="uid://byya5c50ab6rj" path="res://art/sprites/village/Well/Well 0.png" id="4_well0"]
+[ext_resource type="Texture2D" uid="uid://i66r67obk3ta" path="res://art/sprites/village/market/Market 0.png" id="5_market0"]
+[ext_resource type="Texture2D" uid="uid://olhnmf5efj3v" path="res://art/sprites/village/Library/Library 0.png" id="6_library0"]
+[ext_resource type="Texture2D" uid="uid://dtfg42tf2x7kj" path="res://art/sprites/village/Chapel/chapel 0.png" id="7_chapel0"]
+[ext_resource type="Texture2D" uid="uid://xachqpq6p033" path="res://art/sprites/village/Tavern/Tavern 0.png" id="8_tavern0"]
+[ext_resource type="Texture2D" uid="uid://d0ni1xedg0xl7" path="res://art/sprites/village/Hunter’s Lodge/Hunter’s Lodge 0.png" id="9_lodge0"]
+
+[node name="VillageWorld" type="Node2D"]
+script = ExtResource("1_world")
+layout_scale = 4.0
+camera_zoom = 1.55
+
+[node name="Plateau" type="Node2D" parent="."]
+editor_description = "Layout pixel space (512×343). Place Slot* nodes on the ruins; they scale with the plateau."
+scale = Vector2(4, 4)
+
+[node name="Layout" type="Sprite2D" parent="Plateau"]
+texture = ExtResource("2_layout")
+centered = false
+
+[node name="Buildings" type="Node2D" parent="Plateau"]
+z_index = 1
+
+[node name="SlotWell" parent="Plateau/Buildings" instance=ExtResource("3_slot")]
+position = Vector2(141, 180)
+scale = Vector2(0.14, 0.14)
+building_id = "well"
+ruin_texture = ExtResource("4_well0")
+
+[node name="SlotMarket" parent="Plateau/Buildings" instance=ExtResource("3_slot")]
+position = Vector2(341, 177)
+scale = Vector2(0.14, 0.14)
+building_id = "market"
+ruin_texture = ExtResource("5_market0")
+
+[node name="SlotLibrary" parent="Plateau/Buildings" instance=ExtResource("3_slot")]
+position = Vector2(245, 145)
+scale = Vector2(0.14, 0.14)
+building_id = "library"
+ruin_texture = ExtResource("6_library0")
+
+[node name="SlotChapel" parent="Plateau/Buildings" instance=ExtResource("3_slot")]
+position = Vector2(288, 220)
+scale = Vector2(0.14, 0.14)
+building_id = "chapel"
+ruin_texture = ExtResource("7_chapel0")
+
+[node name="SlotTavern" parent="Plateau/Buildings" instance=ExtResource("3_slot")]
+position = Vector2(90, 240)
+scale = Vector2(0.14, 0.14)
+building_id = "tavern"
+ruin_texture = ExtResource("8_tavern0")
+
+[node name="SlotHuntersLodge" parent="Plateau/Buildings" instance=ExtResource("3_slot")]
+position = Vector2(400, 120)
+scale = Vector2(0.14, 0.14)
+building_id = "hunters_lodge"
+ruin_texture = ExtResource("9_lodge0")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(1024, 686)
+zoom = Vector2(1.55, 1.55)
+enabled = true

@@ -76,6 +76,7 @@ Milestone: [Alpha 0.4 gate](https://github.com/Nasshor01/Projekt-Loop/milestone/
 | #35 Village resource ekonomika | 0.4.5 |
 | #36 Village companion | 0.4.5 |
 | #37 Trapper plně hratelný + unlock | **0.5** |
+| Další village plán (po splitu v2) | [`docs/VILLAGE_PLAN.md`](VILLAGE_PLAN.md) |
 | Holy Push + displacement mikro-engine | **přesunuto do gate** (#53) |
 | Barrel / quicksand / víc arena terénu | 0.4.x–0.5 |
 | Další artefakty / enemy packy | průběžně 0.4.x |
