@@ -276,6 +276,8 @@
 "ui.char_select.trapper_locked_hint","Locked — restore the Tavern in the Village.","Zamčeno — obnov Hospodu ve vesnici."
 "ui.char_select.trapper_locked_tavern","Locked — restore the Tavern in the Village.","Zamčeno — obnov Hospodu ve vesnici."
 "ui.char_select.trapper_locked_dossier","Locked — a hunter dossier waits in the field.","Zamčeno — v terénu čeká dossier Lovců."
+"class.paladin.flavor","Holds the line, stacks Block, and pulls enemies in.","Drží linii, nabírá Block a tahá nepřítele k sobě."
+"class.trapper.flavor","Traps, kite, and poison. They pay for every step.","Pasti, kite a jed. Nepřátelé platí za každý krok."
 "ui.run_prep.title","Character setup","Výběr postavy"
 "ui.run_prep.start","Start","Start"
 "ui.run_prep.level","Level: {value}","Level: {value}"

@@ -452,7 +452,8 @@ func go_to_run_prep_screen(p_class: ClassData, p_subclass: SubclassData):
 		subclass_name = p_subclass.subclass_name
 	DebugLogger.log_info("Subclass: %s" % subclass_name, "CHAR_SELECT")
 	
-	_change_scene(run_prep_scene)
+	PlayerData.initialize_player(p_class, p_subclass)
+	start_new_run()
 
 func reward_chosen():
 	if _is_post_boss_reward:

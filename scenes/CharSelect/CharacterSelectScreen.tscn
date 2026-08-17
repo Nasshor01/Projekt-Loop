@@ -1,13 +1,50 @@
-[gd_scene load_steps=9 format=3 uid="uid://bmsqxk7qw1bd0"]
+[gd_scene load_steps=14 format=3 uid="uid://bmsqxk7qw1bd0"]
 
 [ext_resource type="Script" uid="uid://cdxpf617wcyde" path="res://scenes/CharSelect/CharacterSelectScreen.gd" id="1_jvmhw"]
-[ext_resource type="Resource" uid="uid://dbgquedjcu78p" path="res://data/classes/Tank.tres" id="2_tank"]
 [ext_resource type="Texture2D" uid="uid://befhniipfiopx" path="res://art/icons/paladin portrait.png" id="2_paladin_art"]
+[ext_resource type="Resource" uid="uid://dbgquedjcu78p" path="res://data/classes/Tank.tres" id="2_tank"]
 [ext_resource type="Resource" uid="uid://bqaye7oh04v8p" path="res://data/classes/Paladin.tres" id="3_paladin"]
-[ext_resource type="Resource" uid="uid://classassassin01lp" path="res://data/classes/Assassin.tres" id="4_assassin"]
-[ext_resource type="Resource" uid="uid://classtrapper01lp" path="res://data/classes/Trapper.tres" id="5_trapper"]
+[ext_resource type="Resource" uid="uid://1nivr7ywhwen" path="res://data/classes/Assassin.tres" id="4_assassin"]
+[ext_resource type="Resource" uid="uid://coq6apu4j4quf" path="res://data/classes/Trapper.tres" id="5_trapper"]
 [ext_resource type="Texture2D" uid="uid://c04yhfwcnno6v" path="res://art/icons/trapper_portrait.png" id="6_trapper_art"]
-[ext_resource type="Texture2D" uid="uid://diu4i873cqthb" path="res://art/sprites/backgrounds/bg_menu_cathedral_cliff-Sheet-export.png" id="7_bg"]
+[ext_resource type="Texture2D" uid="uid://wsekcfae51aq" path="res://art/icons/status/Heal.png" id="8_hp"]
+[ext_resource type="Texture2D" uid="uid://4nq7ttmop21r" path="res://art/icons/status/Gold_HP.png" id="9_gold"]
+[ext_resource type="Texture2D" uid="uid://dipfuc6snbvqm" path="res://art/sprites/backgrounds/paladin_backround.png" id="9_wcc8u"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_info"]
+content_margin_left = 22.0
+content_margin_top = 18.0
+content_margin_right = 22.0
+content_margin_bottom = 18.0
+bg_color = Color(0.07, 0.07, 0.09, 0.82)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.22, 0.22, 0.26, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xp_bg"]
+bg_color = Color(0.08, 0.08, 0.1, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.35, 0.4, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xp_fill"]
+bg_color = Color(0.85, 0.72, 0.28, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [node name="CharacterSelectScreen" type="Control"]
 layout_mode = 3
@@ -21,8 +58,10 @@ paladin_class = ExtResource("2_tank")
 paladin_subclass = ExtResource("3_paladin")
 trapper_class = ExtResource("4_assassin")
 trapper_subclass = ExtResource("5_trapper")
+paladin_select_art = ExtResource("9_wcc8u")
+trapper_select_art = ExtResource("6_trapper_art")
 
-[node name="Background" type="TextureRect" parent="."]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -30,11 +69,181 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-texture = ExtResource("7_bg")
+color = Color(0, 0, 0, 1)
+
+[node name="HeroArt" type="TextureRect" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_wcc8u")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CoopStatus" type="Label" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+offset_left = 28.0
+offset_top = 20.0
+offset_right = 640.0
+offset_bottom = 52.0
+theme_override_colors/font_color = Color(0.85, 0.86, 0.9, 0.9)
+theme_override_font_sizes/font_size = 20
+
+[node name="InfoPanel" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 48.0
+offset_top = -190.0
+offset_right = 580.0
+offset_bottom = 140.0
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_info")
+
+[node name="InfoVBox" type="VBoxContainer" parent="InfoPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="NameRow" type="HBoxContainer" parent="InfoPanel/InfoVBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="NameLabel" type="Label" parent="InfoPanel/InfoVBox/NameRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.95, 0.82, 0.32, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 52
+text = "Paladin"
+
+[node name="LevelLabel" type="Label" parent="InfoPanel/InfoVBox/NameRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.91, 0.94, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 28
+text = "Level: 1"
+vertical_alignment = 2
+
+[node name="StatsRow" type="HBoxContainer" parent="InfoPanel/InfoVBox"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="HpIcon" type="TextureRect" parent="InfoPanel/InfoVBox/StatsRow"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+texture = ExtResource("8_hp")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HpLabel" type="Label" parent="InfoPanel/InfoVBox/StatsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 28
+text = "50/50"
+
+[node name="GoldIcon" type="TextureRect" parent="InfoPanel/InfoVBox/StatsRow"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+texture = ExtResource("9_gold")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GoldLabel" type="Label" parent="InfoPanel/InfoVBox/StatsRow"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 28
+text = "50"
+
+[node name="FlavorLabel" type="Label" parent="InfoPanel/InfoVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.91, 0.94, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 24
+autowrap_mode = 3
+
+[node name="XPBar" type="ProgressBar" parent="InfoPanel/InfoVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_xp_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_xp_fill")
+max_value = 80.0
+step = 1.0
+show_percentage = false
+
+[node name="XPLabel" type="Label" parent="InfoPanel/InfoVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.87, 0.9, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 22
+text = "XP: 0 / 80"
+
+[node name="Roster" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -110.0
+offset_top = -132.0
+offset_right = 110.0
+offset_bottom = -28.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="PaladinThumb" type="PanelContainer" parent="Roster"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+
+[node name="PaladinPortrait" type="TextureRect" parent="Roster/PaladinThumb"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("2_paladin_art")
 expand_mode = 1
 stretch_mode = 6
 
-[node name="DimOverlay" type="ColorRect" parent="."]
+[node name="TrapperThumb" type="PanelContainer" parent="Roster"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+
+[node name="Stack" type="Control" parent="Roster/TrapperThumb"]
+custom_minimum_size = Vector2(88, 88)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="TrapperPortrait" type="TextureRect" parent="Roster/TrapperThumb/Stack"]
+unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -42,105 +251,68 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.04, 0.05, 0.08, 0.4)
+texture = ExtResource("6_trapper_art")
+expand_mode = 1
+stretch_mode = 6
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
+[node name="LockOverlay" type="ColorRect" parent="Roster/TrapperThumb/Stack"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.02, 0.04, 0.55)
 
-[node name="MarginContainer" type="MarginContainer" parent="CenterContainer"]
-layout_mode = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
-
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/MarginContainer"]
-custom_maximum_size = Vector2(560, 0)
-layout_mode = 2
-theme_override_constants/separation = 16
-
-[node name="TitleLabel" type="Label" parent="CenterContainer/MarginContainer/VBoxContainer"]
-layout_mode = 2
-text = "Vyber si hrdinu"
+[node name="LockMark" type="Label" parent="Roster/TrapperThumb/Stack/LockOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -16.0
+offset_top = -22.0
+offset_right = 16.0
+offset_bottom = 22.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.92, 0.86, 0.55, 1)
+theme_override_font_sizes/font_size = 28
+text = "?"
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="CharactersContainer" type="HBoxContainer" parent="CenterContainer/MarginContainer/VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 0
-theme_override_constants/separation = 24
-alignment = 1
-
-[node name="PaladinPanel" type="PanelContainer" parent="CenterContainer/MarginContainer/VBoxContainer/CharactersContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/MarginContainer/VBoxContainer/CharactersContainer/PaladinPanel"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="NameLabel" type="Label" parent="CenterContainer/MarginContainer/VBoxContainer/CharactersContainer/PaladinPanel/VBoxContainer"]
-layout_mode = 2
-text = "Paladin"
-horizontal_alignment = 1
-
-[node name="Portrait" type="TextureRect" parent="CenterContainer/MarginContainer/VBoxContainer/CharactersContainer/PaladinPanel/VBoxContainer"]
-custom_minimum_size = Vector2(140, 140)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 0
-texture = ExtResource("2_paladin_art")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="LevelLabel" type="Label" parent="CenterContainer/MarginContainer/VBoxContainer/CharactersContainer/PaladinPanel/VBoxContainer"]
-layout_mode = 2
-text = "Level: 1"
-horizontal_alignment = 1
-
-[node name="TrapperPanel" type="PanelContainer" parent="CenterContainer/MarginContainer/VBoxContainer/CharactersContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-
-[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/MarginContainer/VBoxContainer/CharactersContainer/TrapperPanel"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="NameLabel" type="Label" parent="CenterContainer/MarginContainer/VBoxContainer/CharactersContainer/TrapperPanel/VBoxContainer"]
-layout_mode = 2
-text = "Trapper"
-horizontal_alignment = 1
-
-[node name="Portrait" type="TextureRect" parent="CenterContainer/MarginContainer/VBoxContainer/CharactersContainer/TrapperPanel/VBoxContainer"]
-custom_minimum_size = Vector2(140, 140)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 0
-texture = ExtResource("6_trapper_art")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="LevelLabel" type="Label" parent="CenterContainer/MarginContainer/VBoxContainer/CharactersContainer/TrapperPanel/VBoxContainer"]
-layout_mode = 2
-text = "Level: 1"
-horizontal_alignment = 1
-
-[node name="ContinueButton" type="Button" parent="CenterContainer/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-size_flags_horizontal = 4
-text = "Pokračovat"
-
-[node name="BackButton" type="Button" parent="CenterContainer/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-size_flags_horizontal = 4
+[node name="BackButton" type="Button" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 28.0
+offset_top = -76.0
+offset_right = 188.0
+offset_bottom = -28.0
+grow_vertical = 0
 text = "Zpět"
+
+[node name="ContinueButton" type="Button" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 48)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -248.0
+offset_top = -76.0
+offset_right = -28.0
+offset_bottom = -28.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Pokračovat"
