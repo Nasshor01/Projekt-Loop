@@ -1,4 +1,4 @@
-res://main.tscn
+res://scenes/ui/VillageScene.tscn
 res://art/ui/game_theme.tres
 res://data/skills/paladin_skill_tree_manual.tres
 res://data/cards/everyone/heavy_strike_upgraded.tres
@@ -126,6 +126,8 @@ res://data/events/event_mysterious_merchant.tres
 res://data/events/golden_idol.tres
 res://data/events/traveling_blacksmith.tres
 res://data/events/wizard_altar.tres
+res://data/events/hunter_dossier.tres
+res://main.tscn
 res://scenes/ui/PopupMenu.tscn
 res://scenes/ui/initiative_bar/InitiativeBar.tscn
 res://scenes/ui/initiative_bar/InitiativeIcon.tscn
@@ -154,4 +156,3 @@ res://scenes/rewards/TreasureScene.tscn
 res://scenes/shop/ShopScene.tscn
 res://scenes/map/Map.tscn
 res://scenes/ui/LayoutSlot.tscn
-res://scenes/ui/VillageScene.tscn

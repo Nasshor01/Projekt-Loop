@@ -7,14 +7,16 @@ const WELL := "well"
 const MARKET := "market"
 const LIBRARY := "library"
 const CHAPEL := "chapel"
+const TAVERN := "tavern"
 const HUNTERS_LODGE := "hunters_lodge"
+const HUNTER_DOSSIER_EVENT_ID := "hunter_dossier"
 
-const BUILDING_ORDER: Array[String] = [WELL, MARKET, LIBRARY, CHAPEL]
+const BUILDING_ORDER: Array[String] = [WELL, MARKET, LIBRARY, CHAPEL, TAVERN]
 
 const DEFS := {
 	WELL: {"max_level": 5, "base_cost": 8, "heal_per_level": 2},
 	MARKET: {"max_level": 5, "base_cost": 6, "gold_per_level": 8},
-	LIBRARY: {"max_level": 5, "base_cost": 10},
+	LIBRARY: {"max_level": 3, "base_cost": 10},
 	CHAPEL: {
 		"max_level": 5,
 		"base_cost": 12,
@@ -22,6 +24,7 @@ const DEFS := {
 		"hero_id": "paladin",
 		"required_hero_levels": [1, 3, 5, 8, 12],
 	},
+	TAVERN: {"max_level": 1, "base_cost": 15},
 }
 
 const CLASS_HERO := {
@@ -114,7 +117,11 @@ static func get_def(building_id: String) -> Dictionary:
 static func get_level(building_id: String) -> int:
 	if not SaveManager or not SaveManager.meta_progress:
 		return 0
-	return SaveManager.meta_progress.get_building_level(building_id)
+	var level := SaveManager.meta_progress.get_building_level(building_id)
+	var max_lv := get_max_level(building_id)
+	if max_lv > 0:
+		return mini(level, max_lv)
+	return level
 
 static func get_max_level(building_id: String) -> int:
 	return int(get_def(building_id).get("max_level", 0))
@@ -228,9 +235,9 @@ static func get_shop_card_count() -> int:
 
 static func get_shop_card_count_at(lib: int) -> int:
 	## ShopScene has 6 CardSlots — Library fills them gradually.
-	if lib >= 5:
-		return 6
 	if lib >= 3:
+		return 6
+	if lib >= 2:
 		return 5
 	if lib >= 1:
 		return 4
@@ -250,31 +257,20 @@ static func get_shop_artifact_count_at(market: int) -> int:
 static func get_rare_card_chance() -> float:
 	return get_rare_card_chance_at(get_level(LIBRARY))
 
-static func get_rare_card_chance_at(lib: int) -> float:
-	var chance := BASE_RARE_CHANCE
-	if lib >= 2:
-		chance += 0.04
-	if lib >= 4:
-		chance += 0.04
-	return chance
+static func get_rare_card_chance_at(_lib: int = 0) -> float:
+	return BASE_RARE_CHANCE
 
 static func get_epic_card_chance() -> float:
 	return get_epic_card_chance_at(get_level(LIBRARY))
 
-static func get_epic_card_chance_at(lib: int) -> float:
-	var chance := BASE_EPIC_CHANCE
-	if lib >= 4:
-		chance += 0.04
-	return chance
+static func get_epic_card_chance_at(_lib: int = 0) -> float:
+	return BASE_EPIC_CHANCE
 
 static func get_legendary_card_chance() -> float:
 	return get_legendary_card_chance_at(get_level(LIBRARY))
 
-static func get_legendary_card_chance_at(lib: int) -> float:
-	var chance := BASE_LEGENDARY_CHANCE
-	if lib >= 5:
-		chance += 0.02
-	return chance
+static func get_legendary_card_chance_at(_lib: int = 0) -> float:
+	return BASE_LEGENDARY_CHANCE
 
 ## DEPRECATED alias — Uncommon rarity cancelled; maps to epic chance for old call sites.
 static func get_uncommon_chance() -> float:
@@ -339,6 +335,8 @@ static func get_current_effect_text(building_id: String) -> String:
 			return _library_current_text(level)
 		CHAPEL:
 			return TranslationHelper.tr_format("village.effect.chapel_current", {"value": get_battle_start_block()})
+		TAVERN:
+			return ", ".join(_tavern_current_lines(level))
 	return ""
 
 static func get_next_effect_text(building_id: String) -> String:
@@ -355,6 +353,8 @@ static func get_next_effect_text(building_id: String) -> String:
 			return _library_next_text(level + 1)
 		CHAPEL:
 			return TranslationHelper.tr_format("village.effect.chapel_next", {"value": int(get_def(CHAPEL).get("block_per_level", 2))})
+		TAVERN:
+			return " · ".join(_tavern_gain_lines(level + 1))
 	return ""
 
 static func _market_current_text() -> String:
@@ -381,16 +381,12 @@ static func _library_current_text(level: int) -> String:
 static func _library_next_text(next_level: int) -> String:
 	return " · ".join(_library_gain_lines(next_level))
 
-static func _pct(chance: float) -> int:
-	return int(round(chance * 100.0))
-
 static func _library_snapshot_lines(lib_level: int) -> PackedStringArray:
+	if lib_level <= 0:
+		return PackedStringArray([_tr("village.effect.none")])
 	return PackedStringArray([
 		TranslationHelper.tr_format("village.effect.library_choices", {"value": get_reward_card_count_at(lib_level)}),
 		TranslationHelper.tr_format("village.effect.library_shop", {"value": get_shop_card_count_at(lib_level)}),
-		TranslationHelper.tr_format("village.effect.library_rare", {"value": _pct(get_rare_card_chance_at(lib_level))}),
-		TranslationHelper.tr_format("village.effect.library_epic", {"value": _pct(get_epic_card_chance_at(lib_level))}),
-		TranslationHelper.tr_format("village.effect.library_legendary", {"value": _pct(get_legendary_card_chance_at(lib_level))}),
 	])
 
 static func _library_gain_lines(next_level: int) -> PackedStringArray:
@@ -401,10 +397,6 @@ static func _library_gain_lines(next_level: int) -> PackedStringArray:
 			return PackedStringArray([_tr("village.effect.library_gain_2")])
 		3:
 			return PackedStringArray([_tr("village.effect.library_gain_3")])
-		4:
-			return PackedStringArray([_tr("village.effect.library_gain_4")])
-		5:
-			return PackedStringArray([_tr("village.effect.library_gain_5")])
 	return PackedStringArray()
 
 static func _current_bonus_lines(building_id: String) -> PackedStringArray:
@@ -427,6 +419,8 @@ static func _current_bonus_lines(building_id: String) -> PackedStringArray:
 			return _library_snapshot_lines(level)
 		CHAPEL:
 			return _chapel_current_lines(level)
+		TAVERN:
+			return _tavern_current_lines(level)
 	return PackedStringArray([_tr("village.effect.none")])
 
 static func _next_bonus_lines(building_id: String) -> PackedStringArray:
@@ -456,7 +450,31 @@ static func _next_bonus_lines(building_id: String) -> PackedStringArray:
 			return _library_gain_lines(next_level)
 		CHAPEL:
 			return _chapel_gain_lines(next_level)
+		TAVERN:
+			return _tavern_gain_lines(next_level)
 	return PackedStringArray()
+
+static func _tavern_current_lines(level: int) -> PackedStringArray:
+	if level <= 0:
+		return PackedStringArray([_tr("village.effect.none")])
+	if is_hero_unlocked("trapper"):
+		return PackedStringArray([_tr("village.effect.tavern_restored")])
+	return PackedStringArray([_tr("village.effect.tavern_dossier_open")])
+
+
+static func _tavern_gain_lines(next_level: int) -> PackedStringArray:
+	if next_level == 1:
+		return PackedStringArray([_tr("village.effect.tavern_gain_1")])
+	return PackedStringArray()
+
+
+static func get_trapper_lock_hint() -> String:
+	if is_hero_unlocked("trapper"):
+		return ""
+	if get_level(TAVERN) < 1:
+		return _tr("ui.char_select.trapper_locked_tavern")
+	return _tr("ui.char_select.trapper_locked_dossier")
+
 
 static func _chapel_current_lines(level: int) -> PackedStringArray:
 	if level <= 0:

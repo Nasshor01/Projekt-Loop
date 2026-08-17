@@ -93,6 +93,10 @@ var _camera_y_min: float = 0.0
 var _camera_y_max: float = 0.0
 
 func _ready():
+	# Area2D node clicks need viewport picking (same as village plateau buildings).
+	var vp := get_viewport()
+	if vp:
+		vp.physics_object_picking = true
 	# Tato funkce se volá při startu scény
 	generate_seed_button.pressed.connect(_on_generate_custom_seed_pressed)
 	random_seed_button.pressed.connect(_on_generate_random_seed_pressed)
@@ -160,6 +164,8 @@ func initialize_map():
 		else:
 			self.map_data = GameManager.current_map_data
 	
+	_resync_path_taken_with_map()
+	
 	seed_label.text = TranslationHelper.tr_format("ui.map.seed", {"value": GameManager.current_seed})
 	seed_line_edit.text = str(GameManager.current_seed)
 	
@@ -184,6 +190,7 @@ func _render_map_visuals():
 			var sprite = map_node_instance.get_node("Sprite2D")
 			sprite.texture = node_textures[node_data.type]
 			sprite.scale = _icon_scale_for_type(node_data.type, sprite.texture)
+			map_node_instance.sync_collision_from_sprite()
 
 		map_node_instance.node_clicked.connect(_on_map_node_clicked)
 		
@@ -214,33 +221,108 @@ func _icon_scale_for_type(node_type: MapNodeResource.NodeType, texture: Texture2
 	var s := target / tex_size
 	return Vector2(s, s)
 
+func _resync_path_taken_with_map() -> void:
+	if map_data == null:
+		return
+	_resync_map_graph_references()
+	if PlayerData.path_taken.is_empty():
+		return
+	var resynced: Array[MapNodeResource] = []
+	for old_node in PlayerData.path_taken:
+		if old_node == null:
+			continue
+		var matched := _find_map_node_by_grid(old_node.row, old_node.column)
+		if matched != null:
+			resynced.append(matched)
+	if resynced.is_empty():
+		return
+	PlayerData.path_taken.clear()
+	for node in resynced:
+		PlayerData.path_taken.append(node)
+	PlayerData.floors_cleared = PlayerData.path_taken.size()
+
+
+func _resync_map_graph_references() -> void:
+	var grid_lookup: Dictionary = {}
+	for node in map_data.all_nodes:
+		grid_lookup[_grid_key(node.row, node.column)] = node
+	for node in map_data.all_nodes:
+		node.connections = _remap_node_refs(node.connections, grid_lookup)
+		node.incoming_connections = _remap_node_refs(node.incoming_connections, grid_lookup)
+
+
+func _grid_key(row: int, column: int) -> String:
+	return "%d:%d" % [row, column]
+
+
+func _remap_node_refs(refs: Array, grid_lookup: Dictionary) -> Array:
+	var remapped: Array = []
+	for ref in refs:
+		if ref is MapNodeResource:
+			var canonical: MapNodeResource = grid_lookup.get(_grid_key(ref.row, ref.column))
+			if canonical != null and not remapped.has(canonical):
+				remapped.append(canonical)
+	return remapped
+
+
+func _resolve_map_node(node: MapNodeResource) -> MapNodeResource:
+	if node == null or map_data == null:
+		return null
+	return _find_map_node_by_grid(node.row, node.column)
+
+
+func _get_reachable_nodes() -> Array:
+	if map_data == null:
+		return []
+	var current_node := _resolve_map_node(PlayerData.get_current_node())
+	if current_node == null:
+		return map_data.starting_nodes
+	return current_node.connections
+
+
+func _is_same_map_node(a: MapNodeResource, b: MapNodeResource) -> bool:
+	return a != null and b != null and a.row == b.row and a.column == b.column
+
+
+func _is_node_reachable(destination_node: MapNodeResource) -> bool:
+	var resolved_destination := _resolve_map_node(destination_node)
+	if resolved_destination == null:
+		return false
+	for reachable in _get_reachable_nodes():
+		if _is_same_map_node(reachable, resolved_destination):
+			return true
+	return false
+
+
+func _find_map_node_by_grid(row: int, column: int) -> MapNodeResource:
+	for node in map_data.all_nodes:
+		if node.row == row and node.column == column:
+			return node
+	return null
+
+
 func _on_map_node_clicked(clicked_node: MapNode):
 	# Coop: výběr uzlu má jen host; klient jen přijímá RPC
 	if _is_coop() and not MultiplayerManager.is_server():
 		return
-	var current_node = PlayerData.get_current_node()
-	var destination_node = clicked_node.node_data
+	var destination_node := _resolve_map_node(clicked_node.node_data)
+	if destination_node == null:
+		return
 	
-	var is_valid_move = false
 	if _is_tutorial_map():
 		var allowed = _get_tutorial_allowed_node()
-		if allowed != null and destination_node != allowed:
+		if allowed != null and not _is_same_map_node(destination_node, allowed):
 			return
 	
-	if current_node == null:
-		if map_data.starting_nodes.has(destination_node): is_valid_move = true
-	else:
-		if current_node.connections.has(destination_node): is_valid_move = true
+	if not _is_node_reachable(destination_node):
+		return
 	
-	if is_valid_move:
-		PlayerData.path_taken.append(destination_node)
-		# Loop Vesnice: +1 střep za každý dokončený floor uzel
-		if has_node("/root/SaveManager"):
-			SaveManager.add_shards(1)
-		_update_highlighting()
-		_trigger_node_action(destination_node)
-	else:
-		print("Neplatný tah!")
+	PlayerData.path_taken.append(destination_node)
+	# Loop Vesnice: +1 střep za každý dokončený floor uzel
+	if has_node("/root/SaveManager"):
+		SaveManager.add_shards(1)
+	_update_highlighting()
+	_trigger_node_action(destination_node)
 
 func _is_coop() -> bool:
 	return has_node("/root/MultiplayerManager") and GameManager.is_coop_run and MultiplayerManager.has_active_connection()
@@ -434,56 +516,46 @@ func _update_highlighting():
 	for child in connections_container.get_children():
 		child.queue_free()
 
-	var current_node = PlayerData.get_current_node()
-	var reachable_nodes: Array = []
-	
-	if current_node != null:
-		reachable_nodes = current_node.connections
-	else:
-		reachable_nodes = map_data.starting_nodes
+	var current_node := _resolve_map_node(PlayerData.get_current_node())
+	var reachable_nodes: Array = _get_reachable_nodes()
 
 	# Projdeme všechny vizuální uzly a nastavíme jim nový vzhled.
 	for node_data in map_nodes_visual:
 		var visual_node: MapNode = map_nodes_visual[node_data]
 		
-		# KROK 1: Zastavíme všechny staré animace na tomto uzlu.
-		# To je důležité, aby se nám animace nekumulovaly a nezpůsobovaly chaos.
 		if visual_node.has_meta("pulse_tween"):
 			var old_tween: Tween = visual_node.get_meta("pulse_tween")
 			if is_instance_valid(old_tween):
 				old_tween.kill()
 			visual_node.remove_meta("pulse_tween")
-		
-		# Resetujeme měřítko pro případ, že byl uzel dříve animován.
-		visual_node.scale = Vector2(1.0, 1.0)
+		visual_node.scale = Vector2.ONE
 
-		var is_current = (node_data == current_node)
-		var is_in_path = PlayerData.path_taken.has(node_data)
-		var is_reachable = reachable_nodes.has(node_data)
+		var is_current = _is_same_map_node(node_data, current_node)
+		var is_in_path := false
+		for visited in PlayerData.path_taken:
+			if _is_same_map_node(visited, node_data):
+				is_in_path = true
+				break
+		var is_reachable = false
+		for reachable in reachable_nodes:
+			if _is_same_map_node(reachable, node_data):
+				is_reachable = true
+				break
+		var is_clickable: bool = is_reachable
+		visual_node.set_interactive(is_clickable)
 		
 		if is_current:
-			# Aktuální uzel je jasně bílý a pulzuje nejvýrazněji.
-			visual_node.modulate = Color.WHITE
-			var pulse_tween = create_tween().set_loops().set_trans(Tween.TRANS_SINE)
-			pulse_tween.tween_property(visual_node, "scale", Vector2(1.15, 1.15), 0.8)
-			pulse_tween.tween_property(visual_node, "scale", Vector2(1.0, 1.0), 0.8)
-			visual_node.set_meta("pulse_tween", pulse_tween)
-			
+			visual_node.z_index = 12
+			visual_node.modulate = Color(1.0, 0.95, 0.75)
 		elif is_reachable:
-			# Dosažitelný uzel je také bílý a jemně pulzuje.
+			visual_node.z_index = 10
 			visual_node.modulate = Color.WHITE
-			var pulse_tween = create_tween().set_loops().set_trans(Tween.TRANS_SINE)
-			pulse_tween.tween_property(visual_node, "scale", Vector2(1.1, 1.1), 1.0)
-			pulse_tween.tween_property(visual_node, "scale", Vector2(1.0, 1.0), 1.0)
-			visual_node.set_meta("pulse_tween", pulse_tween)
-			
 		elif is_in_path:
-			# Již navštívený uzel je ztmavený, ale stále dobře viditelný.
-			visual_node.modulate = Color(0.6, 0.6, 0.6)
-			
+			visual_node.z_index = 2
+			visual_node.modulate = Color(0.55, 0.55, 0.55)
 		else:
-			# Nedosažitelný uzel je nejvíce ztmavený.
-			visual_node.modulate = Color(0.35, 0.35, 0.35)
+			visual_node.z_index = 0
+			visual_node.modulate = Color(0.3, 0.3, 0.3)
 
 	# Znovu vykreslíme spojnice (tato část zůstává stejná).
 	for from_node_data in map_data.all_nodes:
@@ -497,8 +569,21 @@ func _update_highlighting():
 			var line = ConnectionLineScene.instantiate()
 			line.setup(from_visual, to_visual)
 			
-			var is_visited_path = PlayerData.path_taken.has(from_node_data) and PlayerData.path_taken.has(to_node_data)
-			var is_reachable_path = (from_node_data == current_node and reachable_nodes.has(to_node_data))
+			var is_visited_path := false
+			for visited in PlayerData.path_taken:
+				if _is_same_map_node(visited, from_node_data):
+					for visited_to in PlayerData.path_taken:
+						if _is_same_map_node(visited_to, to_node_data):
+							is_visited_path = true
+							break
+				if is_visited_path:
+					break
+			var is_reachable_path := false
+			if _is_same_map_node(from_node_data, current_node):
+				for reachable in reachable_nodes:
+					if _is_same_map_node(reachable, to_node_data):
+						is_reachable_path = true
+						break
 			
 			if is_visited_path:
 				line.default_color = VISITED_PATH_COLOR
@@ -508,6 +593,22 @@ func _update_highlighting():
 				line.width = 5.0
 
 			connections_container.add_child(line)
+
+
+func _on_map_node_hovered(map_node: MapNode) -> void:
+	if not map_node.input_pickable:
+		return
+	Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
+
+
+func _on_map_node_exited(_map_node: MapNode) -> void:
+	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+
+
+func _exit_tree() -> void:
+	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+
+
 func _get_map_bounds() -> Rect2:
 	var map_rect = Rect2(map_nodes_visual.values()[0].position, Vector2.ZERO)
 	for node in map_nodes_visual.values():
@@ -598,17 +699,6 @@ func _unhandled_input(event: InputEvent):
 			camera.position.y -= event.relative.y / camera.zoom.y
 			_clamp_camera_y()
 			get_viewport().set_input_as_handled()
-
-func _on_map_node_hovered(map_node: MapNode):
-	# Vytvoříme krátkou animaci, která uzel zvětší. 
-	var tween = create_tween().set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-	tween.tween_property(map_node, "scale", Vector2(1.2, 1.2), 0.15)
-
-# Tato funkce se zavolá, když myš opustí uzel.
-func _on_map_node_exited(map_node: MapNode):
-	# Vytvoříme animaci, která vrátí uzel na původní velikost. 
-	var tween = create_tween().set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-	tween.tween_property(map_node, "scale", Vector2(1.0, 1.0), 0.15)
 
 func _on_dev_command(command: String, args: Array):
 	match command:

@@ -23,6 +23,8 @@ extends Resource
 
 ## Hero ids that may be dispatched. Paladin is always treated as unlocked.
 @export var unlocked_heroes: Array[String] = ["paladin"]
+## Unique story events the player already went through (never spawn again).
+@export var consumed_one_shot_events: Array[String] = []
 
 ## 0 = legacy save (před village splitem). Musí sedět se SaveManager.META_SCHEMA_VERSION.
 @export var schema_version: int = 0
@@ -79,6 +81,19 @@ func unlock_hero(hero_id: String) -> void:
 	if hero_id.is_empty() or is_hero_unlocked(hero_id):
 		return
 	unlocked_heroes.append(hero_id)
+
+
+func is_one_shot_event_consumed(event_id: String) -> bool:
+	if event_id.is_empty():
+		return false
+	return event_id in consumed_one_shot_events
+
+
+func consume_one_shot_event(event_id: String) -> bool:
+	if event_id.is_empty() or is_one_shot_event_consumed(event_id):
+		return false
+	consumed_one_shot_events.append(event_id)
+	return true
 
 func set_hero_progress(hero_id: String, level: int, xp: int) -> void:
 	hero_progress[hero_id] = {"level": max(1, level), "xp": max(0, xp)}

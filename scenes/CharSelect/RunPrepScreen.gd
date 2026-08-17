@@ -19,7 +19,13 @@ func _ready():
 	start_button.pressed.connect(GameManager.start_new_run)
 	back_button.pressed.connect(GameManager.go_to_character_select)
 	SaveManager.meta_progress_changed.connect(update_display)
-	
+
+	if GameManager.selected_subclass_data \
+			and GameManager.selected_subclass_data.subclass_id == "trapper" \
+			and not SaveManager.meta_progress.is_hero_unlocked("trapper"):
+		GameManager.go_to_character_select()
+		return
+
 	PlayerData.initialize_player(GameManager.selected_class_data, GameManager.selected_subclass_data)
 	_update_portrait()
 	

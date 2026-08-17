@@ -137,7 +137,7 @@ func show_action(speaker: String, body: String, action_hint: String = "") -> voi
 	_awaiting_continue = false
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if is_instance_valid(_panel):
-		_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+		_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func use_bottom_anchor() -> void:
 	set_anchors_preset(Control.PRESET_BOTTOM_WIDE)

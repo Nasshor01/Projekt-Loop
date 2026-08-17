@@ -35,12 +35,6 @@ func _ready() -> void:
 		vp.physics_object_picking = true
 
 
-func _exit_tree() -> void:
-	var vp := get_viewport()
-	if vp:
-		vp.physics_object_picking = false
-
-
 func _apply_view() -> void:
 	if plateau:
 		plateau.scale = Vector2(layout_scale, layout_scale)

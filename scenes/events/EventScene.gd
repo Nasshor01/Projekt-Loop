@@ -254,6 +254,7 @@ func _process_choice_new(choice: EventChoice):
 	var results_log = []
 	_result_granted_artifacts.clear()
 	_result_granted_curse = null
+	EventManager.consume_meta_event(current_event)
 	
 	# 1. Aplikuj cenu
 	if choice.cost:

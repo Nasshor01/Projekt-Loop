@@ -25,6 +25,7 @@ const EVENT_ARTIFACT_POOL = preload("res://data/artifacts/pool/event_reward_pool
 @export_group("Artefakty")
 @export var add_artifact: ArtifactsData = null # Odměna konkrétního artefaktu
 @export var add_random_basic_artifact: bool = false # Přejmenováno z add_random_artifact
+@export var random_basic_artifact_count: int = 0
 @export var add_random_event_artifact: bool = false # NOVÁ MOŽNOST
 
 @export_group("Speciální")
@@ -106,10 +107,9 @@ func apply_reward(results_log: Array = []):
 			results_log.append("[color=orange]" + TranslationHelper.tr_format("event.reward.artifact", {"name": add_artifact.get_localized_name()}) + "[/color]")
 	
 	if add_random_basic_artifact:
-		var random_artifact = _get_random_basic_artifact()
-		if random_artifact and PlayerData.add_artifact(random_artifact):
-			granted_artifacts.append(random_artifact)
-			results_log.append("[color=orange]" + TranslationHelper.tr_format("event.reward.random_artifact", {"name": random_artifact.get_localized_name()}) + "[/color]")
+		_grant_random_basic_artifacts(1, results_log)
+	elif random_basic_artifact_count > 0:
+		_grant_random_basic_artifacts(random_basic_artifact_count, results_log)
 	
 	if add_random_event_artifact:
 		var available = EVENT_ARTIFACT_POOL.artifacts.filter(func(art): return PlayerData.can_gain_artifact(art))
@@ -127,6 +127,19 @@ func apply_reward(results_log: Array = []):
 	
 	if opens_card_selection:
 		results_log.append("[color=cyan]" + tr("event.reward.pick_card") + "[/color]")
+
+	if unlock_character != "":
+		if SaveManager and SaveManager.meta_progress:
+			var already := SaveManager.meta_progress.is_hero_unlocked(unlock_character)
+			SaveManager.meta_progress.unlock_hero(unlock_character)
+			SaveManager.save_meta_progress()
+			if already:
+				results_log.append("[color=gray]" + tr("event.reward.line_already_authorized") + "[/color]")
+			else:
+				results_log.append("[color=gold]" + TranslationHelper.tr_format(
+					"event.reward.unlock_line",
+					{"hero": _hero_display_name(unlock_character)}
+				) + "[/color]")
 
 func _upgrade_random_card(results_log: Array):
 	"""Vylepší náhodnou kartu v balíčku"""
@@ -218,6 +231,14 @@ func _get_random_card_by_rarity(rarity: CardData.CardRarity) -> CardData:
 	
 	return filtered_cards.pick_random()
 
+func _grant_random_basic_artifacts(count: int, results_log: Array) -> void:
+	for _i in range(count):
+		var random_artifact := _get_random_basic_artifact()
+		if random_artifact and PlayerData.add_artifact(random_artifact):
+			granted_artifacts.append(random_artifact)
+			results_log.append("[color=orange]" + TranslationHelper.tr_format("event.reward.random_artifact", {"name": random_artifact.get_localized_name()}) + "[/color]")
+
+
 func _get_random_basic_artifact() -> ArtifactsData:
 	"""Získá náhodný artefakt z běžného poolu (např. ze shopu)"""
 	var artifact_pool = load("res://data/artifacts/pool/shop_pool.tres")
@@ -229,6 +250,15 @@ func _get_random_basic_artifact() -> ArtifactsData:
 		return available.pick_random()
 	
 	return null
+
+
+func _hero_display_name(hero_id: String) -> String:
+	var key := "class.%s" % hero_id
+	var name := tr(key)
+	if name == key:
+		return hero_id.capitalize()
+	return name
+
 
 func get_reward_description() -> String:
 	"""Vrátí textový popis odměny"""
@@ -260,8 +290,12 @@ func get_reward_description() -> String:
 		parts.append(TranslationHelper.tr_format("event.reward.desc_artifact", {"name": add_artifact.get_localized_name()}))
 	if add_random_basic_artifact:
 		parts.append(tr("event.reward.desc_random_artifact"))
+	elif random_basic_artifact_count > 0:
+		parts.append(TranslationHelper.tr_format("event.reward.desc_random_artifacts", {"value": random_basic_artifact_count}))
 	if add_random_event_artifact:
 		parts.append("[color=gold]" + tr("event.reward.desc_random_special_artifact") + "[/color]")
+	if unlock_character != "":
+		parts.append(TranslationHelper.tr_format("event.reward.desc_unlock_line", {"hero": _hero_display_name(unlock_character)}))
 	
 	if parts.is_empty():
 		return tr("event.reward.desc_none")

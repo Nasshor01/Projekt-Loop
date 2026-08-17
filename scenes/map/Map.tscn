@@ -82,6 +82,7 @@ offset_top = -153.0
 offset_right = 144.0
 offset_bottom = 103.0
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="LegendContainer" type="VBoxContainer" parent="CanvasLayer/LegendPanel"]
 layout_mode = 1

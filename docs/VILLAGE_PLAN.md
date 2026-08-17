@@ -12,11 +12,11 @@ Spatial hub: `VillageWorld` (plateau + kamera) + `VillageHUD` (CanvasLayer). Ent
 | Budova | Typ | Stav | Efekt |
 |--------|-----|------|--------|
 | Market | sdílená | aktivní | zlato + shop relikvie (beze změny) |
-| Library | sdílená | aktivní | karty / rarity (beze změny) |
+| Library | sdílená | aktivní | jen počty: L1 = 4 volby + 4 shop, L2 = 5 shop, L3 = 6 shop. **Žádné % rarity** |
 | Well | sdílená | aktivní | **+2 HP heal na začátku bitvy / level** (max 5 → +10). **Ne** max HP |
 | Chapel | řada Paladin | aktivní | HP / start block / karty / move — jen Paladin run |
-| Hunter’s Lodge | řada Trapper | šedá ruina | lock text, dokud Trapper není v `unlocked_heroes` |
-| Tavern | TBD | art + coming soon | nekrade Chapel, není rest mezi Acty |
+| Hunter’s Lodge | řada Trapper | šedá ruina | lock, dokud Trapper není v `unlocked_heroes` (po dossier eventu) |
+| Tavern | sdílená | **L1 aktivní** | 15 střepů → otevře jednorázový field event *Hunter Dossier*. Není rest, nekrade Chapel |
 
 **Chapel křivka** (hero level **a** střepy; cena `base_cost × (level + 1)`, base 12):
 
@@ -45,15 +45,18 @@ Hub MVP je venku. Ještě:
 
 Neblokuje Alphu, pokud hub jde klikat a upgradovat.
 
-### 2. Tavern — #47 (malá, ne Chapel)
-Taverna **nesmí** být STS rest mezi Acty a **nesmí** krást identitu Chapel (HP / block / move).
+### 2. Tavern + Hunter Dossier — #47 (shipped MVP)
+Taverna **není** STS rest a **nekrade** Chapel (HP / block / move). Je síň autorizace dalších výdejních řad.
 
-Kandidáti (vybrat jedno jako MVP):
-- unlock další výdejní řady (Trapper gate → `unlock_hero("trapper")` + Lodge přestane být šedá)
-- a/nebo companion unlock (#36)
-- malý příděl / coming-soon sloty na budoucí řady
+**Unlock flow (one-shot):**
+1. Tavern L1 (15 střepů) otevře quest slot.
+2. Další EVENT uzel na mapě **vynutí** `hunter_dossier` (pokud Tavern ≥ 1 a event ještě nebyl projitý).
+3. **3 volby — všechny odemknou Trappera** (žádný skip):
+   - Standard: +1 relikvie
+   - Silná rekvizice: +2 relikvie, −5 max HP
+   - Plná rekvizice: +3 relikvie, −15 max HP
 
-Persist přes `unlocked_heroes` / samostatný companion flag. Střepy stačí, dokud není #35.
+Po **jakékoli** volbě je event v `MetaProgress.consumed_one_shot_events` **navždy**. Trapper je vždy hratelný — jde jen o cenu vybavení z archivu.
 
 ### 3. Companion MVP — #36
 Až má Tavern (nebo Chapel-adjacent slot) unlock:

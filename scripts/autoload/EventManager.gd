@@ -30,6 +30,15 @@ func _filter_events_for_floor(events: Array, floor_num: int) -> Array:
 		# Filtruj podle historie (once_per_run)
 		if event.once_per_run and event_history.has(event.event_id):
 			continue
+
+		if event.once_per_meta and _is_meta_event_consumed(event):
+			continue
+
+		if not _meets_building_requirement(event):
+			continue
+
+		if event.event_id == VillageBonuses.HUNTER_DOSSIER_EVENT_ID and VillageBonuses.is_hero_unlocked("trapper"):
+			continue
 		
 		available_events.append(event)
 	
@@ -44,9 +53,41 @@ func pick_event_for_floor(events: Array, floor_num: int) -> EventData:
 	var available_events: Array = _filter_events_for_floor(events, floor_num)
 	if available_events.is_empty():
 		return null
-	var chosen: EventData = _pick_weighted(available_events)
+	var unique_events: Array = []
+	for event in available_events:
+		if event and event.once_per_meta:
+			unique_events.append(event)
+	var chosen: EventData
+	if not unique_events.is_empty():
+		chosen = unique_events[0] as EventData
+	else:
+		chosen = _pick_weighted(available_events)
 	mark_event_as_used(chosen)
 	return chosen
+
+
+func _is_meta_event_consumed(event: EventData) -> bool:
+	if event == null or event.event_id.is_empty():
+		return false
+	if not SaveManager or not SaveManager.meta_progress:
+		return true
+	return SaveManager.meta_progress.is_one_shot_event_consumed(event.event_id)
+
+
+func _meets_building_requirement(event: EventData) -> bool:
+	if event == null or event.required_building_id.is_empty():
+		return true
+	return VillageBonuses.get_level(event.required_building_id) >= event.required_building_level
+
+
+func consume_meta_event(event: EventData) -> void:
+	if event == null or not event.once_per_meta or event.event_id.is_empty():
+		return
+	if not SaveManager or not SaveManager.meta_progress:
+		return
+	if SaveManager.meta_progress.consume_one_shot_event(event.event_id):
+		SaveManager.save_meta_progress()
+		print("EventManager: Meta one-shot consumed: %s" % event.event_id)
 
 func _pick_weighted(events: Array) -> EventData:
 	if events.is_empty():

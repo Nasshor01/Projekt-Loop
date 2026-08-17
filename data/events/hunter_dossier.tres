@@ -1,0 +1,119 @@
+[gd_resource type="Resource" script_class="EventData" load_steps=10 format=3 uid="uid://du7r6v3667gkj"]
+
+[ext_resource type="Script" uid="uid://dlyussc7fd6oa" path="res://scripts/resources/EventChoice.gd" id="1_choice"]
+[ext_resource type="Script" uid="uid://c1v8e64ngbfh2" path="res://scripts/resources/EventData.gd" id="2_data"]
+[ext_resource type="Script" uid="uid://kiqgk2wb3ugp" path="res://scripts/resources/EventReward.gd" id="3_reward"]
+
+[sub_resource type="Resource" id="Resource_reward1"]
+script = ExtResource("3_reward")
+gold = 0
+heal = 0
+max_hp = 0
+add_random_card = false
+card_rarity = 0
+remove_card = false
+upgrade_card = false
+upgrade_random_card = false
+upgrade_all_cards = false
+transform_card = false
+add_random_basic_artifact = false
+random_basic_artifact_count = 1
+add_random_event_artifact = false
+buff_next_combat = ""
+unlock_character = "trapper"
+trigger_event = ""
+opens_card_selection = false
+
+[sub_resource type="Resource" id="Resource_choice1"]
+script = ExtResource("1_choice")
+choice_text = "event.hunter_dossier.choice.1"
+choice_tooltip = "event.hunter_dossier.choice.1.tooltip"
+reward = SubResource("Resource_reward1")
+success_chance = 1.0
+show_success_chance = false
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+
+[sub_resource type="Resource" id="Resource_reward2"]
+script = ExtResource("3_reward")
+gold = 0
+heal = 0
+max_hp = -5
+add_random_card = false
+card_rarity = 0
+remove_card = false
+upgrade_card = false
+upgrade_random_card = false
+upgrade_all_cards = false
+transform_card = false
+add_random_basic_artifact = false
+random_basic_artifact_count = 2
+add_random_event_artifact = false
+buff_next_combat = ""
+unlock_character = "trapper"
+trigger_event = ""
+opens_card_selection = false
+
+[sub_resource type="Resource" id="Resource_choice2"]
+script = ExtResource("1_choice")
+choice_text = "event.hunter_dossier.choice.2"
+choice_tooltip = "event.hunter_dossier.choice.2.tooltip"
+reward = SubResource("Resource_reward2")
+success_chance = 1.0
+show_success_chance = false
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+
+[sub_resource type="Resource" id="Resource_reward3"]
+script = ExtResource("3_reward")
+gold = 0
+heal = 0
+max_hp = -15
+add_random_card = false
+card_rarity = 0
+remove_card = false
+upgrade_card = false
+upgrade_random_card = false
+upgrade_all_cards = false
+transform_card = false
+add_random_basic_artifact = false
+random_basic_artifact_count = 3
+add_random_event_artifact = false
+buff_next_combat = ""
+unlock_character = "trapper"
+trigger_event = ""
+opens_card_selection = false
+
+[sub_resource type="Resource" id="Resource_choice3"]
+script = ExtResource("1_choice")
+choice_text = "event.hunter_dossier.choice.3"
+choice_tooltip = "event.hunter_dossier.choice.3.tooltip"
+reward = SubResource("Resource_reward3")
+success_chance = 1.0
+show_success_chance = false
+triggers_combat = false
+opens_shop = false
+triggers_next_event = ""
+sets_flag = ""
+
+[resource]
+script = ExtResource("2_data")
+event_id = "hunter_dossier"
+event_name = "event.hunter_dossier.name"
+description = "event.hunter_dossier.desc"
+event_type = 4
+rarity = 3
+min_floor = 0
+max_floor = 99
+once_per_run = true
+once_per_meta = true
+required_gold = 0
+required_class = ""
+required_flag = ""
+required_building_id = "tavern"
+required_building_level = 1
+choices = Array[ExtResource("1_choice")]([SubResource("Resource_choice1"), SubResource("Resource_choice2"), SubResource("Resource_choice3")])
