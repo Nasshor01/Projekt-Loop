@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="UnitData" load_steps=4 format=3 uid="uid://ds5yll3ypahx0"]
 
 [ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_0bo4j"]
-[ext_resource type="Script" uid="uid://burukbn5db8gj" path="res://scripts/ai/FighterAI.gd" id="1_hk6eh"]
+[ext_resource type="Script" path="res://scripts/ai/SkeletonAI.gd" id="1_hk6eh"]
 [ext_resource type="Texture2D" uid="uid://j6ujjllu207g" path="res://art/sprites/units/Skeleton.png" id="2_hk6eh"]
 
 [resource]

@@ -68,8 +68,30 @@ var movement_penalty: int = 0  # Chilled - snížení pohybu
 var is_aiming: bool = false
 var berserker_frustration: int = 0
 var is_permanently_enraged: bool = false
-# Extra attack damage if the fight is stalled / last enemy leftover.
-var desperation_bonus: int = 0
+# Per-enemy telegraphed bonuses (ritual stacks, goblin pack, …).
+var ritual_stacks: int = 0
+var pack_attack_bonus: int = 0
+
+
+func get_bonus_attack_damage() -> int:
+	return ritual_stacks + pack_attack_bonus
+
+
+func get_telegraphed_attack_damage(extra_additive: int = 0) -> int:
+	if not is_instance_valid(unit_data):
+		return 0
+	return maxi(0, unit_data.attack_damage + extra_additive + get_bonus_attack_damage())
+
+
+func _apply_attack_damage_to_intent_preview(preview: Array) -> void:
+	if not is_instance_valid(unit_data):
+		return
+	var shown := get_telegraphed_attack_damage()
+	for i in preview.size():
+		var entry: Dictionary = preview[i]
+		if str(entry.get("id", "")) == "attack":
+			entry["short_text"] = str(shown)
+			preview[i] = entry
 #---------------------------------------------
 
 @onready var _sprite_node: Sprite3D = $Sprite3D
@@ -224,7 +246,7 @@ func attack(target: Node, extra_additive: int = 0, damage_type: int = 0, _is_hol
 		is_critical = total_crit_chance > 0 and randi_range(1, 100) <= total_crit_chance
 	
 	var damage = DamageCalculator.get_final_damage(
-		base_value, self, target, damage_type, is_critical, include_card_bonuses, extra_additive + desperation_bonus
+		base_value, self, target, damage_type, is_critical, include_card_bonuses, extra_additive + get_bonus_attack_damage()
 	)
 	if is_critical:
 		_show_floating_text(damage, "critical")
@@ -995,8 +1017,10 @@ func get_status_counters_list() -> PackedStringArray:
 		counters.append(TranslationHelper.tr_format("enemy.counter.rage", {"current": berserker_frustration, "max": BERSERKER_RAGE_TURNS_REQUIRED}))
 	if is_permanently_enraged:
 		counters.append(tr("enemy.counter.enraged"))
-	if desperation_bonus > 0:
-		counters.append(TranslationHelper.tr_format("enemy.counter.desperation", {"value": desperation_bonus}))
+	if ritual_stacks > 0:
+		counters.append(TranslationHelper.tr_format("enemy.counter.ritual", {"value": ritual_stacks}))
+	if pack_attack_bonus > 0:
+		counters.append(TranslationHelper.tr_format("enemy.counter.pack", {"value": pack_attack_bonus}))
 	if has_meta("mage_turn_count"):
 		var turn_count = int(get_meta("mage_turn_count"))
 		if turn_count > 0:
@@ -1153,13 +1177,7 @@ func _calculate_intent_list(player_unit: Unit, battle_grid: BattleGrid) -> Array
 	var preview := _preview_combat_intents_from_ai(player_unit, battle_grid)
 	if preview.is_empty():
 		return []
-	if desperation_bonus > 0 and is_instance_valid(unit_data):
-		var shown := unit_data.attack_damage + desperation_bonus
-		for i in preview.size():
-			var entry: Dictionary = preview[i]
-			if str(entry.get("id", "")) == "attack":
-				entry["short_text"] = str(shown)
-				preview[i] = entry
+	_apply_attack_damage_to_intent_preview(preview)
 	if countdown > 0:
 		var first: Dictionary = preview[0]
 		first["countdown"] = countdown
@@ -1496,6 +1514,8 @@ func serialize_ai_meta() -> Dictionary:
 	var meta: Dictionary = {}
 	meta["is_permanently_enraged"] = is_permanently_enraged
 	meta["berserker_frustration"] = berserker_frustration
+	meta["ritual_stacks"] = ritual_stacks
+	meta["pack_attack_bonus"] = pack_attack_bonus
 	meta["is_aiming"] = is_aiming
 	if has_meta("boss_phase"):
 		meta["boss_phase"] = int(get_meta("boss_phase"))
@@ -1511,6 +1531,8 @@ func apply_ai_meta(meta: Dictionary):
 	"""Aplikuje AI meta data přijatá od hosta."""
 	is_permanently_enraged = meta.get("is_permanently_enraged", false)
 	berserker_frustration = int(meta.get("berserker_frustration", 0))
+	ritual_stacks = int(meta.get("ritual_stacks", 0))
+	pack_attack_bonus = int(meta.get("pack_attack_bonus", 0))
 	is_aiming = meta.get("is_aiming", false)
 	if meta.has("boss_phase"):
 		set_meta("boss_phase", int(meta["boss_phase"]))

@@ -24,6 +24,10 @@ const CAMERA_MAX_WIDTH_ZOOM := 1.05
 # Leave room for legend + seed panel on the left so nodes don't overlap UI.
 const CAMERA_LEFT_UI_MARGIN := 210.0
 const CAMERA_RIGHT_UI_MARGIN := 40.0
+const PULSE_REACHABLE_SCALE := Vector2(1.06, 1.06)
+const PULSE_CURRENT_SCALE := Vector2(1.08, 1.08)
+const HOVER_SCALE := Vector2(1.12, 1.12)
+const HOVER_MODULATE := Color(1.12, 1.12, 1.02)
 
 # --- Seznamy možných soubojů ---
 # STS-style: první N normal fightů (a raná patra) berou easy pool.
@@ -511,6 +515,91 @@ func _get_tutorial_allowed_node() -> MapNodeResource:
 	if GameManager.tutorial_step == GameManager.TUTORIAL_STEP_MAP_FINAL:
 		return _tutorial_nodes.get("final")
 	return null
+
+
+func _kill_node_pulse(visual_node: MapNode) -> void:
+	if visual_node.has_meta("pulse_tween"):
+		var old_tween: Tween = visual_node.get_meta("pulse_tween")
+		if is_instance_valid(old_tween):
+			old_tween.kill()
+		visual_node.remove_meta("pulse_tween")
+
+
+func _kill_node_hover(visual_node: MapNode) -> void:
+	if visual_node.has_meta("hover_tween"):
+		var old_tween: Tween = visual_node.get_meta("hover_tween")
+		if is_instance_valid(old_tween):
+			old_tween.kill()
+		visual_node.remove_meta("hover_tween")
+
+
+func _start_node_pulse(visual_node: MapNode, max_scale: Vector2, half_period: float) -> void:
+	_kill_node_pulse(visual_node)
+	visual_node.scale = Vector2.ONE
+	var pulse_tween := create_tween().set_loops().set_trans(Tween.TRANS_SINE)
+	pulse_tween.tween_property(visual_node, "scale", max_scale, half_period)
+	pulse_tween.tween_property(visual_node, "scale", Vector2.ONE, half_period)
+	visual_node.set_meta("pulse_tween", pulse_tween)
+
+
+func _get_node_visual_flags(node_data: MapNodeResource) -> Dictionary:
+	var current_node := _resolve_map_node(PlayerData.get_current_node())
+	var reachable_nodes: Array = _get_reachable_nodes()
+	var is_current := _is_same_map_node(node_data, current_node)
+	var is_in_path := false
+	for visited in PlayerData.path_taken:
+		if _is_same_map_node(visited, node_data):
+			is_in_path = true
+			break
+	var is_reachable := false
+	for reachable in reachable_nodes:
+		if _is_same_map_node(reachable, node_data):
+			is_reachable = true
+			break
+	return {
+		"is_current": is_current,
+		"is_in_path": is_in_path,
+		"is_reachable": is_reachable,
+		"is_clickable": is_reachable,
+	}
+
+
+func _apply_node_visual_state(visual_node: MapNode, flags: Dictionary) -> void:
+	_kill_node_hover(visual_node)
+	_kill_node_pulse(visual_node)
+	visual_node.scale = Vector2.ONE
+
+	var is_current: bool = flags.get("is_current", false)
+	var is_in_path: bool = flags.get("is_in_path", false)
+	var is_reachable: bool = flags.get("is_reachable", false)
+	var is_clickable: bool = flags.get("is_clickable", false)
+
+	visual_node.set_interactive(is_clickable)
+
+	if is_current:
+		visual_node.z_index = 12
+		visual_node.modulate = Color(1.0, 0.95, 0.75)
+		_start_node_pulse(visual_node, PULSE_CURRENT_SCALE, 0.9)
+	elif is_reachable:
+		visual_node.z_index = 10
+		visual_node.modulate = Color.WHITE
+		_start_node_pulse(visual_node, PULSE_REACHABLE_SCALE, 1.1)
+	elif is_in_path:
+		visual_node.z_index = 2
+		visual_node.modulate = Color(0.55, 0.55, 0.55)
+	else:
+		visual_node.z_index = 0
+		visual_node.modulate = Color(0.3, 0.3, 0.3)
+
+
+func _refresh_single_node_visual(map_node: MapNode) -> void:
+	if map_node == null or map_node.node_data == null:
+		return
+	if not map_nodes_visual.has(map_node.node_data):
+		return
+	_apply_node_visual_state(map_node, _get_node_visual_flags(map_node.node_data))
+
+
 func _update_highlighting():
 	# Smažeme staré čáry, abychom je překreslili s novými barvami.
 	for child in connections_container.get_children():
@@ -522,40 +611,7 @@ func _update_highlighting():
 	# Projdeme všechny vizuální uzly a nastavíme jim nový vzhled.
 	for node_data in map_nodes_visual:
 		var visual_node: MapNode = map_nodes_visual[node_data]
-		
-		if visual_node.has_meta("pulse_tween"):
-			var old_tween: Tween = visual_node.get_meta("pulse_tween")
-			if is_instance_valid(old_tween):
-				old_tween.kill()
-			visual_node.remove_meta("pulse_tween")
-		visual_node.scale = Vector2.ONE
-
-		var is_current = _is_same_map_node(node_data, current_node)
-		var is_in_path := false
-		for visited in PlayerData.path_taken:
-			if _is_same_map_node(visited, node_data):
-				is_in_path = true
-				break
-		var is_reachable = false
-		for reachable in reachable_nodes:
-			if _is_same_map_node(reachable, node_data):
-				is_reachable = true
-				break
-		var is_clickable: bool = is_reachable
-		visual_node.set_interactive(is_clickable)
-		
-		if is_current:
-			visual_node.z_index = 12
-			visual_node.modulate = Color(1.0, 0.95, 0.75)
-		elif is_reachable:
-			visual_node.z_index = 10
-			visual_node.modulate = Color.WHITE
-		elif is_in_path:
-			visual_node.z_index = 2
-			visual_node.modulate = Color(0.55, 0.55, 0.55)
-		else:
-			visual_node.z_index = 0
-			visual_node.modulate = Color(0.3, 0.3, 0.3)
+		_apply_node_visual_state(visual_node, _get_node_visual_flags(node_data))
 
 	# Znovu vykreslíme spojnice (tato část zůstává stejná).
 	for from_node_data in map_data.all_nodes:
@@ -599,10 +655,18 @@ func _on_map_node_hovered(map_node: MapNode) -> void:
 	if not map_node.input_pickable:
 		return
 	Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
+	_kill_node_pulse(map_node)
+	_kill_node_hover(map_node)
+	var hover_tween := create_tween().set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
+	hover_tween.tween_property(map_node, "scale", HOVER_SCALE, 0.12)
+	hover_tween.parallel().tween_property(map_node, "modulate", HOVER_MODULATE, 0.12)
+	map_node.set_meta("hover_tween", hover_tween)
 
 
-func _on_map_node_exited(_map_node: MapNode) -> void:
+func _on_map_node_exited(map_node: MapNode) -> void:
 	Input.set_default_cursor_shape(Input.CURSOR_ARROW)
+	_kill_node_hover(map_node)
+	_refresh_single_node_visual(map_node)
 
 
 func _exit_tree() -> void:

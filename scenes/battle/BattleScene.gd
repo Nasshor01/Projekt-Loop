@@ -92,11 +92,6 @@ var _is_drawing_cards: bool = false
 var _drawing_turn_start_hand: bool = false  # true jen při normálním dorbírání na začátku tahu (ne mid-turn DRAW_CARDS)
 var _is_first_turn: bool = true
 var _current_turn_number: int = 0
-var _combat_start_enemy_count: int = 0
-var _last_stand_from_round: int = -1
-const DESPERATION_GRACE_ROUNDS := 4
-const DESPERATION_PER_ROUND := 3
-const LAST_STAND_PER_ROUND := 4
 var _is_extra_turn: bool = false
 var _cards_played_this_turn: Dictionary = {}  # Tracking karet za tah pro limit použití
 var _took_damage_last_turn: bool = false  # Tracking poškození pro consecrated_barrier
@@ -372,7 +367,6 @@ func _on_round_started(round_number: int):
 	"""Volá se na začátku každého kola"""
 	_current_turn_number = round_number
 	_update_turn_display()
-	_refresh_desperation()
 	DebugLogger.log_info("=== KOLO %d ===" % round_number)
 
 	if is_instance_valid(initiative_bar):
@@ -578,6 +572,8 @@ func _process_enemy_actions(enemy_unit: Unit):
 		else:
 			enemy_unit.berserker_frustration += 1
 			DebugLogger.log_debug("[BattleScene] Frustrace zvýšena na: %d (bez útoku)." % enemy_unit.berserker_frustration)
+
+	_apply_enemy_turn_end_mechanics(enemy_unit, did_attack_or_rush)
 
 func _execute_single_action(enemy_unit: Unit, action: EnemyAIBase.AIAction):
 	"""Provede jednu akci enemy jednotky"""
@@ -919,43 +915,39 @@ func _living_enemy_count() -> int:
 			n += 1
 	return n
 
-func _enemy_uses_desperation(unit: Unit) -> bool:
-	if not is_instance_valid(unit) or unit.unit_data == null:
-		return false
-	if unit.unit_data.faction != UnitData.Faction.ENEMY:
-		return false
-	var uid := String(unit.unit_data.unit_id)
-	if uid == "training_dummy":
-		return false
-	var ai = unit.unit_data.ai_script
-	if ai and String(ai.resource_path).contains("BossAI"):
-		return false
-	return true
+func _apply_enemy_turn_end_mechanics(enemy_unit: Unit, did_attack_or_rush: bool) -> void:
+	if not is_instance_valid(enemy_unit) or enemy_unit.unit_data == null or enemy_unit.unit_data.ai_script == null:
+		return
+	var ai_path := String(enemy_unit.unit_data.ai_script.resource_path)
+	var gained_ritual := false
+	if "SkeletonAI" in ai_path:
+		enemy_unit.ritual_stacks += 1
+		gained_ritual = true
+	elif "ScoutAI" in ai_path and not did_attack_or_rush:
+		enemy_unit.ritual_stacks += 1
+		gained_ritual = true
+	if gained_ritual:
+		enemy_unit.show_status_text(
+			TranslationHelper.tr_format("enemy.counter.ritual", {"value": enemy_unit.ritual_stacks}),
+			"buff"
+		)
+	if is_instance_valid(_player_unit_node) and is_instance_valid(battle_grid_instance):
+		enemy_unit.update_intent(_player_unit_node, battle_grid_instance)
+	if enemy_unit.has_method("_update_stats_and_emit_signal"):
+		enemy_unit._update_stats_and_emit_signal()
 
-func _refresh_desperation() -> void:
-	var living := _living_enemy_count()
-	if living > 1:
-		_last_stand_from_round = -1
-	elif living == 1 and _combat_start_enemy_count >= 2 and _last_stand_from_round < 0:
-		_last_stand_from_round = _current_turn_number
-
+func _refresh_goblin_pack_bonuses() -> void:
+	if not is_instance_valid(battle_grid_instance):
+		return
 	for enemy in _enemy_units:
-		if not is_instance_valid(enemy):
+		if not is_instance_valid(enemy) or enemy.current_health <= 0:
 			continue
-		var bonus := 0
-		if _enemy_uses_desperation(enemy):
-			var drag := 0
-			if _current_turn_number > DESPERATION_GRACE_ROUNDS:
-				drag = DESPERATION_PER_ROUND * (_current_turn_number - DESPERATION_GRACE_ROUNDS)
-			var last_stand := 0
-			if living == 1 and _combat_start_enemy_count >= 2 and _last_stand_from_round >= 0:
-				last_stand = LAST_STAND_PER_ROUND * maxi(0, _current_turn_number - _last_stand_from_round)
-			bonus = maxi(drag, last_stand)
-		var was_zero := enemy.desperation_bonus <= 0
-		enemy.desperation_bonus = bonus
-		if bonus > 0 and was_zero:
-			enemy.show_status_text(tr("enemy.counter.enraged"), "critical")
-		if enemy.has_method("update_intent") and is_instance_valid(_player_unit_node) and is_instance_valid(battle_grid_instance):
+		if enemy.unit_data == null or enemy.unit_data.ai_script == null:
+			continue
+		if not String(enemy.unit_data.ai_script.resource_path).contains("GoblinAI"):
+			continue
+		GoblinAI.refresh_pack_bonus(enemy, battle_grid_instance)
+		if is_instance_valid(_player_unit_node):
 			enemy.update_intent(_player_unit_node, battle_grid_instance)
 		if enemy.has_method("_update_stats_and_emit_signal"):
 			enemy._update_stats_and_emit_signal()
@@ -1342,7 +1334,7 @@ func _on_unit_died(unit_node: Unit):
 	# Odeber ze seznamu
 	if _enemy_units.has(unit_node):
 		_enemy_units.erase(unit_node)
-		_refresh_desperation()
+		_refresh_goblin_pack_bonuses()
 	
 	battle_grid_instance.remove_object_by_instance(unit_node)
 	
@@ -1517,8 +1509,7 @@ func spawn_enemy_units():
 	
 	# Coop: uložíme stabilní pořadí všech nepřátel – používá se pro RPC payload indexy
 	_all_enemy_units_ordered = _enemy_units.duplicate()
-	_combat_start_enemy_count = _enemy_units.size()
-	_last_stand_from_round = -1
+	_refresh_goblin_pack_bonuses()
 	DebugLogger.log_debug("=== SPAWN DOKONČEN ===")
 	DebugLogger.log_debug("Celkem nepřátel: %d" % _enemy_units.size())
 
@@ -3712,7 +3703,7 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 			await get_tree().create_timer(1.0).timeout
 			
 			var base_dmg = enemy_unit.unit_data.attack_damage
-			var extra = base_dmg + enemy_unit.desperation_bonus
+			var extra = base_dmg + enemy_unit.get_bonus_attack_damage()
 			var all_units = battle_grid_instance.get_all_objects_on_grid()
 			
 			for unit in all_units:
@@ -3852,7 +3843,7 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 			var mult = action.special_data.get("damage_multiplier", 0.5)
 			var base_dmg = enemy_unit.unit_data.attack_damage
 			var extra = _damage_multiplier_to_extra(enemy_unit, mult)
-			extra += enemy_unit.desperation_bonus
+			extra += enemy_unit.get_bonus_attack_damage()
 			var all_units = battle_grid_instance.get_all_objects_on_grid()
 			for unit in all_units:
 				if unit is Unit and unit != enemy_unit and is_instance_valid(unit):

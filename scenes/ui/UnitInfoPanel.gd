@@ -171,7 +171,21 @@ func update_stats(unit_node: Node) -> void:
 	else:
 		energy_slot.visible = false
 		attack_slot.visible = true
-		attack_label.text = TranslationHelper.tr_format("ui.unit_info.atk_brief", {"value": data.attack_damage})
+		var atk_value: int = data.attack_damage
+		if unit_node is Unit and unit_node.has_method("get_telegraphed_attack_damage"):
+			atk_value = unit_node.get_telegraphed_attack_damage()
+		attack_label.text = TranslationHelper.tr_format("ui.unit_info.atk_brief", {"value": atk_value})
+		if unit_node is Unit and unit_node.get_bonus_attack_damage() > 0:
+			attack_label.tooltip_text = TranslationHelper.tr_format(
+				"ui.unit_info.atk_bonus_tooltip",
+				{
+					"total": atk_value,
+					"base": data.attack_damage,
+					"bonus": unit_node.get_bonus_attack_damage(),
+				}
+			)
+		else:
+			attack_label.tooltip_text = ""
 
 	# Block: u nepřítele jen když > 0 (HP bar už je na gridu)
 	if unit_node.current_block > 0:
@@ -527,6 +541,7 @@ func _build_fingerprint(unit_node: Node) -> String:
 	parts.append(intent_pair.detail_text)
 	if unit_node is Unit:
 		parts.append(str(unit_node.active_statuses))
+		parts.append(str(unit_node.get_bonus_attack_damage()))
 	if unit_node.has_method("get_status_counters_list"):
 		parts.append(",".join(unit_node.get_status_counters_list()))
 	if unit_node.get_unit_data().faction == UnitData.Faction.PLAYER:
