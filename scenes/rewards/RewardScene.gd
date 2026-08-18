@@ -85,6 +85,34 @@ func _collect_layout_slots() -> void:
 	print("DEBUG: layout slots cards=", card_slots.size(), " artifacts=", artifact_slots.size())
 
 
+func _set_gold_reward_label(amount: int) -> void:
+	if amount <= 0:
+		gold_display.visible = false
+		return
+	gold_label.text = "+%d" % amount
+	gold_display.visible = true
+
+
+func _set_skip_button_text(text: String, show_gold_icon: bool) -> void:
+	skip_button.text = text
+	if show_gold_icon:
+		KeywordManager.apply_gold_button_icon(skip_button, 24)
+	else:
+		KeywordManager.clear_button_icon(skip_button)
+
+
+func _set_skip_card_prompt() -> void:
+	if encounter_type == EncounterData.EncounterType.NORMAL:
+		_set_skip_button_text(
+			KeywordManager.strip_gold_word(
+				TranslationHelper.tr_format("ui.reward.skip_card_gold", {"value": SKIP_CARD_GOLD_NORMAL})
+			),
+			true
+		)
+	else:
+		_set_skip_button_text(tr("ui.reward.skip_card"), false)
+
+
 func setup_ui():
 	print("DEBUG: setup_ui() volán")
 	print("DEBUG: gold_reward = ", gold_reward)
@@ -95,11 +123,7 @@ func setup_ui():
 	
 	# 1. Zlato
 	PlayerData.add_gold(gold_reward)
-	if gold_reward > 0:
-		gold_label.text = TranslationHelper.tr_format("ui.reward.gold", {"value": gold_reward})
-		gold_display.visible = true
-	else:
-		gold_display.visible = false
+	_set_gold_reward_label(gold_reward)
 
 	var has_cards := not card_choices.is_empty()
 	var has_artifacts := not artifact_rewards.is_empty()
@@ -161,17 +185,14 @@ func setup_ui():
 	# 4. Tlačítko "Přeskočit" / "Pokračovat"
 	# TEPRVE NYNÍ nastavujeme tlačítko, když už máme správné hodnoty
 	if card_choices.is_empty() and artifact_rewards.is_empty():
-		skip_button.text = tr("ui.common.continue")
+		_set_skip_button_text(tr("ui.common.continue"), false)
 		skip_button.pressed.connect(_finish_reward)
 	# Pokud jsou jen artefakty na výběr (např. po bossovi)
 	elif card_choices.is_empty() and not artifact_rewards.is_empty():
 		skip_button.visible = false # Po bossovi si musíš vybrat
 	# Standardní situace s výběrem karty
 	else:
-		if encounter_type == EncounterData.EncounterType.NORMAL:
-			skip_button.text = TranslationHelper.tr_format("ui.reward.skip_card_gold", {"value": SKIP_CARD_GOLD_NORMAL})
-		else:
-			skip_button.text = tr("ui.reward.skip_card")
+		_set_skip_card_prompt()
 		skip_button.pressed.connect(_on_skip_pressed)
 	
 	if has_node("/root/GameManager") and GameManager.tutorial_active and GameManager.tutorial_step == GameManager.TUTORIAL_STEP_REWARD_1:
@@ -214,7 +235,7 @@ func _on_card_clicked(card_to_add: CardData):
 	if _combo_mode and not _artifact_claimed:
 		title_label.text = tr("ui.reward.choose_artifact")
 		skip_button.disabled = false
-		skip_button.text = tr("ui.reward.skip_artifact")
+		_set_skip_button_text(tr("ui.reward.skip_artifact"), false)
 		return
 	skip_button.disabled = true
 	if _tutorial_return_to_menu:
@@ -232,18 +253,13 @@ func _on_skip_pressed():
 			_card_resolved = true
 			if encounter_type == EncounterData.EncounterType.NORMAL and not card_choices.is_empty():
 				PlayerData.add_gold(SKIP_CARD_GOLD_NORMAL)
-				if gold_reward > 0:
-					gold_label.text = TranslationHelper.tr_format("ui.reward.gold", {"value": gold_reward + SKIP_CARD_GOLD_NORMAL})
-					gold_display.visible = true
-				else:
-					gold_display.visible = true
-					gold_label.text = TranslationHelper.tr_format("ui.reward.gold", {"value": SKIP_CARD_GOLD_NORMAL})
+				_set_gold_reward_label(gold_reward + SKIP_CARD_GOLD_NORMAL)
 			for slot in card_slots:
 				if is_instance_valid(slot):
 					slot.visible = false
 			if not _artifact_claimed:
 				title_label.text = tr("ui.reward.choose_artifact")
-				skip_button.text = tr("ui.reward.skip_artifact")
+				_set_skip_button_text(tr("ui.reward.skip_artifact"), false)
 				return
 		# Skip relic (or both already resolved)
 		_hide_untaken_artifacts()
@@ -253,12 +269,7 @@ func _on_skip_pressed():
 	_card_resolved = true
 	if encounter_type == EncounterData.EncounterType.NORMAL and not card_choices.is_empty():
 		PlayerData.add_gold(SKIP_CARD_GOLD_NORMAL)
-		if gold_reward > 0:
-			gold_label.text = TranslationHelper.tr_format("ui.reward.gold", {"value": gold_reward + SKIP_CARD_GOLD_NORMAL})
-			gold_display.visible = true
-		else:
-			gold_display.visible = true
-			gold_label.text = TranslationHelper.tr_format("ui.reward.gold", {"value": SKIP_CARD_GOLD_NORMAL})
+		_set_gold_reward_label(gold_reward + SKIP_CARD_GOLD_NORMAL)
 	_finish_reward()
 
 # ===== COOP sdílený reward =====
@@ -393,10 +404,7 @@ func _on_artifact_selected(artifact_to_add: ArtifactsData):
 	# Elite combo: artefakt první — ještě karta nebo skip
 	if _combo_mode and not _card_resolved:
 		title_label.text = tr("ui.reward.choose_card")
-		if encounter_type == EncounterData.EncounterType.NORMAL:
-			skip_button.text = TranslationHelper.tr_format("ui.reward.skip_card_gold", {"value": SKIP_CARD_GOLD_NORMAL})
-		else:
-			skip_button.text = tr("ui.reward.skip_card")
+		_set_skip_card_prompt()
 		skip_button.disabled = false
 		skip_button.visible = true
 		return

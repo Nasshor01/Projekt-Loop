@@ -82,7 +82,7 @@ func get_cost_description() -> String:
 	"""Vrátí textový popis ceny"""
 	var parts = []
 	if gold > 0:
-		parts.append("[color=yellow]" + TranslationHelper.tr_format("event.cost.gold", {"value": gold}) + "[/color]")
+		parts.append("[color=yellow]-%d %s[/color]" % [gold, KeywordManager.gold_bbcode(18)])
 	if hp > 0:
 		parts.append("[color=red]" + TranslationHelper.tr_format("event.cost.hp", {"value": hp}) + "[/color]")
 	if max_hp > 0:

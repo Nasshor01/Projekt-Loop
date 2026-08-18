@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://igmyfibd5goq"]
+[gd_scene load_steps=10 format=3 uid="uid://igmyfibd5goq"]
 
 [ext_resource type="Script" uid="uid://x2hd3fytxgbm" path="res://scenes/ui/GlobalUI.gd" id="1_f4cv4"]
 [ext_resource type="PackedScene" uid="uid://cu6oy5nwloafr" path="res://scenes/ui/PlayerArtifactsUI.tscn" id="2_z3wfs"]
@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/PlayerFeedback.tscn" id="5_feedback"]
 [ext_resource type="PackedScene" uid="uid://dah2k3m4n5p6q" path="res://scenes/ui/CardTooltip.tscn" id="6_tooltip"]
 [ext_resource type="PackedScene" uid="uid://cbx4uhn0axyol" path="res://scenes/ui/Settings.tscn" id="7_settings"]
+[ext_resource type="Texture2D" uid="uid://c1a1rmh3inaeh" path="res://art/icons/status/gold_coin.png" id="8_gold"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_z18a7"]
 bg_color = Color(0, 0, 0, 0.501961)
@@ -71,7 +72,10 @@ theme_override_constants/separation = 10
 alignment = 1
 
 [node name="GoldIcon" type="TextureRect" parent="MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay"]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+texture = ExtResource("8_gold")
+expand_mode = 1
 stretch_mode = 5
 
 [node name="GoldLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay"]
@@ -80,7 +84,7 @@ theme_override_colors/font_color = Color(1, 0.9, 0.35, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 30
-text = "Zlato: 100"
+text = "100"
 
 [node name="FloorDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
 layout_mode = 2

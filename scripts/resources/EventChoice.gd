@@ -51,6 +51,6 @@ func get_tooltip() -> String:
 	
 	# Automaticky vygeneruj tooltip z rewards
 	if reward:
-		return tr("event.choice.possible_rewards") + " " + reward.get_reward_description()
+		return tr("event.choice.possible_rewards") + " " + KeywordManager.strip_img_bbcode(reward.get_reward_description())
 	
 	return ""

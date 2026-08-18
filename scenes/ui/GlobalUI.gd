@@ -75,7 +75,7 @@ func _on_player_health_changed(new_health, new_max_health):
 	hp_label.text = TranslationHelper.tr_format("ui.global.hp", {"current": new_health, "max": new_max_health})
 
 func _on_player_gold_changed(new_gold):
-	gold_label.text = TranslationHelper.tr_format("ui.global.gold", {"value": new_gold})
+	gold_label.text = str(new_gold)
 
 func _on_player_deck_changed():
 	deck_button.text = TranslationHelper.tr_format("ui.global.deck", {"value": PlayerData.master_deck.size()})

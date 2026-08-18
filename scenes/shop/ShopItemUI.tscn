@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://c2y1v7bbphs46"]
+[gd_scene load_steps=4 format=3 uid="uid://c2y1v7bbphs46"]
 
 [ext_resource type="Script" uid="uid://cxjm6qrlkogyv" path="res://scenes/shop/ShopItemUI.gd" id="1_b06mc"]
 [ext_resource type="FontFile" uid="uid://t08shflw41tf" path="res://art/fonts/blrrpixs016.ttf" id="2_cardfont"]
+[ext_resource type="Texture2D" uid="uid://c1a1rmh3inaeh" path="res://art/icons/status/gold_coin.png" id="3_gold"]
 
 [node name="ShopItemUI" type="VBoxContainer"]
 custom_minimum_size = Vector2(240, 350)
@@ -16,7 +17,20 @@ size_flags_horizontal = 4
 size_flags_vertical = 3
 mouse_filter = 2
 
-[node name="PriceLabel" type="Label" parent="."]
+[node name="PriceRow" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="GoldIcon" type="TextureRect" parent="PriceRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+texture = ExtResource("3_gold")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PriceLabel" type="Label" parent="PriceRow"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)

@@ -44,7 +44,7 @@ func apply_reward(results_log: Array = []):
 	granted_artifacts.clear()
 	if gold > 0:
 		PlayerData.add_gold(gold)
-		results_log.append("[color=yellow]" + TranslationHelper.tr_format("event.reward.gain_gold", {"value": gold}) + "[/color]")
+		results_log.append("[color=yellow]+%d %s[/color]" % [gold, KeywordManager.gold_bbcode(18)])
 	
 	if heal > 0:
 		var actual_heal = heal
@@ -264,7 +264,7 @@ func get_reward_description() -> String:
 	"""Vrátí textový popis odměny"""
 	var parts = []
 	if gold > 0:
-		parts.append(TranslationHelper.tr_format("event.reward.desc_gold", {"value": gold}))
+		parts.append("+%d %s" % [gold, KeywordManager.gold_bbcode(18)])
 	if heal > 0:
 		if heal == 999:
 			parts.append(tr("event.reward.desc_full_heal"))

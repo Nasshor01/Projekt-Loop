@@ -209,7 +209,9 @@ const SHORTHAND_ICONS: Dictionary = {
 	"heart": "res://art/icons/status/Heal.png",
 	"vulnerable": "res://art/icons/status/Vulnerable.png",
 	"regeneration": "res://art/icons/status/Regeneration.png",
-	"poison": "res://art/icons/status/Poison.png"
+	"poison": "res://art/icons/status/Poison.png",
+	"gold": "res://art/icons/status/gold_coin.png",
+	"gold_coin": "res://art/icons/status/gold_coin.png"
 }
 
 const ICON_SIZE: int = 16

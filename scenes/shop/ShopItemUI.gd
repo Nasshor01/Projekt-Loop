@@ -9,6 +9,7 @@ signal card_hover_exited(card_data: CardData)
 
 @onready var item_content_container: Control = %ItemContent
 @onready var price_label: Label = %PriceLabel
+@onready var gold_icon: TextureRect = %GoldIcon
 @onready var sale_label: Label = %SaleLabel
 
 var item_data: Resource
@@ -55,6 +56,8 @@ func mark_purchased() -> void:
 	if is_instance_valid(price_label):
 		price_label.text = tr("ui.shop.purchased")
 		price_label.modulate = Color(0.7, 0.7, 0.7, 1)
+	if is_instance_valid(gold_icon):
+		gold_icon.visible = false
 	if is_instance_valid(sale_label):
 		sale_label.visible = false
 	_set_content_interactive(false)
@@ -233,14 +236,16 @@ func _update_price_display():
 	if not is_instance_valid(price_label):
 		return
 	price_label.visible = true
+	if is_instance_valid(gold_icon):
+		gold_icon.visible = true
 	if is_on_sale and original_price > 0:
-		price_label.text = TranslationHelper.tr_format("ui.shop.sale_price", {"value": purchase_cost, "original": original_price})
+		price_label.text = str(purchase_cost)
 		price_label.modulate = Color(0.45, 1.0, 0.45, 1)
 		if is_instance_valid(sale_label):
 			sale_label.text = tr("ui.shop.sale")
 			sale_label.visible = true
 	else:
-		price_label.text = TranslationHelper.tr_format("ui.shop.price", {"value": purchase_cost})
+		price_label.text = str(purchase_cost)
 		price_label.modulate = Color.WHITE
 		if is_instance_valid(sale_label):
 			sale_label.visible = false

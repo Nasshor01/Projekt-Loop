@@ -86,11 +86,19 @@ func _wait_for_shop_data():
 			return
 	_generate_shop_inventory()
 
+func _update_remove_card_button() -> void:
+	if not is_instance_valid(remove_card_button):
+		return
+	KeywordManager.apply_gold_button_icon(remove_card_button, 22)
+	remove_card_button.text = KeywordManager.strip_gold_word(
+		TranslationHelper.tr_format("ui.shop.remove_card", {"value": get_card_removal_cost()})
+	)
+
+
 func _update_ui_texts():
 	if title_label:
 		title_label.text = tr("ui.shop.title")
-	if remove_card_button:
-		remove_card_button.text = TranslationHelper.tr_format("ui.shop.remove_card", {"value": get_card_removal_cost()})
+	_update_remove_card_button()
 	if leave_button:
 		leave_button.text = tr("ui.shop.leave")
 	_refresh_village_hint()
@@ -426,7 +434,7 @@ func _on_card_selected_for_removal(card_data: CardData):
 	if PlayerData.spend_gold(cost):
 		PlayerData.shop_card_removals_count += 1
 		PlayerData.master_deck.erase(card_data)
-		remove_card_button.text = TranslationHelper.tr_format("ui.shop.remove_card", {"value": get_card_removal_cost()})
+		_update_remove_card_button()
 		print(TranslationHelper.tr_format("log.shop.card_removed", {"name": card_data.card_name}))
 		card_pile_viewer.hide()
 		_refresh_all_affordability()

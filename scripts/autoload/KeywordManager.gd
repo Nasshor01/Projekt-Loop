@@ -16,8 +16,13 @@ const ICON_MAP: Dictionary = {
 	"heart": "res://art/icons/status/Heal.png",
 	"vulnerable": "res://art/icons/status/Vulnerable.png",
 	"regeneration": "res://art/icons/status/Regeneration.png",
-	"poison": "res://art/icons/status/Poison.png"
+	"poison": "res://art/icons/status/Poison.png",
+	"gold": "res://art/icons/status/gold_coin.png",
+	"gold_coin": "res://art/icons/status/gold_coin.png"
 }
+
+const GOLD_COIN_PATH := "res://art/icons/status/gold_coin.png"
+const GOLD_COIN_TEXTURE := preload("res://art/icons/status/gold_coin.png")
 
 ## Dictionary of all known keywords. Keys are internal names (e.g. "vulnerable").
 ## Each entry: title, icon, description (translation keys), color (hex), search_terms (for parsing)
@@ -222,6 +227,40 @@ func get_keyword_description_dynamic(key: String, _card_data: CardData = null) -
 	return get_keyword_description(key)
 
 
-## Returns icon path for shorthand card descriptions. Keys: damage, holy, block, heal, vulnerable, regeneration.
+## Returns icon path for shorthand card descriptions. Keys: damage, holy, block, heal, vulnerable, regeneration, gold.
 static func get_icon_path(key: String) -> String:
 	return ICON_MAP.get(key, "")
+
+
+static func gold_bbcode(px: int = 18) -> String:
+	return "[img=%dx%d]%s[/img]" % [px, px, GOLD_COIN_PATH]
+
+
+static func strip_gold_word(text: String) -> String:
+	"""Drop leftover 'gold'/'g'/'zlata' from amount labels until translations reimport."""
+	var t := text.replace(" gold", "").replace(" Gold", "").replace(" zlata", "").replace(" zlato", "")
+	var re := RegEx.new()
+	re.compile("(\\d+)g\\)")
+	return re.sub(t, "$1)", true)
+
+
+static func strip_img_bbcode(text: String) -> String:
+	var re := RegEx.new()
+	re.compile("\\[img(?:=[^\\]]*)?\\][^\\[]*\\[/(?:img)?\\]")
+	return re.sub(text, "", true).strip_edges()
+
+
+static func apply_gold_button_icon(button: Button, px: int = 24) -> void:
+	if button == null:
+		return
+	button.icon = GOLD_COIN_TEXTURE
+	button.expand_icon = true
+	button.add_theme_constant_override("icon_max_width", px)
+
+
+static func clear_button_icon(button: Button) -> void:
+	if button == null:
+		return
+	button.icon = null
+	button.expand_icon = false
+	button.remove_theme_constant_override("icon_max_width")
