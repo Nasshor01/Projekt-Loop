@@ -81,6 +81,7 @@ var node_names = {
 	MapNodeResource.NodeType.BOSS: "ui.map.node.boss"
 }
 
+@onready var legend_panel: Panel = $CanvasLayer/LegendPanel
 @onready var legend_container = $CanvasLayer/LegendPanel/LegendContainer
 
 @onready var generator_node = $MapGenerator
@@ -744,7 +745,8 @@ func _setup_camera():
 	camera.limit_bottom = int(map_rect.end.y + CAMERA_VERTICAL_PADDING)
 
 func _unhandled_input(event: InputEvent):
-	if get_viewport().gui_get_focus_owner():
+	var focus_owner := get_viewport().gui_get_focus_owner()
+	if focus_owner is LineEdit:
 		return
 
 	if event is InputEventMouseButton:
@@ -827,34 +829,51 @@ func _setup_legend():
 
 	# Projdeme všechny typy uzlů (VČETNĚ BOSSE!)
 	for node_type in node_names:
-		# Vytvoříme řádek jako HBoxContainer
 		var row = HBoxContainer.new()
-		row.custom_minimum_size = Vector2(200, 40)
+		row.custom_minimum_size = Vector2(0, 40)
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		
-		# Vytvoříme ikonku jako TextureButton (místo TextureRect)
-		var icon = TextureButton.new()
-		icon.texture_normal = node_textures[node_type]
+		var icon = TextureRect.new()
+		icon.texture = node_textures[node_type]
 		icon.custom_minimum_size = Vector2(32, 32)
-		icon.ignore_texture_size = true
-		icon.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-		icon.disabled = true  # Zakážeme klikání, ale ikonka zůstane vidět
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		
-		# Vytvoříme popisek
 		var label = Label.new()
-		label.text = " " + tr(node_names[node_type])
+		label.text = tr(node_names[node_type])
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		
-		# Sestavíme řádek
 		row.add_child(icon)
 		row.add_child(label)
-		
-		# Přidáme malou mezeru mezi ikonkou a textem
 		row.add_theme_constant_override("separation", 8)
 		
-		# Přidáme řádek do legendy
 		legend_container.add_child(row)
-		
-		print("Přidána legenda pro: ", tr(node_names[node_type]))
+	
+	await get_tree().process_frame
+	_fit_legend_panel()
 
-	print("Legenda dokončena s ", legend_container.get_child_count(), " položkami")
+func _fit_legend_panel() -> void:
+	if not is_instance_valid(legend_panel) or not is_instance_valid(legend_container):
+		return
+	
+	var panel_width := 220.0
+	var content_height: float = legend_container.get_combined_minimum_size().y + 16.0
+	var viewport_height := get_viewport_rect().size.y
+	var panel_top := maxf(88.0, (viewport_height - content_height) * 0.5)
+	
+	legend_panel.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	legend_panel.custom_minimum_size = Vector2(panel_width, content_height)
+	legend_panel.size = Vector2(panel_width, content_height)
+	legend_panel.offset_left = 16.0
+	legend_panel.offset_top = panel_top
+	legend_panel.offset_right = 16.0 + panel_width
+	legend_panel.offset_bottom = panel_top + content_height
+	legend_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	
+	legend_container.position = Vector2(10.0, 8.0)
+	legend_container.size = Vector2(panel_width - 20.0, content_height - 16.0)
+	legend_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
