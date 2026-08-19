@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://igmyfibd5goq"]
+[gd_scene load_steps=9 format=3 uid="uid://igmyfibd5goq"]
 
 [ext_resource type="Script" uid="uid://x2hd3fytxgbm" path="res://scenes/ui/GlobalUI.gd" id="1_f4cv4"]
 [ext_resource type="PackedScene" uid="uid://cu6oy5nwloafr" path="res://scenes/ui/PlayerArtifactsUI.tscn" id="2_z3wfs"]
@@ -9,18 +9,6 @@
 [ext_resource type="PackedScene" uid="uid://cbx4uhn0axyol" path="res://scenes/ui/Settings.tscn" id="7_settings"]
 [ext_resource type="Texture2D" uid="uid://c1a1rmh3inaeh" path="res://art/icons/status/gold_coin.png" id="8_gold"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_z18a7"]
-bg_color = Color(0, 0, 0, 0.501961)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.8, 0.8, 0.8, 0.75)
-corner_radius_top_left = 5
-corner_radius_top_right = 5
-corner_radius_bottom_right = 5
-corner_radius_bottom_left = 5
-
 [node name="GlobalUI" type="CanvasLayer"]
 layer = 20
 script = ExtResource("1_f4cv4")
@@ -30,14 +18,14 @@ anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 80.0
 grow_horizontal = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_z18a7")
+theme_type_variation = &"HudBar"
 
 [node name="MarginContainer" type="MarginContainer" parent="MainPanel"]
 layout_mode = 2
-theme_override_constants/margin_left = 15
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 15
-theme_override_constants/margin_bottom = 10
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 6
 
 [node name="MainLayout" type="HBoxContainer" parent="MainPanel/MarginContainer"]
 layout_mode = 2
@@ -47,12 +35,17 @@ theme_override_constants/separation = 20
 layout_mode = 2
 alignment = 1
 
-[node name="HPDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/LeftSection"]
+[node name="HPDisplay" type="PanelContainer" parent="MainPanel/MarginContainer/MainLayout/LeftSection"]
+layout_mode = 2
+theme_type_variation = &"HudChip"
+
+[node name="HPRow" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/LeftSection/HPDisplay"]
 layout_mode = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="HPLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/LeftSection/HPDisplay"]
+[node name="HPLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/LeftSection/HPDisplay/HPRow"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
@@ -66,19 +59,24 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 30
 alignment = 1
 
-[node name="GoldDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
+[node name="GoldDisplay" type="PanelContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
+layout_mode = 2
+theme_type_variation = &"HudChip"
+
+[node name="GoldRow" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay"]
 layout_mode = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="GoldIcon" type="TextureRect" parent="MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay"]
+[node name="GoldIcon" type="TextureRect" parent="MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay/GoldRow"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 texture = ExtResource("8_gold")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="GoldLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay"]
+[node name="GoldLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay/GoldRow"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.9, 0.35, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
@@ -86,24 +84,34 @@ theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 30
 text = "100"
 
-[node name="FloorDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
+[node name="FloorDisplay" type="PanelContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
+layout_mode = 2
+theme_type_variation = &"HudChip"
+
+[node name="FloorRow" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection/FloorDisplay"]
 layout_mode = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="FloorLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/CenterSection/FloorDisplay"]
+[node name="FloorLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/CenterSection/FloorDisplay/FloorRow"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 30
 text = "Patro: 1"
 
-[node name="NGPlusDisplay" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
+[node name="NGPlusDisplay" type="PanelContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection"]
+layout_mode = 2
+theme_type_variation = &"HudChip"
+
+[node name="NGPlusRow" type="HBoxContainer" parent="MainPanel/MarginContainer/MainLayout/CenterSection/NGPlusDisplay"]
 layout_mode = 2
 theme_override_constants/separation = 10
 alignment = 1
 
-[node name="NGPlusLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/CenterSection/NGPlusDisplay"]
+[node name="NGPlusLabel" type="Label" parent="MainPanel/MarginContainer/MainLayout/CenterSection/NGPlusDisplay/NGPlusRow"]
+unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 4
@@ -116,10 +124,12 @@ theme_override_constants/separation = 15
 alignment = 1
 
 [node name="DeckButton" type="Button" parent="MainPanel/MarginContainer/MainLayout/RightSection"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "Balíček (30)"
 
 [node name="MenuButton" type="Button" parent="MainPanel/MarginContainer/MainLayout/RightSection"]
+unique_name_in_owner = true
 layout_mode = 2
 text = "Menu"
 

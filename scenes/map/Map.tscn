@@ -42,21 +42,23 @@ vis_boss_y_offset = -85.0
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="SeedLabel" type="Label" parent="CanvasLayer"]
-offset_left = 24.0
-offset_top = 768.0
-offset_right = 64.0
-offset_bottom = 793.0
+offset_left = 16.0
+offset_top = 1032.0
+offset_right = 56.0
+offset_bottom = 1057.0
 
 [node name="Panel" type="Panel" parent="CanvasLayer"]
 offset_left = 16.0
-offset_top = 816.0
-offset_right = 272.0
-offset_bottom = 1008.0
+offset_top = 776.0
+offset_right = 232.0
+offset_bottom = 928.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/Panel"]
 layout_mode = 0
-offset_right = 180.0
-offset_bottom = 103.0
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 196.0
+offset_bottom = 136.0
 
 [node name="SeedLineEdit" type="LineEdit" parent="CanvasLayer/Panel/VBoxContainer"]
 layout_mode = 2

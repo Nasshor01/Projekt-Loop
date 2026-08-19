@@ -1,5 +1,4 @@
 res://main.tscn
-res://art/ui/game_theme.tres
 res://data/cards/everyone/heavy_strike_upgraded.tres
 res://data/cards/everyone/heavy_strike.tres
 res://data/events/cursed_well.tres

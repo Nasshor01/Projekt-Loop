@@ -1,12 +1,12 @@
 extends CanvasLayer
 
-@onready var hp_label = $MainPanel/MarginContainer/MainLayout/LeftSection/HPDisplay/HPLabel
-@onready var gold_label = $MainPanel/MarginContainer/MainLayout/CenterSection/GoldDisplay/GoldLabel
-@onready var floor_label = $MainPanel/MarginContainer/MainLayout/CenterSection/FloorDisplay/FloorLabel
-@onready var ng_plus_label = $MainPanel/MarginContainer/MainLayout/CenterSection/NGPlusDisplay/NGPlusLabel
+@onready var hp_label = %HPLabel
+@onready var gold_label = %GoldLabel
+@onready var floor_label = %FloorLabel
+@onready var ng_plus_label = %NGPlusLabel
 @onready var player_artifacts_ui = $ArtifactsStrip/PlayerArtifactsUI
-@onready var deck_button = $MainPanel/MarginContainer/MainLayout/RightSection/DeckButton
-@onready var menu_button = $MainPanel/MarginContainer/MainLayout/RightSection/MenuButton
+@onready var deck_button = %DeckButton
+@onready var menu_button = %MenuButton
 @onready var deck_viewer = $DeckViewer
 @onready var card_tooltip: CardTooltip = $TooltipLayer/CardTooltip
 @onready var popup_menu = %PopupMenu

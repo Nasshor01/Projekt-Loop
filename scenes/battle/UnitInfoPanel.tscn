@@ -1,51 +1,18 @@
-[gd_scene load_steps=5 format=3 uid="uid://bykx7qci4fkvl"]
+[gd_scene load_steps=3 format=3 uid="uid://bykx7qci4fkvl"]
 
 [ext_resource type="Script" uid="uid://dlf8mjbbts8fx" path="res://scenes/ui/UnitInfoPanel.gd" id="1_balmg"]
 [ext_resource type="FontFile" uid="uid://bhj8pjkqc1umb" path="res://art/fonts/Ithaca-LVB75.ttf" id="2_font"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-content_margin_left = 0.0
-content_margin_top = 0.0
-content_margin_right = 0.0
-content_margin_bottom = 0.0
-bg_color = Color(0.05, 0.06, 0.09, 0.94)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.72, 0.74, 0.82, 0.9)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_intent"]
-content_margin_left = 8.0
-content_margin_top = 6.0
-content_margin_right = 8.0
-content_margin_bottom = 6.0
-bg_color = Color(0.16, 0.12, 0.1, 0.92)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.95, 0.78, 0.4, 0.75)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
 [node name="UnitInfoPanel" type="PanelContainer"]
 custom_minimum_size = Vector2(260, 0)
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 script = ExtResource("1_balmg")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 8
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
 
 [node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer"]
 unique_name_in_owner = true
@@ -172,7 +139,7 @@ theme_override_constants/separation = 6
 [node name="IntentBox" type="PanelContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_intent")
+theme_type_variation = &"GoldPanel"
 
 [node name="IntentVBox" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/IntentBox"]
 layout_mode = 2
