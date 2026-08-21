@@ -32,36 +32,36 @@ const DESC_MAX_LINES_FULL := 5
 const DESC_MAX_LINES_COMPACT := 4
 const DESC_DENSE_LINE_THRESHOLD := 3
 const DESC_VERY_DENSE_LINE_THRESHOLD := 5
-const DESC_DENSE_SHRINK := 1
-const DESC_VERY_DENSE_SHRINK := 2
+const DESC_DENSE_SHRINK := 0 ## Pixeloid: stay on 9px grid.
+const DESC_VERY_DENSE_SHRINK := 0
 
-## Hand / reward / deck (240×300 @ 1.0) — Ithaca (same family as tooltip).
-const HAND_NAME_FONT := 22
-const HAND_DESC_FONT := 19
-const HAND_COST_FONT := 28
-const HAND_USAGE_FONT := 17
+## Hand / reward / deck (240×300 @ 1.0) — Pixeloid Sans @ 16 (~2px under 18).
+const HAND_NAME_FONT := 16
+const HAND_DESC_FONT := 16
+const HAND_COST_FONT := 16
+const HAND_USAGE_FONT := 16
 const HAND_DESC_MIN := 16
 const HAND_NAME_MIN := 16
-const HAND_OUTLINE_NAME := 4
-const HAND_OUTLINE_COST := 4
+const HAND_OUTLINE_NAME := 1
+const HAND_OUTLINE_COST := 1
 const HAND_OUTLINE_DESC := 0 ## dark ink on white panel
-const HAND_OUTLINE_USAGE := 3
+const HAND_OUTLINE_USAGE := 1
 const HAND_LINE_SEP := 2
-## Wider letter spacing on card titles only (positive = apart).
-const NAME_GLYPH_SPACING := 2
+## Pixeloid: keep glyph spacing 0 on the 9px grid.
+const NAME_GLYPH_SPACING := 0
 const HAND_GLYPH_SPACING := 0
 
 ## Shop (240×300 @ 1.0) — match hand face metrics.
-const SHOP_NAME_FONT := 22
-const SHOP_DESC_FONT := 19
-const SHOP_COST_FONT := 28
-const SHOP_USAGE_FONT := 17
+const SHOP_NAME_FONT := 16
+const SHOP_DESC_FONT := 16
+const SHOP_COST_FONT := 16
+const SHOP_USAGE_FONT := 16
 const SHOP_DESC_MIN := 16
 const SHOP_NAME_MIN := 16
-const SHOP_OUTLINE_NAME := 4
-const SHOP_OUTLINE_COST := 4
+const SHOP_OUTLINE_NAME := 1
+const SHOP_OUTLINE_COST := 1
 const SHOP_OUTLINE_DESC := 0
-const SHOP_OUTLINE_USAGE := 3
+const SHOP_OUTLINE_USAGE := 1
 const SHOP_LINE_SEP := 2
 const SHOP_GLYPH_SPACING := 0
 
@@ -73,7 +73,7 @@ const NAME_COLOR_CURSE := Color(1.0, 0.55, 0.55, 1)
 const COST_COLOR_CURSE := Color(1.0, 0.85, 0.85, 1)
 
 ## Compact face only.
-const NAME_FONT_COMPACT := 25
+const NAME_FONT_COMPACT := 16
 const COST_FONT_SIZE := SHOP_COST_FONT ## legacy alias
 const USAGE_FONT_SIZE := SHOP_USAGE_FONT
 const DESC_FONT_MIN := SHOP_DESC_MIN
@@ -99,7 +99,7 @@ const COST_COLOR := Color(1.0, 0.95, 0.75, 1.0)
 const USAGE_COLOR := Color(0.45, 0.28, 0.05, 1.0)
 const PATH_SEAL_BADGE := "res://art/icons/artifact_fx/seal_badge.png"
 const PATH_RETAIN_BADGE := "res://art/icons/artifact_fx/retain_badge.png"
-const PATH_CARD_FONT := "res://art/fonts/Ithaca-LVB75.ttf"
+const PATH_CARD_FONT := "res://art/fonts/PixeloidSans.ttf"
 static var _frame_texture_cache: Dictionary = {}
 static var _badge_texture_cache: Dictionary = {}
 static var _card_font_spaced: Font = null

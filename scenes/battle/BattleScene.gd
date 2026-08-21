@@ -99,6 +99,9 @@ var _current_tooltip_card_data: CardData = null
 var _terrain_hover_panel: PanelContainer
 var _terrain_hover_label: Label
 var _terrain_hover_cell: Vector2i = Vector2i(-999, -999)
+## Avoid rebuilding All-Seeing Eye ranges every frame while mouse is off enemies.
+var _last_enemy_info_hover: Node = null
+var _last_enemy_range_shown: Node = null
 # Coop: true = můj tah, false = tah spoluhráče (pouze když _is_coop_run())
 var _coop_my_turn: bool = true
 var _coop_spectator_mode: bool = false  # Coop: můj paladin zemřel, jsem divák
@@ -1046,6 +1049,7 @@ func _finish_drawing_hand():
 	# Mid-turn DRAW_CARDS: only refresh hand/piles — do not re-enter turn-start finish
 	# (PLAYER_TURN / End Turn / on_hand_ready / Chalice modal).
 	if not _drawing_turn_start_hand:
+		_refresh_hand_playability()
 		return
 	_drawing_turn_start_hand = false
 	_current_battle_state = BattleState.PLAYER_TURN
@@ -1060,6 +1064,7 @@ func _finish_drawing_hand():
 			for child in player_hand_ui_instance.get_children():
 				if child is CardUI and child.has_method("update_display"):
 					child.update_display()
+	_refresh_hand_playability()
 
 
 func _wire_artifact_interact_ui() -> void:
@@ -1240,12 +1245,14 @@ func _sync_hand_ui_after_artifacts() -> void:
 				same = false
 				break
 		if same:
+			_refresh_hand_playability()
 			return
 	player_hand_ui_instance.clear_hand()
 	for card_data in data_hand:
 		player_hand_ui_instance.add_card_to_hand(card_data)
 	player_hand_ui_instance._request_arrange()
 	_update_pile_counts()
+	_refresh_hand_playability()
 
 
 func _on_artifact_extra_turn_requested():
@@ -1335,6 +1342,8 @@ func _on_unit_died(unit_node: Unit):
 	if _enemy_units.has(unit_node):
 		_enemy_units.erase(unit_node)
 		_refresh_goblin_pack_bonuses()
+		if _current_battle_state == BattleState.PLAYER_TURN:
+			_refresh_hand_playability()
 	
 	battle_grid_instance.remove_object_by_instance(unit_node)
 	
@@ -1860,6 +1869,7 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 	_is_action_processing = false
 	_card_play_in_progress = false
 	_reset_player_selection()
+	_refresh_hand_playability()
 
 ## Debug/cheat: add a card by id to the player's current hand (e.g. from DevConsole)
 func add_card_to_hand(card_id: String) -> bool:
@@ -1884,6 +1894,7 @@ func add_card_resource_to_hand(card: CardData) -> bool:
 	PlayerData.current_hand.append(card)
 	player_hand_ui_instance.add_card_to_hand(card)
 	player_hand_ui_instance._request_arrange()
+	_refresh_hand_playability()
 	_update_pile_counts()
 	DebugLogger.log_debug("add_card_resource_to_hand: added '%s'" % card.card_id)
 	return true
@@ -1989,6 +2000,7 @@ func _execute_move(unit_to_move: Unit, target_cell: Vector2i):
 		return
 	if unit_to_move == _player_unit_node:
 		set_enemy_intents()
+		_refresh_hand_playability()
 	# Real-time coop: druhý peer musí vidět stejný pohyb
 	if _is_coop_run() and has_node("/root/MultiplayerManager"):
 		var idx = _coop_get_player_unit_index(unit_to_move)
@@ -2703,6 +2715,7 @@ func _clear_card_selection_state_before_play():
 	battle_grid_instance.hide_enemy_range()
 	if _current_battle_state == BattleState.PLAYER_TURN:
 		battle_grid_instance.hide_danger_zone()
+	_restore_all_seeing_eye_preview()
 
 func _reset_player_selection():
 	if is_instance_valid(_selected_unit):
@@ -2719,6 +2732,25 @@ func _reset_player_selection():
 	if _current_battle_state == BattleState.PLAYER_TURN:
 		battle_grid_instance.hide_danger_zone()
 	_player_action_state = PlayerActionState.IDLE
+	_restore_all_seeing_eye_preview()
+
+func _restore_all_seeing_eye_preview() -> void:
+	if not has_node("/root/ArtifactManager"):
+		return
+	if not ArtifactManager.get_run_flag("show_enemy_move_preview", false):
+		return
+	if not is_instance_valid(battle_grid_instance):
+		return
+	if not battle_grid_instance.has_method("show_all_enemy_move_previews"):
+		return
+	var living: Array = []
+	for enemy_unit in _enemy_units:
+		if is_instance_valid(enemy_unit) and enemy_unit.current_health > 0:
+			living.append(enemy_unit)
+	battle_grid_instance.show_all_enemy_move_previews(living)
+	# Idle Eye preview is up again — next leave-hover can clear/restore once.
+	_last_enemy_info_hover = null
+	_last_enemy_range_shown = null
 
 
 
@@ -2729,6 +2761,7 @@ func _on_energy_changed(_new_amount: int):
 	# Energy display lives on PlayerInfoPanel (standalone CanvasLayer EnergyLabel was removed).
 	if is_instance_valid(player_info_panel) and player_info_panel.has_method("update_energy_display"):
 		player_info_panel.update_energy_display()
+	_refresh_hand_playability()
 
 func _on_end_turn_button_pressed():
 	if _current_battle_state != BattleState.PLAYER_TURN:
@@ -2869,13 +2902,20 @@ func _refresh_enemy_info_hover(unit_under_mouse: Node, show_range: bool) -> void
 	"""Enemy info při hoveru; zůstane otevřené i když myš přejede na panel (scroll)."""
 	if is_instance_valid(unit_under_mouse) and unit_under_mouse.get_unit_data().faction == UnitData.Faction.ENEMY:
 		enemy_info_panel.update_stats(unit_under_mouse)
-		if show_range and is_instance_valid(battle_grid_instance):
+		_last_enemy_info_hover = unit_under_mouse
+		# Only recompute Dijkstra/highlights when the hovered enemy changes (_process path).
+		if show_range and is_instance_valid(battle_grid_instance) and unit_under_mouse != _last_enemy_range_shown:
 			battle_grid_instance.show_enemy_range(unit_under_mouse)
+			_last_enemy_range_shown = unit_under_mouse
 		return
 	if _is_mouse_over_enemy_info_panel():
 		return
-	enemy_info_panel.hide_panel()
-	_clear_enemy_hover_highlights()
+	# Leaving enemy hover: clear once, then restore Eye preview once — not every idle frame.
+	if _last_enemy_info_hover != null:
+		_last_enemy_info_hover = null
+		_last_enemy_range_shown = null
+		enemy_info_panel.hide_panel()
+		_clear_enemy_hover_highlights()
 
 func _refresh_terrain_hover(grid_cell: Vector2i, unit_under_mouse: Node) -> void:
 	if _is_mouse_over_battle_hud() \
@@ -2974,24 +3014,10 @@ func _hide_terrain_hover() -> void:
 		_terrain_hover_panel.visible = false
 
 func _show_valid_targets_for_card(card: CardData):
-	var valid_target_cells: Array[Vector2i] = []
-	var is_attack = true
-	var needs_los = card.range_type == CardData.EffectRangeType.RANGED_FIXED or card.range_type == CardData.EffectRangeType.RANGED_LINE
-	
-	if card.range_type == CardData.EffectRangeType.FULL_BOARD and is_instance_valid(_player_unit_node):
-		is_attack = _card_has_enemy_play_target(card)
-		valid_target_cells.append(_player_unit_node.grid_position)
-		for enemy in _enemy_units:
-			if is_instance_valid(enemy):
-				valid_target_cells.append(enemy.grid_position)
-		battle_grid_instance.show_targetable_cells(valid_target_cells, is_attack)
-		return
-	
-	# PLAYER_CENTERED_AOE: zobrazit AOE preview kolem hráče, hráčova buňka jako cíl
+	var info: Dictionary = _collect_valid_targets_for_card(card)
+	var valid_target_cells: Array[Vector2i] = info.get("cells", [])
+	var is_attack: bool = bool(info.get("is_attack", true))
 	if card.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE and is_instance_valid(_player_unit_node):
-		is_attack = true
-		valid_target_cells.append(_player_unit_node.grid_position)
-		# Okamžitě zobrazit AOE highlight kolem hráče
 		var aoe_cells: Array[Vector2i] = []
 		for effect in card.effects:
 			if effect == null or effect.trigger != CardEffectData.EffectTrigger.ON_PLAY:
@@ -3006,9 +3032,29 @@ func _show_valid_targets_for_card(card: CardData):
 					aoe_cells.append(cell)
 		if not aoe_cells.is_empty():
 			battle_grid_instance.show_aoe_highlight(aoe_cells)
-		battle_grid_instance.show_targetable_cells(valid_target_cells, is_attack)
-		return
-	
+	battle_grid_instance.show_targetable_cells(valid_target_cells, is_attack)
+
+func _collect_valid_targets_for_card(card: CardData) -> Dictionary:
+	var valid_target_cells: Array[Vector2i] = []
+	var is_attack := true
+	if card == null or not is_instance_valid(_player_unit_node) or not is_instance_valid(battle_grid_instance):
+		return {"cells": valid_target_cells, "is_attack": is_attack}
+
+	var needs_los = card.range_type == CardData.EffectRangeType.RANGED_FIXED or card.range_type == CardData.EffectRangeType.RANGED_LINE
+
+	if card.range_type == CardData.EffectRangeType.FULL_BOARD:
+		is_attack = _card_has_enemy_play_target(card)
+		valid_target_cells.append(_player_unit_node.grid_position)
+		for enemy in _enemy_units:
+			if is_instance_valid(enemy):
+				valid_target_cells.append(enemy.grid_position)
+		return {"cells": valid_target_cells, "is_attack": is_attack}
+
+	if card.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE:
+		is_attack = true
+		valid_target_cells.append(_player_unit_node.grid_position)
+		return {"cells": valid_target_cells, "is_attack": is_attack}
+
 	for effect in card.effects:
 		if not _effect_is_play_target(effect):
 			continue
@@ -3021,22 +3067,24 @@ func _show_valid_targets_for_card(card: CardData):
 						if distance <= card.range_value:
 							if needs_los and not battle_grid_instance.has_line_of_sight(_player_unit_node.grid_position, enemy.grid_position, enemy):
 								continue
-							valid_target_cells.append(enemy.grid_position)
+							if not valid_target_cells.has(enemy.grid_position):
+								valid_target_cells.append(enemy.grid_position)
 			CardEffectData.TargetType.ALL_ENEMY_UNITS:
 				is_attack = true
 				for enemy in _enemy_units:
-					if is_instance_valid(enemy):
+					if is_instance_valid(enemy) and not valid_target_cells.has(enemy.grid_position):
 						valid_target_cells.append(enemy.grid_position)
 			CardEffectData.TargetType.SELF_UNIT:
 				is_attack = false
-				if not valid_target_cells.has(_player_unit_node.grid_position): valid_target_cells.append(_player_unit_node.grid_position)
+				if not valid_target_cells.has(_player_unit_node.grid_position):
+					valid_target_cells.append(_player_unit_node.grid_position)
 			CardEffectData.TargetType.EMPTY_GRID_CELL:
 				is_attack = false
 				for cell in battle_grid_instance.get_all_active_cells():
 					if _resolve_living_unit_on_cell(cell) != null:
 						continue
 					var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, cell)
-					if distance <= card.range_value:
+					if distance <= card.range_value and not valid_target_cells.has(cell):
 						valid_target_cells.append(cell)
 			_:
 				if effect.effect_type == CardEffectData.EffectType.PLACE_TERRAIN:
@@ -3045,15 +3093,51 @@ func _show_valid_targets_for_card(card: CardData):
 						if _resolve_living_unit_on_cell(cell) != null:
 							continue
 						var distance = battle_grid_instance.get_distance(_player_unit_node.grid_position, cell)
-						if distance <= card.range_value:
+						if distance <= card.range_value and not valid_target_cells.has(cell):
 							valid_target_cells.append(cell)
-	battle_grid_instance.show_targetable_cells(valid_target_cells, is_attack)
+	return {"cells": valid_target_cells, "is_attack": is_attack}
+
+func _card_has_any_valid_target_now(card: CardData) -> bool:
+	if card == null:
+		return false
+	var has_play_effect := false
+	for effect in card.effects:
+		if _effect_is_play_target(effect):
+			has_play_effect = true
+			break
+	# Cards with no ON_PLAY target effects (weird / exhaust-only) stay selectable if other gates pass.
+	if not has_play_effect:
+		return true
+	var info: Dictionary = _collect_valid_targets_for_card(card)
+	var cells: Array = info.get("cells", [])
+	return not cells.is_empty()
+
+func _evaluate_card_playability(card: CardData) -> Dictionary:
+	if card == null:
+		return {"playable": false, "reason": "unplayable"}
+	if card.is_unplayable():
+		return {"playable": false, "reason": "unplayable"}
+	if is_instance_valid(_player_unit_node) and (_player_unit_node.is_frozen or _player_unit_node.active_statuses.has("frozen")):
+		return {"playable": false, "reason": "frozen"}
+	if PlayerData.current_energy < _play_cost(card):
+		return {"playable": false, "reason": "energy"}
+	if card.max_uses_per_turn > 0:
+		var current_count: int = int(_cards_played_this_turn.get(card.card_id, 0))
+		if current_count >= card.max_uses_per_turn:
+			return {"playable": false, "reason": "max_uses"}
+	if not _card_has_any_valid_target_now(card):
+		return {"playable": false, "reason": "range"}
+	return {"playable": true, "reason": ""}
+
+func _refresh_hand_playability() -> void:
+	pass
 
 func _clear_enemy_hover_highlights():
 	if battle_grid_instance and battle_grid_instance.has_method("clear_highlights"):
 		battle_grid_instance.clear_highlights()
 	else:
 		battle_grid_instance.hide_enemy_range()
+	_restore_all_seeing_eye_preview()
 
 func _update_pile_counts():
 	if is_instance_valid(draw_pile_button): draw_pile_button.update_count(PlayerData.draw_pile.size())

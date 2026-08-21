@@ -104,14 +104,14 @@ size = 20.0
 
 [node name="BattleGrid" parent="." instance=ExtResource("2_t3o3d")]
 grid_line_color = Color(0.5, 0.5, 0.5, 0.5)
-highlight_color = Color(1, 1, 0, 0.588235)
-movement_highlight_color = Color(0.2, 0.8, 0.2, 0.588235)
-attack_highlight_color = Color(1, 0.2, 0.2, 0.588235)
-support_highlight_color = Color(0.2, 0.501961, 1, 0.588235)
-aoe_highlight_color = Color(0.8, 0.2, 1, 0.588235)
-player_spawn_highlight_color = Color(0.2, 0.901961, 0.901961, 0.588235)
-movement_warning_color = Color(0.901961, 0.8, 0.101961, 0.588235)
-danger_zone_color = Color(0.8, 0.2, 0.2, 0.588235)
+movement_highlight_color = Color(0.22, 0.72, 0.35, 0.5)
+attack_highlight_color = Color(0.88, 0.24, 0.22, 0.5)
+support_highlight_color = Color(0.28, 0.55, 0.92, 0.45)
+aoe_highlight_color = Color(0.68, 0.32, 0.88, 0.4)
+player_spawn_highlight_color = Color(0.28, 0.78, 0.82, 0.45)
+movement_warning_color = Color(0.86, 0.7, 0.2, 0.45)
+danger_zone_color = Color(0.82, 0.28, 0.24, 0.4)
+enemy_range_highlight_color = Color(0.28, 0.52, 0.88, 0.5)
 
 [node name="UnitWorldUILayer" type="CanvasLayer" parent="."]
 

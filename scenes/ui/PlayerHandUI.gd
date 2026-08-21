@@ -143,6 +143,12 @@ func clear_hand():
 		if child is CardUI:
 			child.queue_free()
 
+func set_card_playability(_playable: bool, _reason: String, _card_node: Control) -> void:
+	pass
+
+func refresh_all_playability(_evaluator: Callable) -> void:
+	pass
+
 func set_selected_card(card_node: Control):
 	_selected_card = card_node
 	_request_arrange()

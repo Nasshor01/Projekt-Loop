@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://cyruiah668yvv" path="res://scripts/CardUI.gd" id="1_ob8v0"]
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="2_pmyly"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="3_yi8ee"]
-[ext_resource type="FontFile" uid="uid://bhj8pjkqc1umb" path="res://art/fonts/Ithaca-LVB75.ttf" id="4_cardfont"]
+[ext_resource type="FontFile" uid="uid://dujraxyp63qxw" path="res://art/fonts/PixeloidSans.ttf" id="4_cardfont"]
 [ext_resource type="Texture2D" uid="uid://bbi5nypa6xj6v" path="res://art/sprites/cards/warrior/Warrior basic.png" id="4_pmyly"]
 
 [sub_resource type="Resource" id="Resource_fsx4a"]
@@ -49,7 +49,6 @@ offset_right = 320.0
 offset_bottom = 400.0
 script = ExtResource("1_ob8v0")
 card_data = SubResource("Resource_r3b4p")
-description_font_size = 18
 
 [node name="CardTemplateImage" type="TextureRect" parent="."]
 texture_filter = 1
@@ -81,9 +80,9 @@ offset_right = 265.0
 offset_bottom = 203.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
+theme_override_constants/outline_size = 1
 theme_override_fonts/font = ExtResource("4_cardfont")
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 16
 text = "Název karty"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -97,9 +96,9 @@ offset_right = 190.0
 offset_bottom = 67.0
 theme_override_colors/font_color = Color(1, 0.95, 0.75, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
+theme_override_constants/outline_size = 1
 theme_override_fonts/font = ExtResource("4_cardfont")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 16
 text = "XX"
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -116,7 +115,7 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/text_highlight_v_padding = 4
 theme_override_constants/outline_size = 0
 theme_override_fonts/normal_font = ExtResource("4_cardfont")
-theme_override_font_sizes/normal_font_size = 19
+theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
 text = "[center]Popis karty[/center]"
 scroll_active = false
@@ -130,9 +129,9 @@ offset_right = 253.0
 offset_bottom = 336.0
 theme_override_colors/font_color = Color(0.45, 0.28, 0.05, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
+theme_override_constants/outline_size = 1
 theme_override_fonts/font = ExtResource("4_cardfont")
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 16
 text = "1/2"
 horizontal_alignment = 2
 vertical_alignment = 2

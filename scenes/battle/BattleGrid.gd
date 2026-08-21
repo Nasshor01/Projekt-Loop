@@ -23,16 +23,15 @@ extends Node3D
 @export var grid_rows: int = 10
 
 @export var grid_line_color: Color = Color(0.5, 0.5, 0.5, 0.5)
-@export var highlight_color: Color = Color(1, 1, 0, 0.35)
-# Přehled barev overlay: zelená = pohyb hráče, modrá = pohyb nepřítele, červená = útok
-@export var movement_highlight_color: Color = Color(0.15, 0.88, 0.25, 0.5)   # zelená – move player
-@export var attack_highlight_color: Color = Color(0.95, 0.15, 0.15, 0.55)    # červená – attack
-@export var support_highlight_color: Color = Color(0.2, 0.5, 1.0, 0.45)
-@export var aoe_highlight_color: Color = Color(0.8, 0.2, 1.0, 0.4)
-@export var player_spawn_highlight_color: Color = Color(0.2, 0.9, 0.9, 0.45)
-@export var movement_warning_color: Color = Color(0.9, 0.75, 0.1, 0.45)
-@export var danger_zone_color: Color = Color(0.85, 0.2, 0.2, 0.4)
-@export var enemy_range_highlight_color: Color = Color(0.2, 0.45, 0.95, 0.5) # modrá – move enemy
+@export var movement_highlight_color: Color = Color(0.2, 0.75, 0.35, 0.5)   # zelená – move player
+@export var attack_highlight_color: Color = Color(0.9, 0.22, 0.2, 0.55)    # červená – attack
+@export var support_highlight_color: Color = Color(0.25, 0.55, 0.95, 0.45)
+@export var aoe_highlight_color: Color = Color(0.7, 0.3, 0.9, 0.4)
+@export var player_spawn_highlight_color: Color = Color(0.25, 0.8, 0.85, 0.45)
+@export var movement_warning_color: Color = Color(0.88, 0.72, 0.18, 0.45)
+@export var danger_zone_color: Color = Color(0.85, 0.25, 0.22, 0.4)
+@export var enemy_range_highlight_color: Color = Color(0.25, 0.5, 0.9, 0.5) # modrá – move enemy
+@export var highlight_color: Color = Color(1.0, 0.92, 0.25, 0.28)
 @export var initiative_hover_color: Color = Color(1.0, 0.82, 0.08, 0.78) # zlatá – hover v initiative baru
 @export var artifact_throne_color: Color = Color(0.98, 0.82, 0.12, 0.85)
 @export var artifact_crown_color: Color = Color(0.82, 0.35, 1.0, 0.85)
@@ -40,6 +39,16 @@ extends Node3D
 @export var artifact_grove_color: Color = Color(0.25, 0.85, 0.35, 0.7)
 @export var terrain_impassable_color: Color = Color(0.40, 0.38, 0.36, 0.55)
 @export var terrain_slow_color: Color = Color(0.52, 0.38, 0.16, 0.48)
+
+@export_group("Region Highlight")
+## Soft wash over tile interiors (region center).
+@export_range(0.05, 0.6, 0.01) var region_fill_alpha: float = 0.2
+## Stronger alpha on the outer perimeter only.
+@export_range(0.4, 1.0, 0.01) var region_edge_alpha: float = 0.9
+## How wide the soft rim fades inward (UV cell space).
+@export_range(0.04, 0.35, 0.01) var region_edge_softness: float = 0.14
+@export_range(0.0, 0.1, 0.005) var region_edge_core: float = 0.028
+@export var region_overlay_y: float = 0.03
 
 @onready var units_container: Node3D = $UnitsContainer
 var _terrain_container: Node3D
@@ -70,6 +79,13 @@ var _arena_floor: ArenaFloor = null
 var _yaw_follow_sprites: Array[Sprite3D] = []
 var _highlight_tweens: Array[Tween] = []
 var _mouse_over_cell: Vector2i = Vector2i(-1, -1)
+## Shared XZ quad for region fill cells (slight overlap kills seams).
+var _region_fill_mesh: Mesh = null
+## Cached ShaderMaterials keyed by color+neighbor mask.
+var _overlay_mat_cache: Dictionary = {}
+var _region_highlight_shader: Shader = preload("res://art/shaders/region_highlight.gdshader")
+## Skip full region mesh rebuild when only cursor/floor tints changed.
+var _region_overlay_signature: String = ""
 
 var _movable_cells: Array[Vector2i] = []
 var _targetable_cells: Array[Vector2i] = []
@@ -329,22 +345,15 @@ func get_all_objects_on_grid() -> Array:
 	return units
 
 func update_visual_highlights():
-	_kill_highlight_tweens()
 	_reset_floor_tile_materials()
-	_spawn_highlight_nodes.clear()
-	_enemy_overlap_pulse_nodes.clear()
-	# Plane overlay už nepoužíváme — zvýrazníme přímo blok podlahy
-	for child in _highlights_container.get_children():
-		child.queue_free()
 
-	# cell -> { color, emit, spawn, pulse }
+	# Soft floor tint only for persistent markers + single-cell cursors.
 	var tints: Dictionary = {}
 	var put := func(cell: Vector2i, color: Color, emit: float = 1.0, is_spawn: bool = false, pulse: bool = false):
 		if not is_cell_active(cell):
 			return
 		tints[cell] = {"color": color, "emit": emit, "spawn": is_spawn, "pulse": pulse}
 
-	# Artifact zones / line under combat highlights (combat tints overwrite).
 	for cell in _artifact_line_cells:
 		put.call(cell, artifact_line_color, 1.35)
 	for cell in _artifact_zones.keys():
@@ -357,8 +366,6 @@ func update_visual_highlights():
 				put.call(cell, artifact_crown_color, 2.0)
 			_:
 				put.call(cell, artifact_throne_color, 1.5)
-	# Living Grove roots share mud/stone terrain path — tint their cells too.
-	# Impassable rock / movement-stopping mud stay readable when no combat overlay.
 	for cell in terrain_layer.keys():
 		var td: TerrainData = terrain_layer[cell] as TerrainData
 		if td == null:
@@ -369,31 +376,8 @@ func update_visual_highlights():
 			put.call(cell, terrain_impassable_color, 0.45)
 		elif td.stops_movement_on_enter:
 			put.call(cell, terrain_slow_color, 0.5)
-
-	for cell in _danger_cells:
-		put.call(cell, danger_zone_color, 1.0)
-	for cell in _enemy_range_cells:
-		if not _enemy_attack_range_cells.has(cell):
-			put.call(cell, enemy_range_highlight_color, 1.15)
-	for cell in _enemy_attack_range_cells:
-		if _enemy_range_cells.has(cell):
-			put.call(cell, attack_highlight_color, 1.3, false, true)
-		else:
-			put.call(cell, attack_highlight_color, 1.25)
-	for cell in _movable_cells:
-		put.call(cell, movement_highlight_color, 1.15)
-	for cell in _warning_cells:
-		put.call(cell, movement_warning_color, 1.0)
-	for cell in _player_spawn_cells:
-		if _coop_selected_spawns.has(cell):
-			continue
-		put.call(cell, player_spawn_highlight_color, 1.0, true)
 	for cell in _coop_selected_spawns:
 		put.call(cell, _coop_selected_spawns[cell], 2.0)
-	for cell in _targetable_cells:
-		put.call(cell, _targetable_cells_color, 1.25)
-	for cell in _aoe_cells:
-		put.call(cell, aoe_highlight_color, 1.1)
 
 	if is_valid_grid_position(_mouse_over_cell) and is_cell_active(_mouse_over_cell):
 		put.call(_mouse_over_cell, highlight_color, 1.35)
@@ -402,6 +386,75 @@ func update_visual_highlights():
 
 	for cell in tints:
 		_apply_floor_tint(cell, tints[cell])
+
+	var signature := _compute_region_overlay_signature()
+	if signature == _region_overlay_signature:
+		return
+	_region_overlay_signature = signature
+
+	_kill_highlight_tweens()
+	_spawn_highlight_nodes.clear()
+	_enemy_overlap_pulse_nodes.clear()
+	for child in _highlights_container.get_children():
+		child.queue_free()
+
+	# Soft fill + outer-rim shader (no thick ribbon mesh, no internal grid seams).
+	var overlap_set: Dictionary = {}
+	for cell in _enemy_attack_range_cells:
+		if _enemy_range_cells.has(cell):
+			overlap_set[cell] = true
+
+	var move_only: Array[Vector2i] = []
+	for cell in _enemy_range_cells:
+		if not _enemy_attack_range_cells.has(cell):
+			move_only.append(cell)
+	var movable_only: Array[Vector2i] = []
+	for cell in _movable_cells:
+		if not _warning_cells.has(cell):
+			movable_only.append(cell)
+	var spawn_cells: Array[Vector2i] = []
+	for cell in _player_spawn_cells:
+		if not _coop_selected_spawns.has(cell):
+			spawn_cells.append(cell)
+
+	_spawn_region_highlight(_danger_cells, danger_zone_color)
+	_spawn_region_highlight(move_only, enemy_range_highlight_color)
+	_spawn_region_highlight(_enemy_attack_range_cells, attack_highlight_color, overlap_set)
+	_spawn_region_highlight(movable_only, movement_highlight_color)
+	_spawn_region_highlight(_warning_cells, movement_warning_color)
+	_spawn_region_highlight(spawn_cells, player_spawn_highlight_color, {}, true)
+	# Card targets (self / enemies in range / empty cells): pulse so playable spots read clearly.
+	var targetable_pulse: Dictionary = {}
+	for cell in _targetable_cells:
+		targetable_pulse[cell] = true
+	_spawn_region_highlight(_targetable_cells, _targetable_cells_color, targetable_pulse)
+	_spawn_region_highlight(_aoe_cells, aoe_highlight_color)
+
+func _compute_region_overlay_signature() -> String:
+	var parts: PackedStringArray = []
+	parts.append(_cells_signature("d", _danger_cells))
+	parts.append(_cells_signature("em", _enemy_range_cells))
+	parts.append(_cells_signature("ea", _enemy_attack_range_cells))
+	parts.append(_cells_signature("m", _movable_cells))
+	parts.append(_cells_signature("w", _warning_cells))
+	parts.append(_cells_signature("s", _player_spawn_cells))
+	parts.append(_cells_signature("t", _targetable_cells))
+	parts.append(_cells_signature("a", _aoe_cells))
+	parts.append("%.3f|%.3f|%.3f|%.3f" % [region_fill_alpha, region_edge_alpha, region_edge_softness, region_edge_core])
+	parts.append("%.3f" % (_targetable_cells_color.r + _targetable_cells_color.g * 2.0 + _targetable_cells_color.b * 4.0))
+	parts.append("sp%d" % (1 if _spawn_pulse_active else 0))
+	return "|".join(parts)
+
+func _cells_signature(prefix: String, cells: Array) -> String:
+	if cells.is_empty():
+		return prefix
+	var sorted_cells: Array = cells.duplicate()
+	sorted_cells.sort_custom(func(a, b): return a.x < b.x or (a.x == b.x and a.y < b.y))
+	var bits: PackedStringArray = [prefix]
+	for cell_v in sorted_cells:
+		var cell: Vector2i = cell_v as Vector2i
+		bits.append("%d,%d" % [cell.x, cell.y])
+	return ";".join(bits)
 
 func _kill_highlight_tweens() -> void:
 	for tw in _highlight_tweens:
@@ -427,21 +480,104 @@ func _apply_floor_tint(cell: Vector2i, info: Dictionary) -> void:
 		return
 	var mat := base.duplicate() as StandardMaterial3D
 	var c: Color = info.color
-	var blend := clampf(c.a + 0.2, 0.4, 0.85)
+	# Softer cursor / marker tint — region overlays carry the strong signal.
+	var blend := clampf(c.a * 0.55 + 0.08, 0.12, 0.45)
 	mat.albedo_color = base.albedo_color.lerp(Color(c.r, c.g, c.b), blend)
 	mat.emission_enabled = true
 	var emit_str: float = float(info.get("emit", 1.0))
-	mat.emission = Color(c.r, c.g, c.b) * (0.55 * emit_str)
-	mat.emission_energy_multiplier = 1.0
+	mat.emission = Color(c.r, c.g, c.b) * (0.22 * emit_str)
+	mat.emission_energy_multiplier = 0.85
 	tile.material_override = mat
 
-	if info.get("spawn", false):
-		_spawn_highlight_nodes.append(tile)
-		if _spawn_pulse_active:
-			_start_spawn_pulse_on_mesh(tile)
-	if info.get("pulse", false):
-		_enemy_overlap_pulse_nodes.append(tile)
-		_start_enemy_overlap_pulse_on_mesh(tile)
+func _get_region_fill_mesh() -> Mesh:
+	if _region_fill_mesh != null:
+		return _region_fill_mesh
+	# Custom XZ quad with stable UVs: UV.y=0 at -Z (grid UP), UV.x=0 at -X (LEFT).
+	var half := cell_size_3d * 0.51
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n := Vector3.UP
+	var corners := [
+		[Vector3(-half, 0, -half), Vector2(0, 0)],
+		[Vector3(half, 0, -half), Vector2(1, 0)],
+		[Vector3(half, 0, half), Vector2(1, 1)],
+		[Vector3(-half, 0, half), Vector2(0, 1)],
+	]
+	var idxs := [0, 1, 2, 0, 2, 3]
+	for i in idxs:
+		st.set_normal(n)
+		st.set_uv(corners[i][1])
+		st.add_vertex(corners[i][0])
+	_region_fill_mesh = st.commit()
+	return _region_fill_mesh
+
+func _neighbor_mask(cell: Vector2i, cell_set: Dictionary) -> int:
+	var mask := 0
+	if cell_set.has(cell + Vector2i.UP):
+		mask |= 1
+	if cell_set.has(cell + Vector2i.RIGHT):
+		mask |= 2
+	if cell_set.has(cell + Vector2i.DOWN):
+		mask |= 4
+	if cell_set.has(cell + Vector2i.LEFT):
+		mask |= 8
+	return mask
+
+func _make_region_shader_material(color: Color, mask: int) -> ShaderMaterial:
+	var mat := ShaderMaterial.new()
+	mat.shader = _region_highlight_shader
+	mat.set_shader_parameter("highlight_color", Color(color.r, color.g, color.b, 1.0))
+	mat.set_shader_parameter("fill_alpha", region_fill_alpha)
+	mat.set_shader_parameter("edge_alpha", region_edge_alpha)
+	mat.set_shader_parameter("edge_softness", region_edge_softness)
+	mat.set_shader_parameter("edge_core", region_edge_core)
+	mat.set_shader_parameter("glow_strength", 0.55)
+	mat.set_shader_parameter("n_north", 1.0 if (mask & 1) != 0 else 0.0)
+	mat.set_shader_parameter("n_east", 1.0 if (mask & 2) != 0 else 0.0)
+	mat.set_shader_parameter("n_south", 1.0 if (mask & 4) != 0 else 0.0)
+	mat.set_shader_parameter("n_west", 1.0 if (mask & 8) != 0 else 0.0)
+	mat.render_priority = 1
+	return mat
+
+func _get_region_shader_material(color: Color, mask: int, unique: bool = false) -> ShaderMaterial:
+	if unique:
+		return _make_region_shader_material(color, mask)
+	var key := "sh_%.3f_%.3f_%.3f_%d_%.3f_%.3f" % [
+		color.r, color.g, color.b, mask, region_fill_alpha, region_edge_alpha
+	]
+	if not _overlay_mat_cache.has(key):
+		_overlay_mat_cache[key] = _make_region_shader_material(color, mask)
+	return _overlay_mat_cache[key]
+
+func _spawn_region_highlight(cells: Array, color: Color, pulse_cells: Dictionary = {}, is_spawn: bool = false) -> void:
+	if cells.is_empty():
+		return
+	var cell_set: Dictionary = {}
+	for cell_v in cells:
+		var cell: Vector2i = cell_v as Vector2i
+		if is_cell_active(cell):
+			cell_set[cell] = true
+	if cell_set.is_empty():
+		return
+
+	var fill_mesh := _get_region_fill_mesh()
+	for cell in cell_set.keys():
+		var mask := _neighbor_mask(cell, cell_set)
+		var needs_unique: bool = pulse_cells.has(cell) or is_spawn
+		var mat := _get_region_shader_material(color, mask, needs_unique)
+		var mi := MeshInstance3D.new()
+		mi.mesh = fill_mesh
+		mi.material_override = mat
+		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mi.position = Vector3(cell.x * cell_size_3d, region_overlay_y, cell.y * cell_size_3d)
+		_highlights_container.add_child(mi)
+		if is_spawn:
+			_spawn_highlight_nodes.append(mi)
+			if _spawn_pulse_active:
+				_start_spawn_pulse_on_mesh(mi)
+		if pulse_cells.has(cell):
+			_enemy_overlap_pulse_nodes.append(mi)
+			_start_region_pulse_on_mesh(mi)
 
 func show_initiative_hover_cell(cell: Vector2i) -> void:
 	if not is_cell_active(cell):
@@ -457,15 +593,25 @@ func hide_initiative_hover_cell(cell: Vector2i) -> void:
 	_initiative_hover_cell = Vector2i(-1, -1)
 	update_visual_highlights()
 
-func _start_enemy_overlap_pulse_on_mesh(mesh_inst: MeshInstance3D) -> void:
+func _start_region_pulse_on_mesh(mesh_inst: MeshInstance3D) -> void:
 	if not is_instance_valid(mesh_inst):
 		return
-	var mat := mesh_inst.material_override as StandardMaterial3D
+	var mat := mesh_inst.material_override as ShaderMaterial
 	if not is_instance_valid(mat):
 		return
+	var base_fill: float = float(mat.get_shader_parameter("fill_alpha"))
+	var base_edge: float = float(mat.get_shader_parameter("edge_alpha"))
 	var tween := create_tween().set_loops()
-	tween.tween_property(mat, "emission_energy_multiplier", 1.45, 0.5)
-	tween.tween_property(mat, "emission_energy_multiplier", 1.0, 0.5)
+	tween.tween_method(func(v: float):
+		if is_instance_valid(mat):
+			mat.set_shader_parameter("fill_alpha", lerpf(base_fill, minf(base_fill + 0.18, 0.55), v))
+			mat.set_shader_parameter("edge_alpha", lerpf(base_edge, 1.0, v))
+	, 0.0, 1.0, 0.5)
+	tween.tween_method(func(v: float):
+		if is_instance_valid(mat):
+			mat.set_shader_parameter("fill_alpha", lerpf(minf(base_fill + 0.18, 0.55), base_fill, v))
+			mat.set_shader_parameter("edge_alpha", lerpf(1.0, base_edge, v))
+	, 0.0, 1.0, 0.5)
 	_highlight_tweens.append(tween)
 
 func start_spawn_pulse():
@@ -476,14 +622,19 @@ func start_spawn_pulse():
 func _start_spawn_pulse_on_mesh(mesh_inst: MeshInstance3D):
 	if not is_instance_valid(mesh_inst):
 		return
-	var mat := mesh_inst.material_override as StandardMaterial3D
+	var mat := mesh_inst.material_override as ShaderMaterial
 	if not is_instance_valid(mat):
 		return
-	var base_col := mat.albedo_color
-	var pulse_col := base_col.lerp(Color(0.45, 0.55, 1.0), 0.55)
+	var base_fill: float = float(mat.get_shader_parameter("fill_alpha"))
 	var tween := create_tween().set_loops()
-	tween.tween_property(mat, "albedo_color", pulse_col, 0.7)
-	tween.tween_property(mat, "albedo_color", base_col, 0.7)
+	tween.tween_method(func(v: float):
+		if is_instance_valid(mat):
+			mat.set_shader_parameter("fill_alpha", lerpf(base_fill, minf(base_fill + 0.22, 0.6), v))
+	, 0.0, 1.0, 0.7)
+	tween.tween_method(func(v: float):
+		if is_instance_valid(mat):
+			mat.set_shader_parameter("fill_alpha", lerpf(minf(base_fill + 0.22, 0.6), base_fill, v))
+	, 0.0, 1.0, 0.7)
 	_highlight_tweens.append(tween)
 
 func show_targetable_cells(cells: Array[Vector2i], is_attack: bool):

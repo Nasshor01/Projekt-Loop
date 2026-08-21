@@ -1,14 +1,25 @@
 [gd_resource type="Theme" load_steps=18 format=3 uid="uid://dnqe7wahwllei"]
 
 [ext_resource type="FontFile" uid="uid://bhj8pjkqc1umb" path="res://art/fonts/Ithaca-LVB75.ttf" id="1_font"]
-[ext_resource type="Texture2D" uid="uid://b8chromepanel1" path="res://art/ui/chrome/panel.png" id="2_panel"]
-[ext_resource type="Texture2D" uid="uid://b8chromehudbar" path="res://art/ui/chrome/hud_bar.png" id="3_hud"]
-[ext_resource type="Texture2D" uid="uid://b8chromechip01" path="res://art/ui/chrome/chip.png" id="4_chip"]
-[ext_resource type="Texture2D" uid="uid://b8chromegoldpn" path="res://art/ui/chrome/panel_gold.png" id="5_gold"]
-[ext_resource type="Texture2D" uid="uid://b8chromebtnorm" path="res://art/ui/chrome/button_normal.png" id="6_btn"]
-[ext_resource type="Texture2D" uid="uid://b8chromebthovr" path="res://art/ui/chrome/button_hover.png" id="7_btn_h"]
-[ext_resource type="Texture2D" uid="uid://b8chromebtpres" path="res://art/ui/chrome/button_pressed.png" id="8_btn_p"]
-[ext_resource type="Texture2D" uid="uid://b8chromebtdisb" path="res://art/ui/chrome/button_disabled.png" id="9_btn_d"]
+[ext_resource type="Texture2D" uid="uid://bmjynnrfn7ip1" path="res://art/ui/chrome/panel.png" id="2_panel"]
+[ext_resource type="Texture2D" uid="uid://bmjynnq68wfer" path="res://art/ui/chrome/hud_bar.png" id="3_hud"]
+[ext_resource type="Texture2D" uid="uid://bmjynnq1u2t41" path="res://art/ui/chrome/chip.png" id="4_chip"]
+[ext_resource type="Texture2D" uid="uid://bmjynnq525htn" path="res://art/ui/chrome/panel_gold.png" id="5_gold"]
+[ext_resource type="Texture2D" uid="uid://bmjynnq077svm" path="res://art/ui/chrome/button_normal.png" id="6_btn"]
+[ext_resource type="Texture2D" uid="uid://bmjynnq071s0r" path="res://art/ui/chrome/button_hover.png" id="7_btn_h"]
+[ext_resource type="Texture2D" uid="uid://bmjynnq08avis" path="res://art/ui/chrome/button_pressed.png" id="8_btn_p"]
+[ext_resource type="Texture2D" uid="uid://bmjynnq07wmwb" path="res://art/ui/chrome/button_disabled.png" id="9_btn_d"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_disabled"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+texture = ExtResource("9_btn_d")
+texture_margin_left = 8.0
+texture_margin_top = 8.0
+texture_margin_right = 8.0
+texture_margin_bottom = 8.0
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_hover"]
 content_margin_left = 12.0
@@ -43,23 +54,12 @@ texture_margin_top = 8.0
 texture_margin_right = 8.0
 texture_margin_bottom = 8.0
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_btn_disabled"]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
-texture = ExtResource("9_btn_d")
-texture_margin_left = 8.0
-texture_margin_top = 8.0
-texture_margin_right = 8.0
-texture_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_panel"]
-content_margin_left = 10.0
-content_margin_top = 8.0
-content_margin_right = 10.0
-content_margin_bottom = 8.0
-texture = ExtResource("2_panel")
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_gold"]
+content_margin_left = 8.0
+content_margin_top = 6.0
+content_margin_right = 8.0
+content_margin_bottom = 6.0
+texture = ExtResource("5_gold")
 texture_margin_left = 8.0
 texture_margin_top = 8.0
 texture_margin_right = 8.0
@@ -87,12 +87,12 @@ texture_margin_top = 8.0
 texture_margin_right = 8.0
 texture_margin_bottom = 8.0
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_gold"]
-content_margin_left = 8.0
-content_margin_top = 6.0
-content_margin_right = 8.0
-content_margin_bottom = 6.0
-texture = ExtResource("5_gold")
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_panel"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+texture = ExtResource("2_panel")
 texture_margin_left = 8.0
 texture_margin_top = 8.0
 texture_margin_right = 8.0
@@ -114,11 +114,11 @@ Button/styles/focus = SubResource("StyleBoxTexture_btn_hover")
 Button/styles/hover = SubResource("StyleBoxTexture_btn_hover")
 Button/styles/normal = SubResource("StyleBoxTexture_btn_normal")
 Button/styles/pressed = SubResource("StyleBoxTexture_btn_pressed")
-GoldPanel/base_type = "PanelContainer"
+GoldPanel/base_type = &"PanelContainer"
 GoldPanel/styles/panel = SubResource("StyleBoxTexture_gold")
-HudBar/base_type = "PanelContainer"
+HudBar/base_type = &"PanelContainer"
 HudBar/styles/panel = SubResource("StyleBoxTexture_hud")
-HudChip/base_type = "PanelContainer"
+HudChip/base_type = &"PanelContainer"
 HudChip/styles/panel = SubResource("StyleBoxTexture_chip")
 Label/colors/font_color = Color(1, 1, 1, 1)
 Label/colors/font_outline_color = Color(0, 0, 0, 1)
