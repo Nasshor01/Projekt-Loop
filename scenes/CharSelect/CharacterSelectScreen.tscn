@@ -10,7 +10,9 @@
 [ext_resource type="Texture2D" uid="uid://wsekcfae51aq" path="res://art/icons/status/Heal.png" id="8_hp"]
 [ext_resource type="Texture2D" uid="uid://c1a1rmh3inaeh" path="res://art/icons/status/gold_coin.png" id="9_anmwl"]
 [ext_resource type="Texture2D" uid="uid://dipfuc6snbvqm" path="res://art/sprites/backgrounds/paladin_backround.png" id="9_wcc8u"]
-[ext_resource type="Texture2D" uid="uid://dru4vu0sa435j" path="res://art/sprites/backgrounds/Trapper_backround.png" id="10_trapper_bg"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_anmwl"]
+load_path = "res://.godot/imported/Trapper_backround.png-4abb571c2f427eb79cf95e8306ce17d6.ctex"
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_info"]
 content_margin_left = 28.0
@@ -60,7 +62,7 @@ paladin_subclass = ExtResource("3_paladin")
 trapper_class = ExtResource("4_assassin")
 trapper_subclass = ExtResource("5_trapper")
 paladin_select_art = ExtResource("9_wcc8u")
-trapper_select_art = ExtResource("10_trapper_bg")
+trapper_select_art = SubResource("CompressedTexture2D_anmwl")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
