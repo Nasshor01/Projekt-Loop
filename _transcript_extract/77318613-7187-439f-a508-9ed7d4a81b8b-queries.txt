@@ -1,0 +1,958 @@
+----- Q1 -----
+potřebuji stáhnout pull aktuální github
+
+----- Q2 -----
+je toho spoustu nového v issues dostal jsem velké feedbacky
+
+----- Q3 -----
+c:\Users\Jirka\Downloads\Projekt LOOP.docx 
+
+Projekt LOOP Playtest Impressions and Gameplay Feedback
+2 zdroje
+·
+14. 8. 2026
+Texty popisují vývoj nezávislé videohry Projekt LOOP, která kombinuje karetní roguelike s taktickým pohybem po mřížce. Technická dokumentace podrobně rozebírá ekonomiku vesnice, systém vylepšování budov a unikátní herní artefakty ovlivňující bojové statistiky. Produktová roadmapa stanovuje strategii pro uvolňování verzí, cenotvorbu a etický přístup k využití umělé inteligence v herním umění. Zpětná vazba od testerů identifikuje kritické chyby v tutoriálu, nedostatky v popiscích karet a problémy s tempem soubojů u postav pro boj zblízka. Přiložený přepis z playtestu tyto výtky potvrzuje a zdůrazňuje rozpor mezi očekáváním hráčů a skutečnými mechanikami v rané alfa verzi. Celkově zdroje poskytují komplexní pohled na design, plánování a aktuální stav vývoje tohoto českého herního projektu.
+
+Dnes • 7:45
+Blok A — Tutorial / bugy (blocker)
+Popiš přesně, co se stalo u campfire / upgrade obrazovky v tutoriálu: co viděl, co klikal, proč uvízl.
+Co přesně udělal po soft-locku (Restart / Menu / Close)? Kam ho to poslalo?
+Byly i jiné bugy nebo soft-locky mimo tutorial campfire? Seznam s časovými značkami pokud jsou.
+
+Thoughts
+Campfire / upgrade obrazovka v tutoriálu
+Co viděl: Hráč se dostal na obrazovku kempu (campsite/campfire), kde měl vybrat kartu k vylepšení ("choose card to upgrade")
+. Na obrazovce však nebylo vůbec nic na výběr ("there's nothing to choose here")
+. Viděl pouze přepínač "show upgrades off on" a tlačítko pro potvrzení "click to confirm"
+.
+Co klikal: Zkoušel klikat všude možně – zkoušel klikat pravým tlačítkem ("right click it here")
+, přepínat zobrazení vylepšení ("show upgrades off on")
+ a opakovaně klikal na tlačítko pro potvrzení ("click to confirm")
+. Zkoušel také, zda se dá z lokace odejít ("can I leave this place then")
+, a pokoušel se klikat na cokoli dalšího, co by ho posunulo dál (zmiňuje "close floor loop"), ale bez úspěchu
+.
+Proč uvízl: Hra po něm vyžadovala, aby v rámci tutoriálu vybral kartu, zobrazil její upgrade a potvrdil ho. Protože se mu ale žádné karty k výběru nenačetly, nemohl akci dokončit a hra ho nepustila dál, čímž došlo k soft-locku
+.
+Reakce na soft-lock a kam ho to poslalo
+První pokus (Restart): Hráč klikl na tlačítko Restart
+. To ho však nevrátilo na začátek tutoriálu, ale poslalo ho to rovnou do nového běžného průchodu hrou (new run)
+.
+Druhý pokus (Opakování tutoriálu): Rozhodl se dát tutoriálu ještě jednu šanci a spustil ho znovu
+. Odehrál souboj přesně podle pokynů hry, ale u upgradu karty v kempu skončil opět ve stejném soft-locku
+.
+Kam ho to poslalo dál: Po druhém záseku se krátce podíval na webovou stránku hry, zda tam o tutoriálu nejsou nějaké informace
+. Následně tutoriál definitivně opustil a v menu si vybral třídu Paladina, se kterým spustil klasickou hru (mapu s elitními souboji, událostmi, obchodem a bossem)
+.
+Jiné bugy nebo nedostatky mimo campfire v tutoriálu
+Zdrojový přepis neobsahuje explicitní časové značky, proto jsou níže uvedeny pouze popisy chyb v pořadí, jak se ve videu objevily:
+Nepříjemné překrývání textu (vizuální bug): Hráč narazil na problém, kdy se mu textové vrstvy překrývaly přes sebe ("annoying text overlay there how the overlays top of that")
+.
+Chybějící text s popisem efektu na kartě: U karty, která měla udělovat 8 poškození všem nepřátelům v oblasti 3x3 ("deal eight damage to enemies in 3 three area around you"), chyběl na samotné kartě jakýkoli text, který by tento plošný efekt popisoval ("doesn't say anything on the card itself that has some area effect to it")
+.
+Zcela prázdný obchod: Když hráč navštívil obchod, byl úplně prázdný ("empty quite empty")
+. Sám spekuloval, zda je to bug, nebo záměrná mechanika, která má hráče donutit investovat zlato až do upgradů ve vesnici
+.
+Mimo výše zmíněné vizuální a funkční nedostatky hráč na žádný další soft-lock, který by mu zcela zabránil pokračovat v hraní, nenarazil. Hru nakonec ukončil sám dobrovolně kvůli únavě ze zdlouhavých soubojů
+.
+⚔️ Můžeme se podívat na to, jaké konkrétní výhrady měl hráč k hratelnosti, pohybu po gridu nebo k tempu soubojů s nepřáteli.
+Blok B — Combat pacing
+Kde v boji říkal, že je to zdlouhavé? První fight, pozdější, melee vs ranged?
+Co přesně dělal během „prázdných“ tahů (jen pohyb + End Turn)? Kolik tahů odhadem než se dostal do range?
+Co říkal o iniciativě (BG3 bar), brnění/blocku a pozicování na gridu — chválil / nechápal / frustrovalo?
+
+Thoughts
+Zdlouhavost boje (Combat pacing)
+Kde v boji to říkal: Hráč označil boj za zdlouhavý především v pozdějším souboji proti druidovi (vyvolávači), který neustále vyvolával vlky a aplikoval na něj znehybňující efekty
+. Tento střet popsal jako „souboj trpělivosti“ (battle of patience) a uvedl, že se pohyboval na hranici čisté otravnosti („bordering on tedium“)
+.
+Melee vs. Ranged: Problém se zdlouhavostí přímo spojoval s hraním za melee postavu (Paladina)
+. Poznamenal, že s bojovníkem na blízko je ve hře (minimálně v této rané fázi) příliš mnoho prázdných tahů
+. U nepřátelského ranged (střeleckého) druida ho naopak frustrovalo, že před ním neustále utíkal a držel si odstup
+.
+„Prázdné“ tahy (Dead turns)
+Co přesně dělal: Během těchto tahů hráč pouze popošel dopředu (využil pohyb zdarma) a klikl na ukončení tahu (End Turn)
+. Nemohl dělat nic jiného, protože nepřátelé byli příliš daleko a on neměl dostatek možností k akci, takže jen čekal, až se k němu přiblíží
+. Popsal to jako frustrující „mrtvý čas“ (dead air)
+.
+Odhad počtu tahů do range: Přepis neobsahuje přesný číselný odhad počtu tahů, než se dostal k nepříteli. Hráč pouze obecně mluví o „spoustě mrtvých tahů“ („so many dead turns“)
+ a již v tutoriálu si všiml, že nepřátelé mají obrovskou mobilitu a pohybují se téměř třikrát dál než on sám
+.
+Iniciativa, brnění a pozicování na gridu
+Iniciativa (BG3 bar): Při prvním pohledu na lištu usoudil, že jde o iniciativu ve stylu Baldur's Gate 3, což mu přišlo jako dobré řešení („fair enough“)
+. Později se ale krátce zmatil – myslel si, že lišta ukazuje životy nepřátel, protože hodnota jejich HP se shodovala s jejich iniciativou
+. Jakmile si uvědomil svůj omyl, zhodnotil iniciativu jako silný prvek („initiative strong“), který mu umožňuje jednat před nepřáteli
+.
+Brnění/Block: Zjistil, že brnění absorbuje poškození
+. Velmi ho překvapilo a potěšilo, že brnění přetrvává mezi jednotlivými tahy („armor stays between turns“)
+. Zkoušel ho záměrně hromadit (stackovat), aby otestoval, jak dlouho vydrží, což považoval za zajímavou mechaniku
+. Díky silné obraně a léčení pro něj nebyla správa životů žádný problém
+.
+Pozicování na gridu (Frustrace): Hráč byl z gridu spíše frustrovaný a mechanics mu přišly bezduché („mindless“)
+. Vadilo mu několik věcí:
+Nemožnost útočit diagonálně, což ho omezovalo v boji
+.
+Zaseknutí na překážkách a debuffy: Když vstoupil na políčko se sutinami (boulder/rubble), ztratil veškerý pohyb
+. Nepřátelé ho navíc dokázali nepříjemně obklíčit („surrounded in annoying way“)
+ nebo ho znehybnit (efekt nature's grasp / kořeny), takže se nemohl pohnout a boj se jen natahoval
+.
+Nutnost zahánět nepřátele do kouta: Kvůli tomu, že měl nepřítel větší pohyb, ho musel složitě nahánět po mapě a manévrovat jako při partii šachů, což ho kvůli neustálým nepřátelským debuffům otravovalo
+.
+🎨 Mohli bychom se podívat na to, jak hráč hodnotil vizuální stránku hry, nesourodé grafické styly (anime postavy vs. klasický pixel art) nebo celkovou hudební kulisu.
+Blok C — LOOP / meta / village
+Co přesně říkal o názvu LOOP / „co je ten loop“? Citace pokud jdou.
+Co řekl o vesnici / osadě / meta-progresi / shardech / budovách?
+Dokončil runu? Jak skončila (boss / death) a co říkal na konci?
+
+Thoughts
+Názor na název LOOP / „co je ten loop“
+Hráč byl zmatený z toho, jakou roli vlastně "loop" (smyčka) v hratelnosti hraje, a původně hru popsal jako „Slay the Spire, ale s loop mechanikou, o které ještě nevím, co dělá“
+. Později během hraní konstatoval, že o této mechanice stále nic neví, a měl pocit, že mu tato klíčová funkce nebyla vůbec ukázána: „supposedly big enough content with this game wasn't really showcased me at all that being the loop feature what is it even was there a loop feature“
+.
+Na základě názvu očekával nějakou herní mechaniku spojenou s časovou smyčkou nebo manipulací s časem: „giving me some sort of a time management time loop mechanic assumption that's not really here“
+. Nakonec dospěl k názoru, že slovo „loop“ v názvu pravděpodobně odkazuje pouze na samotný roguelike princip opakovaného procházení hrou dokola: „it's more just the rog like nature I suppose that's being messed with that word“
+.
+Vesnice / meta-progrese / budovy
+Hráč na začátku videa zmínil, že ve vesnici lze provádět vylepšení
+. Detailněji se na meta-progresi podíval až na úplném konci po opuštění runu
+. Všiml si, že vylepšení ve vesnici mu mohou odemknout věci jako:
+Vyšší maximální životy („max HP“)
+,
+Lepší obchod („better shop“)
+,
+Více zlata do začátku („more gold / starting gold“)
+,
+Více možností při výběru odměn („more choices for rewards in general“)
+,
+Zisk bloku (brnění) na začátku bitvy („blocked at the start of the battle“)
+.
+Uvědomil si také, že obchod přímo během průchodu hrou byl úplně prázdný pravděpodobně záměrně – aby hra hráče motivovala investovat do upgradů obchodu právě ve vesnici
+. O konkrétních budovách, surovinách nebo shardech se však přepis blíže nezmiňuje.
+Dokončení runy a konec hry
+Hráč runu nedokončil a ani v ní neumřel. Rozhodl se z ní dobrovolně odejít a vypnout ji po dokončení úmorného souboje s druidem
+.
+Jako hlavní důvod uvedl, že se bojí dalších zdlouhavých a únavných soubojů plných prázdných tahů: „I'm not going to make it that far because I don't want to play anymore i'm too afraid to get into another dry out fight like that where I'm just like I mentioned before with those death turns but uh multiplied by uh a couple of... yeah just multiplied a bunch“
+. Po krátkém zhodnocení vesnice hru vypnul se slovy: „All right I am done here good luck with Devon [devs] cheers.“
+🧠 Můžeme se podívat na to, co hráč říkal o grafické stránce hry, konkrétně o nesourodém stylu postav (anime design vs. pixel art).
+Blok D — Art / audio / overall
+Konkrétní stížnosti na vizuál (které postavy, UI, „temporary“ grafika)?
+Co přesně chválil na hudbě / SFX?
+Shrň top 5 věcí, které by podle něj měly vývojáři opravit nejdřív (jeho slovy).
+
+Thoughts
+Konkrétní stížnosti na vizuál
+Dočasné pozadí (placeholder): Hned v úvodu hry si hráč stěžoval na grafické pozadí, které na něj působilo jako nepříjemná optická iluze. Poznamenal, že pokud by se na něj díval příliš dlouho, jeho oči by dostaly zabrat způsobem, který by se jim vůbec nelíbil
+.
+Nesourodé styly postav (Art clashing): Hráč velmi výrazně kritizoval kontrast mezi ženskými postavami, které mají čistý anime styl, a zbytkem hry, který je vyveden v klasickém fantasy pixel artu
+. Prohlásil, že tyto dva styly vedle sebe bijí do očí („stand out like a sore thumb“)
+. Doufá však, že se jedná pouze o dočasnou záležitost rané verze hry
+.
+Uživatelské rozhraní (UI) a textové vrstvy: Narazil na nepříjemný vizuální bug, kdy se mu překrývaly textové vrstvy přes sebe („annoying text overlay“)
+. Zmínil také, že okna s informacemi a rozlišení hry celkově by zasloužily lepší škálování
+.
+Chybějící grafika na kartách: Posteskl si, že každá karta v těchto typech her mívá svůj jedinečný a krásný art, což zde zatím chybí
+.
+Hodnocení hudby a SFX
+Hudba byla pro hráče nejoblíbenější částí celé hry a velmi ji chválil
+. Ocenil zejména tyto věci:
+Výborná rozmanitost: Na to, v jak rané fázi se build nachází, je hudební doprovod velmi pestrý
+.
+Atmosféra a styl: Hudba mu přišla velmi atmosférická (moody) a mile ho překvapilo zapojení houslí
+.
+Zajímavé motivy: V tutoriálu si všiml lehkého nádechu hudby z „egyptské pouště“ doprovázeného flétnami
+. V běžném průchodu hrou (ve vesmírném pozadí) si zase užíval skvělou a hutnou basovou linku („good bassy track“), která se přesně trefila do jeho hudebního vkusu
+.
+Přestože zmínil, že hudba občas úplně nesedí k vizuální estetice hry, poslouchal ji nesmírně rád
+.
+Top 5 věcí, které by měli vývojáři opravit nejdřív (jeho slovy)
+Pokud pomineme kritický soft-lock v tutoriálu
+, hráč během hraní formuloval těchto pět konkrétních věcí, které by se měly přednostně změnit nebo opravit:
+Způsob zahrávání karet (klikání namísto tažení): Hráč by si přál možnost na kartu pouze jednou kliknout a následně kliknout na nepřítele. Frustrovalo ho, že musí kartu pokaždé držet a složitě ji táhnout ze spodní lišty na cíl
+.
+Ovládání kamery na mapě pomocí myši: Vadilo mu, že musí sundat ruku z podpírání hlavy, aby mohl mapu posouvat na klávesnici. Chce mít možnost pohybovat kamerou intuitivně pouze pomocí myši, jako je tomu v jiných hrách
+.
+Odstranění „mrtvých tahů“ (dead turns) u melee postav: Vývojáři by měli vyřešit design soubojů na blízko. Hráče otravovalo, že musí strávit spoustu tahů pouhým pohybem vpřed a ukončováním tahu (tzv. „mrtvý vzduch“), zatímco nepřátelé mají obrovskou mobilitu a neustále utíkají
+.
+Doplnění chybějících popisů na karty: Vývojáři musí zajistit, aby karty jasně komunikovaly své efekty. Narazil na kartu, která měla plošný efekt (area effect), ale na samotné kartě o tom nebylo ani slovo, což označil za chybějící element
+.
+Sjednocení grafického stylu a oprava UI překryvů: Opravit překrývání textů v UI
+ a vyřešit nepatřičný kontrast mezi anime portréty a pixel artem, aby vizuál působil jako jeden ucelený svět
+.
+🃏 Můžeme se podívat na to, jak hráč hodnotil systém výběru karet po bitvě a zda mu herní mechaniky jako např. „exhaust“ nebo „curse“ přišly dostatečně zajímavé.
+Blok E — Extra (užitečné)
+Hráł Paladina nebo Trappera? Jaký deck / karty zmínil?
+Porovnání se STS / BG3 — co přesně řekl, že funguje / chybí.
+Je něco, co NotebookLM považuje za silný pozitivní signál, že pitch sedí?
+
+Thoughts
+Hraná třída a zmíněné karty
+Paladin nebo Trapper: Hráč během celého videa hrál za Paladina
+. Sám sebe označil za bojovníka na blízko („melee lad“)
+ a mluvil o sobě jako o „andělovi s legendárním vybavením“
+. Třídu Trappera sice při výběru postav registroval
+, ale hrát ho nezačal – na úplném konci pouze zmínil, že by ho rád vyzkoušel někdy později mimo video, aby zjistil, jak funguje jeho mechanika pokládání pastí
+.
+Zmíněný deck a karty: Hráč začínal s balíčkem o velikosti 6 karet
+. Bhem hraní přímo zmínil nebo zahrál tyto karty a mechaniky:
+Quick Strike (Rychlý úder) – uděluje poškození a léčí
+.
+Heal / Smart Heal (Léčení) – využíval hojně pro udržení plného zdraví
+.
+Defend (Obrana) – základní obranná karta za 0 energie
+.
+Divine Judgment (Boží soud) – silná karta udělující 15 poškození všem nepřátelům s mechanikou Exhaust (vyčerpání/odstranění z balíčku pro daný souboj)
+.
+AoE Protection (Plošná ochrana)
+.
+Bezejmenná AoE karta – karta udělující 8 poškození v oblasti 3x3 (u které si stěžoval na chybějící popisek efektu)
+.
+„OP karta“ – silná karta, která přidává 6 bloku, dává 6 poškození a léčí s bonusem proti nemrtvým
+.
+Porovnání se Slay the Spire (STS) a Baldur's Gate 3 (BG3)
+Slay the Spire (STS):
+Co funguje: Hráč okamžitě rozpoznal strukturu mapy a postupu k bossovi jako klasické „Slay the Spire“ schéma
+. Velmi pozitivně hodnotil přítomnost otazníků (náhodných událostí) na mapě
+ a herní události, jako je oltář, kde mohl obětovat zdraví za plošný upgrade karet (což přirovnal k síle sedmi kempů)
+.
+Co chybí: Nejvíce mu chyběl unikátní vizuální art pro každou jednotlivou kartu, který je pro žánr roguelike karetních her typický a dělá je lákavými
+. Také vyjádřil pochybnost nad vyladěním balancu v této fázi hry na rozdíl od STS v jeho raných dnech
+. V neposlední řadě postrádal jakékoli vysvětlení slibované „loop“ mechaniky, která je v STS nahrazena jasným herním cyklem
+.
+Baldur's Gate 3 (BG3):
+Co funguje: Systém zobrazení tahů na základě iniciativy přirovnal právě k BG3 a označil ho za férový a přehledný („fair enough“)
+. Uvědomil si, že vysoká iniciativa je pro něj klíčová výhoda
+.
+Co chybí: Na gridovém bojišti mu chyběla mechanika příležitostných útoků (Attacks of Opportunity), které zná z BG3
+. Zjistil, že se kolem nepřátel může pohybovat zcela volně bez jakéhokoli postihu ze strany soupeřů
+.
+Pozitivní signály potvrzující herní pitch (koncept)
+Přestože byl hráč k mnoha prvkům kritický, z jeho reakcí vystupuje několik silných signálů, že základní designový koncept (pitch) hry funguje a má potenciál:
+Pozicování na gridu dává smysl („Think twice about where you stand“): Hra prezentuje grid jako klíčový prvek, kde na pozici záleží
+. Hráč potvrdil, že překážky (boulders) blokující cestu fungují skvěle
+, a v boji s druidem musel reálně taktizovat a „nahánět ho jako při šachách“, aby ho zahnal do kouta a zamezil jeho neustálému utíkání
+. To ukazuje, že taktický pohyb na gridu má hloubku.
+Meta-progrese vesnice dává průchodu smysl: Když hráč viděl seznam vylepšení ve vesnici (zvýšení HP, startovní zlato, odemykání lepšího obchodu)
+, okamžitě pochopil designový záměr. Schválil, že obchod v samotném runu byl prázdný záměrně, aby ho hra motivovala budovat vesnici
+. Tento cyklus meta-progrese se mu zamlouval.
+Synergie a tvorba silných buildů (Theorycrafting): Hráč byl nadšený z potenciálu vytváření extrémně silných kombinací. Velmi ho bavilo hromadění (stackování) brnění, které mu zůstávalo mezi tahy
+, a možnost získávat nekonečnou sílu díky pasivním efektům označil za skvěle „OP“ (overpowered)
+. To potvrzuje, že aspekt „build-breaking“ předmětů a karet má pevný základ
+.
+Prvotřídní hudební kulisa: Hudba skvěle fungovala jako atmosférický prvek, který hráče udržoval u hry i ve chvílích frustrace z hratelnosti
+.
+📊 Mohli bychom připravit přehledný report shrnující doporučení pro vývojáře, jak upravit design soubojů na blízko (melee), aby se eliminovaly kritizované prázdné tahy.
+co říkal pozitivního a co negativního, jaké byly problémy
+
+Thoughts
+Hráč během svého playtestu nasbíral celou řadu dojmů. Hra ho v mnoha ohledech zaujala, ale zároveň narazil na zásadní technické překážky a designové nedodělky, které mu herní zážitek kazily.
+Zde je přehledné shrnutí pozitivních a negativních ohlasů i konkrétních problémů:
+👍 Pozitivní ohlasy (Co se líbilo)
+Vynikající hudební doprovod: Hudba byla pro hráče nejlepší částí hry
+. Ocenil její rozmanitost a atmosféru (zapojení houslí
+, egyptský flétnový nádech v tutoriálu
+ a výraznou basovou linku při souboji ve vesmírném pozadí
+).
+Mechanika přetrvávajícího brnění: Velmi ho zaujalo, že brnění (block) nemizí na konci tahu, ale přetrvává do dalších kol, což mu umožňovalo zajímavé taktizování a hromadění obrany
+.
+Iniciativa ve stylu BG3: Systém určování pořadí tahů inspirovaný Baldur's Gate 3 označil za přehledný a férový
+, přičemž vysokou iniciativu vnímal jako silnou výhodu
+.
+Potenciál pro silné synergie (Theorycrafting): Bavila ho možnost kombinovat efekty a vytvářet silné buildy, jako např. pasivní navyšování síly každé kolo
+ nebo využívání silných útočně-obranných karet s léčením
+.
+Meta-progrese vesnice: Koncept vylepšování osady (zvyšování HP, startovního zlata či odemykání obchodu) mu dával smysl
+. Pochopil, že obchod v samotném průchodu hrou je prázdný nejspíš záměrně, aby hráče motivoval k investicím ve vesnici
+.
+Zajímavé události na mapě: Pozitivně hodnotil přítomnost otazníků a náhodných událostí
+. Nadchl ho například oltář, kde mohl za cenu zdraví plošně vylepšit všechny karty v balíčku, což přirovnal k síle sedmi kempů najednou
+.
+👎 Negativní ohlasy (Co vadilo)
+Zdlouhavé tempo soubojů (Tedium): Nejsilnější kritika směřovala k velkému množství „mrtvých tahů“ (dead turns), kdy se jako bojovník na blízko (Paladin) mohl pouze pohnout dopředu a ukončit tah, protože nepřátelé byli daleko
+. Souboj s druidem, který neustále utíkal a vyvolával vlky, popsal jako čistou otravnost a „bitvu trpělivosti“
+.
+Zklamání z absence slibované „Loop“ mechaniky: Název hry v něm vzbudil očekávání herních mechanik spojených s časovou smyčkou či manipulací s časem
+. Během hraní však nic takového nezaznamenal a měl pocit, že mu tato klíčová funkce nebyla vůbec ukázána
+. Uzavřel to tím, že slovo „loop“ v názvu zřejmě odkazuje pouze na běžnou roguelike smyčku opakovaného hraní
+.
+Nevyužitý potenciál gridu: Bez mechanik, jako jsou například příležitostné útoky (Attacks of Opportunity) při pohybu kolem nepřátel, mu boj na gridu přišel v této fázi poněkud bezduchý
+. Vadila mu také nemožnost útočit diagonálně
+.
+Nepohodlné ovládání:
+Zahrávání karet: Frustrovalo ho, že musí karty z lišty složitě táhnout myší (drag and drop) na cíl, místo toho, aby stačilo na kartu pouze kliknout a poté zvolit cíl
+.
+Pohyb kamery: Vadilo mu, že nemůže mapou pohybovat intuitivně pomocí myši, ale musí používat klávesnici, kvůli čemuž musel sundávat ruku z podepřené hlavy
+.
+⚠️ Technické problémy a bugy
+Kritický soft-lock v tutoriálu (Blocker): Na obrazovce tábora (campfire) se hráči vůbec nenačetly karty k upgradu
+. Protože hra vyžadovala vylepšení karty k postupu dál, hráč zde uvízl
+. Tlačítko „Restart“ ho nevrátilo do tutoriálu, ale hodilo ho rovnou do běžné hry
+. Při druhém pokusu o tutoriál se stala úplně stejná chyba
+.
+Nesourodý vizuální styl (Art Clash): Velmi kriticky se vyjádřil ke kontrastu mezi ženskými postavami v čistém anime stylu a zbytkem hry v klasickém fantasy pixel artu
+. Prohlásil, že tyto styly vedle sebe bijí do očí
+.
+Nepříjemné pozadí (Placeholder): Úvodní pozadí hry na něj působilo jako nepříjemná optická iluze, která mu při delším sledování unavovala oči
+.
+Vizuální bugy v UI: Hráč narazil na nepříjemné překrývání textových vrstev v uživatelském rozhraní
+.
+Chybějící informace na kartách: Narazil na kartu, která měla plošný účinek (útok v oblasti 3x3), ale na samotné kartě o tom nebyla žádná zmínka
+.
+Zatím chybějící ilustrace karet: Posteskl si, že karty zatím nemají své vlastní jedinečné obrázky, což je pro tento žánr klíčové
+.
+📊 Mohu pro vás připravit přehlednou analýzu, která detailně rozebírá hratelnost za Paladina a navrhne konkrétní úpravy pro zlepšení tempa soubojů (combat pacing).
+stěžoval si na čitelnost karet jako takový nebo jenom neobsáhlost karet textu ?
+
+Thoughts
+Hráč si stěžoval primárně na neobsáhlost a chybějící informace v textu karet a na absenci jejich grafické podoby (artu), nikoli na čitelnost písma či vzhled karet jako takových.
+Zde jsou konkrétní detaily z jeho playtestu:
+Chybějící informace (neobsáhlost textu): Hráč výslovně narazil na kartu, která měla mít plošný efekt (poškození v oblasti 3x3), ale na samotné kartě o tomto plošném účinku nebylo vůbec nic napsáno, což označil za chybějící element
+. Podobně si posteskl, že v rozhraní nemůže vidět popisek vylepšené verze karty
+.
+Chybějící ilustrace karet: Velká stížnost směřovala k tomu, že karty zatím nemají svůj unikátní vizuální art
+. Zmínil, že součástí kouzla karetních her je právě prohlížení a kochání se grafikou jednotlivých karet, což mu zde chybí
+.
+Problémy s čitelností UI obecně: Pokud jde o čitelnost, kritizoval spíše uživatelské rozhraní hry jako celek, nikoli samotné karty. Zmínil nepříjemné překrývání textových vrstev v UI přes sebe
+ a také to, že informační boxy jsou příliš malé a hra má v této verzi problémy se škálováním rozlišení
+.
+Ve výsledku mu tedy nevadilo, že by text na kartách nešel přečíst, ale spíše to, že text neobsahoval klíčové herní informace
+ a kartám chyběl vizuální design
+.
+🃏 Chtěli byste se blíže podívat na to, které konkrétní karty z paladinova startovního balíčku hráč během své cesty nejvíce využíval a jak hodnotil jejich sílu?
+projekt loop kolonka feedback z disku
+
+co jsou hlavní problémy ?
+
+Thoughts
+Podle interního dokumentu se souhrnem zpětné vazby od testerů (LeySpot, HappySealGames, TheMoonIsFurious) byly hlavní problémy projektu LOOP rozděleny do následujících kategorií
+:
+1. Nejkritičtější problémy (Blockery / P0) – Opravit ihned
+Tato skupina chyb bezprostředně brání plynulému hraní nebo zásadně narušuje průchod hrou
+:
+Nefunkční vylepšení v kempu v tutoriálu (Tutorial camp upgrade broken): Na obrazovce výběru se nezobrazují žádné karty a tlačítko pro potvrzení nereaguje, což hráče v tutoriálu kompletně zablokuje
+.
+Chyba restartu (Restart bug): Tlačítko restartu v tutoriálu nevrátí hráče na začátek tutoriálu, ale hodí ho rovnou do běžného průchodu hrou (new run)
+.
+Nespolehlivý ukazatel záměrů (Intent preview nedůvěryhodný): Nepřátelé na ukazateli tahu (preview) zobrazují pouze pohyb, ale ve skutečnosti se pohnou a rovnou zaútočí, což znemožňuje spolehlivé taktické plánování
+.
+2. Nedostatky v hratelnosti a tempu (Gameplay & Pacing / P1)
+„Mrtvé tahy“ u melee postav (Dead turns): Při hraní za bojovníka na blízko (Paladina) tráví hráč na začátku hry příliš mnoho tahů pouhým přesunem vpřed a ukončováním tahu, protože nepřátelé si udržují odstup
+.
+Úmorný a zdlouhavý boj s Druidem (Tedium): Nekonečné vyvolávání vlků, léčení a znehybňování (entangle) natahuje bitvu bez jakéhokoliv napětí
+.
+Grid působí příliš jednoduše (Mindless): Bojišti chybí taktické prvky jako útoky při ústupu (Attacks of Opportunity/AoO) nebo možnost útočit diagonálně
+.
+3. Chyby v rozhraní a textech (UX / Copy / P1)
+Chybějící texty karet: Kartám chybí popisy jejich dosahu, speciálních efektů nebo toho, že se jedná o plošný útok (např. chybějící text u 3x3 AoE karty)
+.
+Zmatení z lišty iniciativy: Čísla iniciativy nad bojištěm si hráči pletou s ukazateli životů (HP) nepřátel
+.
+Zavádějící název „LOOP“: Slovo v názvu vyvolává mylné očekávání mechaniky časové smyčky (time-loop), která ve hře není obsažena
+.
+Drobnější UX nedostatky: Zcela prázdný obchod bez herního vysvětlení (že se musí vylepšit ve vesnici)
+, nutnost karty na cíl složitě táhnout (drag) místo pouhého kliknutí
+ a absence posouvání kamery myší po bojišti
+.
+4. Vizuální identita a nesoulad (Art style / Mid-Alpha)
+Art style clash (Anime vs. Pixel art): Výrazný vizuální kontrast mezi čistě anime portréty ženských postav a klasickým fantasy pixel artem zbytku hry působí nekonzistentně
+.
+Dočasné pozadí menu: Působí jako nepříjemná optická iluze, která při delším pohledu unavuje oči
+.
+Absence unikátních ilustrací na kartách: Karty zatím postrádají své vlastní jedinečné obrázky
+.
+🛠️ Pokud chcete, mohu vám ukázat, jak mají vývojáři rozplánované opravy těchto problémů v rámci budoucích verzí (roadmapy).
+jenže u té vizuální identity nevím co si mám z toho vzít.. někdo píše že je to prostě ten jyný styl ten osobní.. a jiný řekne že se mu to tak nelíbí
+
+a u toho nevím co si myslet
+
+Thoughts
+Rozpor v hodnocení vizuální identity je u raných verzí her (zde verze Alpha 0.3.x) zcela běžný. Když se na tento konflikt podíváš skrz zpětnou vazbu testerů a plány vývojářů, dá se z něj vyčíst několik zásadních věcí:
+1. Proč ten rozpor vůbec vznikl?
+Kritický pohled (LeySpot): Poukazuje na konkrétní „Art Clash“ – bije ho do očí kontrast mezi portréty ženských postav v čistém anime stylu a klasickým fantasy pixel artem u zbytku hry (monster a herních spritů)
+. Pro něj to působí nekonzistentně a doslova říká, že to vedle sebe bije do očí („stand out like a sore thumb“)
+.
+Pozitivní pohled (HappySealGames): Naopak kombinaci pixel artu a designů postav chválí jako vlastní, specifickou identitu hry („own identity“)
+. Je ale důležité vzít v úvahu kontext – HappySealGames je sám indie vývojář
+, takže má pro podobné „punkové“ a neobvyklé kombinace v raných verzích mnohem větší pochopení a toleranci.
+2. Co si z toho tedy vzít?
+Je to přirozená vlastnost prototypu: Všechny tyto grafické prvky jsou v této fázi hry pouze dočasné (placeholders)
+. U raných verzí část publika (žánroví nadšenci) dokáže přimhouřit oko a vidět v tom osobité kouzlo, zatímco širší publikum (kritičtí hráči, youtubeři) bude nekonzistentní grafiku vždy vnímat jako nedostatek péče.
+Vizuální styl zatím netvoří ucelený svět: I když se to někomu může líbit, fakt, že dva lidé vnímají stejný vizuální prvek zcela opačně, ukazuje, že hra zatím nemá jasně definovanou estetiku.
+Jak k tomu přistupují vývojáři:
+Vývojáři si jsou tohoto problému vědomi. V roadmapě mají zapsaný úkol #59 (Art style clash) naplánovaný pro fázi Mid-Alpha
+.
+Uplatňují zde ale racionální finanční přístup: pro první verzi hry (Loop 1) jim tyto dočasné a levné assety stačí
+. Pokud bude mít hra úspěch (dosáhne například na jackpot v podobě 10k+ prodaných kopií), plánují v případném pokračování (Loop 2) najmout profesionální výtvarníky a vizuální identitu kompletně sjednotit
+.
+Shrnutí: V této fázi vývoje si z toho nemusíš dělat těžkou hlavu – současný vizuál ber jako funkční prototyp, který plní svůj účel
+. Rozporuplné reakce jsou důkazem, že pro finální vydání na Steamu bude sjednocení vizuálního stylu naprostou nutností, aby hra nepůsobila jako nesourodý slepenec stažených grafik
+.
+🎨 Můžeme se podívat na to, jaké konkrétní úkoly mají vývojáři v plánu vyřešit v nejbližším patchi (Alpha 0.4) předtím, než se vůbec pustí do úprav vizuálního stylu.
+ohledně když říkal že exhaust karta nehratelná v jaké fázi to přesně říkal a v jakém kontextu a o jakou kartu přesně šlo
+
+Thoughts
+Tento moment nastal během zdlouhavého souboje s Druidem (který se ve videu odehrával zhruba mezi 31. a 40. minutou)
+.
+O jakou kartu šlo
+Jednalo se o kartu Divine Judgment
+. Tuto kartu hráč získal o něco dříve jako odměnu po jednom ze soubojů
+. Jde o silný útok, který uděluje 15 poškození všem nepřátelům, ale má v popisu klíčové slovo Exhaust (vyčerpání – po zahrání se karta odstraní z balíčku pro zbytek souboje)
+.
+V jakém kontextu to říkal
+Hráč měl kartu v ruce a pokoušel se ji v boji použít, ale hra mu to neumožnila
+. Popsal to následovně:
+Zmatek s energií: Podle zobrazené ceny usoudil, že by kartu měl mít možnost zahrát („the energy cost made me think that I can that it's actually playable“), ale nešlo to („but not currently at least“)
+.
+Zbytečné místo v ruce: Frustrovalo ho, že karta v ruce vizuálně vypadala jako hratelná, ale ve skutečnosti ji zahrát nemohl, takže mu tam jen překážela („i cannot play you okay you're just there forever and ever“)
+.
+Úvaha nad Exhaust mechanikou: Správně si uvědomil, že pokud by kartu zahrál, už by se v tomto souboji neměla vrátit do oběhu („so if I played you you wouldn't be recycling anymore“), ale kvůli nefunkčnosti (nebo špatnému zobrazení ceny/statu v UI) byla v danou chvíli zcela k ničemu
+.
+V souhrnném dokumentu feedbacku je tento problém označen jako jasná chyba rozhraní: karta s mechanikou Exhaust v ruce sice vypadá jako aktivní/hratelná, ale reálně ji nelze seslat („Exhaust card in hand looks playable but isn't“)
+.
+⚔️ Pokud chcete, můžeme se podívat na to, jaké další podivné interakce nebo "sýry" (exploity) hráč během tohoto souboje s Druidem a jeho vlky objevil.
+byly někdě nějaké zmínky o AI ?
+
+Thoughts
+Ano, v interních dokumentech vývojářů (konkrétně v produktové roadmapě v sekci týkající se etiky) se výslovně mluví o využití AI (generovaných assetů)
+. Vývojáři k tomuto tématu přistupují s velmi jasnými etickými a finančními pravidly:
+Využití jako dočasný art v Loop 1: Generované assety jsou pro první verzi hry (Loop 1) akceptovány pouze jako dočasný herní vizuál a hudba, aby se udržely nízké náklady
+.
+Striktní zákaz placeného AI obsahu: Platí přísné pravidlo, že se nesmí prodávat žádný AI artbook ani AI soundtrack jako prémiové DLC (Deluxe edice)
+. Vývojáři uvádějí, že bez peněz na lidskou práci nemá smysl brát od hráčů peníze za AI generovanou práci
+. Veškeré Deluxe edice a kosmetické doplňky přijdou na řadu až tehdy, kdy bude k dispozici placená a licencovaná práce od lidí
+.
+Plány na nahrazení v Loop 2: Pokud bude mít první díl úspěch a dosáhne na jackpot v podání 10 tisíc a více prodaných kopií
+, chtějí vývojáři veškerý generovaný obsah v pokračování (Loop 2) kompletně nahradit skutečnou lidskou prací – tj. najmout profesionální výtvarníky, UI designéry a hudebníky
+.
+Tento pragmatický přístup zároveň vysvětluje rozporuplný vizuální styl (art style clash), na který si stěžoval tester v playtestu (kombinace anime portrétů a pixel artu) – jedná se zkrátka o dočasné, nízkonákladové assety pro fázi prototypu
+.
+📈 Můžeme se podívat na to, jak přesně mají vývojáři nastavenou cenovou strategii pro itch.io a Steam a jaké prodeje očekávají.
+mluvím o feedbacků zda někteří z playtesterů zminovaly AI ?
+
+Thoughts
+V samotné zpětné vazbě od playtesterů (LeySpot, HappySealGames, TheMoonIsFurious) se výraz „AI“ vůbec neobjevuje. Žádný z nich explicitně nezmiňuje generativní umělou inteligenci ani neřeší technický původ herních grafických či hudebních podkladů
+.
+Hráči se vyjadřovali pouze k herním projevům, které s tím úzce souvisejí – tedy k dočasným grafikám (placeholders) a nesourodosti stylů (art style clash):
+LeySpot kritizoval kontrast mezi ženskými portréty v čistém anime stylu a pixel artem zbytku hry
+. Vnímal to však jako klasické nedodělky rané verze („early build shenanigans“) a předpokládal, že jde o dočasné placeholders, které budou později nahrazeny
+.
+HappySealGames naopak tuto kombinaci stylů obhajoval a vnímal ji jako „vlastní specifickou identitu“ hry
+.
+Skutečnost, že jde o generovaná data, je známa pouze z interní produktové roadmapy vývojářů. Ti ve svých poznámkách otevřeně přiznávají používání generovaných assetů pro úsporu nákladů v této fázi (Loop 1), ale zároveň si stanovili přísné etické pravidlo, že nebudou prodávat žádné AI artbooky ani AI soundtracky jako placené DLC
+.
+🛠️ Chcete se podívat na to, jak přesně mají vývojáři v roadmapě naplánované sjednocení vizuálu a v jaké fázi chtějí dočasné assety kompletně nahradit lidskou prací?
+takže bych asi nemusel nikde veřejně přiznávat AI hudbu ani arty
+
+Thoughts
+Interní dokumenty projektu LOOP se otázkou povinného nebo veřejného přiznání AI na prodejních platformách vůbec nezabývají
+. Definují pouze vaše vlastní interní etické a finanční hranice:
+Dočasné řešení: AI assety jsou brány jako akceptovatelné placeholders pro první verzi (Loop 1), aby se minimalizovaly počáteční náklady
+.
+Zákaz monetizace AI: Je striktně zakázáno prodávat AI artbooky nebo AI soundtracky jako prémiové DLC (Deluxe edice)
+.
+Plán na nahrazení: Pokud Loop 1 dosáhne úspěchu (hranice 10k+ prodaných kopií), veškerý AI obsah bude v Loop 2 kompletně nahrazen placenou lidskou tvorbou
+.
+To, zda budete muset použití AI přiznat veřejně, se však neřídí vaším interním rozhodnutím, ale podmínkami platforem, na kterých budete hru vydávat. Tyto externí podmínky v dodaných materiálech popsány nejsou. Obecně platí, že například Steam má od roku 2024 velmi striktní pravidla, která po vývojářích vyžadují povinné nahlášení jakéhokoliv využití generativní AI (pro grafiku, hudbu, texty i kód) v rámci schvalovacího dotazníku, a tyto informace se pak zobrazují přímo na produktové stránce hry pro zákazníky.
+🔍 Chcete, abych vyhledal aktuální oficiální pravidla Steamu a itch.io pro vydávání her s AI obsahem, abyste přesně věděli, co a kde budete muset při vydání deklarovat?
+a jak to poznají ?
+
+Thoughts
+V herních podkladech a dokumentech k projektu LOOP se bohužel vůbec nepíše o tom, jak by mohl Steam, jiná platforma nebo samotní hráči odhalit, že jste k tvorbě grafiky a hudby použili AI.
+Pokud chcete, mohu pro vás udělat průzkum na webu a vyhledat, jaké metody a kontrolní mechanismy dnes platformy (jako právě Steam) k detekci AI generovaných assetů používají, jak fungují jejich dotazníky a podle čeho obvykle AI tvorbu rozpozná komunita.
+Chcete, abych se po tom na webu podíval?
+protože třeba AI kody nepozná... assety nevím je to pixel art perfect pixel art.. není tam ty hnusný blure.. a jako pokdu jde o hudbu to bych dokázal klidně veřejně přiznat
+
+Thoughts
+U kódu je to bez debat – tam to nikdo nemá šanci zpětně analyzovat ani poznat.
+U pixel artu máš naprostou pravdu. Pokud jsou assety čisté, drží si správnou pixelovou mřížku a netrpí klasickými neduhy generátorů (jako jsou podivné deformace, rozmazané detaily nebo nelogické stíny), je pro běžného člověka i automatické filtry téměř nemožné AI původ odhalit. Ostatně ani kritický tester LeySpot nepoznal, že by šlo o AI – jeho stížnost směřovala čistě na nesoulad stylů (art style clash), kdy vedle sebe stály anime portréty a klasický fantasy pixel art, což bral jako běžnou záležitost raných verzí hry a dočasné assety (placeholders)
+.
+Co se týče hudby, tvůj záměr ji klidně veřejně přiznat je skvělý a poctivý krok, který komunita spíše ocení. Navíc hudba byla v dosavadních testech hodnocena naprosto fantasticky:
+LeySpot ji označil za vůbec nejlepší část celé hry
+ a chválil její skvělou rozmanitost a atmosféru
+.
+HappySealGames si ji také nesmírně užíval a označil celkovou prezentaci a hudbu za svou nejoblíbenější složku
+.
+Tento tvůj přístup navíc dokonale ladí s interní etikou, kterou máš nastavenou v produktové roadmapě: využít AI pouze jako dočasnou berličku pro snížení nákladů v první verzi (Loop 1)
+, ale neprodávat žádný AI soundtrack nebo artbook jako placené Deluxe DLC, dokud nepůjde o lidskou práci
+. Ukazuje to, že máš k projektu zdravý a poctivý přístup, který se před hráči snadno obhájí.
+🎵 Můžeme se podívat na to, jak na základě zpětné vazby upravit prezentaci hry na itch.io, aby hráči hned od začátku lépe chápali její vizuální identitu i mechaniky.
+jenže co najednou změní rádoby hdnocení.. že hudba je AI tak začnou být skeptický atd
+
+Thoughts
+Máš naprostou pravdu a trefuješ se do černého. V herní komunitě (obzvlášť u nezávislých her) existuje obrovský paradox. Lidé mohou hudbu upřímně milovat a chválit
+, ale jakmile se dozví, že za ní stojí AI, jejich hodnocení se dokáže ze zásady otočit o 180 stupňů a začnou být extrémně skeptičtí.
+Tento skepticismus se ale dá velmi účinně otupit tím, jak s touto kartou hernímu světu předstoupíš. Tvoje vlastní interní roadmapa ti dává ten nejlepší možný štít
+:
+1. Transparentnost jako zbraň (Žádný podraz)
+Největší hněv komunity se spouští tehdy, když mají hráči pocit, že se je vývojář snažil opít rohlíkem a vydával AI tvorbu za lidskou, nebo když se na ní pokouší přímo vydělat. Ty máš ale v plánu naprosto poctivý přístup:
+Můžeš na rovinu (třeba v popisku hry nebo v devlogu) uvést, že jako solo vývojář s nulovým rozpočtem používáš AI jako dočasné řešení (placeholders) pro Loop 1, abys vůbec mohl hru uvést k životu a ukázat její atmosféru
+.
+Zároveň veřejně deklaruješ své etické pravidlo: neprodáváš žádný Deluxe upgrade, soundtrack ani artbook s AI obsahem
+. Hra má jen jednu levnou edici
+.
+Jasně řekneš: "Pokud hra uspěje (např. dosáhne na jackpot v podobě 10k+ kopií), každá koruna z výdělku půjde na to, abychom pro Loop 2 najali skutečné lidské umělce a skladatele a AI kompletně nahradili."
+Tímto haterům kompletně sebereš vítr z plachet. Ukážeš, že AI nepoužíváš z chamtivosti, abys ušetřil na lidech, ale jako nouzovou berličku na prototyp, přičemž tvým cílem je skutečné lidi v budoucnu zaplatit
+.
+2. Využití pozitivní zpětné vazby
+To, že LeySpot i HappySealGames hudbu tak moc chválili
+, ti dalo nesmírně cennou informaci: trefil ses do správného žánru, tempa a nálady (basová linka, housle, flétny fungují skvěle)
+. I kdybys v budoucnu hudbu nahradil lidskou tvorbou, AI ti teď posloužila jako dokonalý „hudební design dokument“. Víš přesně, co hra potřebuje a co se hráčům líbí
+.
+3. Psychologie dobrovolného přiznání
+Když se přiznáš sám a uděláš z toho součást svého příběhu ("skromný vývojář bojuje s nulovým rozpočtem"), nikdo tě nemůže s velkou slávou "odhalit" na Redditu a tvářit se, že odhalil skandál. Upřímnost v indie komunitě rezonuje mnohem víc než snaha o dokonalou, ale neupřímnou fasádu.
+✍️ Mohli bychom rovnou sepsat poctivé prohlášení pro hráče na itch.io, které z použití AI udělá sympatický příběh o skromném indie vývoji, místo aby to působilo jako tajemství.
+potřebuji kompletně všechno ze všech feedbacků
+
+Thoughts
+Profil a přehled testerů (Srpen 2026)
+Zpětná vazba pro herní verzi Alpha 0.3.x pochází od tří nezávislých testerů s odlišným herním pozadím, což poskytuje vyvážený pohled na současný stav hry:
+Parametr
+LeySpot (WePlaytestGames)
+HappySealGames
+TheMoonIsFurious
+Formát zpětné vazby
+Video playtest (~42 minut)
+Komentář pod itch.io
+Reddit DM
+Hraná třída (Class)
+Tutoriál → Paladin (po zaseknutí)
+Neuvádí
+Trapper → Boss
+Dokončení runu
+Ne (vypnutí hry po souboji s Druidem)
+Neuvádí
+Ano (dosažen boss, prohra)
+Tón hodnocení
+Detailní, kritický, upřímný
+Konstruktivní, pozitivní
+Přátelský, žánrový nadšenec
+Zkušenost s vývojem
+Ne (čistě herní recenzent)
+Ano (indie vývojář hry ZAR)
+Neví se
+1. Kritické problémy a technické chyby (Blockery / P0)
+Tato skupina chyb bezprostředně brání plynulému hraní nebo zásadně narušuje taktickou složku hry:
+Zaseknutí v kempu v tutoriálu (Tutorial camp upgrade bug): Při vstupu na obrazovku vylepšení karet v kempu se hráči vůbec nenačtou karty k výběru
+. Tlačítko „Click to confirm“ nic nedělá, z obrazovky nelze odejít a hráč se ocitá v kompletním soft-locku
+. LeySpot na tuto chybu narazil dvakrát po sobě
+. HappySealGames obecně označil tuto část za nejasnou
+.
+Chybná funkce tlačítka restartu (Restart bug): Pokud hráč v tutoriálu klikne na tlačítko „Restart“ (např. po uvíznutí v kempu), hra ho nevrátí na začátek tutoriálu, ale hodí ho přímo do nového běžného runu
+. Hráč je pak nucen hrát bez jakéhokoliv vysvětlení základních mechanik
+.
+Nespolehlivý ukazatel záměrů (Intent preview mismatch): Nepřátelé na bojišti zobrazují v náhledu tahu pouze pohybovou šipku, ale během svého tahu se pohnou a rovnou na hráče zaútočí
+. Tento rozpor zásadně narušuje plánování a způsobuje, že hráči nemohou herním informacím důvěřovat
+. TheMoonIsFurious to označil za svou hlavní výhradu k boji
+.
+2. Nedostatky v hratelnosti a tempu (Gameplay & Pacing)
+Hráči se shodují, že herní tempo má v současné fázi vážné trhliny:
+„Mrtvé tahy“ u melee postav (Dead turns): Při hře za Paladina (bojovníka na blízko) tráví hráč na začátku souboje příliš mnoho kol tím, že se pouze posouvá dopředu a ukončuje tah, protože nepřátelé jsou daleko a utíkají
+. Tento „mrtvý čas“ bez možnosti provést smysluplné rozhodnutí frustruje hráče a kazí zábavu
+. HappySealGames to označil za vůbec největší herní problém
+.
+Úmorný a zdlouhavý boj s Druidem (Druid tedium): LeySpot strávil téměř 10 minut (zhruba od 31. do 40. minuty videa) soubojem s nepřátelským Druidem
+. Druid neustále utíká, vyvolává vlky, dává si štíty a znehybňuje hráče pomocí kořenů (nature's grasp)
+. Boj postrádal jakékoliv napětí, byl čistě mechanický a vedl k tomu, že LeySpot hru okamžitě po souboji otráveně vypnul
+.
+Grid působí příliš jednoduše (Mindless): Taktickému bojišti chybí mechanické detaily, které by hráče nutily přemýšlet nad manévrováním
+. LeySpot postrádal příležitostné útoky (Attacks of Opportunity) při pohybu kolem nepřátel
+ a vadila mu nemožnost útočit diagonálně
+.
+Nepochopení terénu (Boulder tiles): Blokující kameny na gridu (boulders) berou hráči při vstupu veškerý zbývající pohyb
+. LeySpot se to naučil až velmi pozdě v průchodu a doporučuje, aby tuto mechaniku vysvětlil tutoriál
+.
+3. Uživatelské rozhraní (UI), texty a UX chyby
+UX vykazuje řadu nedostatků typických pro ranou alfu:
+Zavádějící název hry a chybějící „LOOP“ mechanika: Název hry a doprovodný podtitul „makes you think twice about where you stand“ vyvolal v LeySpotovi silné očekávání mechaniky časové smyčky či manipulace s časem
+. Během hry však nic takového nenašel a byl zmatený, zda mu hra tuto klíčovou vlastnost vůbec ukázala
+. Došel k závěru, že slovo „loop“ pouze nešťastně odkazuje na roguelike cyklus
+.
+Chybějící popisy a informace na kartách: Kartám chybí jasné údaje o dosahu, plošných efektech nebo synergiích
+. LeySpot konkrétně narazil na kartu udělující poškození v oblasti 3x3, která na sobě neměla o plošném efektu (AoE) ani zmínku
+. Na obrazovce odměn také chybí náhled vylepšené verze karty
+.
+Záměna iniciativy s HP: Čísla na liště iniciativy (určující pořadí tahů) si LeySpot spletl s životy nepřátel, protože se shodovala s jejich aktuálním zdravím (např. 15 HP vs. 15 iniciativa)
+. UI nijak vizuálně tyto hodnoty neodlišuje
+.
+Zmatek v rolích nepřátel: Hra nikde neuvádí, jakou roli nepřítel plní (např. střelec nebo léčitel)
+. Hráč to musí odhadovat pouze z drobných modelů postav
+.
+Prázdný obchod: LeySpot byl zmaten ze zcela prázdného obchodu a nevěděl, že se jedná o záměr – motivovat hráče k upgradům obchodu v meta-progresi vesnice
+.
+Chorobné ovládání (Drag vs. Click): Hráče frustrovalo, že obranné karty lze zahrát jedním kliknutím, ale útočné karty musí ze spodní lišty složitě táhnout myší (drag and drop) na cíl
+. Požaduje možnost kliknout na kartu a následně kliknout na cíl
+.
+Absence posouvání kamery myší (Mouse pan): Na taktické mapě bojiště nelze pohybovat kamerou pomocí myši
+. Hráč musel sundávat ruku z podepřené hlavy a posouvat pohled na klávesnici (WASD), což označil za vysoce neintuitivní
+.
+Špatné škálování a textové překryvy: Okna v UI jsou příliš malá, texty se v rozlišení špatně škálují a na obrazovkách vylepšení dochází k překrývání textových vrstev přes sebe, což blokuje čitelnost
+. Mapa runu je navíc nepohodlně namačkaná na úplném horním okraji obrazovky
+.
+4. Vizuální identita, zvuk a celková prezentace
+Estetika hry vyvolává rozporuplné reakce:
+Art style clash (Anime vs. Pixel art): LeySpot velmi ostře kritizoval vizuální nekonzistenci – ženské hrdinky mají čistý, detailní anime styl, zatímco zbytek hry (nepřátelé, prostředí, spritové) tvoří klasický fantasy pixel art
+. Prohlásil, že tyto dva styly vedle sebe bije do očí a doufá, že jde o dočasné řešení v rané verzi
+. HappySealGames naopak tuto kombinaci stylů obhajoval a označil ji za „vlastní specifickou identitu“ hry
+.
+Placeholder pozadí v menu: Úvodní animované pozadí působí jako nepříjemná optická iluze, která při delším sledování unavuje oči a způsobuje oční napětí
+.
+Chybějící unikátní ilustrace na kartách: Karty zatím nemají svůj vlastní specifický art
+. LeySpot zdůraznil, že možnost prohlížet si krásné ilustrace karet je klíčovou součástí kouzla karetních her
+.
+Jednoznačná chvála hudby: Hudební doprovod byl všemi testery označen za nejlepší část celé hry
+. Hudba je nesmírně rozmanitá a atmosférická – LeySpot vyzdvihl zapojení houslí, egyptské flétnové motivy v tutoriálu a skvělou, hutnou basovou linku při boji ve vesmírném pozadí, která přesně sedla do jeho vkusu
+. I když podle něj hudba ne vždy zcela ladí s vizuální estetikou, poslouchal ji velmi rád
+.
+5. Herní balance, "sýry" (exploity) a synergie
+Testerům se podařilo odhalit několik zásadních chyb v balancu, které umožňují hru snadno zneužít:
+Příliš silný Altar Event (Sedm kempů): Oltář na mapě umožňuje obětovat zdraví za plošný upgrade úplně všech karet v balíčku
+. LeySpot to označil za absurdně silný efekt, který se vyrovná síle sedmi kempů najednou
+.
+Zneužívání léčení na konci bitvy (Stall-heal cheese): Jelikož hra nijak netrestá natahování soubojů, LeySpot objevil taktiku, kdy záměrně nechal naživu jednoho posledního vlka a postupným vyčkáváním a sesíláním léčení si doplnil zdraví na 100 %
+. Správa životů je tak příliš snadná a kempování ztrácí smysl
+.
+Nekonečná síla (Infinite strength OP combo): LeySpot při sázce u studny (well event) získal prokletí a artefakt, díky kterému získával s každým obdrženým popálením (burn) vyléčení a permanentní nárůst síly na začátku každého tahu
+. Označil to za naprosto rozbitou (OP) synergii, která mu umožnila hru snadno procházet
+.
+Cheese k bossovi přes štíty: TheMoonIsFurious dokázal snadno projít celou mapu až k bossovi díky kombinaci masivního vylepšení karet a hromadění štítů za 0 energie
+.
+6. Pozitivní signály (Co funguje skvěle)
+Přes všechny výhrady se ve zpětné vazbě objevují silné důkazy, že herní designový koncept má obrovský potenciál:
+Taktické propojení gridu a karet: Všichni tři testeři nezávisle potvrdili, že kombinace taktického pohybu po gridu, správy energie a roguelike karetního systému tvoří vynikající a nesmírně zajímavý základ
+. Rozhodování o tom, kde postava stojí, má reálnou váhu
+.
+Nápaditost Trappera (Board control): Hraní za Trappera (pokládání pastí, kiting, kontrola bojiště mimo pouhé útok/obrana) je pro fanoušky žánru extrémně atraktivní
+. Výzva od vývojářů (zapsání jména do hry při poražení bosse za Trappera) zafungovala jako skvělý herní motor
+.
+Mechanika přetrvávajícího brnění: Skutečnost, že brnění (block) nemizí na konci tahu, se setkala s velkým nadšením
+. LeySpot se bavil záměrným hromaděním brnění napříč tahy
+.
+Rozmanitost prostředí: Hráči si užívali střídání různých pozadí (např. vesmírné bojiště) a oceňovali budování atmosféry
+.
+Vesnice a meta-progrese: Koncept vylepšování budov ve vesnici (zvyšování startovního zlata, HP, odemykání karet a obchodu) dává jednotlivým průchodům jasný smysl a dlouhodobý cíl
+.
+Shrnutí konsenzu pro vývojáře
+Tři nezávislí lidé se shodli na tom, že jádro hry a hudba jsou velmi silné, ale hře v rozletu brání nedodělky v tutoriálu, chybějící texty karet a špatné tempo soubojů na blízko v rané fázi hry
+.
+P0 priority k opravě: Vyřešit nefunkční vylepšení karet v kempu (#51), opravit přesměrování restartu v tutoriálu (#52) a opravit nespolehlivý ukazatel nepřátelských útoků (#43)
+.
+P1 priority k opravě: Doplnit chybějící popisy karet (dosah, plošné efekty), vyčistit UI překryvy a vyřešit tempo melee bojovníka (early combat pacing)
+.
+🎨 Můžeme se podívat na to, jak přesně mají vývojáři v roadmapě rozplánované sjednocení vizuálního stylu (Art style clash) a kdy plánují dočasné grafiky kompletně nahradit.
+
+tady máš komplet přehledně snad 
+
+issues byly vytvořeny z toho ale mužeš zkontrolovat
+
+----- Q4 -----
+tak jak vylepšit náš interaktivní tutorial ? 
+
+i co se týče ovládání udělal bych to více méně pomocí dialogu ze strany training dummy dokážeš to udělat ? pořádně a robustně? jako ten nejlepší tutorial ?
+
+----- Q5 -----
+Godot Engine v4.4.1.stable.official (c) 2007-present Juan Linietsky, Ariel Manzur & Godot Contributors.
+--- Debug adapter server started on port 6006 ---
+--- GDScript language server started on port 6005 ---
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/ui/TutorialSpeech.gd" with error "Parse error".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scripts/map/Map.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scripts/map/Map.gd" with error "Parse error".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scripts/map/Map.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/camp/RestScene.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/camp/RestScene.gd" with error "Parse error".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/camp/RestScene.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/rewards/RewardScene.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/rewards/RewardScene.gd" with error "Parse error".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/rewards/RewardScene.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/Tutorial.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/ui/Tutorial.gd" with error "Parse error".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/Tutorial.gd:0 - Compile Error: Failed to compile depended scripts.
+
+----- Q6 -----
+E 0:01:19:352   step: Infinite loop detected. Check set_loops() description for more info.
+  <C++ Error>   Method/function failed. Returning: false
+  <C++ Source>  scene/animation/tween.cpp:408 @ step()
+
+super jenom dummy neměl žádnou intent ikonku 
+
+a taky když jsem jenom kliknul na ovládání jakékoliv wasd myš tak to automaticky skočilo dále aniž bch já dal pokračovat
+
+----- Q7 -----
+--- Debugging process stopped ---
+  ERROR: res://scenes/ui/Tutorial.gd:138 - Parse Error: Identifier "_terrain_placed" not declared in the current scope.
+  ERROR: res://scenes/ui/Tutorial.gd:157 - Parse Error: Identifier "_terrain_placed" not declared in the current scope.
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/ui/Tutorial.gd" with error "Parse error".
+  ERROR: res://scenes/ui/Tutorial.gd:138 - Parse Error: Identifier "_terrain_placed" not declared in the current scope.
+  ERROR: res://scenes/ui/Tutorial.gd:157 - Parse Error: Identifier "_terrain_placed" not declared in the current scope.
+
+----- Q8 -----
+skvělí tutoriál je bombastický a funguje za mě skvěle 
+
+ale co takhle začít napojovat náš lehčí lore již zasadit do tutorialu nějak ? 
+
+d:\Games\projekt-loop-v2\docs\LORE_BIBLE_PROJEKT_LOOP.md
+
+----- Q9 -----
+co přesně je v tom tutorialu za dialogy ?
+
+----- Q10 -----
+jo to by asi šlo... je to takové nenápadne a myslím si že by to mohlo fungovat
+
+----- Q11 -----
+a aby později nebyl zamtek v dialogách... kde jsou uchovaný dialogy? nebo je na to nějaký manager? já nechci mít bordel v tom a potřebuji aby všechno mělo svoje místo
+
+----- Q12 -----
+a aby později nebyl zamtek v dialogách... kde jsou uchovaný dialogy? nebo je na to nějaký manager? já nechci mít bordel v tom a potřebuji aby všechno mělo svoje místo
+
+----- Q13 -----
+Dva drobné detaily k dočesání (návrhy):
+Reakce na chybu (Fail barks):
+
+Píšeš: „Ještě ne.“ / „Moc daleko...“ / „Potřebuješ ruku? Drž se pokynu.“
+
+Návrh: Ten třetí bark zní trochu moc lidsky/moderně. Aby dál držel chladný tón protokolu, mohl by znát spíš jako automatická výzva trenažéru:
+
+„Odchylka od protokolu. Drž se pokynu.“ nebo „Sled úkonů neodpovídá. Zkusu to znovu.“
+
+Drobnost u vysvětlení Armoru:
+
+Figurína říká: „Brnění zůstává mezi tahy — nezmizí.“
+
+Pokud v tvojí hře brnění skutečně přetrvává do dalšího tahu (na rozdíl od Slay the Spire, kde se na konci tahu maže), je to v pořádku! Pokud se ale na konci tahu maže, tak pozor na formulaci, aby to hráče nemátlo. (Z textu vyplývá, že ho chceš naučit, že ho trefí v tahu soupeře, takže v nepřátelském tahu drží).
+
+----- Q14 -----
+a ty barky v tom tutorialu by mohly být klidně delší jelikžo člověk si to ani nestihne přečíst
+
+----- Q15 -----
+vynikající tutorial to je přesně insane a vysvětluje za mě core
+
+----- Q16 -----
+to znamená dokončený další issues ?
+
+----- Q17 -----
+69 zavři a 67 ještě nech a okomentuj
+
+nová verze hry, commit a push
+
+----- Q18 -----
+potřebuji seznam změn pro discord
+
+----- Q19 -----
+takhle nějak 
+
+🔧 Patch 0.3.8.2 (mezi buildy / export)
+
+🎵 Export • Soundtrack v exportu — playlist přes ResourceLoader (DirAccess v exportu nefunguje)
+
+🧿 Artefakty / boj • Chalice: draw reshuffle discard pile; prompt výš nad rukou • Další artifact wiring: Bloodrage, Heart of the Loop, Hellchain, Molten Heart, Fractured Bulwark, Verdant Scale…
+
+💾 Save / Continue • Seal / cost karet + loop_level se ukládají a načítají při Continue • Opravy mid-turn draw soft-locku, AoE targetingu, energy refundů, curse cest
+🔧 Patch 0.3.8.3
+
+📚 Tutorial • Camp upgrade + restart tutorial flow — už žádný soft-lock
+
+🌐 i18n • Crash recovery dialog, MP/coop/run prep UI přeložené • TranslationBootstrap — překlady z translations.csv hned při startu (EN/CS)
+🔧 Patch 0.3.8.4
+
+🛠️ Kritické opravy z playtestu • Smrt → New Run: full HP + energie + startovní gold (už ne leftover HP 0 / falešný game-over) • #43 Intenty: threat-first — move-then-attack ukazuje ATTACK jako primární (ne jen MOVE) • Divine Judgment / Divine Protection: FULL_BOARD auto-play + správné highlighty • #66 Druid spirits: dismiss při smrti summoner / spiritů
+
+🃏 Karty • #56 AoE na líci: 3×3 / řada / sloupec / všem (Consecration atd.) • #68 Kletby: cost —, tooltip „Nehratelné“, ON_DRAW / END_OF_TURN triggery (Weakness, Pain) • Všechny .tres — trigger metadata (ON_PLAY / ON_DRAW / END_OF_TURN)
+
+🗺️ Terén (#67) • Hover tooltip na skálu/bahno (název + popis) • Vizuální tint: neprůchodné vs. bahno (zpomalení)
+
+🖥️ UI drobnosti • Initiative bar — tooltip jméno + iniciativa • Enemy panel: Melee / Ranged • Dual intent spacing + zoom fix
+
+----- Q20 -----
+Set application/file_version
+Set application/product_version
+rcedit (../Builds/0.3.8.5/Projekt_LOOP_v0.3.8.5.exe): 
+  WARNING: scene/resources/resource_format_text.cpp:447 - res://scenes/ui/Tutorial.tscn:4 - ext_resource, invalid UID: uid://b40v0y5l2r6jw - using text path instead: res://scenes/ui/Tutorial.gd
+
+----- Q21 -----
+spíše si říkám zda by podstatě tohle nemělo být 0.3.9
+
+----- Q22 -----
+ano a projistotu pak znovu commitni ap ushni
+
+----- Q23 -----
+jak to teď upravit? a pak napsat po tom co vložímnovou verzi nový devlog ohledně toho co se dělo, o feedbacku a momentálním zpracování a halvně nový navoněný tutoriál vysvětlucíjí více věcí 
+
+<h1>Projekt LOOP</h1>
+<h2>Position is not a bonus mechanic.<br>It's the core of everything.</h2>
+<p><strong>Most deckbuilders let you stand still and play cards.<br>
+Projekt LOOP makes you think twice about where you stand.</strong></p>
+<hr>
+<h2>What is Projekt LOOP?</h2>
+<p>
+Projekt LOOP is a <strong>tactical roguelike deckbuilder</strong> where movement and positioning matter as much as the cards in your hand.
+Build your deck, travel a branching procedural map, and outsmart enemies that react to distance, health, and battlefield position.
+</p>
+<p>
+This is not a traditional card battler with movement added on top &mdash; combat is built around the <strong>grid</strong>.
+Every card, every AoE, every ability cares about where you stand.
+</p>
+<hr>
+<h2>Key Features</h2>
+<ul>
+<li><strong>Position is power</strong> &mdash; AoE, rows, columns and control tools depend on your placement. Move first, think second, play third.</li>
+<li><strong>Smart enemies with real roles</strong> &mdash; Fighters close in, Archers kite, Assassins flank, Berserkers escalate, supports keep fights ugly.</li>
+<li><strong>Procedural branching runs</strong> &mdash; risk vs reward every node.</li>
+<li><strong>Build-breaking artifacts</strong> &mdash; designed for wild synergies.</li>
+<li><strong>Village meta progression</strong> &mdash; earn shards and invest between runs.</li>
+<li><strong>BG3-style Initiative</strong> &mdash; clear turn order with current + next round preview.</li>
+<li><strong>Real New Game+</strong> &mdash; continue your build and push deeper into the LOOP.</li>
+</ul>
+<hr>
+<h2>Playable Now</h2>
+<p><strong>Paladin</strong> &mdash; holy frontliner and grid controller. Bonus damage vs Undead and Demon. <strong>Recommended starting experience.</strong></p>
+<p><strong>Trapper</strong> &mdash; Experimental class focused on traps and terrain control.<br>
+You can try it, but it currently has only a small set of cards due to the new mechanic, so you most likely won’t reach the boss.</p>
+<p><em>Challenge:</em> If you somehow reach the boss with Trapper and send me a screenshot, I’ll put your name in the game credits.</p>
+<hr>
+<h2>Current Status &mdash; Pre-Alpha 0.3.8.3</h2>
+<p>-HOTFIX with tutorial in new version</p>
+<p>
+The game is now <strong>playable end-to-end</strong>. You can finish runs and progress in the Village.
+A large part of what you see here is expected to make it into Alpha.
+</p>
+<p>
+Bugs will still appear &mdash; this is still Pre-Alpha.
+</p>
+<hr>
+<h2>Important Notes</h2>
+<p><strong>Card readability</strong><br>
+I am still fighting with card readability (fonts, sizes, scaling). This is currently my biggest pain point.<br>
+<strong>Right-click any card</strong> to open a full tooltip if the text is hard to read.</p>
+<p><strong>Controls (short)</strong><br>
+• Play card → Drag from hand onto target/tile<br>
+• Card tooltip → Right-click<br>
+• Move unit → Click unit → click green tile<br>
+• Camera → WASD + Q/E (rotate) + mouse wheel<br>
+• End Turn → Button in UI<br>•Map scrolling mouse wheel</p>
+<hr>
+<h2>What’s new since 0.3.2</h2>
+<ul>
+<li>some SFX + music playlist</li>
+<li>Village hub + shard progression</li>
+<li>~36 artifacts with real behavior</li>
+<li>BG3-style Initiative bar</li>
+<li>Much better card tooltips & UI</li>
+<li>New goblin encounters + smoother early game</li>
+<li>Shop / reward / event UX improvements</li>
+<li>Major playtest polish pass</li>
+</ul>
+<hr>
+<h2>Feedback</h2>
+<p>
+If you find a bug, unclear UI, or have any thoughts &mdash; please tell me.
+Even short feedback helps a lot.
+</p>
+<p>
+Discord: <a href="https://discord.gg/BbP8WBVMkT">https://discord.gg/BbP8WBVMkT</a>
+</p>
+<hr>
+<p><strong>Move. Think. Play.</strong></p>
+
+----- Q24 -----
+jak to teď upravit? a pak napsat po tom co vložímnovou verzi nový devlog ohledně toho co se dělo, o feedbacku a momentálním zpracování a halvně nový navoněný tutoriál vysvětlucíjí více věcí 
+
+<h1>Projekt LOOP</h1>
+<h2>Position is not a bonus mechanic.<br>It's the core of everything.</h2>
+<p><strong>Most deckbuilders let you stand still and play cards.<br>
+Projekt LOOP makes you think twice about where you stand.</strong></p>
+<hr>
+<h2>What is Projekt LOOP?</h2>
+<p>
+Projekt LOOP is a <strong>tactical roguelike deckbuilder</strong> where movement and positioning matter as much as the cards in your hand.
+Build your deck, travel a branching procedural map, and outsmart enemies that react to distance, health, and battlefield position.
+</p>
+<p>
+This is not a traditional card battler with movement added on top &mdash; combat is built around the <strong>grid</strong>.
+Every card, every AoE, every ability cares about where you stand.
+</p>
+<hr>
+<h2>Key Features</h2>
+<ul>
+<li><strong>Position is power</strong> &mdash; AoE, rows, columns and control tools depend on your placement. Move first, think second, play third.</li>
+<li><strong>Smart enemies with real roles</strong> &mdash; Fighters close in, Archers kite, Assassins flank, Berserkers escalate, supports keep fights ugly.</li>
+<li><strong>Procedural branching runs</strong> &mdash; risk vs reward every node.</li>
+<li><strong>Build-breaking artifacts</strong> &mdash; designed for wild synergies.</li>
+<li><strong>Village meta progression</strong> &mdash; earn shards and invest between runs.</li>
+<li><strong>BG3-style Initiative</strong> &mdash; clear turn order with current + next round preview.</li>
+<li><strong>Real New Game+</strong> &mdash; continue your build and push deeper into the LOOP.</li>
+</ul>
+<hr>
+<h2>Playable Now</h2>
+<p><strong>Paladin</strong> &mdash; holy frontliner and grid controller. Bonus damage vs Undead and Demon. <strong>Recommended starting experience.</strong></p>
+<p><strong>Trapper</strong> &mdash; Experimental class focused on traps and terrain control.<br>
+You can try it, but it currently has only a small set of cards due to the new mechanic, so you most likely won’t reach the boss.</p>
+<p><em>Challenge:</em> If you somehow reach the boss with Trapper and send me a screenshot, I’ll put your name in the game credits.</p>
+<hr>
+<h2>Current Status &mdash; Pre-Alpha 0.3.8.3</h2>
+<p>-HOTFIX with tutorial in new version</p>
+<p>
+The game is now <strong>playable end-to-end</strong>. You can finish runs and progress in the Village.
+A large part of what you see here is expected to make it into Alpha.
+</p>
+<p>
+Bugs will still appear &mdash; this is still Pre-Alpha.
+</p>
+<hr>
+<h2>Important Notes</h2>
+<p><strong>Card readability</strong><br>
+I am still fighting with card readability (fonts, sizes, scaling). This is currently my biggest pain point.<br>
+<strong>Right-click any card</strong> to open a full tooltip if the text is hard to read.</p>
+<p><strong>Controls (short)</strong><br>
+• Play card → Drag from hand onto target/tile<br>
+• Card tooltip → Right-click<br>
+• Move unit → Click unit → click green tile<br>
+• Camera → WASD + Q/E (rotate) + mouse wheel<br>
+• End Turn → Button in UI<br>•Map scrolling mouse wheel</p>
+<hr>
+<h2>What’s new since 0.3.2</h2>
+<ul>
+<li>some SFX + music playlist</li>
+<li>Village hub + shard progression</li>
+<li>~36 artifacts with real behavior</li>
+<li>BG3-style Initiative bar</li>
+<li>Much better card tooltips & UI</li>
+<li>New goblin encounters + smoother early game</li>
+<li>Shop / reward / event UX improvements</li>
+<li>Major playtest polish pass</li>
+</ul>
+<hr>
+<h2>Feedback</h2>
+<p>
+If you find a bug, unclear UI, or have any thoughts &mdash; please tell me.
+Even short feedback helps a lot.
+</p>
+<p>
+Discord: <a href="https://discord.gg/BbP8WBVMkT">https://discord.gg/BbP8WBVMkT</a>
+</p>
+<hr>
+<p><strong>Move. Think. Play.</strong></p>
+

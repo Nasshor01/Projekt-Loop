@@ -47,7 +47,6 @@ func _ready():
 	if village_button:
 		village_button.pressed.connect(GameManager.go_to_village)
 	load_run_button.pressed.connect(_on_load_run_button_pressed)
-	multiplayer_button.pressed.connect(_on_multiplayer_pressed)
 	tutorial_button.pressed.connect(GameManager.go_to_tutorial)
 	settings_button.pressed.connect(GameManager.go_to_settings)
 	if credits_button:
@@ -58,15 +57,23 @@ func _ready():
 		get_tree().quit()
 	)
 
-	mp_host_button.pressed.connect(_on_mp_host_pressed)
-	mp_join_button.pressed.connect(_on_mp_join_pressed)
-	mp_back_button.pressed.connect(_on_mp_back_pressed)
+	if OS.has_feature("web"):
+		if multiplayer_button:
+			multiplayer_button.visible = false
+			multiplayer_button.disabled = true
+		if mp_panel:
+			mp_panel.visible = false
+	else:
+		multiplayer_button.pressed.connect(_on_multiplayer_pressed)
+		mp_host_button.pressed.connect(_on_mp_host_pressed)
+		mp_join_button.pressed.connect(_on_mp_join_pressed)
+		mp_back_button.pressed.connect(_on_mp_back_pressed)
+		if has_node("/root/MultiplayerManager"):
+			MultiplayerManager.connection_succeeded.connect(_on_multiplayer_connection_succeeded)
+			MultiplayerManager.connection_failed.connect(_on_multiplayer_connection_failed)
+
 	if credits_back_button:
 		credits_back_button.pressed.connect(_on_credits_back_pressed)
-
-	if has_node("/root/MultiplayerManager"):
-		MultiplayerManager.connection_succeeded.connect(_on_multiplayer_connection_succeeded)
-		MultiplayerManager.connection_failed.connect(_on_multiplayer_connection_failed)
 
 	_update_load_button_state()
 	_update_ui_texts()

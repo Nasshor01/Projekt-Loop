@@ -1,0 +1,1015 @@
+========================================================================
+#67 [OPEN] UX/Tutorial: terrain (rock impassable, mud stops move) + cover clarity
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/67
+Author: Nasshor01 | Labels: enhancement, early-alpha, polish, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T08:23:32Z | Updated: 2026-08-14T21:36:03Z
+------------------------------------------------------------------------
+## Summary
+Playtest (LeySpot): learned late that stepping on boulder/rubble blocks movement; cover "+50%" unclear on card.
+
+## Findings (code audit)
+### Rock / rubble (`rock.tres`)
+- **Design:** `is_walkable = false` — impassable obstacle, not a step penalty
+- **Gap:** no in-combat tooltip; art may look like walkable debris
+
+### Mud (`mud.tres`)
+- **Design:** `stops_movement_on_enter = true` + Slow −2 for 2 turns — ends multi-cell move on enter
+- **Gap:** `terrain.mud.desc` is still placeholder in translations.csv
+
+### Cover "+50%"
+- **Design:** Archer AI only (`ArcherAI.COVER_BONUS_MULTIPLIER = 1.5`) — not a player card effect
+- **Gap:** Trapper `cover_fire.tres` is plain 5 dmg — name misleading; no combat telegraph for archer cover
+
+## Fix direction
+- [ ] Real EN+CS text for `terrain.mud.desc` and rock tooltip in fight
+- [ ] Tutorial or first-encounter callout for mud + impassable rock
+- [ ] `keyword.cover` + archer telegraph; rename or rework Cover Fire card
+- [ ] Link to #56 card text pass
+
+## Source
+LeySpot playtest Aug 2026
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-14T21:36:03Z]
+**Tutorial slice done in 0.3.8.5** (5bcb642) — keeping this issue open.
+
+Done:
+- Dummy callout: rock is impassable, mud stops the move and applies Slow
+- Hover-to-read terrain in the lesson
+- 	errain.rock.desc / 	errain.mud.desc already have real EN+CS text
+
+Still open here:
+- [ ] keyword.cover + archer telegraph for the +50% cover bonus
+- [ ] Rename or rework Trapper Cover Fire (still plain 5 dmg; name implies cover)
+
+
+========================================================================
+#64 [OPEN] Balance: early OP synergies (burn heal artifact, upgrade-all altar, stall-heal)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/64
+Author: Nasshor01 | Labels: early-alpha, balance, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T06:21:22Z | Updated: 2026-08-17T13:38:15Z
+------------------------------------------------------------------------
+## Playtest notes
+- Well event: burn + heal 1 → "strength indefinitely" / pretty OP
+- Ancient altar upgrade-all deck = "like seven campfires"
+- Could stall Druid fight, leave 1 wolf, heal to full — "health management not a problem"
+
+## Relation
+Extends #44 cheese tuning. Mechanics OK for alpha but flag for pass.
+
+## Source
+LeySpot transcript ~21:00, ~15:00, ~34:00
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-08-16T10:02:14Z]
+3795f88 fixed Burn **clarity**, not this balance ticket.
+
+Burn is now a stacking value (attacks add 1, −1 at end of turn, UI shows the stack only — no fake “3 turns”). Well burn+heal / altar upgrade-all / stall-heal still need a pass here. Leaving open.
+
+
+[Nasshor01 -- 2026-08-17T13:38:15Z]
+**Partial progress** in commit `aa30e84` (refactor: global desperation → per-enemy STS mechanics).
+
+**Addressed (stall-heal slice):**
+- Removed global heal-stall / last-stand / drag desperation (`+dmg` hidden on all enemies).
+- Leaving one weak enemy to heal is valid again (STS-style); only **that enemy’s own** telegraphed mechanic escalates (Skeleton Ritual, Scout skirmish stack, Goblin pack when allies die).
+- Intent + UnitInfoPanel ATK now show final telegraphed damage (no base-4 vs actual-7 mismatch).
+
+**Still open in #64:**
+- Burn + heal artifact synergy
+- Upgrade-all altar / mass upgrade cheese
+- Other OP synergies listed in playtest notes
+
+Not closing — this is one slice of the balance pass.
+
+
+========================================================================
+#62 [OPEN] UX: map screen layout — path UI cramped at top (resolution scaling)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/62
+Author: Nasshor01 | Labels: enhancement, early-alpha, polish, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T06:21:18Z | Updated: 2026-08-14T06:21:18Z
+------------------------------------------------------------------------
+## Playtest (~06:40)
+"Slay the Spire map over here, quite localized to the very top of my screen — UI adjustments needed."
+
+## Scope
+- [ ] Map node path / UI safe area on 1080p and ultrawide
+- [ ] Related to resolution scaling (#57)
+
+## Source
+LeySpot transcript
+
+========================================================================
+#60 [OPEN] Obsah/Polish: unikátní artwork na kartách (místo prázdna/placeholder)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/60
+Author: Nasshor01 | Labels: enhancement, mid-alpha, polish, content, playtest | Milestone: -
+Created: 2026-08-14T06:18:43Z | Updated: 2026-08-14T06:18:43Z
+------------------------------------------------------------------------
+## Summary
+Playtester (LeySpot): karty v žánru STS mají mít vlastní ilustrace — teď chybí / působí prázdně. Owner: **později** art design na kartách (obrázek místo ničeho).
+
+## Timing
+**Not Alpha 0.4 blocker.** After fairness / tutorial / spatial village direction. Can slip into 0.4.x or Mid Alpha art pass.
+
+## Scope (later)
+- [ ] Art pipeline for card faces (ModularCards / RPG pack or painted)
+- [ ] Paladin pool first (recommended class)
+- [ ] Trapper when pool expands (#37)
+- [ ] Upgraded cards: same art OK (name+ green), no separate frame bake required (STS-style)
+- [ ] EN/CS unaffected
+
+## Related
+- #26 Paladin artwork (frames / early scope — may already cover some)
+- #37 Trapper cards
+- #59 anime vs pixel world (separate — portraits/world consistency)
+- Playtest: missing unique card art called out
+
+## Done when
+Most reward/shop cards show readable unique art, not empty/placeholder panels.
+
+========================================================================
+#59 [OPEN] Polish: unify art direction (anime portraits vs pixel world)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/59
+Author: Nasshor01 | Labels: enhancement, mid-alpha, polish, playtest | Milestone: -
+Created: 2026-08-14T05:55:01Z | Updated: 2026-08-14T05:55:01Z
+------------------------------------------------------------------------
+## Summary
+Playtester: anime female characters "stand out like a sore thumb" vs fantasy pixel art world. Hopes temporary. Also missing unique card art (STS expectation). Placeholder BG felt optical-strain early.
+
+## Timing
+Not Alpha blocker — track for Mid Alpha / art pass. Alpha can note WIP in itch copy.
+
+## Source
+WePlaytestGames LeySpot
+
+========================================================================
+#58 [OPEN] UX: card play mode setting (drag vs click) + document camera controls
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/58
+Author: Nasshor01 | Labels: enhancement, early-alpha, polish, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T05:54:59Z | Updated: 2026-08-14T06:21:25Z
+------------------------------------------------------------------------
+## Owner decisions
+- Originally had **click-to-target**; switched to **drag** from earlier feedback.
+- Best path: **Settings toggle** — user picks Drag & drop OR Click then target.
+- Map/battle mouse camera: **partially already exists** but undocumented.
+
+## Code reality (Aug 2026)
+- BattleScene already has both handlers; live hand is drag-first (\`is_draggable\`).
+- Map: wheel + MMB/RMB vertical pan (no docs).
+- Battle: WASD pan; MMB = rotate; wheel = zoom (tutorial documents this; map does not).
+
+## Scope
+- [ ] Settings: Card play mode = Drag | Click-to-target (persist \`user://settings.cfg\`)
+- [ ] Wire toggle to \`CardUI.is_draggable\` / which hand signals are active
+- [ ] Document controls: tutorial + itch / controls text (map mouse pan, battle WASD+MMB+wheel)
+- [ ] Optional later: battle mouse drag-pan if still requested
+
+## Source
+LeySpot QoL + owner
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-08-14T06:17:31Z]
+## Code note
+Both play paths already exist in BattleScene. Toggle is mostly Settings + gate \`is_draggable\`, not a full rewrite.
+Camera: document existing map MMB/RMB pan + battle tutorial controls; battle mouse-*pan* is not implemented (MMB rotates).
+
+
+[Nasshor01 -- 2026-08-14T06:21:25Z]
+Transcript: Defend works click-once (12:52), Attack requires drag (12:58). Confirms partial click support - settings toggle should gate drag vs click consistently.
+
+
+========================================================================
+#57 [OPEN] UX: text overlay / UI layering + resolution scaling
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/57
+Author: Nasshor01 | Labels: bug, early-alpha, polish, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T05:54:58Z | Updated: 2026-08-14T05:54:58Z
+------------------------------------------------------------------------
+## Summary
+Playtester hit "annoying text overlay" (layers on top of each other) and wanted better UI/window scaling.
+
+## Scope
+- [ ] Reproduce common overlay cases (tooltips vs hand vs intent/info)
+- [ ] Fix z-order / mouse-filter where text stacks unreadably
+- [ ] Note resolution scaling for later polish if not quick
+
+## Source
+WePlaytestGames LeySpot
+
+========================================================================
+#54 [OPEN] UX/Design: LOOP naming — NG+ is placeholder; communicate vision
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/54
+Author: Nasshor01 | Labels: enhancement, early-alpha, polish, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T05:41:43Z | Updated: 2026-08-14T06:21:27Z
+------------------------------------------------------------------------
+## Owner note
+NG+ / Loop counter is a **placeholder**. Long-term vision: more enemy variety, more bosses, deeper design — not just "run again harder".
+
+## Playtest
+LeySpot expected a time-loop mechanic from the title; found nothing showcased.
+
+## Alpha scope (communication, not new system)
+- [ ] Player-facing copy: what "Loop" means *today* (roguelike cycle / harder return) vs what is coming
+- [ ] Soften or explain "NG+" button text so it doesn''t promise a finished feature
+- [ ] Tutorial / EndOfRun one-liner about returning to Village + next Loop
+
+## Later (content, not this issue alone)
+Enemy packs, bosses, Act variety — tracked via content issues (#46, #50, etc.)
+
+## Source
+WePlaytestGames + owner Aug 2026
+
+--- KOMENTARE (3) ---
+
+[Nasshor01 -- 2026-08-14T05:54:53Z]
+## Quotes
+- Expected time-loop / time-management from title: "time management time loop mechanic assumption that''s not really here"
+- "was there a loop feature?" / supposed big content never showcased
+- Eventually guessed "loop" just means roguelike repeating runs
+
+Village meta at end: understood HP / shop / gold / reward choices / start block — liked intentional empty-shop → village investment read.
+
+
+[Nasshor01 -- 2026-08-14T05:56:18Z]
+## Owner note (Aug 2026)
+Confirmed: **LOOP currently means nothing mechanically** beyond roguelike repeat / HUD Loop counter / NG+ naming. Playtester expected a time-loop feature that is not in the game.
+
+Priority stays: communication + naming clarity for Alpha (#54), not inventing a new loop system before village/meta depth.
+
+
+[Nasshor01 -- 2026-08-14T06:21:26Z]
+Tagline vs expected time-loop from LOOP name and think twice where you stand (42:10).
+
+
+========================================================================
+#50 [OPEN] Obsah: nový enemy + AI typ (Alpha direction pack)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/50
+Author: Nasshor01 | Labels: enhancement, early-alpha, content | Milestone: Alpha 0.4
+Created: 2026-08-13T07:18:31Z | Updated: 2026-08-17T13:38:17Z
+------------------------------------------------------------------------
+## Summary
+Před Alphou přidat **1 nový typ AI + enemy pack**, ať je vidět kam se combat ubírá (ne jen reskin goblinů).
+
+## Proč
+AI sada už je široká (Fighter / Archer / Berserker / Assassin / Healer / Monk / Mage / Druid / DarkBeast / Boss). Alpha direction = **nový behavior**, ideálně complementary k grid/trap fantasy (zóny, pasti, positioning) — ne frakce od nuly.
+
+## Scope (Alpha pack)
+- [ ] Design 1 AI role (nový skript nebo výrazná varianta existující)
+- [ ] 1–2 enemy unitu používající tu AI
+- [ ] 1–2 encounters (normal a/nebo elite) do poolu
+- [ ] Intent labels čitelné a konzistentní s #43 (žádný MOVE→attack lie)
+- [ ] Art / EN+CS jména
+- [ ] Smoke v #33 QA
+
+## Out of scope
+- Celá nová frakce / Act
+- AI „respektuj zóny“ jako globální pathfinding rewrite
+- Boss redesign
+
+## Ideas (pick one later)
+- Trap-aware / zone-pusher enemy (trestá stání na pastích / tlačí hráče)
+- Summoner-lite (hráčský companion má mirror na enemy straně už existuje u Druid — spíš jiná fantazie)
+- Ranged controller (root / slow tile)
+
+## Related
+- #43 intent · #30 / #46 encounters · #34 gate · #40 holy ground
+
+## Done when
+Nový enemy se objeví v runě, hraje jinak než stávající melee/archer set, intent je důvěryhodný.
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-17T13:38:17Z]
+**Partial progress** in commit `aa30e84` — not closing #50.
+
+Added three **basic-enemy AI variants** (extends FighterAI):
+- `GoblinAI` — pack tactics (+1 ATK per goblin ally)
+- `SkeletonAI` — ritual stacking each turn
+- `ScoutAI` — skirmish ritual when turn did not attack
+
+Wired on `goblin_unit`, `skeleton`, `goblin_scout_f`.
+
+This is **per-enemy differentiation** on existing melee line, not the full “1 new AI role + encounter pack” scope. Issue stays open for a genuinely new behavior (trap-aware / zone controller / etc.).
+
+
+========================================================================
+#49 [OPEN] Village: spatial hub (pustina / trosky / klik → UI)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/49
+Author: Nasshor01 | Labels: enhancement, early-alpha, polish, meta | Milestone: Alpha 0.4
+Created: 2026-08-13T07:18:30Z | Updated: 2026-08-16T19:51:41Z
+------------------------------------------------------------------------
+## Summary
+Village hub **není** seznam tlačítek. Alpha má ukázat **prostorovou vesnici**: pustina / obrys osady, budovy nebo **trosky**, klik → upgrade UI / subscéna.
+
+Inspirace feel: settlement hub (Shades & Fidget / Trivian / Divoké kmeny styl) — vidíš vesnici, ne menu.
+
+## Proč
+Existující `VillageScene` už má funkční meta (shards + Well / Market / Library / Chapel). Chybí prezentace „tady žiješ / tady stavíš“. Spatial hub = směr hry před Alphou **bez** rebuildu ekonomiky.
+
+## Scope (Alpha MVP — presentation + reuse)
+- [ ] Scéna: pustina / obrys vesnice (pozadí + layout slotů)
+- [ ] 4 stávající budovy jako **trosky → postavená budova** (podle level > 0)
+- [ ] Klik na budovu / trosku → panel nebo subscéna (název, bonusy, cost, Upgrade)
+- [ ] Napojit na existující `MetaProgress` / `VillageBonuses` (shards OK pro MVP)
+- [ ] Vizuál ruin vs built (reuse `art/sprites/village/` kde jde)
+- [ ] Entry body z Main Menu / End of Run / Game Over beze změny flow
+
+## Out of scope (neblokuje #49)
+- Plný Loop Hero extract loop → #35
+- Per-hero signature buildings → #48
+- Volný roaming / placement sim / craft strom
+- Nová surovina (stačí shards, dokud nepřijde #35)
+
+## Related
+- #34 gate · #35 economy follow-up · #47 Tavern · #36 Companion · #37 Trapper unlock
+
+## Done when
+Hráč otevře village a **vidí osadu**, ne list buttonů; upgrade pořád funguje end-to-end.
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-16T19:51:41Z]
+**Update (main `9d2c829`):** Alpha MVP spatial hub je v kódu.
+
+- `VillageWorld` (plateau + kamera) + `VillageHUD` (CanvasLayer) — entry pořád `scenes/ui/VillageScene.tscn`
+- 6 slotů: Well, Market, Library, Chapel, Tavern, Hunter’s Lodge (ruin art podle levelu)
+- klik → detail panel, upgrade přes střepy
+
+Zbývá polish (kamera/tooltip, Chapel L4–L5 sprite). Ekonomika extract = #35, ne tento issue.
+
+Další pořadí: `docs/VILLAGE_PLAN.md`
+
+
+========================================================================
+#48 [OPEN] 0.4.5 Village: per-hero building + global/personal bonusy
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/48
+Author: Nasshor01 | Labels: enhancement, mid-alpha, meta | Milestone: Post-Alpha: Loop Hero economy / depth
+Created: 2026-08-12T19:18:09Z | Updated: 2026-08-16T19:51:42Z
+------------------------------------------------------------------------
+## Summary
+Village stays shared, but each hero can have **1 signature building** upgraded with materials from runs. Mix of **global** bonuses (all heroes) and **personal** bonuses (that hero only).
+
+## Why
+Shared-only village feels flat once multiple characters exist. Signature buildings reinforce class fantasy without forking the whole hub.
+
+## Timing
+**Po Alphě** — až existuje spatial hub (#49). UI = budova na mapě vesnice / per-hero wing, ne nový list-only screen.
+
+## Scope (after #49 + ideally #35)
+- [ ] Design 1 building per current hero (Paladin / Trapper)
+- [ ] Upgrade levels spend run materials
+- [ ] Define which bonuses are global vs personal
+- [ ] Spatial UI: shared village + per-hero building slot
+- [ ] Persist in meta
+
+## Out of scope
+- Unique full village per character
+- Skill tree (#38)
+
+## Related
+- #49 · #35 · #47 Tavern · #37
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-16T19:51:42Z]
+**První slice je venku (main `9d2c829`), issue nechávám otevřený.**
+
+Shipped:
+- **Chapel** = signature budova Paladina (osobní HP / start block / karty / move 2→3). Schody chtějí hero level **i** střepy.
+- **Well / Market / Library** = sdílené. Well už není globální max HP — jen heal na začátku bitvy.
+- **Lodge** = šedá ruina, dokud Trapper není v `unlocked_heroes`. Křivka jako Chapel až s #37.
+
+Ještě v tomto issue: Lodge zrcadlo Chapel, materiály na drahé schody (#35), Chapel L5 startovní relikvie.
+
+Plán: `docs/VILLAGE_PLAN.md`
+
+
+========================================================================
+#47 [OPEN] Village: Tavern — unlock hrdinů / companion
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/47
+Author: Nasshor01 | Labels: enhancement, early-alpha, meta | Milestone: Alpha 0.4
+Created: 2026-08-12T19:18:06Z | Updated: 2026-08-16T19:51:43Z
+------------------------------------------------------------------------
+## Summary
+Village **Tavern** = hero / companion unlock hub uvnitř **spatial village** (#49). Ne oddělený list mimo osadu — Tavern je budova (nebo troska) na mapě vesnice.
+
+## Scope (Alpha MVP)
+- [ ] Tavern jako klikatelný slot ve spatial hubu (#49) — ruin → built OK
+- [ ] UI po kliku: locked slots + unlock cost/condition
+- [ ] Wire **Trapper** unlock (viz #37) a/nebo **companion** unlock (viz #36)
+- [ ] Future heroes placeholder slots OK
+- [ ] Persist unlocks v meta save
+
+## Out of scope for MVP
+- Per-run hiring economy
+- Full companion roster beyond #36 MVP
+- Plný Loop Hero material extract (#35) — shards OK
+
+## Related
+- #49 spatial hub · #35 resources · #37 Trapper · #36 companion · #48 per-hero buildings · #34 gate
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-16T19:51:43Z]
+**Update:** Tavern slot je na spatial hubu (#49) — lvl 0 art + „zatím neobnoveno“. Není to STS rest mezi Acty a nekrade Chapel.
+
+Další MVP (viz `docs/VILLAGE_PLAN.md`): klik → unlock Trappera (`unlock_hero` + Lodge přestane šednout) a/nebo companion (#36). Střepy stačí, dokud není #35.
+
+
+========================================================================
+#46 [OPEN] Obsah: další encounter pack (post-#30)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/46
+Author: Nasshor01 | Labels: mid-alpha, content | Milestone: Post-Alpha: Loop Hero economy / depth
+Created: 2026-08-12T19:18:04Z | Updated: 2026-08-12T19:18:04Z
+------------------------------------------------------------------------
+﻿## Summary
+Follow-up to closed #30. Playtester reached boss but variety still thin. Need another encounter pack for replay after Alpha 0.4.
+
+## Scope
+- [ ] **3–5** more encounters (normal + elite mix)
+- [ ] At least 2 with tactical layouts (choke / cover / split / trap-friendly space)
+- [ ] Pool weights so early fights stay readable
+- [ ] Optional: 1–2 new enemy variants only if reuse is not enough
+
+## Out of scope
+- Full new faction
+- AI rewrite (intent trust is separate)
+
+## Related
+- #30 (done) · #40 Paladin holy ground · intent trust bug
+
+========================================================================
+#45 [OPEN] Obsah: rozšířit event pool (4–8 nových)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/45
+Author: Nasshor01 | Labels: mid-alpha, content, playtest | Milestone: Post-Alpha: Loop Hero economy / depth
+Created: 2026-08-12T19:18:02Z | Updated: 2026-08-12T19:18:02Z
+------------------------------------------------------------------------
+﻿## Summary
+Only ~5 story events. Playtester explicitly wants more events before judging depth. Events are high leverage for run variety without engine work.
+
+## Scope
+- [ ] Add **4–8** new events (mix risk/reward, class-neutral, 1–2 with light story)
+- [ ] Wire into `all_events_pool.tres` with sensible weights
+- [ ] EN + CS text
+- [ ] No new broken economy (see balance cheese issue)
+
+## Ideas (pick later)
+- Trap-flavored wilderness event (Trapper-friendly, still usable by Paladin)
+- Moral choice / HP for relic
+- Merchant variants
+- Rest-adjacent shrine (not another free upgrade-all)
+
+## Done when
+A full run can see different event faces across 2–3 attempts.
+
+========================================================================
+#44 [OPEN] Balance: mass upgrade + 0-cost shields cheese
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/44
+Author: Nasshor01 | Labels: early-alpha, content, balance, playtest | Milestone: Alpha 0.4
+Created: 2026-08-12T19:18:01Z | Updated: 2026-08-16T10:17:36Z
+------------------------------------------------------------------------
+﻿## Summary
+Playtester cheesed a deep Trapper run via **mass upgrade** + **0-cost shields** — fights became trivial. Known OP, not a fluke.
+
+## Likely sources
+- Events with `upgrade_all_cards` (e.g. wizard altar / mysterious merchant)
+- Low-cost / 0-cost block cards after upgrade (Defend / Fortify / class shields)
+
+## Scope (balance pass — not a rewrite)
+- [ ] Audit mass-upgrade events: keep exciting, reduce runaway (cost tax, exclude basics, once-per-run, weaker upgrade)
+- [ ] Audit upgraded block cards that go to 0 cost or extreme block-per-energy
+- [ ] Soft rarity / reward weight so cheese is less auto-pilot
+- [ ] Note in #33 QA: try the cheese path once intentionally
+
+## Out of scope
+- Full rarity redesign of entire Paladin pool
+- Removing upgrade-all events entirely (tune first)
+
+## Done when
+Mass upgrade is still a strong payoff, not a free win button through Act / boss.
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-16T10:17:36Z]
+Owner call: Defend+ stays 0E / 5 block. OP synergies stay — assembling a broken run is intended.
+
+Tuned the **mass-upgrade events** instead (`wizard_altar`, `mysterious_merchant`):
+- `once_per_run = true` (seeing the event consumes it)
+- rarity **Legendary**, with weighted event picks (no longer uniform 1/5)
+- upgrade-all itself is **once per run** even if you later find the other event (choice greys out)
+
+Not touching Molten Heart / stall-heal / Defend+.
+
+
+========================================================================
+#40 [OPEN] Paladin: holy ground / grid taktika (content, ne engine)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/40
+Author: Nasshor01 | Labels: enhancement, early-alpha, content | Milestone: Alpha 0.4
+Created: 2026-08-02T18:25:37Z | Updated: 2026-08-02T20:13:08Z
+------------------------------------------------------------------------
+## Cíl
+Paladin na gridu teď = přibliž se a melee. Trapper (pasty + kite) ukazuje, že deska funguje. Před Alphou chceme **tenkou taktickou vrstvu pro Paladina jako content**, ne redesign enginu.
+
+**Identita zůstává:** tank drží linii / close range.  
+**Změní se:** má smysl stát na *konkrétním* místě (choke, holy ground), ne jen „u enemy“.
+
+## Proč (design)
+- Alpha = content + balance, **ne** měnit jádro boje
+- Engine už má `PLACE_TERRAIN`, rocks, mud, AoE preview
+- Paladin má AoE (`consecration`, `holy_wave`, `light_pillar`…), ale **nepokládá zóny**
+- AI pastím neuhýbá — holy tiles fungují stejně jako trapky (lákat / trestat vstup)
+
+## Scope (content only)
+- [ ] 1–2 Paladin karty: **holy ground / consecrated tile** (dmg / slow / bonus když na ní stojíš) přes existující `PLACE_TERRAIN`
+- [ ] Volitelně 1 setup/mobility karta v poolu (extra move / initiative) — ať dosáhneš choke
+- [ ] Artwork + rarity frame + EN/CS text + upgrade řádek pokud pasuje do #27 stylu
+- [ ] Napojení do Paladin reward/shop poolů
+- [ ] Playtest: Paladin run, kde layout + zóna nutí decisions
+
+## Není v scope (až po 0.4)
+- Taunt / pull / knockback systémy
+- AI „respektuj zóny“ / nové pathfinding rules
+- Předělávat celý Paladin starter deck
+- Dělat z Paladina druhého Trappera
+
+## Vazby
+- Encounter layouty: #30
+- Gate checklist: #34
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-02T20:13:08Z]
+Still open for Alpha 0.4 gate. Encounter layouts from #30 are in — holy ground cards can lean on them.
+
+
+========================================================================
+#39 [OPEN] Obsah: artefakty — doplnit rarity ladder (Common/Uncommon)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/39
+Author: Nasshor01 | Labels: early-alpha, content | Milestone: Alpha 0.4
+Created: 2026-08-02T18:25:36Z | Updated: 2026-08-12T19:19:18Z
+------------------------------------------------------------------------
+## Cíl
+Artefakty mají **čitelnou raritu v shop/reward** — ne jen pár Rare/Legendary. Po #29 máme ~15 artefaktů; Common je skoro prázdný, Uncommon slabý.
+
+Alpha slibuje: **přidáváme content + balancujeme**, neměníme mechaniky. Tohle je čistý content gap.
+
+## Aktuální gap (orientačně)
+- Common: skoro 0
+- Uncommon: málo
+- Rare / Legendary: relativně OK
+- Cursed: 1
+
+## Scope
+- [ ] Dopočítat **Common** (aspoň 3–4) — slabší, časté, zajímavé
+- [ ] Dopočítat **Uncommon** (aspoň 2–3)
+- [ ] Zkontrolovat pool weights (shop / elite / treasure) podle rarity
+- [ ] EN + CS překlady
+- [ ] Efekty fungují (reuse existujících handlerů kde jde)
+
+## Není v scope
+- Nové artifact effect typy (jen pokud bez nich nejde smysluplný Common)
+- Boss-only redesign
+
+## Done when
+Hráč v runě cítí rarity ladder (Common často, Rare vzácněji), ne flat pool.
+
+--- KOMENTARE (3) ---
+
+[Nasshor01 -- 2026-08-02T20:13:07Z]
+Next content focus after **0.3.7** (encounter pack shipped). Still open for Alpha 0.4 gate.
+
+
+[Nasshor01 -- 2026-08-04T13:45:43Z]
+## Progress note (main `ed56a3b`)
+
+Artifact **playtest / combat UX** advanced a lot (grid markers, seal/retain, STS2 prompts, alchemy cards), but this issue’s **rarity ladder gap** (Common/Uncommon fill + pool weights) is **still open** — not addressed in this sync.
+
+Next for #39: add Common/Uncommon catalog entries + verify shop/elite/treasure weights.
+
+
+[Nasshor01 -- 2026-08-12T19:19:18Z]
+Playtest note: artefakty **nebyly** stížnost — Common/Uncommon ladder pořád dává smysl pro rarity feel, ale priorita pod #43/#44.
+
+
+========================================================================
+#38 [OPEN] Design note: Skill tree — maybe / necommitted (klidně nikdy)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/38
+Author: Nasshor01 | Labels: documentation, mid-alpha | Milestone: Post-Alpha: Loop Hero economy / depth
+Created: 2026-07-30T08:06:23Z | Updated: 2026-08-05T13:15:16Z
+------------------------------------------------------------------------
+## Status: NECOMMITTED
+
+Skill tree **nepočítat** do Beta ani 1.0 jako must-have.
+
+- Zůstává „maybe někdy / uvážení“ — klidně **nikdy**.
+- Hra musí stát bez skill tree (karty + artefakty + vesnice + postavy).
+- Není Early Alpha ani Mid Alpha priorita. Village = hlavní meta.
+
+Toto issue je decision log, ať se to znovu neplete do kritické cesty roadmapy.
+
+Viz: `docs/ROADMAP_PRODUKT_A_TRH.md`
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-07-31T21:38:59Z]
+## Roadmap update
+Beze zm?ny: skill tree **ne** v 0.4 / 0.4.5 / 0.5 priorit?. Village = meta. Skill tree nejd??v kolem Bety.
+Ve?ejn? n?zev build? = **Alpha** (bez Early/Mid).
+
+
+[Nasshor01 -- 2026-08-05T13:15:16Z]
+Updated per product roadmap: skill tree is uncommitted (maybe/never), not a Beta deadline. See docs/ROADMAP_PRODUKT_A_TRH.md.
+
+
+========================================================================
+#37 [OPEN] Trapper: ~50 karet (kompletní pool před Alphou)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/37
+Author: Nasshor01 | Labels: early-alpha, content, meta, playtest | Milestone: Alpha 0.4
+Created: 2026-07-30T08:06:22Z | Updated: 2026-08-16T19:51:47Z
+------------------------------------------------------------------------
+## Směr
+Trapper už teď ukazuje grid fantasy (pasti, lure, board control). External playtest (TheMoonIsFurious): **pasti baví**, pool je tenký (~9 karet).
+
+**Owner priority před Alphou:** Trapper dostane **kompletní card pool ~50 karet** (ne WIP thin kit). Pořád může zůstat „druhá class“, ale obsahově plný.
+
+## Content pass (Alpha gate)
+- [ ] Rozšířit Trapper pool na **~50 karet** (mix Attack / Defense / Utility / traps / setup)
+- [ ] Upgraded varianty (`Name+`) pro relevantní karty — stejný STS-style systém jako Paladin
+- [ ] Artwork z **ModularCards / RPG pack** (class color TBD — ne blue clash s Rare)
+- [ ] Rarity frames + EN/CS texty
+- [ ] Napojení do reward / shop poolů + weights
+- [ ] Starter deck refresh, ať early game neopakuje 9 stejných
+- [ ] Lehký balance pass (ne cheese z #44)
+
+## Unlock
+- [ ] Prefer unlock přes Village **Tavern** (#47) ve spatial hubu (#49)
+- [ ] Dočasně OK: class selectable + label Experimental, dokud Tavern není hotový — ale pool ~50 je must
+
+## Playtest notes (Aug 2026)
+- (+) Affect board beyond attack/defend — strong identity
+- (−) Thin pool vs Paladin
+- (−) Intent trust bug (#43) hurts positioning classes hard
+
+## Done when
+- [ ] ~50 Trapper karet ve hře (včetně upgrade řádků kde dává smysl)
+- [ ] Full Act run cítí variety
+- [ ] QA smoke v #33
+
+Související: #8 · #49 · #47 · #43 · #34
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-07-31T21:38:58Z]
+## Roadmap update
+Target: **0.5** ? Trapper kompletn? hrateln? postava (ne jen experimental).  
+Unlock flow p?es Village (hospoda) podle p?vodn?ho pl?nu. Do 0.4 z?st?v? WIP/experimental v komunikaci (#32).
+
+
+[Nasshor01 -- 2026-08-16T19:51:47Z]
+**Update (village strana):** Hunter’s Lodge je na hubu jako šedá ruina + lock „řada Trapper není odemčená“. Character select Trappera zatím **nemaže**.
+
+Unlock řady = Tavern (#47) → `unlock_hero("trapper")` → Lodge jako Chapel (HP/karty/move, gated hero levelem). Kartový pool Trappera je pořád tento issue.
+
+
+========================================================================
+#36 [OPEN] Village: companion unlock + combat MVP
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/36
+Author: Nasshor01 | Labels: enhancement, early-alpha, meta | Milestone: Alpha 0.4
+Created: 2026-07-30T08:06:20Z | Updated: 2026-08-16T19:51:44Z
+------------------------------------------------------------------------
+## Proč
+Paladin má karty heal/buff spojenců; teď je hráč prakticky jediný ally. Před Alphou chceme **ukázat směr**: společník se odemyká přes village a bojuje s tebou.
+
+## Směr (Alpha MVP)
+- Odemčení přes Village (budova / Tavern slot — viz #47 / #49)
+- **1** companion unit v combat
+- Ally targeting: heal/buff na companion funguje (`SELECTED_ALLY_UNIT` / `ALL_ALLY_UNITS` — dnes stub = jen hráč)
+- `SUMMON_UNIT` / spawn companion na začátku runu nebo fightu (upřesnit při implementaci)
+
+## Scope checklist
+- [ ] Design: 1 companion (jméno, HP, role — tank/support light)
+- [ ] Unit data + sprite (reuse OK)
+- [ ] Combat: companion na gridu, initiative, základní AI nebo simple follow
+- [ ] Ally targeting pro existující Paladin heal/buff karty
+- [ ] Unlock gate ve spatial village (cost / building level)
+- [ ] Persist unlock v meta save
+- [ ] Smoke v #33 QA
+
+## Out of scope for Alpha MVP
+- Plný companion roster / hiring mid-run
+- Companion skill trees / equipment
+- Multi-companion party
+
+## Related
+- #49 spatial hub · #47 Tavern · #35 economy (later) · #34 gate
+
+## Done when
+Hráč odemkne 1 společníka ve village a v runě ho vidí v souboji; aspoň 1 heal/buff karta ho cílí správně.
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-07-31T21:38:57Z]
+## Roadmap update
+Target: s Village v **0.4.5** (companion odem?en? p?es village). Nen? sou??st Alpha 0.4 gate.
+
+
+[Nasshor01 -- 2026-08-16T19:51:44Z]
+**Update:** Companion se ještě nedělal. Unlock má jít přes Tavern (#47) na spatial hubu (#49), ne přes nový list.
+
+Pořadí v `docs/VILLAGE_PLAN.md`: nejdřív Tavern unlock, pak 1 companion v souboji + ally targeting.
+
+
+========================================================================
+#35 [OPEN] 0.4.5+ Village: resource ekonomika (Loop Hero extract)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/35
+Author: Nasshor01 | Labels: enhancement, mid-alpha, meta, playtest | Milestone: Post-Alpha: Loop Hero economy / depth
+Created: 2026-07-30T08:06:18Z | Updated: 2026-08-16T19:51:45Z
+------------------------------------------------------------------------
+## Vize
+Village je hlavní core meta (ne skill tree). Po spatial hubu (#49) přijde **hlubší material smyčka** (Loop Hero DNA) — užitečná rozhodnutí v runu, ne jen flat shard drop.
+
+**Poznámka (Aug 2026):** list UI + shards + 4 budovy už fungují. Alpha nejdřív dostane **spatial hub** (#49). Tento issue = ekonomický follow-up **po / vedle** hubu, ne rebuild prezentace.
+
+## Material extract (Loop Hero DNA) — target rules
+Jeden primární materiál z runu (název TBD: shards / scrap / … — může zůstat shards).
+
+| Moment | Kolik odešleš / necháš |
+|---|---|
+| **Death** | ~**25 %** nasbíraného jde do village |
+| **Rest (send home)** | ~**50 %** aktuálního run stocku odejde domů |
+| **Boss kill → leave** | **100 %** do village (run končí) |
+| **Boss kill → continue** | odešleš **50 %**, zbytek zůstává v runu |
+
+## MVP scope (end-to-end jedna surovina)
+- [ ] Drop / gain materiálu z fightů (+ volitelně eventy)
+- [ ] Rest UI: send home 50 %
+- [ ] Death: 25 % banked
+- [ ] Boss victory: leave 100 % vs continue 50 %
+- [ ] Spend ve **spatial village** (#49) — ne zpět na list UI
+- [ ] Meta save persist
+
+## Follow-ups
+- #47 Tavern unlock hrdinů
+- #48 Per-hero signature building + global vs personal bonusy
+- #36 Companion (Alpha MVP může jít dřív na shards)
+
+## Out of scope for this issue
+- Spatial hub presentation → #49 (Alpha gate)
+- Plný Loop Hero craft strom
+- Oddělená vesnice per character (stačí shared hub + later #48)
+
+## Done when
+Hráč cítí: každá runa něco postaví ve village i při failu; rest/boss rozhodnutí má váhu.
+
+Související: #7 Meta-progress · #49 spatial hub · #34
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-07-31T21:38:56Z]
+## Roadmap update
+Target version: **0.4.5** (po Alpha 0.4).  
+Mezi 0.4 a 0.4.5: mal? content dropy (enemy / artefakt) jako 0.4.x ? content syst?my jsou na to p?ipraven?.
+
+
+[Nasshor01 -- 2026-08-16T19:51:45Z]
+**Update:** Village split v2 je v main — Well = battle-start heal, extra HP patří Chapel/Lodge. Extract / druhá surovina se **záměrně nedělaly**.
+
+Tento issue zůstává 0.4.5. Až poběží, drahé Chapel schody 4–5 můžou chtít materiál **navíc** ke střepům a hero levelu. Camp/extraction nepatří do Well.
+
+Plán: `docs/VILLAGE_PLAN.md`
+
+
+========================================================================
+#34 [OPEN] Epic: Alpha 0.4 — checklist
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/34
+Author: Nasshor01 | Labels: enhancement, early-alpha | Milestone: Alpha 0.4
+Created: 2026-07-30T08:06:17Z | Updated: 2026-08-16T10:02:22Z
+------------------------------------------------------------------------
+Parent checklist for **Alpha 0.4** (public name = Alpha). Flexible progress.
+
+**Version:** build stays `0.3.x` until the gate is done. Then drop **0.4.0 Alpha**.
+Current patch track: **0.3.7+**.
+
+**Gate principle:** Alpha = **solid template + fairness + visible direction** (spatial village, deeper Trapper, companion unlock, new threat) — not core combat rewrites.
+
+External playtest Aug 2026: „template is there / great start“ — kostra žánru drží; chybí hloubka a trust (intent). Alpha má ukázat **kam se to ubírá**, ne jen Paladin polish.
+
+**Playtest priorities folded in:**
+- Fairness: intent trust (#43) — must
+- Known cheese: mass upgrade + 0-cost shields (#44) — tune before public Alpha
+- Direction: spatial village hub (#49), Trapper ~50 cards (#37), companion via village (#36), new enemy/AI pack (#50)
+
+**Core Soft Freeze:** after **0.4.0** — no core rewrites; content / balance / characters / terrain / artifacts. Max one micro EffectType later, then freeze again. Roadmap: `docs/ROADMAP_PRODUKT_A_TRH.md`.
+
+## Gate (must before 0.4 drop)
+
+### Fairness / polish (existing)
+- [x] #25 Cards: rarity frames
+- [x] #26 Paladin artwork (EA scope / ModularCards frames)
+- [x] #27 Paladin upgrades (data + Rest/event UX; combat balance later)
+- [x] #28 SFX
+- [x] #29 3–4 artifacts (initial bump)
+- [x] #30 Encounter pack (3–5) + tactical layouts + easy/hard pool
+- [x] #43 Bug: Intent MOVE vs move+attack (insight trust)
+- [x] #53 Displacement: Taunt starter + Shield Push / Divine Pull / Holy Push
+- [ ] #44 Balance: mass upgrade + 0-cost shields cheese
+- [ ] #39 Artifacts: fill rarity ladder (Common/Uncommon)
+- [ ] #40 Paladin: holy ground / grid tactics (content only)
+- [ ] #31 3 GIFs
+- [ ] #32 Branding — **Alpha** (only at 0.4 drop — not earlier)
+- [ ] #33 QA 3× full Paladin run (+ cheese / Trapper / village / companion smoke)
+
+### Direction slice (owner priority — before Alpha)
+- [ ] #49 Village: spatial hub (pustina / trosky / klik → UI) — **ne list tlačítek**
+- [ ] #37 Trapper: ~50 karet (kompletní pool + upgrades + ModularCards)
+- [ ] #36 Companion: unlock přes village + 1 companion v combat (MVP)
+- [ ] #50 Obsah: nový enemy + AI typ (ukázat směr threatů)
+- [ ] #47 Tavern slot ve spatial village (aspoň Trapper / companion unlock hook)
+
+## After 0.4 (roadmap)
+- **0.4.x** — small content drops; events (#45), more encounters (#46)
+- **0.4.5+** — #35 Loop Hero material extract loop; #48 per-hero signature buildings; deeper companion roster
+- Skill tree (#38) — **maybe / never**
+
+## Out of scope for 0.4
+- [ ] #35 Full Loop Hero extract economy (death 25% / rest 50%) — keep current shards OK for spatial hub MVP
+- [ ] #48 Per-hero signature buildings (after hub exists)
+- [ ] #45 / #46 events & encounter follow-ups (can slip into 0.4.x if time)
+- [ ] #38 Skill tree
+- Full companion roster / hiring economy
+- Deluxe / paid AI artbook or AI OST
+
+## Milestones
+- Alpha 0.4 gate: https://github.com/Nasshor01/Projekt-Loop/milestone/2
+- Post-Alpha meta depth: https://github.com/Nasshor01/Projekt-Loop/milestone/3
+
+## Extra shipped (not in original gate)
+- [x] Shop/Reward STS UX polish
+- [x] Meta save: no wipe on every `0.3.x` bump (`META_SCHEMA_VERSION` only)
+- [x] 0.3.7: fortress goblin units/encounters, easy first 3 fights, victory label + tooltip hover fixes
+- [x] Artifact playtest UX: grid markers, Tablet/Oathbreaker, STS2 prompts, alchemy cards
+- [x] Initiative bar BG3-style look-ahead
+- [x] Unit Info Panel auto-expand; GDScript warning cleanup
+- [x] Product roadmap doc: `docs/ROADMAP_PRODUKT_A_TRH.md`
+- [x] External playtest contact (Trapper → boss) — feedback logged into #43–#48
+- [x] Village list meta already live (shards + Well/Market/Library/Chapel) — #49 replaces presentation, keeps bonuses
+- [x] Burn is a stacking value (−1 each turn); UI shows stack only, not duration (`3795f88`)
+
+--- KOMENTARE (7) ---
+
+[Nasshor01 -- 2026-08-02T12:28:13Z]
+Progress update (`bcf5323`): **#29 closed**. Gate left: #30 encounter, #31 GIFs, #33 QA, #32 branding at 0.4.0 drop. Also shipped STS shop/reward UX + meta-save no longer wipes on every patch version.
+
+
+[Nasshor01 -- 2026-08-02T12:28:26Z]
+Progress update (bcf5323): #29 closed. Gate left: #30 encounter, #31 GIFs, #33 QA, #32 branding at 0.4.0 drop. Also shipped STS shop/reward UX + meta-save no longer wipes on every patch version.
+
+
+[Nasshor01 -- 2026-08-04T13:45:41Z]
+## Shipped in latest main sync (`ed56a3b`)
+
+### Initiative bar (BG3-style look-ahead)
+- Remaining turns of **current round** (left) + live **next-round preview** (right)
+- Round separator so consecutive turns across rounds no longer feel like “I act twice / enemies act twice”
+- Initiative numbers always visible; pending next-round boosts update the preview immediately
+- Ally/enemy border colors; active slot highlight
+
+### Artifact playtest UX
+- Grid artifacts (Throne / Crown / Grove / Gilded) use mud-style flat ground visuals + floor tints
+- Tablet of Forgotten Oaths / Oathbreaker Seal permanent deck picks
+- STS2-style battle interact UI (Alchemy / Chalice / Eye) instead of modal boxes
+- DevConsole: `grid_artifacts` / `playtest_artifacts`
+
+### UI / polish
+- Unit Info Panel auto-expands to content (scroll only at viewport cap)
+- Large GDScript warning cleanup (unused params, shadowing, integer division, etc.)
+
+### Still open for Alpha 0.4 gate
+- #39 Artifact rarity ladder (Common/Uncommon)
+- #40 Paladin holy ground content
+- #31 GIFs
+- #32 Branding at 0.4 drop
+- #33 QA 3× full Paladin run
+
+
+[Nasshor01 -- 2026-08-12T19:19:16Z]
+### Playtest batch (Aug 2026) — issues added/updated
+- **Fairness:** #43 intent MOVE vs move+attack
+- **Balance:** #44 mass upgrade + 0-cost shields
+- **Depth (post-0.4):** #45 events · #46 encounters · #37 Trapper pool/art · #35/#47/#48 village
+
+Alpha gate principle refreshed in body: template OK; ship Paladin-complete + Trapper WIP; village after 0.4.
+
+
+[Nasshor01 -- 2026-08-14T05:41:54Z]
+## External playtest folded in (WePlaytestGames / LeySpot, Aug 2026)
+
+- #51 Tutorial Rest upgrade soft-lock — **blocker**
+- #52 Restart mid-tutorial → new run — **blocker**
+- #53 Early melee pacing (move/end-turn waits)
+- #54 Explain / showcase LOOP naming
+
+Video: https://www.youtube.com/watch?v=QyfWa2_vvU0
+
+
+[Nasshor01 -- 2026-08-15T08:03:26Z]
+Owner decision: #53 displacement (Taunt / PUSH / PULL / Holy Push) is Alpha gate MUST — Soft Freeze exception before 0.4.0. Not closer spawns.
+
+
+[Nasshor01 -- 2026-08-16T10:02:22Z]
+Fact sync with main `3795f88` (no gate-scope rewrite):
+
+- Checked off **#43** (already closed earlier).
+- Checked off **#53** (Taunt / PUSH / PULL cards shipped; issue closed).
+- Logged stacking Burn (UI shows stack, −1 per turn) under Extra shipped. Balance of Well burn+heal stays on **#64**.
+- Removed “Taunt / pull / knockback” from Out of scope — that micro-engine is in the game now.
+
+
+========================================================================
+#33 [OPEN] QA: 3× plná Paladin runa bez crash/softlock
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/33
+Author: Nasshor01 | Labels: bug, early-alpha, playtest | Milestone: Alpha 0.4
+Created: 2026-07-30T08:06:15Z | Updated: 2026-08-13T07:18:41Z
+------------------------------------------------------------------------
+## Cíl
+Self-QA před Alpha 0.4 dropem + zapracovat external feedback + direction slice.
+
+## External playtest (Aug 2026)
+- TheMoonIsFurious: Trapper → boss (cheese path), intent trust issues, likes traps, wants more pool/events
+- Issues: #43 intent · #44 cheese · #45 events · #37 Trapper depth
+
+## Done when
+- [ ] 3× run: tutorial → mapa → boss (nebo death) bez crash — **Paladin recommended**
+- [ ] 1× intentional cheese path (mass upgrade / 0-cost block) — zapsat feel → #44
+- [ ] 1× Trapper run se širším poolem (#37) — pasti + intent
+- [ ] 1× Village spatial hub smoke (#49): klik trosky/budovy → upgrade
+- [ ] 1× Companion unlock + combat smoke (#36) pokud je v buildu
+- [ ] 1× nový enemy/AI pack spot (#50)
+- [ ] Save/load OK
+- [ ] Blockery zapsané jako issues a fixed
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-08-01T20:36:52Z]
+**0.3.6 bugfixes relevant to QA:**
+- **Save/load artefaktů** — duplicate ztrácel \esource_path\ (\es://\); teď \source_path\ + stacks. Starý save s broken path jablko neobnoví — znovu sebrat + uložit.
+- **Defensive Stance / Consecrated Weapon** — until-consumed statusy už se nemažou na konci hráčova tahu (drží se do zásahu / holy útoku).
+
+Stále open: 3× plná runa + ověřit save/load + stance v combat.
+
+
+[Nasshor01 -- 2026-08-04T13:45:44Z]
+## QA reminder after `ed56a3b`
+
+Please re-run at least one full Paladin run focusing on:
+1. Initiative bar look-ahead after using initiative cards (round boundary clarity)
+2. `grid_artifacts` / playtest artifacts visibility on the battle grid
+3. Unit Info Panel on dense enemies (Monk passives)
+4. No yellow debugger spam from skill-tree-disabled path
+
+Blockers → new issues; this checklist stays open until 3× clean runs.
+
+
+========================================================================
+#32 [OPEN] Branding: Alpha (až při 0.4 dropu) + Recommended Paladin
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/32
+Author: Nasshor01 | Labels: early-alpha, polish | Milestone: Alpha 0.4
+Created: 2026-07-30T08:06:14Z | Updated: 2026-08-13T07:20:21Z
+------------------------------------------------------------------------
+## Cíl
+Veřejně jen **Alpha** (ne Early/Mid/Pre-Alpha).  
+**Nedělat teď:** nepřepisovat menu na `0.4`, dokud není hotový gate z #34.
+
+## Až při dropu 0.4.0
+- [ ] Menu / GlobalUI: `Alpha 0.4.0` (místo Pre-Alpha 0.3.x)
+- [ ] itch popis: co funguje / co se změní / WIP
+- [ ] Recommended experience: **Paladin** (stále)
+- [ ] Trapper: po #37 (~50 karet) už ne „prázdný WIP“ — komunikovat jako **second class / full pool**, unlock přes Tavern pokud #47 hotové
+- [ ] Spatial village (#49) zmínit jako meta hub (ne skill tree)
+- [ ] Companion (#36): pokud v buildu, krátce v patch notes
+- [ ] Skill tree není slibovaný v komunikaci (odloženo — #38)
+
+## Roadmap naming (komunikace)
+- **0.4** — Alpha: fairness + spatial village + Trapper depth + companion MVP + direction enemy
+- **0.4.x** — content patchy (events / encounters)
+- **0.4.5+** — Loop Hero material extract (#35), per-hero buildings (#48)
+
+========================================================================
+#31 [OPEN] Prezentace: 3 GIFy pro itch / social
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/31
+Author: Nasshor01 | Labels: early-alpha, polish | Milestone: Alpha 0.4
+Created: 2026-07-30T08:06:12Z | Updated: 2026-07-30T08:06:13Z
+------------------------------------------------------------------------
+## Cíl
+Tři krátké GIFy jako hlavní hook Early Alpha.
+
+1. Klik na postavu + změna pozice (pohyb na gridu)
+2. V jednom tahu: drag karta na enemy + drag karta na sebe
+3. Demon Assassin Shadow Teleport / únik (ideálně vs Skeleton Archer situace)
+
+## Done when
+- [ ] 3 GIFy exportované
+- [ ] Na itch stránce / Early Alpha postu
+

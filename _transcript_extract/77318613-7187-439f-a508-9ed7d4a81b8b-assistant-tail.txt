@@ -1,0 +1,122 @@
+===== ASSISTANT SNIP 47/51 =====
+Ano. **0.3.9** sedí líp.
+
+`0.3.8.2`–`.4` byly opravy (export, soft-lock, playtest bugy). Tohle je nový systém: celý tutorial, dialogové okno, katalog replik. To už není hotfix uvnitř 0.3.8.
+
+`0.4` pořád zůstává Alpha. `0.3.9` = Pre-Alpha s funkčním core tutoriálem.
+
+Když chceš, přepíšu verzi v `project.godot` + `export_presets`, commit/push, a ty znovu exportneš `Projekt_LOOP_v0.3.9.exe`. Discord pak jako **Patch 0.3.9**. Starý `0.3.8.5` exe můžeš zahodit.
+
+===== ASSISTANT SNIP 48/51 =====
+Hotovo. Verze je **0.3.9**, na `main`: `40482e2`.
+
+Exportuj znovu do `../Builds/0.3.9/Projekt_LOOP_v0.3.9.exe`. Starý `0.3.8.5` můžeš zahodit. UID u Tutorialu je v tomhle commitu taky opravené.
+
+Discord:
+
+🔧 Patch 0.3.9
+
+📚 Tutorial (#69)
+• Cvičná figurína učí core: pohyb, Energie, karty, intenty, Brnění přes tah soupeře, melee 1, tábor, mapa
+• Kamera (WASD / kolečko / MMB / Q-E) — postup jen na Pokračovat
+• Drag i click; fail barky v dialogu, ne jako číslo nad hlavou
+
+🗺️ Terén (#67 slice)
+• Skála neprůchodná, bahno zastaví + Slow — v tutorialu i na hoveru
+• Cover +50 % / Cover Fire — ještě otevřené
+
+===== ASSISTANT SNIP 49/51 =====
+Upravím itch popis na 0.3.9 a napíšu devlog z playtestu a nového tutoriálu. Nejdřív zkontroluju, jestli ten HTML už v projektu leží.
+
+===== ASSISTANT SNIP 50/51 =====
+move, intents, armor timing, terrain, and map controls.
+</p>
+<p>
+So the last stretch of work went into two tracks:
+</p>
+<ul>
+<li><strong>Kill soft-locks and trust bugs</strong> from earlier patches (tutorial camp, death → New Run leftovers, intents that lied, curse cards looking playable, etc.)</li>
+<li><strong>Rewrite the tutorial</strong> so first contact teaches the real core loop, not just “click camp and upgrade something”</li>
+</ul>
+
+<hr>
+<h2>The big thing in 0.3.9: dummy-spoken tutorial</h2>
+<p>
+The training dummy now coaches you through the fight like leftover drill protocol.
+It explains, then waits for the correct action.
+</p>
+<p>
+What it covers now:
+</p>
+<ul>
+<li>Deploy as an active unit</li>
+<li>Camera: WASD / wheel / middle mouse / Q-E</li>
+<li>Terrain: rock is impassable, mud stops your move and applies Slow</li>
+<li>One free move per turn (no Energy)</li>
+<li>Cards cost Energy; End Turn matters</li>
+<li>Intents — the icon above an enemy is the plan you should trust</li>
+<li>Defend / Armor: holds through the enemy turn, then is gone</li>
+<li>Melee range 1</li>
+<li>Reward pickup → map pan → camp upgrade → next fight</li>
+</ul>
+<p>
+Wrong actions get protocol-style barks in the dialogue box (long enough to read), not a tiny floating number that vanishes instantly.
+</p>
+
+<hr>
+<h2>Feedback → current processing</h2>
+<p>
+Already closed from that wave: tutorial soft-lock / restart, intent trust, empty-shop copy, missing AoE text, initiative readability, enemy role labels, Divine Judgment targeting, Druid spirits lingering, curse playability, and now the full tutorial rewrite.
+</p>
+<p>
+Still on the board (and intentional):
+</p>
+<ul>
+<li>Early melee pacing / kite waiting</li>
+<li>Cheese / overpowered early synergies</li>
+<li>Settings toggle for drag vs click (both already work; toggle is next)</li>
+<li>Cover telegraph clarity</li>
+<li>Art direction / unique card art later</li>
+</ul>
+<p>
+Alpha is still the gate. 0.3.9 is Pre-Alpha with a much better first hour.
+</p>
+
+<hr>
+<h2>If you already tried an older build</h2>
+<p>
+Please try the tutorial again even if you “already know the game.”
+I want to know where it still loses people.
+</p>
+<p>
+Bug / unclear moment / “I bounced here” notes are gold.<br>
+Discord: <a href="https://discord.gg/BbP8WBVMkT">https://discord.gg/BbP8WBVMkT</a>
+</p>
+
+<hr>
+<p><strong>Move. Think. Play.</strong></p>
+```
+
+---
+
+**Postup na itchi:** nejdřív upload `0.3.9` build → ulož upravený description → pak Publish Devlog s textem nahoře.
+
+===== ASSISTANT SNIP 51/51 =====
+Po #69 (hotovo) a #67 (jen tutorial slice) byla další vlna tahle:
+
+1. **[#53](https://github.com/Nasshor01/Projekt-Loop/issues/53) Early melee pacing**  
+   Míň „pohni se / End Turn / čekej“. Bližší spawny, Druid míň kite/root smyčka. Tohle LeySpot vypnul.
+
+2. **[#44](https://github.com/Nasshor01/Projekt-Loop/issues/44) + [#64](https://github.com/Nasshor01/Projekt-Loop/issues/64) Cheese**  
+   Oltář upgrade-all, 0-cost štíty, stall-heal, burn→síla. Pořád free win.
+
+3. **[#58](https://github.com/Nasshor01/Projekt-Loop/issues/58) + [#54](https://github.com/Nasshor01/Projekt-Loop/issues/54)**  
+   Settings: drag vs click + dokumentace ovládání; LOOP naming (NG+ není jen placeholder).
+
+4. **Drobnosti z #67, co zbyly**  
+   Cover telegraph (+50 %) a Cover Fire karta (název vs efekt).
+
+Pak až Mid/Alpha směr: overlay/resolution (#57), mapa (#62), Trapper (#37), spatial village (#49), art (#59/#60).
+
+**Prakticky teď:** #53 pacing → #44+#64 cheese → #58 settings toggle.
+

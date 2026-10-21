@@ -1,0 +1,89 @@
+===== Q1 len=28 =====
+chci se pobavit ohledně loru
+
+===== Q2 len=393 =====
+je prostě jako pro mě vývojáře musím nějak určit ten lore... vymyslet, zatím je to taková kostra v kabátu nic extra já vidět tohle tak mám stále mega moc otázek ale žádnou odpověd skládám si obrázek kámen po kamínku doslova 
+
+musí to mít celé hlavu i patu.. skvělý smysl zápletky, i pád, mind fuck klidně .. ale udržet lore jednoduchý pro roguelike hru.. není to příběhovka kde se jede na noty
+
+===== Q3 len=1107 =====
+jelikož je to dark fantasy dává volnost co se týče experimentů enemy... doslova mužu dělat cokoliv draci monstra, duchové, anděle a demoni, nemrtví  bestie, harpie atd... 
+
+to že je boss zatím demon girl je takov´prozatimní experiment ne hotový boss ale zatím funguje 
+
+co se týče momentálních enemy klidně bych to nechal a rožšiřoval... jelikož new game+ později zanikne budou klasický acty a již podstatě od act 2 se budou moci potkávat varianti
+
+Varianti jsou geneticky upravený monstra obecně enemy kteří mají speciální vlastnosti jako třeba že hoří takže dávají burn, elektriku tě stunnou, atd.. prostě elementální varianti 
+
+to je další věc do lore které by díky tomu mohlo být nenápadný to by mohlo být pak navázání na dialogy ve vesnici prohození slov při cestách jsem potakala zvláštní mutace že hořeeeel atd... a díky tomu se hráč dozví že jsou to vlastně varianti nebo nějaký nazev jiný experiemnti idk 
+
+ale pořád act 2 je nakombený 
+act 3 je již hard to by podstatě měli být samý varianti a ultra silný boss a pak asi nic prozatimního nebude po act 3
+
+ale to je jedno zatím 
+
+jsme tu kvuli loru
+
+===== Q4 len=229 =====
+ale na druhou stranu jde to udělat jinak abych se přece jen trochu lišil StS jelikož sts je living prison přece, a je tam ta verlyba která ho vzkřísuje pořád a je to rozdělený na acty 
+
+a zda jde udělat jinak než na acty nebo tak
+
+===== Q5 len=46 =====
+nejmenuje se to LOOP
+
+ale doslova Projekt LOOP
+
+===== Q6 len=107 =====
+já ale nemám nci mezi akty... do vesnice jdeš mimo run buď před ním nebo po tom co umřeš nebo porazíš bosse
+
+===== Q7 len=192 =====
+ano prostě act 1;2;3 jeden run prostě 
+
+vesice je prostě metaprogresse.. místo na najmout si nové heroes, na vylepšení postavy pomocí upgrade budov čím více upgrade tím silnější v příštím runu
+
+===== Q8 len=790 =====
+jenže... teď otázka.. StS má vzkřísení když upomřeš meow tě oživý a jdeš znovu 
+
+tady to musí fungovat jinak.. třeba něco jako prostě jsi jendotka ... oooo něco jak seriál půjčovna masa.. že prostě jsi perfektní jednotka která když umře vytvoří se nová stejná možná i lepší právě podle toho zda upgraduješ 
+
+aby prostě byla lepší v dalším runu a dostala se dále 
+
+když dojdeš uplně na konec a porazíš bosse nikdy se nevrátíš do vesnice jako ten kdo to celé prošel prostě umřeš nebo utečeš jako klon ale víš že se do vesnice znovu nikdy již nevrátíš 
+
+do vesnice se nedá vrátit, je to jednosměrka, odtamtuď chodí units .. pouze přes extraction dokážeš přinést suroviny do vesnice aby jsi mohl upgradovat budovi, to jest 50% na campfire, 25% se automaticky pošle když umřeš, a 100% na bossovi
+
+===== Q9 len=57 =====
+ale pozor stále je to dakr fantasy ne tech nebo cyberpunk
+
+===== Q10 len=230 =====
+a díky tomu že Projekt LOOP stále běží vlastně je jednoduchý.... neexistuje nikdo kdo by zastavil výdej jednotek ven 
+
+jelikžo je to jednosměrka není nic co by dalo to STOP a právě proto se pořád odesílají na výpravu nové jednotky
+
+===== Q11 len=185 =====
+a jak tedy vesnice tedy ví že nikdo stále nepřicházi a stále tedy vysílají ?
+
+to musí být nějaká třeba přísaha ? 
+
+takže teď musíme kolem toho udělat ten lore z t=ehle základní myšlenky
+
+===== Q12 len=31 =====
+uprav tedy lore bibli kompletně
+
+===== Q13 len=50 =====
+uprav lore bibli kompletně z toho co jsme si řekli
+
+
+
+######## LAST ASSISTANT (up to 3) ########
+
+----- ASSIST -----
+Přesně — teď už nestavíš svět od nuly, jen **důvod, proč výdej nereaguje na prázdno**. Klíčový insight: vesnice **nemusí zjišťovat**, že se nikdo nevrací. Když je návrat osoby **mimo návrh**, absence lidí není alarm. Alarm by byl jen **STOP**. ## Co vesnice „sleduje“ (dark fantasy) Ne: „je někdo doma?“ Ano: **platí ještě přísaha / pečeť výdeje?** | Signál | Co znamená | |--------|------------| | **Desátek (extraction)** | „Nasazení stále probíhá / systém žije“ → výdej smí pokračovat | | **Návrat jednotky** | **Nikdy nebyl úspěch.** Nositelka venku je spotřebovaná / znečištěná / mimo pečeť | | **STOP** | Jen živá autorita s **protipečetí** — a ta taky odešla jednosměrkou | Proto furt vysílají: ne protože jsou zlí nebo hloupí, ale protože **měřítko pokračování není návrat lidí, ale nepřítomnost STOP + občasný desátek**. 25 % po smrti je dokonce záludné: i smrt **živí** dojem, že provoz běží. ## Přísaha (doporučená verze) Jedna přísaha, dvě strany: **1. Přísaha výdeje (na základně)** > Vydávej nositelky, dokud nepřijde pečeť STOP od Trůnu / Řádu. **2. Přísaha nositelky (při výpadu)** > Nevrať se. Odevzdej desátek. Dokonči prioritu nebo zanikni. Tím máš jednosměrku **doktrínou**, ne bugem. Kaple ve vesnici = místo, kde se ta pečeť obnovuje před každým výdejem. „Ví, že nikdo nepřichází?“ **Ano — a má to tak být.** Co neví / neumí: *jak říct STOP bez toho, kdo odešel.* ## Mini páteř lore (kolem téhle myšlenky) 1. **Projekt LOOP** vyráběl a vysílal nositelky nestabilní moci. 2. Výdej je **jednosměrný** (přísaha / pečeť): zpět smí jen desátek. 3. Oficiálně projekt skončil; **STOP nepřišel**. 4. Základna pořád žije z přísahy výdeje + zbytků oddělení. 5. Nová jednotka po smrti = nová inkarnace podle předpisu (silnější s upgrady). 6. Varianty / monstra = odpad a selhání téže moci. 7. Finální boss = priorita; exemplář se nevrací — domů jde balík, ne hrdinka. 8. Tragédie: jediní, kdo mohli přinést STOP, směli jít jen ven. ## Co zatím nech otevřené (dekorace) - Jestli Trůn byl církev / říše / řád - Jestli ve vesnici zbývají vázaní kněží, ozvěny, nebo „prázdný provoz pečeti“ - Jestli jde STOP vůbec kdy získat (Fáze 3 mindfuck) --- Tím máš odpověď na tvoji otázku: **vesnice nevysílá navzdory tomu, že se nikdo nevrací — vysílá právě proto, že návrat nebyl podmínkou, a STOP nikdo nepřinesl.** Chceš tu přísahu formulovat jako **kanonický text** (2–4 věty, tón kaple), nebo nejdřív rozhodnout, *kdo* ve vesnici přísahu vůbec drží (lidé / pečeť sama / ozvěna)?
+
+----- ASSIST -----
+ta s protipečetí — a ta taky směla jít jen ven. > Nikdo se nevrací. Nikdo nemůže říct STOP. Proto pořád odcházejí nové. To není sci-fi senzor. Je to **temná administrativa pod přísahou**. ### 3.3 Dvě přísahy **Přísaha výdeje (základna):** > Vydávej nositelky, dokud nepřijde pečeť STOP. **Přísaha nositelky (při výpadu):** > Nevrať se. Odevzdej desátek. Splň prioritu, nebo zanikni. Kaple = místo obnovy pečeti před výdejem. --- ## 4. Svět (dark fantasy) Krajina po projektu: - zóny testů nestabilní moci, - trasy, kam se pořád posílají jednotky, - odpad, který nikdo neuklidil, - instituce, která vypadá jako vesnice, ale je to **zbylá základna výdeje**. Venku může být Projekt LOOP fáma, kacířství, válečný mýtus — nebo neznámý. Pro základnu je pořád platný předpis. **Tón:** pečeť, přísaha, inkarnace, desátek, oddělení, priorita, odpad. **Ne:** klony, servery, upload, laboratoř, cyberpunk. --- ## 5. Hráčka — vyslaná nositelka ### 5.1 Kdo jsi v runu Nejsi náhodná dobrodružka. Jsi **exemplář řady** Projektu LOOP: připravená, zapečetěná, vyslaná. ### 5.2 Smrt ≠ vzkříšení (anti-Neow) Smrt v misi **není** „někdo tě oživil“. Je to zánik exempláře. Základna podle předpisu vydá **novou inkarnaci stejné řady** — silnější podle stavu oddělení (metaprogrese budov). Hraješ produkt linky pod pečetí, ne věčnou duši ve vězení. ### 5.3 Proč nositelky (ženy) **Prozatímní kanon:** nestabilní moc se spolehlivěji váže na kondicionovaná ženská těla. „Dokonalost“ vzhledu je **specifikace výstupu**, ne odměna světa. ### 5.4 Class = řady projektu | Class | Lore | |-------|------| | **Paladin** | Frontová nositelka — přísaha, blok, stabilizace skrze víru/pečeť | | **Trapper** | Polní specializace — pasti, terén, uzavírání nestabilních cílů | Další class = další řady. „Najmout hero“ ve vesnici = **zvolit / odemknout jinou řadu výdeje**, ne přivést někoho, kdo se vrátil. ### 5.5 Konec runu — boss Po finální prioritě (Act 3 boss) se exemplář **nevrací jako vítěz**. Zanikne, zmizí, nebo uteče *mimo pečeť* — ale **ne domů na základnu**. Domů jde desátek (plný odevzdávací balík), ne hrdinka. --- ## 6. Vesnice — základna výdeje (metaprogrese) Vesnice je **mimo run**: před nasazením, po smrti, po uzavření výdeje. Není to tavern mezi Acty. Uvnitř jednoho runu (Act 1→2→3) se na základnu nevracíš. ### 6.1 Co vesnice dělá - výdej / volba řady (heroes), - obnova oddělení ze střepů (budovy), - silnější **příští** inkarnace. Upgrady nevylepšují „duši, co se vrátila“. Vylepšují **předpis a provoz**, ze kterého vyjede další nositelka. ### 6.2 Budovy = oddělení | Budova | Herní efekt (stručně) | Lore | |--------|------------------------|------| | **Well / Studna** | + max HP | Obnova těla / nádrž pro inkarnace | | **Market / Tržiště** | zlato, shop | Logistika desátku a výdeje materiálu | | **Library / Knihovna** | card offers / rarity | Archivy, protokoly, záznamy o moci | | **Chapel / Kaple** | block na startu | Přísaha, pečeť, stabilizace před výdejem | ### 6.3 Střepy a zlato **Střepy** = zbytky nasazení, které základna umí znovu použít na provoz oddělení. **Zlato** = polní směna *uvnitř* nasazení (shop, eventy). ### 6.4 Kdo jsi ve vesnici (provozní kanon) Hráč ve vesnici není „ta, co to prošla“. Je **správa výdeje** (obsluha předpisu / pečeti) — nebo další exemplář čekající na vyslání. Detail může zůstat lehký; důležité je: **do vesnice se jako vyslaná nositelka nevracíš.** --- ## 7. Desátek (extraction) — jediný návrat Jediný povolený tok pole → základna. | Moment | Podíl | Lore | |--------|-------|------| | **Campfire** | 50 % | řízený odesíl / částečný desátek | | **Smrt** | 25 % | záchranný odpis ze trosek — i smrt „živí“ dojem, že provoz běží | | **Boss** | 100 % | priorita uzavřena → plný odevzdávací balík | Desátek je důvod, proč pečeť výdeje pořád cítí oprávnění pokračovat. Není to upload. Je to **obřad odevzdání / obětina protokolu**. --- ## 8. Run = jedno nasazení (Act 1→2→3) Jeden run = **jedna vyslaná nositelka**, jedna cesta do hloubky. | Act | Hern [REDACTED]
+
+----- ASSIST -----
+Lore bible je přepsaná na **v1.2** v `docs/LORE_BIBLE_PROJEKT_LOOP.md`. Hlavní změny oproti v1.1: - **§0 Developer truth** — uzamčená páteř pro tebe - **Jednosměrka + STOP** — proč výdej furt běží - **Dvě přísahy** (základna / nositelka) - **Anti-Neow** — smrt = nová inkarnace podle upgradů, ne vzkříšení - **Desátek** — 50 % / 25 % / 100 % - **Act 1→2→3 = jeden run**; vesnice = meta mimo run - **Varianty** + dark fantasy volnost enemy - **Žádný tech/cyberpunk** v tónu - Aktualizované anti-kánon, dávkování a gameplay mapování Když budeš chtít, můžeme příště doladit jen drobnosti (kdo přesně obsluhuje pečeť ve vesnici, pojmenování variant).
+

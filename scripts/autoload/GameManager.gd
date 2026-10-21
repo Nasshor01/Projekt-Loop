@@ -76,6 +76,7 @@ func _ready():
 	_setup_crash_recovery()
 	# Aplikujeme uloženou preferenci fullscreen
 	_apply_saved_fullscreen()
+	_apply_web_performance()
 	
 	# Load resource pools at runtime to avoid script resolution issues
 	CARD_REWARD_POOL = load("res://data/cards/reward_card_pool.tres")
@@ -439,6 +440,22 @@ func _apply_saved_fullscreen():
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 		else:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+
+func _apply_web_performance() -> void:
+	if not OS.has_feature("web"):
+		return
+	Engine.max_fps = 45
+	Engine.physics_ticks_per_second = 30
+	var vp := get_viewport()
+	if vp == null:
+		return
+	vp.msaa_3d = Viewport.MSAA_DISABLED
+	vp.msaa_2d = Viewport.MSAA_DISABLED
+	vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+	vp.use_taa = false
+	vp.scaling_3d_scale = 0.65
+	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+
 
 func go_to_run_prep_screen(p_class: ClassData, p_subclass: SubclassData):
 	selected_class_data = p_class

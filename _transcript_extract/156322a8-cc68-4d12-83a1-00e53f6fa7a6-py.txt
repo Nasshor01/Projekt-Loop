@@ -1,0 +1,94 @@
+===== Q1 len=804 =====
+dostal jsem feedback 
+
+Honestly I didnt either, wondering if thats a recent change. Truthfully I think I got pretty lucky, the mass upgrade with 0 cost shields is pretty strong and I sorta cheezed a lot of the fights to get to the top
+
+I think some of the bigger challenges right now is sometimes a character will have a move preview , saying theyre gonna move but then they walk over and attack me so knowing which insights to trust is a bit tough. Im realizing I probably should play with the first character (I mostly picked trapper because you challenged me to it lol) so Id imagine a lot more of the completed cards are on the first character.
+
+I do like the actual traps I can set though with the trapper, being able to affect the board with more then just "attack and defend" is super appealing. .
+
+===== Q2 len=2344 =====
+já jsem nasshor 
+
+TheMoonIsFurious
+Redditor for 15y  ·  33K karma
+Yesterday
+TheMoonIsFurious
+10:18 PM
+Aw I cant seem to add screenshots to the /r/deckbuildingroguelike subreddit. I did make it to the boss with the trapper though I did get my butt kicked once I got there, hah. I'll definitely try and get you some more feedback but I'd like to try and get a run or two in before commenting
+Today
+User Avatar
+Nasshor
+7:48 AM
+Hey, congrats! Didn't realize screenshots can't be posted there, my bad.
+
+That's actually really impressive that you made it to the boss with Trapper. Looking forward to any feedback after a couple more runs.
+TheMoonIsFurious
+3:33 PM
+Honestly I didnt either, wondering if thats a recent change. Truthfully I think I got pretty lucky, the mass upgrade with 0 cost shields is pretty strong and I sorta cheezed a lot of the fights to get to the top
+
+I think some of the bigger challenges right now is sometimes a character will have a move preview , saying theyre gonna move but then they walk over and attack me so knowing which insights to trust is a bit tough. Im realizing I probably should play with the first character (I mostly picked trapper because you challenged me to it lol) so Id imagine a lot more of the completed cards are on the first character.
+
+I do like the actual traps I can set though with the trapper, being able to affect the board with more then just "attack and defend" is super appealing. .
+Image
+User Avatar
+Nasshor
+5:47 PM
+Thanks a lot for playing, it really means a lot to me.
+Yeah, there are definitely some pretty OP mechanics and cards right now. Paladin especially has a few strong ones — balancing (especially around rarity) is something I’ll be focusing on in later stages.
+With Trapper I specifically wanted to use the grid in a completely different way compared to Paladin. Paladin is basically a classic tank — get close, hit things, and survive. Trapper is more about placing traps and trying to lure enemies into them.
+Since the class is still very much WIP, the card pool is quite limited at the moment.
+Really appreciate you giving it a proper try.
+TheMoonIsFurious
+6:00 PM
+Certainly. Yeah Id like to hold more judgement until theres more in a card pool list, more events and the like but the template is there and as a huge fan of the genre I feel like its off to a great start.
+
+===== Q3 len=1464 =====
+jakože když řekl základ template je dobrý... co si mám představit pod tím ? 
+
+že je málo kontentu ? 
+málo enemy? málo akret? u trappera chápu ale co paladin ? je jeasný malý pool s eventama to vím
+
+je málo artefaktů ? 
+
+přemíšlím zda něco nepředělat? ale jako říkal že zákald to funguje z toho mám radost ale jakoby  nevím no
+
+jsem mega rád že si to někdo zahrál ale nevěřím že mužu alphu vydat ne bez dodělaného trappera a village hub.. alpha by měla asi mít pevný základ si myslím 
+
+kurva je fakt že ten projekt fakt nikdy nebude hotovej, vždycky se něco najde co se musí udělat
+
+ale nesmím věšet hlavu... to do list stávající github issues +
+
+dokončit trapepra a pool akret a art karet z modular rpg assetu
+přidat více eventů
+
+více encounterů,
+
+a ten village hub udělat fakt jako užitečnou mechaniku teď je sdílený pro postavy 
+
+myslím si že je udělat základ ale každá postava má třeba vlastní building který je třeba vylepšovat za materiál nasbíraný při cestách, boje eventy a nevím co 
+
+s tím co jsem nevím jestli říkal na styl loop hero když umřeš bereš pouze 25% nasbíraneho materialu, v restu scene mužeš poslat domu 50% nasbíraného a na konci bosse po poražení mužeš vzít 100% materiálu ale jenom když leavneš .. když budeš pokračovat tak odešleš 50% 
+
+hospoda bude sloužit k verbovaní hrdinů tam se unlockují hrdinové.. buď přes questy, materiál, eventy ve hře, splnění achioevmentu třeba 
+
+budou globální i bonusy pro všechny a oddělený 
+
+a dál nevím co
+
+===== Q4 len=39 =====
+přidej a uprav pořádně issues v githubu
+
+
+
+######## LAST ASSISTANT (up to 3) ########
+
+----- ASSIST -----
+Feedback sedí — a u intents je to reálný bug, ne „špatné čtení“ hráče. **1. Move preview vs realita (nejvyšší priorita)** Intent teď říká **MOVE**, když enemy **teď** nedosáhne na hráče. Spousta AI ale v jednom tahu dělá **move → attack** (Fighter, Berserker, Boss, Monk, Druid, Healer…). Hráč vidí „půjde“, enemy dojde a praští. Insights tedy lžou u běžného melee chování. Oprava: intent by měl předpovídat **celý plán tahu** (stejná logika jako AI), ne jen „jsem v range teď“. Když je move+attack v dosahu pohybu → ukazovat Attack (případně Move+Attack). **2. Mass upgrade + 0-cost shieldy** Známý cheese (event `upgrade_all_cards` + levné blocky). Není „lucky bug“ — build je overtuned. Později: nerf costu po upgradu, omezit mass upgrade, nebo méně agresivní block scaling. **3. Trapper vs první postava** Souhlasí s tím, co víme: Paladin je hlubší, Trapper tenčí. Pozitivní je, že **identity pastí funguje** — board control je to, co lidi chtějí. **4. Doporučení testerovi** První run na Paladinovi dává smysl; Trapper spíš na „fun / positioning“ feedback. --- Nejcennější věc z tohohle playtestu: **intent trust**. Chceš, abych to rovnou opravil (intent = skutečný AI plán včetně move+attack)?
+
+----- ASSIST -----
+Dobrý closing — tohle je silný early-access signál. **Co z toho plyne** - Foundation sedí (loop, pastí identity, feel žánru). - Judgement drží zpátky kvůli tenkému Trapper poolu / eventům — očekávané. - Concrete bugs/balance zůstávají: **intent move→attack** a **mass upgrade + 0-cost shields**. **Priorita dál** 1. Intent trust (nejvíc kazí fairness) 2. Cheese nerf později (ne teď, pokud nechceš hned) 3. Trapper content až po Paladin polish / rarity balance **Krátká odpověď (když chceš):** > Thanks — that means a lot coming from someone who knows the genre. Totally fair to wait for a fuller card pool and more events. Intent previews are on my list (move sometimes should show as attack when they can walk into range). Appreciate you sticking with the WIP Trapper run. Chceš rovnou tu intent opravu, nebo nejdřív něco jiného?
+
+----- ASSIST -----
+„Template je dobrý“ **neznamená „málo obsahu“** — znamená **„kostra žánru drží“**. Genre fan tím říká: run → boj na gridu → karty → odměny → další fight → boss → class fantasy (u trappera pasti) — tohle už **je hra**, ne prototyp UI. Chybí **hloubka a opakovatelnost**, ne samotný motor. --- **Co máš vs. co chybí** | Vrstva | Stav | Co říkal | |---|---|---| | Paladin pool | relativně plný | „měl bych hrát první postavu“ | | Trapper pool | tenký (~9) | WIP, drží judgment | | Eventy | ~5 | „víc eventů“ | | Artefakty | dost | **není** hlavní stížnost | | Enemies / intents | fungují, ale lžou | trust bug | | Village | sdílený skeleton | ty chceš víc — on to skoro neřešil | Takže: **nepředělávej základ**. Paladin/combat/grid/karty jsou OK. Doplňuj a opravuj trust/balance. Village = meta vrstva navíc, ne důkaz že „core je špatně“. --- **Alpha ≠ „nikdy nic nechybí“** Alpha má mít **pevný, čitelný zážitek + jasné WIP**. Typicky: - 1 postava „hotová na playtest“ (Paladin) - 2. postava může být označená WIP (Trapper) - Village: **jedna užitečná smyčka**, ne celý Loop Hero Trapper + full village + per-hero buildings + tavern unlocks + material extract 25/50/100 — to je spíš **Early Access milestone**, ne podmínka první alphy. Když to všechno dáš jako hard gate, máš pravdu: **nikdy nebude hotovo**. --- **Village vize (dobrá) — seškáluj** Nápad Loop Hero material + send home + tavern je silný. Na teď stačí: 1. **Jeden materiál** z runu 2. **Send home** v restu / death penalty / boss leave (25/50/100) 3. **2–3 budovy** se skutečným efektem (ne 10 prázdných) 4. Per-character building / tavern unlocks = **fáze 2**, až smyčka 1–3 kliká Sdílený hub teď není trap — je to OK MVP. Oddělené bonusy až když máš víc hrdinů a důvod je rozlišovat. --- **TODO v pořadí (ať se neutopíš)** 1. Intent trust (fairness — feedback už to zmínil) 2. Trapper pool + art (dokončit fantasy, kterou chválil) 3. Víc eventů + encounterů (opakovatelnost) 4. Village: material loop + pár budov 5. Balance / rarity / cheese (později, jak jsi psal jemu) 6. Tavern / per-hero buildings (až 4 drží) --- **Hlava nahoru** Že si to někdo došel k bossovi s WIP Trapperem a řekl „off to a great start“ = **core funguje**. To je přesně to, co alpha potřebuje slyšet. Projekt nebude „hotový“ nikdy — bude **shipovatelný po milnících**. Teď nemáš důvod předělávat základ; máš důvod **doplnit a seříznout scope alphy**. Když chceš, příště z toho uděláme konkrétní „Alpha gate“ checklist (co musí / co smí chybět / co je EA).
+

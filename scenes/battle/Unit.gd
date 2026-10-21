@@ -28,6 +28,9 @@ const MAGE_METEOR_DAMAGE_PERCENT = int(MAGE_METEOR_DAMAGE_MULTIPLIER * 100) # 20
 const INITIATIVE_HOVER_MODULATE := Color(2.25, 1.9, 0.35, 1.0)
 const SELECTED_MODULATE := Color(1.5, 1.5, 1.5)
 const INITIATIVE_HOVER_SCALE := 1.12
+const HIT_FLASH_HP_COLOR := Color(2.2, 0.45, 0.4)
+const HIT_FLASH_BLOCK_COLOR := Color(0.75, 1.2, 2.0)
+const HIT_FLASH_DURATION := 0.22
 ## Statusy, které netikají na konci tahu — drží se, dokud je nespotřebuje trigger (zásah / holy útok).
 const UNTIL_CONSUMED_STATUSES := ["defensive_stance", "consecrated_weapon", "aiming"]
 
@@ -45,6 +48,10 @@ var is_selected: bool = false
 var _initiative_bar_hovered: bool = false
 var _pre_initiative_hover_modulate: Color = Color.WHITE
 var _initiative_hover_tween: Tween = null
+var _hit_flash_tween: Tween = null
+var _hit_flash_color: Color = HIT_FLASH_HP_COLOR
+## Sprite tint outside of selection / initiative hover (e.g. coop tint), captured when a flash starts.
+var _hit_flash_base_modulate: Color = Color.WHITE
 var _initiative_hover_base_scale: Vector3 = Vector3.ONE
 var active_statuses: Dictionary = {}
 
@@ -101,6 +108,7 @@ var _intent_world_padding_ratio: float = 0.08
 var _intent_head_trim_ratio: float = 0.14
 var _intent_screen_gap_min: float = 2.0
 var _intent_screen_gap_max: float = 6.0
+var _web_ui_throttle: bool = false
 
 func _is_local_player() -> bool:
 	"""Vrátí true jen pokud je tato jednotka LOKÁLNÍHO hráče (ne coop spoluhráče).
@@ -112,6 +120,7 @@ func _is_local_player() -> bool:
 	return get_meta("owner_peer_id") == multiplayer.get_unique_id()
 
 func _ready():
+	_web_ui_throttle = OS.has_feature("web")
 	if unit_data:
 		unit_data = unit_data.duplicate()
 
@@ -214,6 +223,8 @@ func _apply_ng_plus_scaling():
 		unit_data.attack_damage = int(unit_data.attack_damage * (1.0 + extra_loop_bonus))
 
 func _process(_delta: float) -> void:
+	if _web_ui_throttle and Engine.get_process_frames() % 3 != 0:
+		return
 	if _health_bar and is_instance_valid(_health_bar):
 		_update_health_bar_screen_position()
 	if _intent_row and _intent_row.visible:
@@ -293,6 +304,13 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 				AudioManager.play_hit_take()
 		else:
 			AudioManager.play_hit_deal()
+
+	if absorbed_by_block > 0 or damage_to_deal > 0:
+		var hp_hit: int = damage_to_deal - absorbed_by_block
+		_play_hit_flash(hp_hit > 0)
+		var battle_scene = get_tree().get_first_node_in_group("battle_scene")
+		if battle_scene and battle_scene.has_method("add_screen_shake"):
+			battle_scene.add_screen_shake(hp_hit, absorbed_by_block, unit_data.faction == UnitData.Faction.PLAYER)
 
 	current_block -= absorbed_by_block
 	damage_to_deal -= absorbed_by_block
@@ -528,6 +546,7 @@ func process_turn_end_statuses() -> void:
 			continue
 
 		active_statuses[status_id].duration -= 1
+		stats_dirty = true
 		if active_statuses[status_id].duration <= 0:
 			statuses_to_remove.append(status_id)
 
@@ -684,6 +703,20 @@ func _refresh_health_bar() -> void:
 	if unit_data and unit_data.faction == UnitData.Faction.PLAYER and _is_local_player():
 		max_hp = PlayerData.max_hp
 	_health_bar.update_values(current_health, max_hp, current_block)
+	if _health_bar.has_method("update_statuses"):
+		_health_bar.update_statuses(active_statuses)
+
+func set_damage_preview(hp_loss: int, lethal: bool, show_label: bool = true) -> void:
+	if _health_bar and is_instance_valid(_health_bar) and _health_bar.has_method("set_damage_preview"):
+		_health_bar.set_damage_preview(hp_loss, lethal, show_label)
+
+## Screen point at the sprite's visual center (targeting arrow tip).
+func get_aim_screen_position(camera: Camera3D) -> Vector2:
+	return camera.unproject_position(global_position + Vector3(0, _get_sprite_world_center_offset_y(), 0))
+
+func clear_damage_preview() -> void:
+	if _health_bar and is_instance_valid(_health_bar) and _health_bar.has_method("clear_damage_preview"):
+		_health_bar.clear_damage_preview()
 
 func _update_health_bar_screen_position() -> void:
 	if not _health_bar or not is_instance_valid(_health_bar):
@@ -740,6 +773,41 @@ func _start_initiative_hover_pulse() -> void:
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 
+## Short tint pulse on hit (red = HP lost, blue = fully blocked); fades back to the resting tint.
+func _play_hit_flash(hp_hit: bool) -> void:
+	if not _sprite_node:
+		return
+	if _is_hit_flashing():
+		_hit_flash_tween.kill()
+	else:
+		_hit_flash_base_modulate = Color.WHITE if (_initiative_bar_hovered or is_selected) else _sprite_node.modulate
+	_hit_flash_color = HIT_FLASH_HP_COLOR if hp_hit else HIT_FLASH_BLOCK_COLOR
+	_hit_flash_tween = create_tween()
+	_hit_flash_tween.tween_method(_apply_hit_flash, 1.0, 0.0, HIT_FLASH_DURATION)\
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+
+
+func _apply_hit_flash(strength: float) -> void:
+	if not _sprite_node:
+		return
+	var tint := _resting_sprite_modulate().lerp(_hit_flash_color, strength)
+	tint.a = _sprite_node.modulate.a
+	_sprite_node.modulate = tint
+
+
+func _is_hit_flashing() -> bool:
+	return _hit_flash_tween != null and _hit_flash_tween.is_valid() and _hit_flash_tween.is_running()
+
+
+## Tint the sprite should have when no hit flash is playing.
+func _resting_sprite_modulate() -> Color:
+	if _initiative_bar_hovered:
+		return INITIATIVE_HOVER_MODULATE
+	if is_selected:
+		return SELECTED_MODULATE
+	return _hit_flash_base_modulate
+
+
 func _stop_initiative_hover_pulse() -> void:
 	if _initiative_hover_tween and _initiative_hover_tween.is_valid():
 		_initiative_hover_tween.kill()
@@ -755,7 +823,7 @@ func set_initiative_hover_visual(hovered: bool) -> void:
 	var battle_grid = _get_battle_grid()
 	if hovered:
 		if not _initiative_bar_hovered:
-			_pre_initiative_hover_modulate = _sprite_node.modulate
+			_pre_initiative_hover_modulate = _resting_sprite_modulate() if _is_hit_flashing() else _sprite_node.modulate
 			_initiative_hover_base_scale = _sprite_node.scale
 			_initiative_bar_hovered = true
 		_apply_initiative_hover_sprite()
@@ -1151,7 +1219,7 @@ func _calculate_intent_list(player_unit: Unit, battle_grid: BattleGrid) -> Array
 	if ai_path.contains("HealerAI"):
 		var all_units = battle_grid.get_all_objects_on_grid()
 		for u in all_units:
-			if u is Unit and u != self and is_instance_valid(u):
+			if is_instance_valid(u) and u is Unit and u != self:
 				if u.unit_data.faction == unit_data.faction:
 					var hp_pct = float(u.current_health) / float(u.unit_data.max_health)
 					if hp_pct < 0.5:

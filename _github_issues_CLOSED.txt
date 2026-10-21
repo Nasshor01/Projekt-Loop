@@ -1,0 +1,996 @@
+========================================================================
+#69 [CLOSED] Content: tutorial rewrite — explain mechanics beyond camp bugfix
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/69
+Author: Nasshor01 | Labels: enhancement, early-alpha, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T08:23:36Z | Updated: 2026-08-14T21:46:34Z
+------------------------------------------------------------------------
+## Summary
+Two independent playtesters (LeySpot video, HappySealGames itch) report tutorial too vague — mechanics, cards, systems not explained. Separate from specific bugs #51/#52.
+
+## Scope
+- [ ] Rewrite tutorial flow (not just camp bugfix)
+- [ ] Explain: energy, move vs card, intents, range, terrain (mud/rock — see #67)
+- [ ] Controls: drag vs click (#58), map mouse pan
+- [ ] Optional: recommend Paladin first (#32)
+
+## Relation
+- #51 camp soft-lock, #52 restart
+- #67 terrain
+- #58 controls
+
+## Source
+LeySpot + HappySealGames Aug 2026
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-08-14T21:36:12Z]
+Shipped in **0.3.8.5** (5bcb642).
+
+Dummy-spoken tutorial now covers the core loop: placement, camera, rock/mud, free move vs cards, energy, End Turn, intents, Defend/armor through the enemy turn, melee range, reward, camp upgrade, map pan.
+
+Spoken lines live in data/dialogue/dialogue.csv via DialogueCatalog. Controls (drag or click, WASD/MMB/wheel, map pan) are taught in the flow.
+
+Optional Paladin-first recommend stays with #32 (Alpha drop).
+
+
+[Nasshor01 -- 2026-08-14T21:46:34Z]
+Verze: tutorial drop je **0.3.9** (ne 0.3.8.5). Commit `40482e2`.
+
+
+========================================================================
+#68 [CLOSED] Bug: curse cards — on-draw missing, unplayable but look playable in hand
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/68
+Author: Nasshor01 | Labels: bug, early-alpha, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T08:23:34Z | Updated: 2026-08-14T13:33:40Z
+------------------------------------------------------------------------
+## Summary
+Curse cards show energy cost in hand but are unplayable or partially broken — separate from normal Exhaust cards (e.g. Divine Judgment #65).
+
+## Root cause (code audit)
+| Card | Issue |
+|------|-------|
+| `curse_weakness.tres` | Text: "When drawn, lose 1 energy + exhaust" — **on-draw hook missing** in `PlayerData.draw_cards` |
+| `curse_basic.tres` | Empty effects, cost 1 — passes energy gate, play never succeeds |
+| `curse_pain.tres` | cost 99 hack, end-of-turn damage not implemented |
+| `CardUI.gd` | Always shows energy orb — no unplayable / curse dimming |
+
+`try_play_card`: empty `effects` → `card_played_successfully` stays false → card stuck in hand until discard.
+
+## Fix direction
+- [ ] On-draw hooks for curse effects (weakness, pain)
+- [ ] Unplayable curse UI (gray out, no energy orb, or "Curse" label)
+- [ ] Block selection when card has no resolvable effects
+- [ ] Smoke: draw each curse mid-combat
+
+## Source
+LeySpot playtest (~31:02 — may overlap with #65 for Divine Judgment; this issue is curse-specific)
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-14T13:33:39Z]
+Fixed in **0.3.8.4**: Curses show `—` cost, `is_unplayable()` blocks play, tooltip notes unplayable; ON_DRAW / END_OF_TURN triggers wired in `CardEffectData` + `BattleScene`.
+
+
+========================================================================
+#66 [CLOSED] Bug: Druid spirits persist after summoner death
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/66
+Author: Nasshor01 | Labels: bug, early-alpha, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T08:23:31Z | Updated: 2026-08-14T13:33:38Z
+------------------------------------------------------------------------
+## Summary
+Playtest (LeySpot, Druid fight ~40:00): killing the Druid does **not** remove summoned wolf/guardian spirits — fight continues until every spirit is killed individually. Adds tedium.
+
+## Root cause (code)
+`BattleScene._on_unit_died` removes only the dead unit — no summoner→minion link, no cascade cleanup.
+
+`spawn_spirit` in `BattleScene.gd` registers spirits as independent combatants with no `summoner` meta.
+
+`DruidAI._count_spirits()` is global, not per-Druid.
+
+## Verdict
+**BUG / missing implementation** — not documented design. Roadmap describes spirits fighting alongside druids, not persisting as orphans.
+
+## Fix direction
+- [ ] On spawn: `spirit_node.set_meta("summoner", druid.get_instance_id())`
+- [ ] On summoner death: kill or fade all units with matching summoner meta
+- [ ] Optional VFX + rebalance if spirits were tuned assuming persistence
+- [ ] Smoke: Druid + 2 spirits → kill Druid → spirits gone (or document if intentional)
+
+## Source
+LeySpot playtest Aug 2026
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-14T13:33:37Z]
+Fixed in **0.3.8.4**: Summoned spirits dismissed when summoner dies (`BattleScene._dismiss_summoned_units` on unit death).
+
+
+========================================================================
+#65 [CLOSED] UX: FULL_BOARD / ALL_ENEMY cards (Divine Judgment) — misleading target flow
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/65
+Author: Nasshor01 | Labels: bug, early-alpha, polish, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T08:23:29Z | Updated: 2026-08-14T13:33:36Z
+------------------------------------------------------------------------
+## Summary
+Playtest (LeySpot, Druid fight ~31:02): **Divine Judgment** in hand looked playable (energy cost 3, Exhaust keyword) but player could not figure out how to play it — "just there forever."
+
+## Root cause (code)
+`divine_judgment.tres`: `range_type = FULL_BOARD`, damage effect `ALL_ENEMY_UNITS`, plus separate `EXHAUST` effect on `SELF_UNIT`.
+
+Play/routing logic only treats `SELECTED_ENEMY_UNIT` as "enemy effect":
+- `has_enemy_effect` ignores `ALL_ENEMY_UNITS`
+- Card is routed as "self-only" because EXHAUST uses `SELF_UNIT`
+- `_show_valid_targets_for_card` highlights **only player cell**, not full board / all enemies
+- Requires 2-step: select card → click/drag grid (non-obvious for "nuke all enemies" card)
+- Attack-style drag-to-enemy UX fails player expectation (same class of issue as #58)
+
+**Exhaust is NOT the bug** — card should be playable; exhaust applies after successful play.
+
+## Fix direction
+- [ ] `FULL_BOARD` / `ALL_ENEMY_UNITS` cards: one-click play or clear "click anywhere" feedback
+- [ ] Include `ALL_ENEMY_UNITS` in enemy-effect / auto-play routing
+- [ ] `_show_valid_targets_for_card`: highlight all enemies or full board for FULL_BOARD
+- [ ] Smoke: Divine Judgment with 3 energy, multiple enemies on board
+
+## Source
+WePlaytestGames LeySpot transcript ~20:08 (reward), ~31:02 (Druid fight)
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-14T13:33:35Z]
+Fixed in **0.3.8.4**: `FULL_BOARD` / Divine Judgment auto-plays from player position without misleading target click (`BattleScene.gd`).
+
+
+========================================================================
+#63 [CLOSED] UX: enemy role/range not readable (healer/ranged from model only)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/63
+Author: Nasshor01 | Labels: enhancement, early-alpha, polish, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T06:21:20Z | Updated: 2026-08-14T13:33:34Z
+------------------------------------------------------------------------
+## Playtest (~31:00)
+"I kinda have to realize from the character model which ones are ranged and which not — doesn't say on character description."
+
+## Scope
+- [ ] Unit info / hover: ranged vs melee, healer role
+- [ ] Optional intent or icon on initiative bar
+
+## Source
+LeySpot vs Druid fight
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-14T13:33:33Z]
+Partial fix in **0.3.8.4**: Enemy hover/info shows Melee vs Ranged label (`enemy.label.melee` / `enemy.label.ranged` in `Unit.gd`). Healer role label still TBD.
+
+
+========================================================================
+#61 [CLOSED] UX: initiative bar — HP vs initiative confusion; show damage on bar
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/61
+Author: Nasshor01 | Labels: enhancement, early-alpha, polish, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T06:21:16Z | Updated: 2026-08-14T13:33:31Z
+------------------------------------------------------------------------
+## Playtest (LeySpot transcript ~12:00, ~20:00)
+Thought initiative numbers **were enemy HP** because values happened to match. Asked for injured enemies to reflect damage on the top bar.
+
+## Scope
+- [ ] Clarify initiative bar labels/tooltips (not HP)
+- [ ] Optional: show HP change / damage on bar or unit info when hurt
+- [ ] Reduce confusion when initiative value == current HP
+
+## Source
+WePlaytestGames full transcript Aug 2026
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-14T13:33:31Z]
+Partial fix in **0.3.8.4**: Initiative bar tooltip clarifies value is initiative, not HP (`ui.initiative.tooltip` on `InitiativeIcon`). Optional damage-on-bar display not implemented — can reopen or track separately if needed.
+
+
+========================================================================
+#56 [CLOSED] Bug: card missing area-effect text (AoE 8 dmg 3x3)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/56
+Author: Nasshor01 | Labels: bug, early-alpha, content, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T05:54:56Z | Updated: 2026-08-14T13:33:30Z
+------------------------------------------------------------------------
+## Summary
+Playtester: card dealing 8 damage to enemies in 3x3 area had **no text on the card** describing the AoE.
+
+## Fix
+- [ ] Find the card (likely Paladin AoE) and fix EN+CS description
+- [ ] Quick audit other AoE cards for missing area wording
+
+## Source
+WePlaytestGames LeySpot
+
+--- KOMENTARE (3) ---
+
+[Nasshor01 -- 2026-08-14T06:17:30Z]
+## Owner note
+Also do a light pass on card descriptions generally — make texts say a bit more clearly what the card does (especially AoE / special targeting), not only the one missing 3x3 line.
+
+
+[Nasshor01 -- 2026-08-14T08:23:38Z]
+Related: #67 cover mechanic + Cover Fire naming; #65 Divine Judgment ALL_ENEMY targeting UX.
+
+
+[Nasshor01 -- 2026-08-14T13:33:29Z]
+Fixed in **0.3.8.4**: AoE prefix on card face via `CardData._aoe_face_prefix()` (3x3, row, column, all enemies).
+
+
+========================================================================
+#55 [CLOSED] UX: empty shop at Market Lv0 — clarify intentional (not a bug)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/55
+Author: Nasshor01 | Labels: early-alpha, polish, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T05:54:55Z | Updated: 2026-08-14T13:38:43Z
+------------------------------------------------------------------------
+## Verdict
+**Not a bug.** Shop/reward offer counts come from Village Market / Library upgrades. At Market level 0 the shop can look empty by design — pushes meta investment.
+
+## Playtest
+LeySpot saw empty shop and guessed this correctly (village unlocks better shop). Still felt confusing without copy.
+
+## Scope (UX only)
+- [ ] Empty-state message in Shop when 0 offers: e.g. "Upgrade Market in the Village to stock the shop"
+- [ ] Optional same hint for thin reward choices at Library 0
+- [ ] Itch / Alpha notes: village upgrades unlock shop & reward options
+
+## Out of scope
+Changing economy / forcing free starter shop stock (unless design changes later)
+
+## Source
+WePlaytestGames LeySpot · owner confirm Aug 2026
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-08-14T05:56:17Z]
+Owner confirm: empty shop at low Village Market is **intentional**, not a bug. Keeping issue as UX copy / empty-state clarity only.
+
+
+[Nasshor01 -- 2026-08-14T13:38:42Z]
+Fixed: village upgrade hints in ShopScene (starter stock / empty shop) and RewardScene (Library 0 → 3 card choices). Translation keys in translations.csv.
+
+
+========================================================================
+#53 [CLOSED] Design: early melee pacing — too much move/end-turn waiting
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/53
+Author: Nasshor01 | Labels: enhancement, early-alpha, balance, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T05:41:41Z | Updated: 2026-08-16T10:02:13Z
+------------------------------------------------------------------------
+﻿## Summary
+Playtester: melee had long stretches of only moving and ending turn while enemies close.
+
+## Why (code)
+Player spawn x≈0–2, early enemies x≈6–7, Paladin move 2 / reach 1, starter without approach tools → dead Move+End turns. Druid kite/root makes it worse.
+
+## Design decision (owner — Alpha gate MUST)
+**Do NOT** shrink battlefield / closer global spawns (HoMM3-style opposite sides stay). Fix **agency during approach**.
+
+### Must before Alpha 0.4
+- [x] Displacement micro-engine: PUSH / PULL / TAUNT EffectTypes
+- [x] **Taunt** in Paladin starter (0E, range 4): on play → enemy paths **1 tile closer**; status forces approach on their next turn (FighterAI override)
+- [x] Simple **0E Shield Push + Divine Pull** into reward/shop pool
+- [x] **Holy Push** in pool (HOLY 5 + push 2; + = HOLY 8)
+- [x] Soft Freeze exception: this micro-engine is **in Alpha gate**, not post-0.4
+
+### Explicitly out of scope for #53
+- Closer early spawn columns / shrink map
+- Core combat rewrites beyond this displacement slice
+- Collision damage on push into units/rocks (tune later)
+
+## Source
+WePlaytestGames LeySpot + owner design (Taunt / push-pull before Alpha)
+
+## Implemented
+Starter: Defend×2, Quick Strike×3, Quick Step×1, **Taunt×1**. Pool: shield_push, divine_pull, holy_push (+ upgrades).
+
+--- KOMENTARE (5) ---
+
+[Nasshor01 -- 2026-08-14T05:54:52Z]
+## Playtest detail
+- Worst pacing: later fight vs **Druid summoner** (wolves + roots) — "battle of patience", "bordering on tedium"
+- Melee Paladin: many **dead turns** = free move + End Turn waiting for enemies
+- Enemies felt ~3× more mobile; ranged kite + Nature''s Grasp stretched fights
+- Quit run voluntarily after Druid — afraid of more dry fights (did not die / did not reach boss)
+- Still: boulders/obstacles "work great"; cornering Druid felt chess-like when it worked
+
+Scope add:
+- [ ] Early melee closer spawns
+- [ ] Review Druid kite/root loop for early-mid Act tedium
+
+
+[Nasshor01 -- 2026-08-14T06:21:25Z]
+Transcript: Druid fight 31:00-40:00 battle of patience, summons remain after kill (40:00), quit at reward 40:36 afraid of another dry fight.
+
+
+[Nasshor01 -- 2026-08-14T08:23:37Z]
+Related: #66 (spirits persist after Druid dies) adds tedium on top of dead-turn pacing.
+
+
+[Nasshor01 -- 2026-08-15T08:03:27Z]
+Implementing now: EffectTypes PUSH/PULL/TAUNT, starter Taunt 0E, pool Shield Push / Divine Pull / Holy Push.
+
+
+[Nasshor01 -- 2026-08-16T10:02:12Z]
+Displacement slice is on main in 3795f88.
+
+Shipped: PUSH / PULL / TAUNT EffectTypes, starter Taunt (0E), reward/shop pool Shield Push / Divine Pull / Holy Push (+ upgrades). All must-checkboxes in this issue were already marked done; closing to match the repo.
+
+Not this ticket: Druid kite/root tedium from playtest comments stays as a later pacing pass. Closer spawns stay out of scope.
+
+
+========================================================================
+#52 [CLOSED] Bug: Restart during tutorial starts new run (not tutorial)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/52
+Author: Nasshor01 | Labels: bug, early-alpha, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T05:41:40Z | Updated: 2026-08-14T13:33:28Z
+------------------------------------------------------------------------
+## Summary
+Playtester Restart during tutorial dropped into a normal new run instead of restarting the tutorial.
+
+## Root cause
+`GameManager._on_popup_restart_run()` → `start_new_run()` always. Never checks `tutorial_active`. Same for EndOfRun "Play Again".
+
+## Fix
+- [ ] If `tutorial_active`: `go_to_tutorial()` (reset to battle_1)
+- [ ] Else: `start_new_run()` as now
+- [ ] Clear tutorial flags inside `start_new_run()` / main menu when leaving tutorial
+- [ ] Optional: pause label "Restart tutorial" while tutorial active
+
+## Source
+WePlaytestGames LeySpot playtest Aug 2026
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-08-14T05:54:50Z]
+## Confirmed by LeySpot
+After soft-lock clicked Restart → dropped into **normal new run**, not tutorial start. Replay tutorial hit same camp lock again.
+
+
+[Nasshor01 -- 2026-08-14T13:33:27Z]
+Fixed in **0.3.8.3+**: Restart during tutorial calls `GameManager.restart_tutorial()` (popup, Game Over, End of Run) instead of `start_new_run()`.
+
+
+========================================================================
+#51 [CLOSED] Bug: Tutorial camp Rest upgrade soft-lock (empty picker)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/51
+Author: Nasshor01 | Labels: bug, early-alpha, playtest | Milestone: Alpha 0.4
+Created: 2026-08-14T05:41:38Z | Updated: 2026-08-14T13:33:25Z
+------------------------------------------------------------------------
+## Summary
+WePlaytestGames / LeySpot (Aug 2026): tutorial campfire upgrade left player stuck — no cards selectable, "Click to confirm" did nothing.
+
+## Root cause (code)
+Tutorial Rest filters Heavy Strike with `card.resource_path == HEAVY_STRIKE.resource_path` (`RestScene.gd`). Reward adds cards via `duplicate_card_for_deck()`, which **clears** `resource_path` and stores `source_path` meta. Filter matches **0 cards**, but upgrade viewer still opens. Heal/Leave stay locked → soft-lock.
+
+## Fix
+- [ ] Match Heavy Strike via `SaveManager.get_card_source_path` / `source_path` (same as RewardScene)
+- [ ] Empty upgrade list: restore Leave / show message (don''t open empty picker)
+- [ ] Tutorial: hide Close or restore options on Close
+- [ ] Smoke: Tutorial → take Heavy Strike → camp Upgrade → one card → confirm → map
+
+## Source
+https://www.youtube.com/watch?v=QyfWa2_vvU0
+https://app.weplaytestgames.com/transcript/56e403c9-ba22-45fc-8658-3928126b8138
+
+--- KOMENTARE (3) ---
+
+[Nasshor01 -- 2026-08-14T05:54:49Z]
+## Playtest detail (LeySpot / NotebookLM)
+
+- Saw campsite "choose card to upgrade" but **nothing to choose**
+- Tried: right-click, show upgrades toggle, click to confirm, leave — all failed
+- Soft-lock because tutorial requires upgrade confirm with empty list
+- Restarted → **new run** (not tutorial)
+- Replayed tutorial → **same soft-lock again**
+- Then abandoned tutorial → Paladin normal run
+
+Confirms root cause: empty upgrade picker + locked Leave.
+
+
+[Nasshor01 -- 2026-08-14T06:21:24Z]
+Transcript timestamps: first lock 07:11-08:20, second attempt 08:58-09:24, Restart 08:13 leads to new run.
+
+
+[Nasshor01 -- 2026-08-14T13:33:25Z]
+Fixed in **0.3.8.3+**: Tutorial camp upgrade matches Heavy Strike via `source_path` / `SaveManager.get_card_source_path`; empty picker restores Leave; inject fallback if deck missing Heavy Strike (`RestScene.gd`).
+
+
+========================================================================
+#43 [CLOSED] Bug: Intent MOVE preview then move+attack (insight trust)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/43
+Author: Nasshor01 | Labels: bug, early-alpha, playtest | Milestone: Alpha 0.4
+Created: 2026-08-12T19:17:58Z | Updated: 2026-08-14T13:33:23Z
+------------------------------------------------------------------------
+﻿## Summary
+External playtest (TheMoonIsFurious, Aug 2026): enemy shows **MOVE** intent, then walks into range and **attacks** in the same turn. Player cannot trust insights.
+
+## Root cause (code)
+`Unit._calculate_intent()` only checks current attack range (`_can_attack_player`). Many AIs return **multi-action** plans: `MOVE` then `ATTACK` in one turn (`FighterAI`, `BerserkerAI`, `BossAI`, `MonkAI`, `DruidAI`, `HealerAI`, …).
+
+Intent says MOVE when out of range; execution still attacks after moving.
+
+## Fix direction
+Intent must preview the **same plan** AI will execute this turn (or at least the highest-threat action):
+- If AI can move into range and attack → show **Attack** (or explicit Move+Attack)
+- Pure reposition with no attack → Move
+- Specials keep existing labels (Rush, Meteor, Aiming, …)
+
+Prefer calling / mirroring `get_actions()` outcome rather than a second divergent heuristic.
+
+## Done when
+- [ ] Move+attack turns never display as plain MOVE
+- [ ] Intent stays consistent if player ends turn without changing board state that would invalidate the plan
+- [ ] Quick playtest on Fighter / Berserker / Boss melee approach
+- [ ] Tutorial intent copy still makes sense
+
+## Source
+Playtest Discord feedback → Nasshor (Projekt Loop)
+
+--- KOMENTARE (4) ---
+
+[Nasshor01 -- 2026-08-13T08:17:53Z]
+## Fix landed (code)
+
+Intent fallback already showed ATTACK only when currently in range. Many AIs plan **MOVE then ATTACK** in one turn (\`FighterAI\`, \`BerserkerAI\`, \`BossAI\`, …), so preview lied as MOVE.
+
+**Change:**
+- \`EnemyAIBase.can_move_then_attack_this_turn()\` — pure helper (same \`find_attack_move_position\` + path as real AI)
+- \`Unit._calculate_intent\` fallback: if still MOVE, upgrade to ATTACK when current-range **or** move-then-attack is possible this turn
+
+**Why not call \`get_actions()\` for preview:** Boss/Mage/Druid/Monk mutate turn counters / meta / status text inside \`get_actions\` — unsafe during player-turn intent refresh.
+
+## Still to verify in-game
+- [ ] Fighter / Berserker approach: intent shows ATTACK when they will walk in and hit
+- [ ] Pure reposition (cannot reach attack range this turn): still MOVE
+- [ ] Specials (Rush, Meteor, Aiming, Hellfire labels) still override
+- [ ] Tutorial intent copy OK
+
+
+[Nasshor01 -- 2026-08-13T08:28:23Z]
+## Multi-agent review (after fix)
+
+**Reported playtest bug (Fighter/Berserker/Boss MOVE→attack):** PASS — code-complete pending in-game smoke.
+
+**Why preview avoids \`get_actions()\`:** confirmed unsafe — Mage/Boss/Monk/Druid tick counters; Archer sets aiming; Berserker sets enrage; plus status text / RNG on others. Only FighterAI is pure.
+
+**Tutorial:** no copy teaches "trust MOVE = they only move". Dummy tutorial already says ATTACK — OK.
+
+**Remaining intent lies (follow-ups, not blocking #43 playtest):**
+1. Archer — can show ATTACK while aiming/fleeing
+2. Monk / Healer / Druid — specials vs generic move-then-attack fallback
+3. Longer-term: pure \`preview_actions()\` mirroring plan without meta writes
+
+
+[Nasshor01 -- 2026-08-13T09:10:58Z]
+﻿## Dual intent UI (follow-up to MOVE trust fix)
+
+Player-facing model:
+- 1 action plan → 1 icon (MOVE only, or ATTACK only, or special)
+- 2 combat actions → 2 smaller icons (e.g. MOVE + ATTACK)
+- Boss barrier/aura filtered from player-facing (cap 2)
+- Pure `EnemyAIBase.preview_combat_intents` — does NOT call get_actions (no meta mutation)
+
+Files:
+- `scenes/ui/IntentIconsRow.gd` / `.tscn` (new)
+- `scenes/ui/IntentIcon.gd` (`compact_mode`)
+- `scripts/ai/EnemyAIBase.gd` (preview helpers)
+- `scenes/battle/Unit.gd` (`current_intents` + row wiring)
+- `scenes/ui/UnitInfoPanel.gd` (MOVE → ATTACK text)
+
+**Playtest:** goblin out of range who can walk in and hit should show **MOVE + ATTACK** icons.
+
+
+[Nasshor01 -- 2026-08-14T13:33:22Z]
+Fixed in **0.3.8.4**: ATTACK-first intent preview in `EnemyAIBase.preview_combat_intents` + `Unit._sync_primary_intent_aliases` (threat-first). No fake MOVE when enemy can attack in range.
+
+
+========================================================================
+#30 [CLOSED] Obsah: encounter pack (3–5) + taktické layouty
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/30
+Author: Nasshor01 | Labels: early-alpha, content | Milestone: Alpha 0.4
+Created: 2026-07-30T08:06:11Z | Updated: 2026-08-02T20:13:06Z
+------------------------------------------------------------------------
+## Cíl
+**Encounter pack** před Alpha 0.4 — ne jen 1 fight. Runy musí cítit variaci (layout + složení), ne pořád stejný „přibliž se a bij“.
+
+Cíl: **3–5 nových encounterů** (mix normal / elite). Reuse jednotek OK; důraz na **map layout** (rocks, mud, choke, lukostřelci za překážkou, flanky).
+
+Souvisí s Paladin grid feel (#40) — encountery mají trestat stání uprostřed bez taktiky.
+
+## Scope
+- [ ] 3–5 nových encounter `.tres` (+ jednotky reuse OK)
+- [ ] Napojení na map weights / pool (normal i elite dle typu)
+- [ ] Aspoň 2 encountery s **taktickým layoutem** (choke / cover / split spawns)
+- [ ] Otestované v runě (objeví se, projdou bez crash)
+
+## Není v scope
+- Nové enemy typy (může být follow-up 0.4.x)
+- Změna AI pathfindingu
+
+## Done when
+Gate #34 může odškrtnout encounter pack.
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-08-02T20:13:05Z]
+Shipped in **0.3.7**:
+- Fortress pack: `fortress_scouts`, `fortress_bowline`, `fortress_bruiser`, `fortress_pack`, elite `fortress_warband`
+- New units: goblin archer F/M, scout F, berserker + sprites
+- Scripted spawn positions respected in battle
+- Easy/hard monster pools (first 3 fights + early floors = easy)
+
+Closing as gate item done.
+
+
+========================================================================
+#29 [CLOSED] Obsah: 3–4 nové artefakty
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/29
+Author: Nasshor01 | Labels: early-alpha, content | Milestone: Alpha 0.4
+Created: 2026-07-30T08:06:10Z | Updated: 2026-08-04T13:45:42Z
+------------------------------------------------------------------------
+## Cíl
+Přidat 3–4 artefakty do poolu (shop/reward), ať meta/run není pořád stejná.
+
+Související starší issue: #16
+
+## Done when
+- [ ] 3–4 nové ArtifactData + efektyty
+- [ ] Efekty fungují v combat/run
+- [ ] Jsou v příslušných poolech
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-08-02T12:28:25Z]
+Done in bcf5323.
+
+**Shipped artifacts (4):**
+- Dragon Scale / Draci supina — +2 Block per living enemy each turn
+- Blood Chalice / Krvavy gral — take 2, heal 4 each turn
+- Mage Tome / Magova kniha — draw on play (max 5x/turn)
+- Cursed Ring / Proklety prsten — +15 max HP, -1 energy/turn
+
+Wired into basic/shop/elite/treasure pools + EN/CS translations.
+
+
+[Nasshor01 -- 2026-08-04T13:45:42Z]
+## Follow-up shipped (main `ed56a3b`)
+
+Beyond the original “3–4 artifacts” bump, playtest UX for the remake catalog is now much further along:
+
+- Grid spawn visuals for Throne Fragment, Crown of Dominion, Ring of the Living Grove, Gilded Dragonheart
+- Tablet / Oathbreaker permanent seal & retain card-state UX
+- Alchemy / All-Seeing Eye / Crimson Chalice interact flow in battle
+- Dedicated alchemy cards + artifact FX art
+
+Original #29 content goal remains done; rarity ladder expansion tracked in #39.
+
+
+========================================================================
+#28 [CLOSED] SFX: lehký balík (dmg, hit, UI click)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/28
+Author: Nasshor01 | Labels: early-alpha, polish | Milestone: Alpha 0.4
+Created: 2026-07-30T08:06:08Z | Updated: 2026-08-01T20:36:49Z
+------------------------------------------------------------------------
+## Cíl
+Pár základních zvuků, ať hra nepůsobí němě.
+
+## Minimální set
+- [x] Dát damage
+- [x] Dostát damage
+- [x] Klik na tlačítko (UI)
+- [x] (Bonus) Card play
+- [ ] (Bonus) Button hover / reward select
+
+## Done when
+Zvuky hrají ve Windows buildu, chybějící file = graceful fallback (ne crash).
+
+## Shipped in 0.3.6
+- `AudioManager` autoload (SFX bus, volume, click hook)
+- Hit deal/take, UI click, card play, shuffle, coins, footstep
+- Music playlist (`MusicManager`) + Settings SFX volume
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-08-01T18:41:15Z]
+## Wired in-game (AudioManager)
+
+| SFX | Hook |
+|-----|------|
+| UI click | global `BaseButton.pressed` |
+| Card play | `BattleScene.try_play_card` on success |
+| Hit deal | `Unit.take_damage` on enemies |
+| Hit take | `Unit.take_damage` on local player |
+| Coins | `PlayerData.add_gold` |
+| Shuffle | `PlayerData.reshuffle_discard_into_draw_pile` |
+
+Also: Settings SFX volume slider + DevConsole `sfx [all|?]`.
+
+Still verify in Windows build; missing file = graceful no-op.
+
+
+[Nasshor01 -- 2026-08-01T20:36:49Z]
+Done in **0.3.6** — AudioManager SFX (hit deal/take, UI click, card play, shuffle, coins, footstep) + music playlist. Hover SFX optional / later.
+
+
+========================================================================
+#27 [CLOSED] Paladin: kompletně upgradovatelné karty
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/27
+Author: Nasshor01 | Labels: early-alpha, content | Milestone: Alpha 0.4
+Created: 2026-07-30T08:06:06Z | Updated: 2026-07-31T21:38:14Z
+------------------------------------------------------------------------
+## Cíl
+Každá Paladin karta dostupná v runě má `*_upgraded` variantu a Rest upgrade funguje.
+
+## Done when
+- [x] Audit: seznam karet bez upgraded
+- [x] Doplněné chybějící upgraded .tres + data
+- [ ] RestScene upgrade: žádná karta bez cíle / broken upgrade
+- [x] Upgraded karta se vizuálně pozná (rám / badge)
+
+--- KOMENTARE (3) ---
+
+[Nasshor01 -- 2026-07-31T09:54:04Z]
+## Design phase done (anti-turret) — awaiting OK before `.tres`
+
+Source of truth locked in-repo:
+
+- Rule: `.cursor/rules/card-upgrade-balance.mdc` (one benefit, cost never up, AOE max **3x3**, **no 5x5**)
+- Matrix: `docs/CARD_UPGRADE_MATRIX.md` (every Paladin + everyone run card: OK / REBALANCE / NEW)
+
+### Locked AOE fixes
+| Card | Was | Target |
+|------|-----|--------|
+| Consecration+ | 8 @ **5x5** | **10 @ 3x3** @ 2E |
+| Purging Burst+ | 1 @ **4x4** | **7 @ 2x2** @ 1E |
+
+### Also flagged REBALANCE
+Smite+ (no cost 1→2), Divine Wrath+ (no full-board / no cost↑), Lay on Hands+, Aura of Devotion+, Pious Defense+, Fortify+, Nimble Move+.
+
+### Checklist
+- [x] Audit: cards without upgraded
+- [x] Design rule + matrix (numbers)
+- [ ] Implement REBALANCE + NEW `*_upgraded.tres` + translations (next step after matrix OK)
+- [ ] RestScene: no card without upgrade target
+- [x] Visual: green Name+ (already in CardUI)
+
+**Next:** confirm matrix numbers → then data pass only (no inventing outside the matrix).
+
+
+[Nasshor01 -- 2026-07-31T10:34:57Z]
+## Implemented (matrix applied)
+
+Data pass done per `docs/CARD_UPGRADE_MATRIX.md` + `.cursor/rules/card-upgrade-balance.mdc`.
+
+### REBALANCE
+- Consecration+: **10 @ 3x3** (no 5x5)
+- Purging Burst+: **7 @ 2x2** (no 4x4)
+- Smite+: 9 @ 1E
+- Divine Wrath+: 10 @ 3x3 Exhaust @ 3E
+- Lay on Hands+: cost 3, uses 3
+- Aura of Devotion+: +2 block/turn @ 1E (not permanent)
+- Pious Defense+: 8 block
+- Fortify+: 14 block, no Exhaust
+- Nimble Move+: move 2, draw 1 @ 0E
+
+### NEW
+31 missing Paladin/everyone upgrades created + linked (incl. Quick Step+).
+
+### Verify
+49/49 Paladin+everyone run-pool/starter cards have `upgraded_version`.
+
+Translations CSV updated (open project in Godot once to reimport `.translation` binaries).
+
+
+[Nasshor01 -- 2026-07-31T21:38:13Z]
+## Closed ? verified for Alpha gate (balance later)
+
+### Done
+- [x] Matrix + all REBALANCE/NEW `*_upgraded.tres` linked (49/49)
+- [x] Rest upgrade picker + preview toggle ? OK in-game
+- [x] Event smith uses same `show_upgrade_selection` (Traveling Blacksmith)
+- [x] Preview chrome: removed green modulate / ? badge ? normal upgraded face (green Name+ only)
+- [x] Card face font (Blrrpix) + sizes locked ? do not touch
+
+### Explicitly deferred
+- Combat number balance / feel ? after external feedback, not a #27 blocker
+- Per-card unique artwork ? already out of scope (#26)
+
+Ship version stays **0.3.x** until the full Alpha **0.4** gate (#34) is done. Do not rename build to 0.4 yet.
+
+
+========================================================================
+#26 [CLOSED] Paladin: reálný artwork karet (pryč placeholdery)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/26
+Author: Nasshor01 | Labels: early-alpha, polish, content | Milestone: Alpha 0.4
+Created: 2026-07-30T08:06:05Z | Updated: 2026-07-31T09:28:39Z
+------------------------------------------------------------------------
+## Cíl
+Poskládat z RPG card assetů reálné karty pro Paladina. Placeholder artwork pryč.
+
+## Done when
+- [ ] Všechny Paladin karty v reward/shop poolu mají artwork
+- [ ] Upgraded varianty mají artwork (nebo jasný upgraded vizuál)
+- [ ] Neutral/everyone karty používané Paladinem taky OK (pokud jsou v poolu)
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2026-07-31T07:11:05Z]
+Blocked on finishing frame verify (#25), then:
+
+- Almost all Paladin/everyone cards still lack `artwork` texture
+- Frames are ready; next step is assigning art into the upper panel slot
+
+Do not close until placeholders are gone for Paladin reward/shop pool at minimum.
+
+
+[Nasshor01 -- 2026-07-31T09:28:39Z]
+## Closed — Early Alpha scope (not STS2-style per-card art)
+
+For Early Alpha, Paladin/Warrior card face = ModularCards Warrior rarity frames (see #25). That replaces placeholder tinted frames.
+
+Out of scope for now: unique illustration per card in the art panel (CardData.artwork) like STS2 — deferred to a later milestone. Art slot can stay empty until then.
+
+Upgraded cards: green name (STS-style), not a separate frame bake.
+
+
+========================================================================
+#25 [CLOSED] Karty: rarity frames z RPG packu (místo modulate barev)
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/25
+Author: Nasshor01 | Labels: enhancement, early-alpha, polish | Milestone: Alpha 0.4
+Created: 2026-07-30T08:06:03Z | Updated: 2026-07-31T09:28:37Z
+------------------------------------------------------------------------
+## Cíl
+Každá rarita (Basic/Common/Uncommon/Rare/Epic/Legendary) má vlastní vizuální rám z RPG card assetů.
+
+## Proč
+Teď `CardUI` barví karty přes `modulate` (zelená/růžová/fialová…). Chceme reálné framy, ne hardcoded barvy.
+
+## Done when
+- [ ] Framy pro rarity napojené v CardUI
+- [ ] `_update_rarity_colors` / modulate rarity pryč nebo jen jako fallback
+- [ ] Paladin karty vypadají konzistentně v ruce, rewardu, shopu, pile vieweru
+
+--- KOMENTARE (3) ---
+
+[Nasshor01 -- 2026-07-31T07:02:23Z]
+## In progress
+
+Warrior rarity frames from `art/sprites/cards/warrior/` are now wired in CardUI:
+
+- BASIC / COMMON / RARE / EPIC / LEGENDARY -> matching Warrior *.png
+- UNCOMMON -> Common frame (Uncommon cancelled)
+- curse card_id -> curse.png
+- Removed rarity modulate tinting
+- Upgraded cards: green name color (STS-style)
+- Cost label moved to top-center orb
+
+Please verify in-game (hand / shop / reward / deck viewer) that text slots still sit on banner + description panels.
+
+
+[Nasshor01 -- 2026-07-31T07:11:04Z]
+## Rarity set locked in
+
+Official card rarities (Uncommon removed from gameplay):
+
+- Basic / Common / Rare / Epic / Legendary
+- Curse = special frame via card_id
+
+Done in code:
+- Migrated 25 UNCOMMON cards → COMMON
+- CardPool weights: Legendary → Epic → Rare → Common
+- Shop prices for all live rarities
+- Village library L4 = epic chance (not uncommon)
+- CardUI frames match the 5 rarities + curse
+
+Still needed before closing #25:
+- In-game verify text slots on new frames
+
+#26 (artwork) is still open — most cards still have no artwork texture.
+
+
+[Nasshor01 -- 2026-07-31T09:28:36Z]
+## Closed — Early Alpha done
+
+Rarity frames are wired in CardUI (Warrior PNG by rarity + curse). Rarity modulate / _update_rarity_colors removed. Same face in hand / shop / reward / deck / pile.
+
+Font/outline polish is playable; fine-tune later if needed.
+
+
+========================================================================
+#16 [CLOSED] Artefakty
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/16
+Author: Nasshor01 | Labels: - | Milestone: -
+Created: 2025-07-31T09:38:43Z | Updated: 2026-07-30T08:08:48Z
+------------------------------------------------------------------------
+přidaní artefaktů do hry + nová scéna truhly kde si hráč vybere vždy jeden z artefaktů kerý tam bude
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-07-30T08:06:43Z]
+Přesunuto do konkrétnějšího Early Alpha úkolu: #29 (3–4 nové artefakty). Tohle issue může zůstat jako starší backlog nebo se zavřít jako duplicate.
+
+
+========================================================================
+#15 [CLOSED] generace custom seed
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/15
+Author: Nasshor01 | Labels: - | Milestone: -
+Created: 2025-07-29T17:57:20Z | Updated: 2025-07-30T13:28:38Z
+------------------------------------------------------------------------
+nefunguje vygenerovat custom seed obě tlačítka generují náhodný seed
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2025-07-30T13:28:36Z]
+custom generace seedu opět funguje oprava v map.gd kde byla propojená funkce na random generate seed obě tlačítka a chyběla z nějakeho duvodu funkce na generate custom seed
+
+
+========================================================================
+#14 [CLOSED] balíček karet
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/14
+Author: Nasshor01 | Labels: - | Milestone: -
+Created: 2025-07-29T13:00:39Z | Updated: 2025-07-30T13:30:53Z
+------------------------------------------------------------------------
+momentálně balíček funguje tak že vždy mám v handě 5 karet minimálně na začátku tahu ... a když můj balíček obsahuje 13 karet tak já vyberu 2x 5 karet a mělo y zůstat v posledním tahu než se zamíchá balíček 3 karty v ruce ale to se nestane balíček se zamíchá a mám zase 5 karet v ruce takže nikdy nedoberu balíček karet ale vždy se to nějak zamíchá než ho stihnu dobrat
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2025-07-30T13:30:53Z]
+oprava- funguje to jak má karty se dobírají nění co měnit
+
+
+========================================================================
+#13 [CLOSED] vytvořit menu manager hned po save manager
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/13
+Author: Nasshor01 | Labels: - | Milestone: -
+Created: 2025-07-28T18:17:59Z | Updated: 2026-07-30T08:08:47Z
+------------------------------------------------------------------------
+vytvořit základní menu co se týče profil na výběr ze 3 "new game" 
+
+vypadat
+select profile 
+new game
+load game
+settings
+exit
+
+========================================================================
+#12 [CLOSED] efekt bahna
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/12
+Author: Nasshor01 | Labels: - | Milestone: -
+Created: 2025-07-28T18:14:15Z | Updated: 2025-07-29T12:17:56Z
+------------------------------------------------------------------------
+Bahno nefunguje na duration 2 kdy player to má dát duration na 2 kola a efekt že po šlápnutí se nedá pohnout, a enemy tento efekt vubec nic nedělá nedostanou efekt slow !
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2025-07-29T12:09:03Z]
+efekt bahno funguje ale pouze když dobrovolně kliknu na bahno... enemy jsou chytřejší a na bahno jen tak nevztoupí a mužeš se pohybovat přes bahno což je chyba očekávám že když chceš přejít tile bahno tak se na tom políčku zastavíš a nedokážeš ho podstatě přeskočit
+
+
+[Nasshor01 -- 2025-07-29T12:17:56Z]
+efekt bahna přidán movement cost na 2 a když je player vedle bahna zobrazí se žlutě políčko bahno a nelze ho přejít a skipnout bahno ale zastavíš se na bahně
+
+
+========================================================================
+#11 [CLOSED] tvar mapy a spawn enemy
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/11
+Author: Nasshor01 | Labels: - | Milestone: -
+Created: 2025-07-28T18:13:12Z | Updated: 2025-07-29T11:08:09Z
+------------------------------------------------------------------------
+kvůli shape a generace battlegrid a náhodným pozici generace enemy tak se stane že enemy se na tom gridu nezobrazi a nespawnout, oprava přes is avalible get cell na battle grid a na battlescene!
+
+========================================================================
+#10 [CLOSED] Battlegrid 2.0
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/10
+Author: Nasshor01 | Labels: - | Milestone: BattleGrid
+Created: 2025-07-25T11:52:47Z | Updated: 2025-08-02T20:49:52Z
+------------------------------------------------------------------------
+udělat větší battlegrid, kamera na mapu s omezením kam až se mužeš dívat, pohyblivá kamera aby nepřekáželo kartám ale zároveň jsi se mohl hýbat kamerou kvůli velikosti třeba battle gridu
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2025-07-28T11:27:58Z]
+větší mapa hotova, kamera omezený pouze zoom ale stále se dá pohybovat uplně mimo battlegrid,
+
+
+[Nasshor01 -- 2025-07-28T11:58:56Z]
+locknutý zoom, omezený pohyb kamerou teď nelze jít mimo grid .. status hotovo a testování
+
+
+========================================================================
+#9 [CLOSED] rožšíření obsahu
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/9
+Author: Nasshor01 | Labels: - | Milestone: -
+Created: 2025-07-25T08:11:31Z | Updated: 2026-07-30T08:08:47Z
+------------------------------------------------------------------------
+Karty: Doplň počet karet k cíli ~50-60 unikátních kusů pro dvě hratelné třídy. Zaměř se na karty využívající status efekty (Poison, Weak, Vulnerable).
+
+Nepřátelé: Vytvoř první tematickou skupinu nepřátel, např. Zrezivělá Pevnost (Goblini a Orkové), s celkovým počtem 15-20 jednotek.
+
+Artefakty: Vytvoř prvních ~15-20 artefaktů, které významně mění hru.
+
+========================================================================
+#8 [CLOSED] Second playable character
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/8
+Author: Nasshor01 | Labels: - | Milestone: -
+Created: 2025-07-25T08:11:12Z | Updated: 2026-07-30T08:08:47Z
+------------------------------------------------------------------------
+Přidat další kompletní třídu s podtřídou dle tvého plánu. Například Mág -> Elementalista nebo Fighter -> Mistr Zbraní, protože přináší zcela nové herní styly.
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2026-07-30T08:06:44Z]
+Trapper pokračuje v Mid Alpha: #37 (unlock přes Village). Pro Early Alpha zůstává experimental (#32).
+
+
+========================================================================
+#7 [CLOSED] Meta-progress
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/7
+Author: Nasshor01 | Labels: - | Milestone: -
+Created: 2025-07-25T08:10:47Z | Updated: 2026-07-30T08:08:46Z
+------------------------------------------------------------------------
+vytvořit základní metaprogress po každém "run" dát hráči něco permanentního  třeba zatím měnu
+
+--- KOMENTARE (2) ---
+
+[Nasshor01 -- 2025-07-29T17:43:43Z]
+farmit materiál který se později spotřebovává pro postavy na odemykání passive tech tree
+
+
+[Nasshor01 -- 2026-07-30T08:06:45Z]
+Meta směr upřesněn: Village core (#35, #36), skill tree odložen (#38). Milestone: Mid Alpha – Village Core.
+
+
+========================================================================
+#6 [CLOSED] SaveManager
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/6
+Author: Nasshor01 | Labels: - | Milestone: -
+Created: 2025-07-25T08:09:58Z | Updated: 2026-07-30T08:08:46Z
+------------------------------------------------------------------------
+Vytvořit systém ukládání a načítaní do JSON souborů
+
+========================================================================
+#5 [CLOSED] BattleGrid vizualizace
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/5
+Author: Nasshor01 | Labels: - | Milestone: BattleGrid
+Created: 2025-07-25T08:09:07Z | Updated: 2025-07-29T17:29:49Z
+------------------------------------------------------------------------
+Přidat plovoucí čísla pro požkození/lečení, aby byly dopady karet okamžitě vidět
+
+--- KOMENTARE (1) ---
+
+[Nasshor01 -- 2025-07-28T13:47:31Z]
+přidána vizualizace floating čísel pro fmg, heal, block, heal to full. momentálně v testování
+
+
+========================================================================
+#4 [CLOSED] BattleGrid překážky
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/4
+Author: Nasshor01 | Labels: - | Milestone: BattleGrid
+Created: 2025-07-25T08:07:56Z | Updated: 2025-08-02T20:49:52Z
+------------------------------------------------------------------------
+přidat více a implementovat překážky na BattleGridu,
+různé buffy a debuffy překážek,
+obtížnost terénu pro pohyb pro více taktičtější hratelnost
+
+========================================================================
+#3 [CLOSED] BattleGrid AoE
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/3
+Author: Nasshor01 | Labels: - | Milestone: BattleGrid
+Created: 2025-07-25T08:06:42Z | Updated: 2025-07-29T17:29:34Z
+------------------------------------------------------------------------
+přidat a dokončit AoE efekt vizualizace
+
+========================================================================
+#2 [CLOSED] základní mechanika
+URL: https://github.com/Nasshor01/Projekt-Loop/issues/2
+Author: Nasshor01 | Labels: - | Milestone: -
+Created: 2025-07-25T08:04:39Z | Updated: 2025-07-25T08:04:41Z
+------------------------------------------------------------------------
+základní mechanika,
+pohyb po grid base mapě,
+generace world mapy proceduálně,
+loop system,
+soubojový systém částečně
+provizorní reward scena,
+

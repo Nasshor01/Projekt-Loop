@@ -157,5 +157,12 @@ res://scenes/map/Map.tscn
 res://scenes/ui/LayoutSlot.tscn
 res://scenes/ui/VillageScene.tscn
 res://scenes/CharSelect/CharacterSelectScreen.tscn
-res://scripts/CardUI.gd
 res://scenes/battle/BattleScene.gd
+res://scenes/battle/Unit.gd
+res://scenes/ui/PlayerHandUI.gd
+res://translations.cs.translation
+res://translations.en.translation
+res://scenes/ui/UnitHealthBar.gd
+res://scripts/CardUI.gd
+res://data/artifacts/behaviors/plague_dragonheart.gd
+res://scenes/ui/UnitInfoPanel.gd

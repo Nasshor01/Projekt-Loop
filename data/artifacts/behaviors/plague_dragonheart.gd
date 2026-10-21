@@ -75,6 +75,8 @@ func _double_all_poison() -> void:
 		if status_dict.has("poison"):
 			var data: Dictionary = status_dict["poison"]
 			data["value"] = int(data.get("value", 0)) * 2
+			if unit.has_method("_update_stats_and_emit_signal"):
+				unit.call("_update_stats_and_emit_signal")
 
 
 func _all_units_on_grid() -> Array:

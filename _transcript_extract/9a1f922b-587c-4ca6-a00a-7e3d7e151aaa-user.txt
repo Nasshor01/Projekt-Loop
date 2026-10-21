@@ -1,0 +1,564 @@
+===== LINE 1 ROLE=user LEN=463 =====
+<timestamp>Saturday, Aug 15, 2026, 11:17 PM (UTC+2)</timestamp>
+<user_query>
+c:\Users\Jirka\OneDrive\Dokumenty\Godot Engine v4.4.1.stable.official.txt 
+
+taky mám pocit že artefakt sekera co dává burn 
+
+tak dává 1 dmg na turn nebo 3 turny ale ten dmg se snižuje co turnem a turn nevím zda se snižuje ... 
+a přijde my že to pak vypadá že i když to píše 1 dmg 3 turny
+tak vlastně je to pouze na 1 turn
+
+ověř to přesně to chování a co to má přesně dělat
+</user_query>
+
+===== LINE 8 ROLE=user LEN=400 =====
+<timestamp>Saturday, Aug 15, 2026, 11:22 PM (UTC+2)</timestamp>
+<user_query>
+tím pádem by to mělo být 1 dmg 1 tah protože je to stackující čím více útočím tak to roste a naopak klesá když neútočím 
+
+takže lepší popis ? prostě dát někam vědět že burn je prostě stackující a klesající po každém kole -1 jelikžo je tím pádem blbost do toho dávat tahy jako čitelnost ale pouze kolik burn má
+</user_query>
+
+===== LINE 25 ROLE=user LEN=114 =====
+<timestamp>Saturday, Aug 15, 2026, 11:27 PM (UTC+2)</timestamp>
+<user_query>
+zatím commitni a pushni
+</user_query>
+
+===== LINE 33 ROLE=user LEN=151 =====
+<timestamp>Sunday, Aug 16, 2026, 11:07 AM (UTC+2)</timestamp>
+<user_query>
+a issues jsou upraveny ? co bylo uděláno a co stále je třeba ?
+</user_query>
+
+===== LINE 38 ROLE=user LEN=156 =====
+<timestamp>Sunday, Aug 16, 2026, 11:11 AM (UTC+2)</timestamp>
+<user_query>
+neber ohled teď na 0.4 gate 
+
+stejně do udělám, všechno před alphou
+</user_query>
+
+===== LINE 41 ROLE=user LEN=133 =====
+<timestamp>Sunday, Aug 16, 2026, 12:00 PM (UTC+2)</timestamp>
+<user_query>
+a ty issues si upravil uzavřel okomentoval ?
+</user_query>
+
+===== LINE 48 ROLE=user LEN=119 =====
+<timestamp>Sunday, Aug 16, 2026, 12:05 PM (UTC+2)</timestamp>
+<user_query>
+takže co máme dále na pořadí ?
+</user_query>
+
+===== LINE 51 ROLE=user LEN=151 =====
+<timestamp>Sunday, Aug 16, 2026, 12:06 PM (UTC+2)</timestamp>
+<user_query>
+co se tím myslí kompletně a přehledně ta 44 a 64 ? vypiš my to
+</user_query>
+
+===== LINE 54 ROLE=user LEN=483 =====
+<timestamp>Sunday, Aug 16, 2026, 12:14 PM (UTC+2)</timestamp>
+<user_query>
+ale tak defend + bych nechal jak je prostě op to klidně muže být spíše jde upravit nějak ten event aby byl buď mega rare, a hlavně once per run 
+
+ty ip synergy zanech... je to prostě tak jak to  má být je to RNG prostě se tak stane že to funguje tak skvěle že to je téměř infinity power a mě se to líbí .. že dokáže se poskládat něco tak op aby to rozbilo hru o to my jde 
+
+a stall heal nechápu
+</user_query>
+
+===== LINE 68 ROLE=user LEN=168 =====
+<timestamp>Sunday, Aug 16, 2026, 12:19 PM (UTC+2)</timestamp>
+<user_query>
+no a jak vlastně vyjít ze stall heal? každá healing karta by měla mít exhaust ?
+</user_query>
+
+===== LINE 71 ROLE=user LEN=278 =====
+<timestamp>Sunday, Aug 16, 2026, 12:23 PM (UTC+2)</timestamp>
+<user_query>
+jako teď už by mělo být že pokud druid umře tak jeho spirits taky umřou 
+
+ale pořád muže nastat goblin leftover boj který dává jenom za 3 nebo 4 dmg a to se dá stále přehelaovat jako u vlka
+</user_query>
+
+===== LINE 92 ROLE=user LEN=104 =====
+<timestamp>Sunday, Aug 16, 2026, 12:29 PM (UTC+2)</timestamp>
+<user_query>
+takže co dále ?
+</user_query>
+
+===== LINE 94 ROLE=user LEN=586 =====
+<timestamp>Sunday, Aug 16, 2026, 12:30 PM (UTC+2)</timestamp>
+<user_query>
+Godot Engine v4.4.1.stable.official (c) 2007-present Juan Linietsky, Ariel Manzur & Godot Contributors.
+--- Debug adapter server started on port 6006 ---
+--- GDScript language server started on port 6005 ---
+  ERROR: res://scenes/events/EventScene.gd:208 - Parse Error: Cannot infer the type of "upgrade_all_locked" variable because the value doesn't have a set type.
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/events/EventScene.gd" with error "Parse error".
+</user_query>
+
+===== LINE 98 ROLE=user LEN=164 =====
+<timestamp>Sunday, Aug 16, 2026, 3:51 PM (UTC+2)</timestamp>
+<user_query>
+udělal  jsem změny a přípravu na village chci aby jsi to commitnul a pushnul
+</user_query>
+
+===== LINE 105 ROLE=user LEN=132 =====
+<timestamp>Sunday, Aug 16, 2026, 7:39 PM (UTC+2)</timestamp>
+<user_query>
+takže víě jak chci přesně tu village dělat ?
+</user_query>
+
+===== LINE 109 ROLE=user LEN=713 =====
+<timestamp>Sunday, Aug 16, 2026, 7:44 PM (UTC+2)</timestamp>
+<user_query>
+to právě chci zajistiti já kde co bude.. ale chci aby jsi přepřipravil scénu 
+
+s tím že je tam ten village layout sheet jako pozadí 
+
+pak dáš někam rádoby sprite který budou klikatelný potom a když se na to najede myší vidíš tooltip prostě popis budovy a requirment na další upgrade a když se to rozklikne vidíš toho víc o té budově, co upgraduje co ti to přidá atd... ale to si pak ještě upřesníme.. prvně chci aby js itam tan ten layout více přiblížený a roztáhnutější já si to když tak upravím tak jak potřebuji a dále předpřipravil sloty toho kde já rozmístím ty budovi zatím co jsou s tím že výdy rozmistuji lvl 0 budovy
+</user_query>
+
+===== LINE 118 ROLE=user LEN=409 =====
+<timestamp>Sunday, Aug 16, 2026, 7:59 PM (UTC+2)</timestamp>
+<user_query>
+není to špatně jenže... je třeba to rozdělit než jedna scnea takle.. to že je to roztaženější je schválně do budoucna taky se tam bude pohybovat po tom pomocí kamery a musí být oddělený UI který je výdy viditelné pomocí  canvas layer a přidej tam
+
+a chci aby tam bylo zatím vše chapel hunter library, market, well, tavern
+</user_query>
+
+===== LINE 119 ROLE=user LEN=409 =====
+<timestamp>Sunday, Aug 16, 2026, 7:59 PM (UTC+2)</timestamp>
+<user_query>
+není to špatně jenže... je třeba to rozdělit než jedna scnea takle.. to že je to roztaženější je schválně do budoucna taky se tam bude pohybovat po tom pomocí kamery a musí být oddělený UI který je výdy viditelné pomocí  canvas layer a přidej tam
+
+a chci aby tam bylo zatím vše chapel hunter library, market, well, tavern
+</user_query>
+
+===== LINE 146 ROLE=user LEN=128 =====
+<timestamp>Sunday, Aug 16, 2026, 8:09 PM (UTC+2)</timestamp>
+<user_query>
+taky všechny budovy dát menší o polovinu
+</user_query>
+
+===== LINE 149 ROLE=user LEN=3505 =====
+<timestamp>Sunday, Aug 16, 2026, 8:18 PM (UTC+2)</timestamp>
+<user_query>
+takže teď chci napojit to robustnější UI a lepší tooltip a čitelnější tooltip ve village na najetí budov.. napojení upgrades a levelování budov s tím že levelem se to mění na to mám taky asi dokument 
+
+s tím když to rozklikneš vidíš přesně kolik co stojí.. jaký level co máš aktuálně za bosy z upgradů + co dostaneš příští upgrade 
+
+Projekt LOOP — Vesnice, ekonomika & rarity
+Design reference · stav kódu Early Alpha · zdroj: VillageBonuses.gd, ShopPricing.gd, GameManager.gd, reward/shop scény
+Jak funguje vesnice: meta-progres mezi runy. Hráč utrácí shardy za levely budov. Cena upgradu = base_cost × (aktuální_level + 1). Budovy se ve scéně generují runtime (nejsou v editoru jako child nody).
+1. Získávání shardů
+Encounter
+Shardy
+Normal
+1
+Elite
+3
+Boss
+8
+
+2. Budovy — přehled
+Budova
+Max level
+Base cost (shardy)
+Hlavní efekt
+Well (Studna)
+5
+8
++4 max HP / level
+Market (Trh)
+5
+6
++8 startovní zlato / level + více relikvií v shopu
+Library (Knihovna)
+5
+10
+více karet v reward/shop + lepší rarity
+Chapel (Kaple)
+3
+12
++2 block na start bitvy / level
+
+2.1 Well — HP
+Level
+Cena upgradu na tento level
+Bonus max HP (kumulativně)
+1
+8
++4
+2
+16
++8
+3
+24
++12
+4
+32
++16
+5
+40
++20
+
+Celkem shardů 1→5: 120
+2.2 Market — zlato + shop relikvie
+Level
+Cena
+Startovní zlato
+Relikvie v shopu
+0
+—
++0 (base run gold bez bonusu)
+1
+1
+6
++8
+2
+2
+12
++16
+2
+3
+18
++24
+3 (plné ArtifactSloty)
+4
+24
++32
+3
+5
+30
++40
+3
+
+Celkem shardů 1→5: 90. Layout shopu má 3 ArtifactSloty — Market je plní.
+2.3 Library — karty & rarity
+Layout limity: Reward max 4 CardSloty · Shop max 6 CardSlotů.
+Level
+Cena
+Reward karty
+Shop karty
+Rare %
+Epic %
+Legendary %
+Common (zbytek)
+0
+—
+3
+3
+30
+12
+3
+~55
+1
+10
+4
+4
+30
+12
+3
+~55
+2
+20
+4
+4
+34
+12
+3
+~51
+3
+30
+4
+5
+34
+12
+3
+~51
+4
+40
+4
+5
+38
+16
+3
+~43
+5
+50
+4
+6
+38
+16
+5
+~41
+
+Celkem shardů 1→5: 150
+Mapování rarity (STS2 inspirace): Common ≈ STS Common · Rare ≈ STS Uncommon · Epic ≈ STS Rare · Legendary nad Rare. Roll je sekvenční: nejdřív Legendary pásmo, pak Epic, pak Rare, jinak Common.
+2.4 Chapel — block
+Level
+Cena
+Block na start bitvy
+1
+12
++2
+2
+24
++4
+3
+36
++6
+
+Celkem shardů 1→3: 72
+3. Zlato za fight
+Encounter
+Gold range
+Normal
+18–28
+Elite
+40–55
+Boss
+95–110
+
+Skip karty po Normal: +10 gold. Artifacty mohou gold dál upravit (např. Charm of Fortune).
+4. Shop ceny (STS2-inspired)
+4.1 Karty (±5 % variance)
+Rarity
+Base
+Typický range
+Basic
+30
+~29–32
+Common
+50
+~48–53
+Rare
+75
+~71–79
+Epic
+150
+~143–158
+Legendary
+225
+~214–236
+
+Jedna náhodná karta je ve slevě 50 %.
+4.2 Relikvie (±15 % podle ArtifactType)
+Type
+Base
+Typický range
+Common
+175
+~149–201
+Uncommon
+225
+~191–259
+Rare
+275
+~234–316
+Legendary / Boss
+300
+~255–345
+Event
+225
+~191–259
+Cursed
+150
+~128–173
+
+4.3 Card removal
+75 + 25 × počet_předchozích_remove → 75, 100, 125, …
+5. Reward flow (Elite combo)
+Elite dává kartu + relikvii na jedné scéně.
+Pořadí libovolné: karta první → zůstane volba relikvie; relikvie první → zůstane volba karty.
+Scéna končí až po obou volbách (nebo skip zbývající).
+Boss: typicky jen artefakty (až 3 sloty), bez skip.
+6. Layout limity (důležité pro design)
+Scéna
+Card sloty
+Artifact sloty
+Naplnění
+Shop
+6
+3
+Library / Market
+Reward
+4
+3
+Library (karty) · encounter (relics)
+
+7. Celkové shardy na max vesnici
+Budova
+Max investice
+Well
+120
+Market
+90
+Library
+150
+Chapel
+72
+Celkem
+432 shardů
+
+ale upgrady postav jako má paladin a hunter si řekneme později 
+
+počet shardu t oco se teď vidí v pravo nahoře dát do nějakého rámečku nebo jako UI aby to bylo viditelnější
+</user_query>
+
+===== LINE 165 ROLE=user LEN=151 =====
+<timestamp>Sunday, Aug 16, 2026, 8:27 PM (UTC+2)</timestamp>
+<user_query>
+kamerou stále nejde hýbat
+
+a text zvětšit shards .. je moc malý
+</user_query>
+
+===== LINE 171 ROLE=user LEN=123 =====
+<timestamp>Sunday, Aug 16, 2026, 8:33 PM (UTC+2)</timestamp>
+<user_query>
+teď Levým nejde klikat na ty budovy
+</user_query>
+
+===== LINE 175 ROLE=user LEN=181 =====
+<timestamp>Sunday, Aug 16, 2026, 8:37 PM (UTC+2)</timestamp>
+<user_query>
+když vylepším kaply na max přijde my že nedrží tu pozici co jsme nastavil a je to nějak velký
+</user_query>
+
+===== LINE 179 ROLE=user LEN=304 =====
+<timestamp>Sunday, Aug 16, 2026, 8:44 PM (UTC+2)</timestamp>
+<user_query>
+to jsem nemyslel aby kaple byly všechny stejně velký ale aby se to klidně zvětšovalo ale u upgrade 0 1 2 vypadaly dobře ale pak skok na 3 se to masivně zvětšilo nechci stejně velký ale trochu zmenšit poslední upgrade
+</user_query>
+
+===== LINE 183 ROLE=user LEN=199 =====
+<timestamp>Sunday, Aug 16, 2026, 9:03 PM (UTC+2)</timestamp>
+<user_query>
+u kaple zvětši 1 2 3 a zmenši 0 jelikžo 0 je roztáhnutý v těch px x px skoro po celku ale 1 2 3 jsou jži budovi
+</user_query>
+
+===== LINE 187 ROLE=user LEN=110 =====
+<timestamp>Sunday, Aug 16, 2026, 9:05 PM (UTC+2)</timestamp>
+<user_query>
+kaple 1 zmenšit trochu
+</user_query>
+
+===== LINE 190 ROLE=user LEN=671 =====
+<timestamp>Sunday, Aug 16, 2026, 9:09 PM (UTC+2)</timestamp>
+<user_query>
+teď je dobrý přemýšlet nad tím upgrades co má postava paladin momentálně a co ostatní budovi 
+
+jelikož market a library bych klidně zanechal 
+
+postavy kterým budovi jako je trapper tak budova by měla být rádoby zašedlá nebo tak aby bylo vidět že je neaktivní ruina.. teprve po tom co se unlockne trapper pak lze vylepšovat budovu 
+
+taky si musímeříct co a jak a proč by se vylepšovala taverna to taky musí něco dělat přepni se na chat a jdeme dělat brainstorming.. taky si myslím že levlování budov bude větší pro ty postavy 
+
+a taky materiály nové k těm shardům a poté ty extraction
+</user_query>
+
+===== LINE 195 ROLE=user LEN=739 =====
+<timestamp>Sunday, Aug 16, 2026, 9:21 PM (UTC+2)</timestamp>
+<user_query>
+taky právě chci aby jsi do toho bral na requirment level té postavy musíme si taky určit požadovaný minimální level postavy na ty upgrades 
+
+a hlavně by upgrade těch budov postav jako je kaple musí mít tu velkou váhu musí tam být znát že ta postava sílí prostě a právě proto si myslím že studna by neměla být nějak jako brán globální +max hp ale musíme zavést něco jiného 
+
+to by měly mít vlastní budovy ty hp navíc 
+nevím startovní karty navíc nebo lepší startovní karty, upgrade karet do začátku třeba.. artefakt uděláme pak třeba startovní pro paladina special 
+
+unlock třeba nových karet klidně, a třeba move by pak byl o 1 větší než má teď těch 2
+</user_query>
+
+===== LINE 206 ROLE=user LEN=424 =====
+<timestamp>Sunday, Aug 16, 2026, 9:28 PM (UTC+2)</timestamp>
+<user_query>
+Vesnice: sdílené vs budovy postav (v2)
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+</user_query>
+
+===== LINE 216 ROLE=user LEN=3150 =====
+<mcp_meta_tools>
+You have access to MCP (Model Context Protocol) tools through `GetMcpTools` and `CallMcpTool`.
+
+## MCP Tool Discovery and Invocation
+
+Use `GetMcpTools` to discover tool schemas, then `CallMcpTool` to invoke them. Aim to minimize round-trips: ideally one `GetMcpTools` call followed by one `CallMcpTool` call.
+
+If the user mentions, references, or links to a product or service that corresponds to an available MCP server, and the request likely depends on information from that service, proactively inspect that MCP server before answering. Do not wait for the user to explicitly ask you to use MCP. If you are unsure which server matches, use `GetMcpTools` with a pattern based on the service name.
+
+`GetMcpTools` supports four modes:
+
+1. `{"server":"<id>"}`: returns full input schemas and full descriptions for every tool on that server. Preferred when you know which server to use.
+2. `{"server":"<id>","toolName":"<name>"}`: returns the full schema and full description for one tool.
+3. `{"pattern":"<regex>"}`: searches tool and server names across all servers using RE2 syntax (no backreferences, lookahead, or lookbehind). Use when you're unsure which server has the tool you need.
+4. No arguments: returns a catalog of all servers with tool names and short descriptions. Only use this if you have no idea which server or tool to look for — in most cases, prefer fetching by server or pattern instead.
+
+Pattern-search and catalog results shorten long descriptions, marked by a trailing "... [truncated]"; server and single-tool lookups always return the complete description.
+
+MANDATORY - Always call `GetMcpTools` to discover a tool's schema before invoking it with `CallMcpTool`. If you already know the server, go directly to it rather than listing the full catalog first.
+
+If the available MCP tools do not fully support what the user asked you to do, complete the work you can with the current tool set. In your work summary, include what you were unable to do with MCP and why. Do not use browser automation to work around missing or unavailable MCP tools unless the user explicitly asks you to use the browser.
+
+Available MCP servers:
+
+<mcp_meta_tool_servers>
+<mcp_meta_tool_server name="cursor-app-control" tools="move_agent_to_root, move_agent_to_cloned_root, create_project, rename_chat, cursor_dialog, open_resource, open_automation" serverUseInstructions="Controls the Cursor application itself (workspace root, projects, opening resources, automations, and local task drafts, user rules, chat title). See each tool description for usage." />
+</mcp_meta_tool_servers>
+
+## MCP Resource Access
+
+You also have access to MCP resources via `FetchMcpResource`.
+If a relevant server is marked as needing authentication, or if an MCP tool call fails with an authentication/authorization error, call `mcp_auth` for that server, then inspect that server again and retry the original request if appropriate. Do not call `mcp_auth` just because it is listed, and do not repeatedly call it if authentication did not fix the failure. Do not call `mcp_auth` in parallel; authenticate only one server at a time.
+</mcp_meta_tools>
+
+===== LINE 217 ROLE=user LEN=424 =====
+<timestamp>Sunday, Aug 16, 2026, 9:28 PM (UTC+2)</timestamp>
+<user_query>
+Vesnice: sdílené vs budovy postav (v2)
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+</user_query>
+
+===== LINE 257 ROLE=user LEN=384 =====
+<timestamp>Sunday, Aug 16, 2026, 9:43 PM (UTC+2)</timestamp>
+<user_query>
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+</user_query>
+
+===== LINE 258 ROLE=user LEN=162 =====
+<timestamp>Sunday, Aug 16, 2026, 9:43 PM (UTC+2)</timestamp>
+<user_query>
+dále potřebuji rádoby restart metaprogresse kompletně projistotu.. jelikžo
+</user_query>
+
+===== LINE 259 ROLE=user LEN=384 =====
+<timestamp>Sunday, Aug 16, 2026, 9:43 PM (UTC+2)</timestamp>
+<user_query>
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+</user_query>
+
+===== LINE 260 ROLE=user LEN=264 =====
+<timestamp>Sunday, Aug 16, 2026, 9:43 PM (UTC+2)</timestamp>
+<user_query>
+dále potřebuji rádoby restart metaprogresse kompletně projistotu.. jelikož když si to zahrajou nový update i ostatní co hrali předchozí verze tak aby nebyl bordel a nepadalo to
+</user_query>
+
+===== LINE 271 ROLE=user LEN=203 =====
+<timestamp>Sunday, Aug 16, 2026, 9:48 PM (UTC+2)</timestamp>
+<user_query>
+takže další plán s village potřebuji uložit do dokumentu následně to ulož commitni všechno okomentu issues a pushni
+</user_query>
+

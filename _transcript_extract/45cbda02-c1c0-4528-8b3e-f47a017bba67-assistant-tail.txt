@@ -1,0 +1,32 @@
+===== ASSISTANT SNIP 38/42 =====
+Opraveno.
+
+**Příčina:** AI A* v `EnemyAIBase.update_astar_grid` spojovala sousedy i mimo mapu. ID bodu `y * cols + x` pro buněku mimo grid kolidovalo s reálnou buněkou na druhém okraji → wrap/teleport (na cross mapě šířky 13 to vypadá přesně jako „2 kroky dozadu, 3. skok k hráči“).
+
+**Fix:**
+1. Před `connect_points` kontrola `is_valid_grid_position` + `is_cell_active`
+2. V `BattleScene` MOVE: pokud cesta skočí o víc než 1 pole, krok se zahodí a zaloguje
+
+Na `fortress_pack` by scout měl jít jen po sousedních polích, ne přes okraj.
+
+===== ASSISTANT SNIP 39/42 =====
+Ano — přesně tak. Bug byl ve společném AI A* (`EnemyAIBase`), ne jen u scoutky. Kdokoli šel kolem okraje (hlavně na cross/nepravidelné mapě), mohl „projít“ na druhou stranu a objevit se za tebou.
+
+Oprava platí pro všechny nepřátele, co tím A* chodí.
+
+===== ASSISTANT SNIP 40/42 =====
+Obě změny **jsou na disku** — „failed to modify“ bylo falešné (nebo jen UI glitch).
+
+1. `scripts/ai/EnemyAIBase.gd` — bounds check před `connect_points`
+2. `scenes/battle/BattleScene.gd` — guard proti skoku v MOVE path
+
+Stačí znovu načíst scénu / restartnout hru a otestovat `fortress_pack`.
+
+===== ASSISTANT SNIP 41/42 =====
+Ano — **tento konkrétní wrap/teleport přes okraj** by už neměl nastat.
+
+Hlavní A* to už nespojuje, a kdyby někdy přišla špatná cesta, MOVE ji stejně zastaví na skoku.
+
+===== ASSISTANT SNIP 42/42 =====
+Hotovo. Na líci karty teď místo holého čísla + block uvidíš **„Block = current HP“** / **„Blok = aktuální HP“** (stejný styl jako Shield Bash „Dmg = Block“). Tooltip zůstává plný text.
+

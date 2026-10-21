@@ -1,0 +1,78 @@
+===== LINE 1 ROLE=user LEN=376 =====
+<timestamp>Friday, Aug 14, 2026, 10:35 PM (UTC+2)</timestamp>
+<user_query>
+hele je začít skládat příběh toho proč se hra jmenuje Projekt LOOP 
+
+proč se to odehrává ve světě dark fantasy, proč hrdinky jsou sexy waifu,
+proč musíš zabíjet monstra nebo prostě enemy
+co je to za svět 
+prostě vytvořit backround, příběh, pozadí toho co se reálně děje 
+
+nějaké návrhy ?
+</user_query>
+
+===== LINE 4 ROLE=user LEN=215 =====
+<timestamp>Friday, Aug 14, 2026, 10:41 PM (UTC+2)</timestamp>
+<user_query>
+proč bereš jako loop jako časovou smyčku ? nehleď na to co řekl ve feedbacku hledáme něco originálního co bude sedět do té hry
+</user_query>
+
+===== LINE 7 ROLE=user LEN=191 =====
+<timestamp>Friday, Aug 14, 2026, 10:41 PM (UTC+2)</timestamp>
+<user_query>
+hlavně ber to že ta hra se jmenuje Projekt LOOP ne jenom loop nebo že je to project ale  
+Projekt LOOP
+</user_query>
+
+===== LINE 10 ROLE=user LEN=1036 =====
+<timestamp>Friday, Aug 14, 2026, 10:45 PM (UTC+2)</timestamp>
+<user_query>
+Projekt LOOP byl oficiální program.
+Měl vyrobit, vycvičit a nasazovat specifické bojovnice — ženy schopné nést a používat nestabilní moc (karty, artefakty, „ozvěny“).
+Projekt oficiálně skončil. Nebo selhal. Nebo byl utajen a pohřben.
+Ale infrastruktura se nikdy nevypnula.
+
+Vesnice = zbylá základna / administrační uzel projektu.
+Ty = pořád aktivní jednotka. Systém tě pořád posílá ven.
+Mise = staré protokoly, které už nikdo nepřepsal.
+Shardy / materiál = zbytky zdrojů, které se projekt naučil recyklovat.
+Budovy = původní oddělení projektu (kaple = kondicionování, hospoda = nábor, knihovna = záznamy…).
+Enemy = to, co projekt nedokázal uklidit, nebo co vzniklo jako vedlejší produkt.
+Boss = něco, co protokol pořád označuje jako prioritní cíl — i když už dávno neví proč.
+
+LOOP tedy není časová smyčka.
+Je to uzavřený pracovní cyklus, který se nikdy nevypnul:
+vyjít → splnit → vrátit se → nahlásit / odevzdat → jít znovu.
+A ty v něm pořád jsi.
+</user_query>
+
+===== LINE 13 ROLE=user LEN=106 =====
+<timestamp>Friday, Aug 14, 2026, 10:46 PM (UTC+2)</timestamp>
+<user_query>
+sestav lore bibli
+</user_query>
+
+===== LINE 19 ROLE=user LEN=1015 =====
+<timestamp>Friday, Aug 14, 2026, 10:59 PM (UTC+2)</timestamp>
+<user_query>
+Máš pevný základ, ale spoustu věcí záměrně necháváš otevřených. Díky tomu můžeš odpovědi dávkovat postupně a přirozeně:
+Jak to rozšiřovat
+
+MístoCo odhalovatDialogy postavOsobní vztah k projektu („já si pamatuju jen výcvik“, „některé protokoly už neberu vážně“)Vesnice / budovyCo jednotlivá oddělení dřív dělala, co z nich zbyloEventyStaré záznamy, poškozené direktivy, místa kde protokol selhalPo bossoviProč tenhle cíl pořád visí v prioritách, co projekt nedokázal uzavřítUnlock nové postavyJiná řada / specializace, jiný pohled na stejný systém
+Důležité pravidlo
+Nikdy nevysvětluj všechno najednou.
+Hráč má nejdřív pochopit jen:
+
+Jsem jednotka.
+Vesnice je základna.
+Cyklus pořád běží.
+
+Teprve později (přes eventy, bossy, dialogy) dostává:
+
+Projekt byl pohřben.
+Už nemusí existovat nikdo, kdo by ho měl právo vypnout.
+Některé cíle pořád běží ze setrvačnosti.
+
+Tím pádem lore roste s hrou, místo aby bylo všechno v tutorialu.
+</user_query>
+

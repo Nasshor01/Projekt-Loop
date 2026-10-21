@@ -1,0 +1,141 @@
+===== LINE 1 ROLE=user LEN=130 =====
+<timestamp>Sunday, Aug 2, 2026, 5:53 PM (UTC+2)</timestamp>
+<user_query>
+co podle issues a project máme dále dělat ?
+</user_query>
+
+===== LINE 11 ROLE=user LEN=896 =====
+<timestamp>Sunday, Aug 2, 2026, 8:19 PM (UTC+2)</timestamp>
+<user_query>
+ono paladin run již za mě funguje dobře ale ano je třeba to řádně otestovat do poslední kapky takzvaně....
+
+ale než vydám alfu 
+
+já si myslím že encounterů by mělo být více 
+
+to samé artefaktů rozdělené do těch rarit skutečně 
+
+a myslím si že podstatnou část je to mít opravdu alpha verze že již se budou přidávat konent a balancovat 
+
+ne měnit mechanika hry 
+
+to znamená že jak já hraju paladina on moc není taktický na grid prostě 
+
+chtělo by to přece jen před alphou něco přidat aby to bylo opravdu taktické i pro nudné postavy  trapper je naopak vynikající za mě tam ta taktika funguje skvěle musíš jít zpět používat trapky a lákat enemy do nich 
+
+ale paladin je prostě takovej přibliž se k enemy a fighti bez nutnosti dělat taktiku vždycky pořádný close range 
+
+idk zda to tak nechat nebo něco vymyslet ?
+</user_query>
+
+===== LINE 15 ROLE=user LEN=111 =====
+<timestamp>Sunday, Aug 2, 2026, 8:25 PM (UTC+2)</timestamp>
+<user_query>
+ano chci rožšířit issues
+</user_query>
+
+===== LINE 26 ROLE=user LEN=436 =====
+<timestamp>Sunday, Aug 2, 2026, 8:46 PM (UTC+2)</timestamp>
+<user_query>
+něco ti pošlu všechny staré dokumenty jo c:\Users\Jirka\Downloads\projekt loop, herní a obchodní plán.docx c:\Users\Jirka\Downloads\Refaktoring bojového systému pro iniciativu.docx c:\Users\Jirka\Downloads\plan postav v2.docx c:\Users\Jirka\Downloads\plán postav.docx 
+
+jsou to staré moc si z toho teď neber příkald jenom jsem chtěl aby jsi to viděl
+</user_query>
+
+===== LINE 32 ROLE=user LEN=169 =====
+<timestamp>Sunday, Aug 2, 2026, 8:47 PM (UTC+2)</timestamp>
+<user_query>
+ale co si o tom myslíš ? kompletně ? jak to bereš ty dokumenty vs jaký to je teď ?
+</user_query>
+
+===== LINE 36 ROLE=user LEN=312 =====
+<timestamp>Sunday, Aug 2, 2026, 8:52 PM (UTC+2)</timestamp>
+<user_query>
+teď my řekni jak přesně to má vymyšlený sts 2 co se týče encounteru na patrech.. jelikož tam nikdy nepotkáš přece stejné encountery a otazník není vždy event ale cokoliv ve sts 2 to je enemy normal, elite nebo event nebo shop
+</user_query>
+
+===== LINE 41 ROLE=user LEN=200 =====
+<timestamp>Sunday, Aug 2, 2026, 8:56 PM (UTC+2)</timestamp>
+<user_query>
+já nechám u nás otazník jako event... myslím si že později u nás event muže být cokoliv ale vždycky to bude event
+</user_query>
+
+===== LINE 44 ROLE=user LEN=172 =====
+<timestamp>Sunday, Aug 2, 2026, 8:57 PM (UTC+2)</timestamp>
+<user_query>
+a co ty enemy ? mám pocit že v dokumentech co jsem poslal tam byly takové zmínky ne ?
+</user_query>
+
+===== LINE 51 ROLE=user LEN=306 =====
+<timestamp>Sunday, Aug 2, 2026, 9:07 PM (UTC+2)</timestamp>
+<user_query>
+tak my tedy řekni jaké nové encountery udělat ? já udělám či najdu přesné sprity a pak začneme dávat buď stavající AI nebo vytvoříme nové .. jelikož všechny ostatní AI + encounteři byli puvodně jako placeholder podstatě
+</user_query>
+
+===== LINE 56 ROLE=user LEN=563 =====
+[Image]
+<image_files>
+The following images were provided by the user and saved to the workspace for future use:
+1. C:\Users\Jirka\.cursor\projects\d-Games-projekt-loop-v2/assets/c__Users_Jirka_AppData_Roaming_Cursor_User_workspaceStorage_empty-window_images_11-5c7989d0-8b70-48be-a02b-db701fe13de0.png
+
+These images can be copied for use in other locations.
+</image_files>
+<timestamp>Sunday, Aug 2, 2026, 9:20 PM (UTC+2)</timestamp>
+<user_query>
+dej my kvalitní prompt abych toho golbina proměnil v goblin archera nebo toho hobgoblina ale sexy verze
+</user_query>
+
+===== LINE 59 ROLE=user LEN=221 =====
+<timestamp>Sunday, Aug 2, 2026, 9:22 PM (UTC+2)</timestamp>
+<user_query>
+a nebo na základě goblinu co máme  ve hře my mužešš dát samostatný prompt aby my ho asesprite pixellab vygeneroval dle našich představ
+</user_query>
+
+===== LINE 65 ROLE=user LEN=107 =====
+<timestamp>Sunday, Aug 2, 2026, 9:23 PM (UTC+2)</timestamp>
+<user_query>
+není lepší 256x256 ?
+</user_query>
+
+===== LINE 69 ROLE=user LEN=184 =====
+<timestamp>Sunday, Aug 2, 2026, 9:28 PM (UTC+2)</timestamp>
+<user_query>
+a kde je náše sexy archerka ? to je muj reálný hook proč to dělám aby charakteři ve hře byly sexy
+</user_query>
+
+===== LINE 73 ROLE=user LEN=164 =====
+<timestamp>Sunday, Aug 2, 2026, 9:44 PM (UTC+2)</timestamp>
+<user_query>
+exportnul jsem 2 archery... dále co vygenerovat dej my prompty a já to udělám
+</user_query>
+
+===== LINE 78 ROLE=user LEN=140 =====
+<timestamp>Sunday, Aug 2, 2026, 9:56 PM (UTC+2)</timestamp>
+<user_query>
+dobre přidal jsem zatím tohle více zatím nebudu dělat
+</user_query>
+
+===== LINE 93 ROLE=user LEN=273 =====
+<timestamp>Sunday, Aug 2, 2026, 9:59 PM (UTC+2)</timestamp>
+<user_query>
+taky bych chtěl aby první 3 encounteři na mapě prostě první 3 patra byly tak nějak lehé enemy protože když dostanu hned na začátku 2x demon assasin s monkem tak to není uplně lehký start
+</user_query>
+
+===== LINE 101 ROLE=user LEN=288 =====
+<timestamp>Sunday, Aug 2, 2026, 10:01 PM (UTC+2)</timestamp>
+<user_query>
+dále takový ten victory label co jsi kdysi dělal když vyhraju fight umře poslední enemy je tak torchu divnej více dole skoro mezi kartama .. a já nikde v projektu ten laben nenašel abych si ho upravil
+</user_query>
+
+===== LINE 107 ROLE=user LEN=153 =====
+<timestamp>Sunday, Aug 2, 2026, 10:08 PM (UTC+2)</timestamp>
+<user_query>
+a karty v reward scene mají hned nazačátku hover že jsou zvětšené
+</user_query>
+
+===== LINE 119 ROLE=user LEN=210 =====
+<timestamp>Sunday, Aug 2, 2026, 10:12 PM (UTC+2)</timestamp>
+<user_query>
+ukládám teď push na github.. pokud jsme udělali milník chce to další verze, upravit issues a dát my text verze pro discord
+</user_query>
+

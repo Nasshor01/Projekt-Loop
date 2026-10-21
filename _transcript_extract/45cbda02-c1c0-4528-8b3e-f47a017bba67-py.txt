@@ -1,0 +1,82 @@
+===== Q1 len=223 =====
+taaakže co máme z issues dále na pořadí? každý task vbyužívej více agentů rozdělení prací, když potřebuješ povolení neco kodově vyhledávání atd mužeš máš automatické povolení nechci to všechno odklikávat aby jsi čekal na mě
+
+===== Q2 len=970 =====
+Po #69 (hotovo) a #67 (jen tutorial slice) byla další vlna tahle:
+
+#53 Early melee pacing
+Míň „pohni se / End Turn / čekej“. Bližší spawny, Druid míň kite/root smyčka. Tohle LeySpot vypnul.
+
+#44 + #64 Cheese
+Oltář upgrade-all, 0-cost štíty, stall-heal, burn→síla. Pořád free win.
+
+#58 + #54
+Settings: drag vs click + dokumentace ovládání; LOOP naming (NG+ není jen placeholder).
+
+Drobnosti z #67, co zbyly
+Cover telegraph (+50 %) a Cover Fire karta (název vs efekt).
+
+Pak až Mid/Alpha směr: overlay/resolution (#57), mapa (#62), Trapper (#37), spatial village (#49), art (#59/#60).
+
+Prakticky teď: #53 pacing → #44+#64 cheese → #58 settings toggle.
+
+jenže jak to udělat.. já nechci meele pacing... bližší enemy spawny.. jenom proto že paladin je meele jednotka basic tank že prý museli dělat dead turny protože všichni byly moc daleko.. ale za mě je to špatně si myslím... v heroes 3 taky všichni se spawnují na druhé straně a nikdo si nestěžoval že jsou mco daleko že ?
+
+===== Q3 len=532 =====
+je fakt že by se to dalo vyřešit základníma pool karet pro paladina, sice v poolu reward se dá najít nimble move ale je to jenom RNG takže to chce aby měl rovnou v základu asi kartu taunt a bude to mít range s tím že při kartě zahrání se okamžitě podle pathingu AI přiblíží o 1 pole blíže a příští kolo když enemy je na tahu tak se přiblíží dle jeho movemntu ? to by šlo a zároveň budou další karty push a pull do poolu 
+
+a asi víme že to budou jednoduché karty hlavně za 0 energie ! a dále dle návrhu někde bude ten holy push karta
+
+===== Q4 len=47 =====
+ne tohle uděláme před alphou... to je must be !
+
+===== Q5 len=41 =====
+tak jako řekni my více o těch kartách....
+
+===== Q6 len=375 =====
+taunt asi prostě ok klasický taunt
+ale pod shield push bych si představil něco že je mezi námi mezera 1 pole například tak k němu rushnu trefím ho když mám shield třeba 10 tak mu dám 5 dmg a odstrčím ho o jedno pole třeba 
+
+divine pull si představuji jako holy věc že ho přitáhnu a pokud je právě demon nebo undead tak mu dám těch pouze bonusový dmg  HOLY 
+
+to samý holy push
+
+===== Q7 len=268 =====
+proč vlastně když máš v kodech ty emote ikonky proč se nenahradí stejnýma ikonkama jako mají intent jako napříkald když dáš block tak tam se zobrazuje zkurvená emote ikonka namísto intent ikonky stejné.... upřímně chci nahradit všechny ty EMOTE ikonky za reálný ikonky
+
+===== Q8 len=70 =====
+takže všechny emote ikonky se již nepoužívají  a byly reálné náhrady ?
+
+===== Q9 len=325 =====
+ale ano vidíš kde byl spawnutý že ? a já to viděl on byl na stejné lince na druhé straně mapy.. a ano začínal on a zničeho nic se my objevil za zády prostě se tam přesunul to je více než 3 move a méně než 1 tah 
+
+a pak jsem použil taunt protože mě zajímaly ty ikonky a dal jsem ukončit kolo protože mě zajímalo co se bude dít
+
+===== Q10 len=82 =====
+to bude težký ..a víš že enemy se mají vždy spawnovat na druhé straně mapy ode mně
+
+===== Q11 len=85 =====
+ale tak to mohli vesměs uplně všichni když šli přes okraj mapy že se objevili za mnou
+
+===== Q12 len=72 =====
+koukni na to zda jsi ty změny udělal mě to asi napsalo failed to modifiy
+
+===== Q13 len=40 =====
+takže tento bug už by nikdy neměl nastat
+
+===== Q14 len=181 =====
+unbreakable fait karta by měla mít na kartě napsáno že gain block to your current health nějak.. je tma pouze číslo a block a tooltip právě ukazuje gain blcok to your current health
+
+
+
+######## LAST ASSISTANT (up to 3) ########
+
+----- ASSIST -----
+Opraveno. **Příčina:** AI A* v `EnemyAIBase.update_astar_grid` spojovala sousedy i mimo mapu. ID bodu `y * cols + x` pro buněku mimo grid kolidovalo s reálnou buněkou na druhém okraji → wrap/teleport (na cross mapě šířky 13 to vypadá přesně jako „2 kroky dozadu, 3. skok k hráči“). **Fix:** 1. Před `connect_points` kontrola `is_valid_grid_position` + `is_cell_active` 2. V `BattleScene` MOVE: pokud cesta skočí o víc než 1 pole, krok se zahodí a zaloguje Na `fortress_pack` by scout měl jít jen po sousedních polích, ne přes okraj.
+
+----- ASSIST -----
+Ano — přesně tak. Bug byl ve společném AI A* (`EnemyAIBase`), ne jen u scoutky. Kdokoli šel kolem okraje (hlavně na cross/nepravidelné mapě), mohl „projít“ na druhou stranu a objevit se za tebou. Oprava platí pro všechny nepřátele, co tím A* chodí.
+
+----- ASSIST -----
+Obě změny **jsou na disku** — „failed to modify“ bylo falešné (nebo jen UI glitch). 1. `scripts/ai/EnemyAIBase.gd` — bounds check před `connect_points` 2. `scenes/battle/BattleScene.gd` — guard proti skoku v MOVE path Stačí znovu načíst scénu / restartnout hru a otestovat `fortress_pack`.
+

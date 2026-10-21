@@ -1,0 +1,355 @@
+===== Q1 len=39 =====
+potřebuji stáhnout pull aktuální github
+
+===== Q2 len=59 =====
+je toho spoustu nového v issues dostal jsem velké feedbacky
+
+===== Q3 len=49307 =====
+c:\Users\Jirka\Downloads\Projekt LOOP.docx 
+
+Projekt LOOP Playtest Impressions and Gameplay Feedback
+2 zdroje
+·
+14. 8. 2026
+Texty popisují vývoj nezávislé videohry Projekt LOOP, která kombinuje karetní roguelike s taktickým pohybem po mřížce. Technická dokumentace podrobně rozebírá ekonomiku vesnice, systém vylepšování budov a unikátní herní artefakty ovlivňující bojové statistiky. Produktová roadmapa stanovuje strategii pro uvolňování verzí, cenotvorbu a etický přístup k využití umělé inteligence v herním umění. Zpětná vazba od testerů identifikuje kritické chyby v tutoriálu, nedostatky v popiscích karet a problémy s tempem soubojů u postav pro boj zblízka. Přiložený přepis z playtestu tyto výtky potvrzuje a zdůrazňuje rozpor mezi očekáváním hráčů a skutečnými mechanikami v rané alfa verzi. Celkově zdroje poskytují komplexní pohled na design, plánování a aktuální stav vývoje tohoto českého herního projektu.
+
+Dnes • 7:45
+Blok A — Tutorial / bugy (blocker)
+Popiš přesně, co se stalo u campfire / upgrade obrazovky v tutoriálu: co viděl, co klikal, proč uvízl.
+Co přesně udělal po soft-locku (Restart / Menu / Close)? Kam ho to poslalo?
+Byly i jiné bugy nebo soft-locky mimo tutorial campfire? Seznam s časovými značkami pokud jsou.
+
+Thoughts
+Campfire / upgrade obrazovka v tutoriálu
+Co viděl: Hráč se dostal na obrazovku kempu (campsite/campfire), kde měl vybrat kartu k vylepšení ("choose card to upgrade")
+. Na obrazovce však nebylo vůbec nic na výběr ("there's nothing to choose here")
+. Viděl pouze přepínač "show upgrades off on" a tlačítko pro potvrzení "click to confirm"
+.
+Co klikal: Zkoušel klikat všude možně – zkoušel klikat pravým tlačítkem ("right click it here")
+, přepínat zobrazení vylepšení ("show upgrades off on")
+ a opakovaně klikal na tlačítko pro potvrzení ("click to confirm")
+. Zkoušel také, zda se dá z lokace odejít ("can I leave this place then")
+, a pokoušel se klikat na cokoli dalšího, co by ho posunulo dál (zmiňuje "close floor loop"), ale bez úspěchu
+.
+Proč uvízl: Hra po něm vyžadovala, aby v rámci tutoriálu vybral kartu, zobrazil její upgrade a potvrdil ho. Protože se mu ale žádné karty k výběru nenačetly, nemohl akci dokončit a hra ho nepustila dál, čímž došlo k soft-locku
+.
+Reakce na soft-lock a kam ho to poslalo
+První pokus (Restart): Hráč klikl na tlačítko Restart
+. To ho však nevrátilo na začátek tutoriálu, ale poslalo ho to rovnou do nového běžného průchodu hrou (new run)
+.
+Druhý pokus (Opakování tutoriálu): Rozhodl se dát tutoriálu ještě jednu šanci a spustil ho znovu
+. Odehrál souboj přesně podle pokynů hry, ale u upgradu karty v kempu skončil opět ve stejném soft-locku
+.
+Kam ho to poslalo dál: Po druhém záseku se krátce podíval na webovou stránku hry, zda tam o tutoriálu nejsou nějaké informace
+. Následně tutoriál definitivně opustil a v menu si vybral třídu Paladina, se kterým spustil klasickou hru (mapu s elitními souboji, událostmi, obchodem a bossem)
+.
+Jiné bugy nebo nedostatky mimo campfire v tutoriálu
+Zdrojový přepis neobsahuje explicitní časové značky, proto jsou níže uvedeny pouze popisy chyb v pořadí, jak se ve videu objevily:
+Nepříjemné překrývání textu (vizuální bug): Hráč narazil na problém, kdy se mu textové vrstvy překrývaly přes sebe ("annoying text overlay there how the overlays top of that")
+.
+Chybějící text s popisem efektu na kartě: U karty, která měla udělovat 8 poškození všem nepřátelům v oblasti 3x3 ("deal eight damage to enemies in 3 three area around you"), chyběl na samotné kartě jakýkoli text, který by tento plošný efekt popisoval ("doesn't say anything on the card itself that has some area effect to it")
+.
+Zcela prázdný obchod: Když hráč navštívil obchod, byl úplně prázdný ("empty quite empty")
+. Sám spekuloval, zda je to bug, nebo záměrná mechanika, která má hráče donutit investovat zlato až do upgradů ve vesnici
+.
+Mimo výše zmíněné vizuální a funkční nedostatky hráč na žádný další soft-lock, který by mu zcela zabránil pokračovat v hraní, nenarazil. Hru nakonec ukončil sám dobrovolně kvůli únavě ze zdlouhavých soubojů
+.
+⚔️ Můžeme se podívat na to, jaké konkrétní výhrady měl hráč k hratelnosti, pohybu po gridu nebo k tempu soubojů s nepřáteli.
+Blok B — Combat pacing
+Kde v boji říkal, že je to zdlouhavé? První fight, pozdější, melee vs ranged?
+Co přesně dělal během „prázdných“ tahů (jen pohyb + End Turn)? Kolik tahů odhadem než se dostal do range?
+Co říkal o iniciativě (BG3 bar), brnění/blocku a pozicování na gridu — chválil / nechápal / frustrovalo?
+
+Thoughts
+Zdlouhavo
+...[TRUNC]
+
+
+===== Q4 len=29 =====
+takže co máme dále za práci ?
+
+===== Q5 len=202 =====
+tak jak vylepšit náš interaktivní tutorial ? 
+
+i co se týče ovládání udělal bych to více méně pomocí dialogu ze strany training dummy dokážeš to udělat ? pořádně a robustně? jako ten nejlepší tutorial ?
+
+===== Q6 len=371 =====
+E 0:01:19:352   step: Infinite loop detected. Check set_loops() description for more info.
+  <C++ Error>   Method/function failed. Returning: false
+  <C++ Source>  scene/animation/tween.cpp:408 @ step()
+
+super jenom dummy neměl žádnou intent ikonku 
+
+a taky když jsem jenom kliknul na ovládání jakékoliv wasd myš tak to automaticky skočilo dále aniž bch já dal pokračovat
+
+===== Q7 len=637 =====
+--- Debugging process stopped ---
+  ERROR: res://scenes/ui/Tutorial.gd:138 - Parse Error: Identifier "_terrain_placed" not declared in the current scope.
+  ERROR: res://scenes/ui/Tutorial.gd:157 - Parse Error: Identifier "_terrain_placed" not declared in the current scope.
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/ui/Tutorial.gd" with error "Parse error".
+  ERROR: res://scenes/ui/Tutorial.gd:138 - Parse Error: Identifier "_terrain_placed" not declared in the current scope.
+  ERROR: res://scenes/ui/Tutorial.gd:157 - Parse Error: Identifier "_terrain_placed" not declared in the current scope.
+
+===== Q8 len=192 =====
+skvělí tutoriál je bombastický a funguje za mě skvěle 
+
+ale co takhle začít napojovat náš lehčí lore již zasadit do tutorialu nějak ? 
+
+d:\Games\projekt-loop-v2\docs\LORE_BIBLE_PROJEKT_LOOP.md
+
+===== Q9 len=41 =====
+co přesně je v tom tutorialu za dialogy ?
+
+===== Q10 len=78 =====
+jo to by asi šlo... je to takové nenápadne a myslím si že by to mohlo fungovat
+
+===== Q11 len=166 =====
+a aby později nebyl zamtek v dialogách... kde jsou uchovaný dialogy? nebo je na to nějaký manager? já nechci mít bordel v tom a potřebuji aby všechno mělo svoje místo
+
+===== Q12 len=166 =====
+a aby později nebyl zamtek v dialogách... kde jsou uchovaný dialogy? nebo je na to nějaký manager? já nechci mít bordel v tom a potřebuji aby všechno mělo svoje místo
+
+===== Q13 len=772 =====
+Dva drobné detaily k dočesání (návrhy):
+Reakce na chybu (Fail barks):
+
+Píšeš: „Ještě ne.“ / „Moc daleko...“ / „Potřebuješ ruku? Drž se pokynu.“
+
+Návrh: Ten třetí bark zní trochu moc lidsky/moderně. Aby dál držel chladný tón protokolu, mohl by znát spíš jako automatická výzva trenažéru:
+
+„Odchylka od protokolu. Drž se pokynu.“ nebo „Sled úkonů neodpovídá. Zkusu to znovu.“
+
+Drobnost u vysvětlení Armoru:
+
+Figurína říká: „Brnění zůstává mezi tahy — nezmizí.“
+
+Pokud v tvojí hře brnění skutečně přetrvává do dalšího tahu (na rozdíl od Slay the Spire, kde se na konci tahu maže), je to v pořádku! Pokud se ale na konci tahu maže, tak pozor na formulaci, aby to hráče nemátlo. (Z textu vyplývá, že ho chceš naučit, že ho trefí v tahu soupeře, takže v nepřátelském tahu drží).
+
+===== Q14 len=94 =====
+a ty barky v tom tutorialu by mohly být klidně delší jelikžo člověk si to ani nestihne přečíst
+
+===== Q15 len=63 =====
+vynikající tutorial to je přesně insane a vysvětluje za mě core
+
+===== Q16 len=35 =====
+to znamená dokončený další issues ?
+
+===== Q17 len=67 =====
+69 zavři a 67 ještě nech a okomentuj
+
+nová verze hry, commit a push
+
+===== Q18 len=33 =====
+potřebuji seznam změn pro discord
+
+===== Q19 len=1598 =====
+takhle nějak 
+
+🔧 Patch 0.3.8.2 (mezi buildy / export)
+
+🎵 Export • Soundtrack v exportu — playlist přes ResourceLoader (DirAccess v exportu nefunguje)
+
+🧿 Artefakty / boj • Chalice: draw reshuffle discard pile; prompt výš nad rukou • Další artifact wiring: Bloodrage, Heart of the Loop, Hellchain, Molten Heart, Fractured Bulwark, Verdant Scale…
+
+💾 Save / Continue • Seal / cost karet + loop_level se ukládají a načítají při Continue • Opravy mid-turn draw soft-locku, AoE targetingu, energy refundů, curse cest
+🔧 Patch 0.3.8.3
+
+📚 Tutorial • Camp upgrade + restart tutorial flow — už žádný soft-lock
+
+🌐 i18n • Crash recovery dialog, MP/coop/run prep UI přeložené • TranslationBootstrap — překlady z translations.csv hned při startu (EN/CS)
+🔧 Patch 0.3.8.4
+
+🛠️ Kritické opravy z playtestu • Smrt → New Run: full HP + energie + startovní gold (už ne leftover HP 0 / falešný game-over) • #43 Intenty: threat-first — move-then-attack ukazuje ATTACK jako primární (ne jen MOVE) • Divine Judgment / Divine Protection: FULL_BOARD auto-play + správné highlighty • #66 Druid spirits: dismiss při smrti summoner / spiritů
+
+🃏 Karty • #56 AoE na líci: 3×3 / řada / sloupec / všem (Consecration atd.) • #68 Kletby: cost —, tooltip „Nehratelné“, ON_DRAW / END_OF_TURN triggery (Weakness, Pain) • Všechny .tres — trigger metadata (ON_PLAY / ON_DRAW / END_OF_TURN)
+
+🗺️ Terén (#67) • Hover tooltip na skálu/bahno (název + popis) • Vizuální tint: neprůchodné vs. bahno (zpomalení)
+
+🖥️ UI drobnosti • Initiative bar — tooltip jméno + iniciativa • Enemy panel: Melee / Ranged • Dual intent spacing + zoom fix
+
+===== Q20 len=309 =====
+Set application/file_version
+Set application/product_version
+rcedit (../Builds/0.3.8.5/Projekt_LOOP_v0.3.8.5.exe): 
+  WARNING: scene/resources/resource_format_text.cpp:447 - res://scenes/ui/Tutorial.tscn:4 - ext_resource, invalid UID: uid://b40v0y5l2r6jw - using text path instead: res://scenes/ui/Tutorial.gd
+
+===== Q21 len=53 =====
+spíše si říkám zda by podstatě tohle nemělo být 0.3.9
+
+===== Q22 len=44 =====
+ano a projistotu pak znovu commitni ap ushni
+
+===== Q23 len=3887 =====
+jak to teď upravit? a pak napsat po tom co vložímnovou verzi nový devlog ohledně toho co se dělo, o feedbacku a momentálním zpracování a halvně nový navoněný tutoriál vysvětlucíjí více věcí 
+
+<h1>Projekt LOOP</h1>
+<h2>Position is not a bonus mechanic.<br>It's the core of everything.</h2>
+<p><strong>Most deckbuilders let you stand still and play cards.<br>
+Projekt LOOP makes you think twice about where you stand.</strong></p>
+<hr>
+<h2>What is Projekt LOOP?</h2>
+<p>
+Projekt LOOP is a <strong>tactical roguelike deckbuilder</strong> where movement and positioning matter as much as the cards in your hand.
+Build your deck, travel a branching procedural map, and outsmart enemies that react to distance, health, and battlefield position.
+</p>
+<p>
+This is not a traditional card battler with movement added on top &mdash; combat is built around the <strong>grid</strong>.
+Every card, every AoE, every ability cares about where you stand.
+</p>
+<hr>
+<h2>Key Features</h2>
+<ul>
+<li><strong>Position is power</strong> &mdash; AoE, rows, columns and control tools depend on your placement. Move first, think second, play third.</li>
+<li><strong>Smart enemies with real roles</strong> &mdash; Fighters close in, Archers kite, Assassins flank, Berserkers escalate, supports keep fights ugly.</li>
+<li><strong>Procedural branching runs</strong> &mdash; risk vs reward every node.</li>
+<li><strong>Build-breaking artifacts</strong> &mdash; designed for wild synergies.</li>
+<li><strong>Village meta progression</strong> &mdash; earn shards and invest between runs.</li>
+<li><strong>BG3-style Initiative</strong> &mdash; clear turn order with current + next round preview.</li>
+<li><strong>Real New Game+</strong> &mdash; continue your build and push deeper into the LOOP.</li>
+</ul>
+<hr>
+<h2>Playable Now</h2>
+<p><strong>Paladin</strong> &mdash; holy frontliner and grid controller. Bonus damage vs Undead and Demon. <strong>Recommended starting experience.</strong></p>
+<p><strong>Trapper</strong> &mdash; Experimental class focused on traps and terrain control.<br>
+You can try it, but it currently has only a small set of cards due to the new mechanic, so you most likely won’t reach the boss.</p>
+<p><em>Challenge:</em> If you somehow reach the boss with Trapper and send me a screenshot, I’ll put your name in the game credits.</p>
+<hr>
+<h2>Current Status &mdash; Pre-Alpha 0.3.8.3</h2>
+<p>-HOTFIX with tutorial in new version</p>
+<p>
+The game is now <strong>playable end-to-end</strong>. You can finish runs and progress in the Village.
+A large part of what you see here is expected to make it into Alpha.
+</p>
+<p>
+Bugs will still appear &mdash; this is still Pre-Alpha.
+</p>
+<hr>
+<h2>Important Notes</h2>
+<p><strong>Card readability</strong><br>
+I am still fighting with card readability (fonts, sizes, scaling). This is currently my biggest pain point.<br>
+<strong>Right-click any card</strong> to open a full tooltip if the text is hard to read.</p>
+<p><strong>Controls (short)</strong><br>
+• Play card → Drag from hand onto target/tile<br>
+• Card tooltip → Right-click<br>
+• Move unit → Click unit → click green tile<br>
+• Camera → WASD + Q/E (rotate) + mouse wheel<br>
+• End Turn → Button in UI<br>•Map scrolling mouse wheel</p>
+<hr>
+<h2>What’s new since 0.3.2</h2>
+<ul>
+<li>some SFX + music playlist</li>
+<li>Village hub + shard progression</li>
+<li>~36 artifacts with real behavior</li>
+<li>BG3-style Initiative bar</li>
+<li>Much better card tooltips & UI</li>
+<li>New goblin encounters + smoother early game</li>
+<li>Shop / reward / event UX improvements</li>
+<li>Major playtest polish pass</li>
+</ul>
+<hr>
+<h2>Feedback</h2>
+<p>
+If you find a bug, unclear UI, or have any thoughts &mdash; please tell me.
+Even short feedback helps a lot.
+</p>
+<p>
+Discord: <a href="https://discord.gg/BbP8WBVMkT">https://discord.gg/BbP8WBVMkT</a>
+</p>
+<hr>
+<p><strong>Move. Think. Play.</strong></p>
+
+===== Q24 len=3887 =====
+jak to teď upravit? a pak napsat po tom co vložímnovou verzi nový devlog ohledně toho co se dělo, o feedbacku a momentálním zpracování a halvně nový navoněný tutoriál vysvětlucíjí více věcí 
+
+<h1>Projekt LOOP</h1>
+<h2>Position is not a bonus mechanic.<br>It's the core of everything.</h2>
+<p><strong>Most deckbuilders let you stand still and play cards.<br>
+Projekt LOOP makes you think twice about where you stand.</strong></p>
+<hr>
+<h2>What is Projekt LOOP?</h2>
+<p>
+Projekt LOOP is a <strong>tactical roguelike deckbuilder</strong> where movement and positioning matter as much as the cards in your hand.
+Build your deck, travel a branching procedural map, and outsmart enemies that react to distance, health, and battlefield position.
+</p>
+<p>
+This is not a traditional card battler with movement added on top &mdash; combat is built around the <strong>grid</strong>.
+Every card, every AoE, every ability cares about where you stand.
+</p>
+<hr>
+<h2>Key Features</h2>
+<ul>
+<li><strong>Position is power</strong> &mdash; AoE, rows, columns and control tools depend on your placement. Move first, think second, play third.</li>
+<li><strong>Smart enemies with real roles</strong> &mdash; Fighters close in, Archers kite, Assassins flank, Berserkers escalate, supports keep fights ugly.</li>
+<li><strong>Procedural branching runs</strong> &mdash; risk vs reward every node.</li>
+<li><strong>Build-breaking artifacts</strong> &mdash; designed for wild synergies.</li>
+<li><strong>Village meta progression</strong> &mdash; earn shards and invest between runs.</li>
+<li><strong>BG3-style Initiative</strong> &mdash; clear turn order with current + next round preview.</li>
+<li><strong>Real New Game+</strong> &mdash; continue your build and push deeper into the LOOP.</li>
+</ul>
+<hr>
+<h2>Playable Now</h2>
+<p><strong>Paladin</strong> &mdash; holy frontliner and grid controller. Bonus damage vs Undead and Demon. <strong>Recommended starting experience.</strong></p>
+<p><strong>Trapper</strong> &mdash; Experimental class focused on traps and terrain control.<br>
+You can try it, but it currently has only a small set of cards due to the new mechanic, so you most likely won’t reach the boss.</p>
+<p><em>Challenge:</em> If you somehow reach the boss with Trapper and send me a screenshot, I’ll put your name in the game credits.</p>
+<hr>
+<h2>Current Status &mdash; Pre-Alpha 0.3.8.3</h2>
+<p>-HOTFIX with tutorial in new version</p>
+<p>
+The game is now <strong>playable end-to-end</strong>. You can finish runs and progress in the Village.
+A large part of what you see here is expected to make it into Alpha.
+</p>
+<p>
+Bugs will still appear &mdash; this is still Pre-Alpha.
+</p>
+<hr>
+<h2>Important Notes</h2>
+<p><strong>Card readability</strong><br>
+I am still fighting with card readability (fonts, sizes, scaling). This is currently my biggest pain point.<br>
+<strong>Right-click any card</strong> to open a full tooltip if the text is hard to read.</p>
+<p><strong>Controls (short)</strong><br>
+• Play card → Drag from hand onto target/tile<br>
+• Card tooltip → Right-click<br>
+• Move unit → Click unit → click green tile<br>
+• Camera → WASD + Q/E (rotate) + mouse wheel<br>
+• End Turn → Button in UI<br>•Map scrolling mouse wheel</p>
+<hr>
+<h2>What’s new since 0.3.2</h2>
+<ul>
+<li>some SFX + music playlist</li>
+<li>Village hub + shard progression</li>
+<li>~36 artifacts with real behavior</li>
+<li>BG3-style Initiative bar</li>
+<li>Much better card tooltips & UI</li>
+<li>New goblin encounters + smoother early game</li>
+<li>Shop / reward / event UX improvements</li>
+<li>Major playtest polish pass</li>
+</ul>
+<hr>
+<h2>Feedback</h2>
+<p>
+If you find a bug, unclear UI, or have any thoughts &mdash; please tell me.
+Even short feedback helps a lot.
+</p>
+<p>
+Discord: <a href="https://discord.gg/BbP8WBVMkT">https://discord.gg/BbP8WBVMkT</a>
+</p>
+<hr>
+<p><strong>Move. Think. Play.</strong></p>
+
+===== Q25 len=28 =====
+co si navrhoval dále dělat ?
+
+
+
+######## LAST ASSISTANT (up to 3) ########
+
+----- ASSIST -----
+Hotovo. Verze je **0.3.9**, na `main`: `40482e2`. Exportuj znovu do `../Builds/0.3.9/Projekt_LOOP_v0.3.9.exe`. Starý `0.3.8.5` můžeš zahodit. UID u Tutorialu je v tomhle commitu taky opravené. Discord: 🔧 Patch 0.3.9 📚 Tutorial (#69) • Cvičná figurína učí core: pohyb, Energie, karty, intenty, Brnění přes tah soupeře, melee 1, tábor, mapa • Kamera (WASD / kolečko / MMB / Q-E) — postup jen na Pokračovat • Drag i click; fail barky v dialogu, ne jako číslo nad hlavou 🗺️ Terén (#67 slice) • Skála neprůchodná, bahno zastaví + Slow — v tutorialu i na hoveru • Cover +50 % / Cover Fire — ještě otevřené
+
+----- ASSIST -----
+ runs and progress in the Village. A large part of what you see here is expected to make it into Alpha. Bugs will still appear &mdash; this is still Pre-Alpha. Important Notes Card readability I am still fighting with card readability (fonts, sizes, scaling). This is currently my biggest pain point. Right-click any card to open a full tooltip if the text is hard to read. Controls (short) • Play card → Drag onto target/tile or click card then click target • Card tooltip → Right-click • Move unit → Click yourself → click a green tile • Battle camera → WASD pan, mouse wheel zoom, hold middle mouse / Q-E to rotate • Map pan → Mouse wheel or hold middle/right mouse • End Turn → Button in UI What’s new since 0.3.2 0.3.9: full dummy-spoken tutorial rewrite (mechanics, terrain, intents, armor, map/camp) Playtest polish pass + critical soft-lock / death-reset / intent fixes SFX + music playlist (works in exported builds) Village hub + shard progression ~36 artifacts with real behavior BG3-style Initiative bar Better card tooltips &amp; UI New goblin encounters + smoother early game Shop / reward / event UX improvements Feedback If you find a bug, unclear UI, or have any thoughts &mdash; please tell me. Even short feedback helps a lot. Discord: https://discord.gg/BbP8WBVMkT Move. Think. Play. ``` --- ### 2) itch Devlog (nový post po uploadu 0.3.9) **Title:** `0.3.9 — Playtest feedback + a tutorial that actually teaches the game` **Body:** ```html 0.3.9 is live This build is less about another hotfix stack and more about one question playtesters kept asking without saying it out loud: “Okay… but how do I actually play this?” What happened after the last playtests External playtests (video + itch + Reddit) were brutal in the useful way. People liked the music, the grid fantasy, and the “think twice where you stand” pitch. They also bounced hard when the game expected them to already know Energy, free move, intents, armor timing, terrain, and map controls. So the last stretch of work went into two tracks: Kill soft-locks and trust bugs from earlier patches (tutorial camp, death → New Run leftovers, intents that lied, curse cards looking playable, etc.) Rewrite the tutorial so first contact teaches the real core loop, not just “click camp and upgrade something” The big thing in 0.3.9: dummy-spoken tutorial The training dummy now coaches you through the fight like leftover drill protocol. It explains, then waits for the correct action. What it covers now: Deploy as an active unit Camera: WASD / wheel / middle mouse / Q-E Terrain: rock is impassable, mud stops your move and applies Slow One free move per turn (no Energy) Cards cost Energy; End Turn matters Intents — the icon above an enemy is the plan you should trust Defend / Armor: holds through the enemy turn, then is gone Melee range 1 Reward pickup → map pan → camp upgrade → next fight Wrong actions get protocol-style barks in the dialogue box (long enough to read), not a tiny floating number that vanishes instantly. Feedback → current processing Already closed from that wave: tutorial soft-lock / restart, intent trust, empty-shop copy, missing AoE text, initiative readability, enemy role labels, Divine Judgment targeting, Druid spirits lingering, curse playability, and now the full tutorial rewrite. Still on the board (and intentional): Early melee pacing / kite waiting Cheese / overpowered early synergies Settings toggle for drag vs click (both already work; toggle is next) Cover telegraph clarity Art direction / unique card art later Alpha is still the gate. 0.3.9 is Pre-Alpha with a much better first hour. If you already tried an older build Please try the tutorial again even if you “already know the game.” I want to know where it still loses people. Bug / unclear moment / “I bounced here” notes are gold. Discord: https://discord.gg/BbP8WBVMkT Move. Think. Play. ``` --- **Postup na itchi:** nejdřív upload `0.3.9` build → ulož upravený description → pak Publish Devlog s textem nahoře.
+
+----- ASSIST -----
+Po #69 (hotovo) a #67 (jen tutorial slice) byla další vlna tahle: 1. **[#53](https://github.com/Nasshor01/Projekt-Loop/issues/53) Early melee pacing** Míň „pohni se / End Turn / čekej“. Bližší spawny, Druid míň kite/root smyčka. Tohle LeySpot vypnul. 2. **[#44](https://github.com/Nasshor01/Projekt-Loop/issues/44) + [#64](https://github.com/Nasshor01/Projekt-Loop/issues/64) Cheese** Oltář upgrade-all, 0-cost štíty, stall-heal, burn→síla. Pořád free win. 3. **[#58](https://github.com/Nasshor01/Projekt-Loop/issues/58) + [#54](https://github.com/Nasshor01/Projekt-Loop/issues/54)** Settings: drag vs click + dokumentace ovládání; LOOP naming (NG+ není jen placeholder). 4. **Drobnosti z #67, co zbyly** Cover telegraph (+50 %) a Cover Fire karta (název vs efekt). Pak až Mid/Alpha směr: overlay/resolution (#57), mapa (#62), Trapper (#37), spatial village (#49), art (#59/#60). **Prakticky teď:** #53 pacing → #44+#64 cheese → #58 settings toggle.
+

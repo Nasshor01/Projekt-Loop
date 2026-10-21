@@ -16,6 +16,13 @@ var _cam_target_pos: Vector3
 var _cam_target_rot_y: float
 var _cam_target_rot_x: float
 var _cam_target_zoom: float
+
+@export_group("Screen Shake")
+## Max camera offset (orthographic world units) at full trauma.
+@export var shake_max_offset: float = 0.35
+## Trauma lost per second (1.0 = full shake fades in 1 s).
+@export var shake_decay: float = 2.2
+var _shake_trauma: float = 0.0
 # ---------------------------------------------
 
 const UnitScene = preload("res://scenes/battle/Unit.tscn")
@@ -76,6 +83,37 @@ var _current_battle_state: BattleState = BattleState.SETUP
 
 var _selected_card_ui: Control = null
 var _selected_card_data: CardData = null
+var _damage_preview_units: Array[Unit] = []
+var _damage_preview_key: String = ""
+var _damage_preview_results: Dictionary = {}
+## Above the hand (CanvasLayer 2) so neither the arrow nor its readout hides under cards.
+const TARGETING_ARROW_LAYER := 3
+const ARROW_ATTACK_COLOR := Color(1.0, 0.32, 0.26)
+const ARROW_UTILITY_COLOR := Color(0.45, 0.85, 1.0)
+const ARROW_INVALID_COLOR := Color(0.62, 0.62, 0.68, 0.75)
+## Dragged targeted card parks at the bottom once the cursor rises above this fraction of screen height.
+@export var arrow_park_screen_ratio: float = 0.7
+var _targeting_arrow: TargetingArrow = null
+var _targeting_arrow_active: bool = false
+var _arrow_card_id: int = 0
+var _arrow_valid_cells: Array = []
+var _arrow_is_attack: bool = true
+var _arrow_uses_arrow: bool = false
+const TURN_BANNER_FONT := preload("res://art/fonts/Ithaca-LVB75.ttf")
+## Just below the InitiativeBar (offset_top 80 .. offset_bottom 172).
+const TURN_BANNER_TOP := 196.0
+const TURN_BANNER_HOLD := 0.75
+const TURN_BANNER_PLAYER_COLOR := Color(1.0, 0.85, 0.35)
+const TURN_BANNER_ENEMY_COLOR := Color(1.0, 0.45, 0.4)
+var _turn_banner: PanelContainer = null
+var _turn_banner_label: Label = null
+var _turn_banner_tween: Tween = null
+const END_TURN_PULSE_COLOR := Color(1.35, 1.2, 0.75)
+const END_TURN_PULSE_SCALE := Vector2(1.06, 1.06)
+const END_TURN_PULSE_HALF_PERIOD := 0.55
+## Cached by _refresh_hand_playability so the per-frame pulse check stays cheap.
+var _hand_has_playable_card: bool = false
+var _end_turn_pulse_tween: Tween = null
 var _player_unit_node: Unit = null
 var _coop_other_player_unit: Unit = null
 var _selected_unit: Unit = null
@@ -112,6 +150,7 @@ var _coop_client_spawn_cell: Vector2i = Vector2i(-1, -1)
 
 func _ready():
 	add_to_group("battle_scene")
+	_apply_web_battle_quality()
 	# Deterministic RNG: stejný seed = stejný grid, pozice nepřátel a terén u hosta i klienta.
 	# Používáme path_taken.size() (ne floors_cleared), aby měl klient stejný počet jako host při vstupu do bitvy.
 	if has_node("/root/GameManager"):
@@ -165,6 +204,8 @@ func _ready():
 		ArtifactManager.extra_turn_requested.connect(_on_artifact_extra_turn_requested)
 
 	_wire_artifact_interact_ui()
+	_build_targeting_arrow()
+	_build_turn_banner()
 	_update_ui_texts()
 	
 	_setup_camera_boundaries()
@@ -179,6 +220,16 @@ func _ready():
 		_cam_target_rot_x = camera_3d.rotation.x
 	
 	start_player_spawn_selection()
+
+func _apply_web_battle_quality() -> void:
+	if not OS.has_feature("web"):
+		return
+	var space := get_node_or_null("SpaceBackground")
+	if space:
+		space.visible = false
+	var light := get_node_or_null("DirectionalLight3D") as DirectionalLight3D
+	if light:
+		light.shadow_enabled = false
 
 func _update_ui_texts():
 	if is_instance_valid(end_turn_button):
@@ -225,6 +276,7 @@ func _process(delta):
 	current_rot.x = lerp_angle(current_rot.x, _cam_target_rot_x, t)
 	camera_3d.rotation = current_rot
 	camera_3d.size = lerp(camera_3d.size, _cam_target_zoom, t)
+	_update_screen_shake(delta)
 	
 	# 4. RAYCAST UPDATE PRO HOVER
 	var grid_cell = get_grid_cell_under_mouse()
@@ -239,6 +291,42 @@ func _process(delta):
 			_reset_player_selection()
 		else:
 			_update_card_target_preview()
+			if _current_battle_state == BattleState.PLAYER_TURN:
+				_update_targeting_arrow(grid_cell)
+				_update_card_damage_preview(grid_cell)
+				_update_targeting_arrow_readout(grid_cell)
+			else:
+				_clear_card_damage_preview()
+				_hide_targeting_arrow()
+	else:
+		if not _damage_preview_units.is_empty():
+			_clear_card_damage_preview()
+		if _targeting_arrow_active:
+			_hide_targeting_arrow()
+	_update_end_turn_pulse()
+
+## Called by Unit.take_damage. Trauma stacks; offset scales with trauma² so small hits stay subtle.
+func add_screen_shake(hp_lost: int, block_lost: int, target_is_player: bool) -> void:
+	var amount := 0.0
+	if hp_lost > 0:
+		amount = 0.2 + float(hp_lost) / 25.0
+		if target_is_player:
+			amount += 0.15
+	elif block_lost > 0:
+		amount = 0.08
+	_shake_trauma = clampf(_shake_trauma + minf(amount, 0.75), 0.0, 1.0)
+
+## Uses h_offset/v_offset so it never fights the camera position lerp; picking rays follow the offset.
+func _update_screen_shake(delta: float) -> void:
+	if _shake_trauma <= 0.0:
+		if camera_3d.h_offset != 0.0 or camera_3d.v_offset != 0.0:
+			camera_3d.h_offset = 0.0
+			camera_3d.v_offset = 0.0
+		return
+	_shake_trauma = maxf(0.0, _shake_trauma - shake_decay * delta)
+	var strength := _shake_trauma * _shake_trauma * shake_max_offset
+	camera_3d.h_offset = randf_range(-1.0, 1.0) * strength
+	camera_3d.v_offset = randf_range(-1.0, 1.0) * strength
 
 func _unhandled_input(event: InputEvent):
 	if _is_action_processing: return
@@ -400,8 +488,18 @@ func _on_turn_started(unit: Unit):
 	
 	# Rozhodní, zda jde o hráče nebo AI
 	if unit.unit_data.faction == UnitData.Faction.PLAYER:
+		var is_teammate: bool = _is_coop_run() and unit.has_meta("owner_peer_id") \
+				and unit.get_meta("owner_peer_id") != multiplayer.get_unique_id()
+		if is_teammate:
+			_show_turn_banner(tr("ui.battle.coop_teammate_turn"), TURN_BANNER_PLAYER_COLOR)
+		else:
+			_show_turn_banner(tr("ui.battle.banner_your_turn"), TURN_BANNER_PLAYER_COLOR)
 		_start_player_initiative_turn(unit, extra_draw)
 	else:
+		# Skipped enemy rounds (Heart of the Loop) would otherwise flash a banner per enemy.
+		if not (has_node("/root/ArtifactManager") and ArtifactManager.get_run_flag("skip_enemy_round", false)):
+			_show_turn_banner(TranslationHelper.tr_format("ui.battle.banner_enemy_turn",
+					{"name": unit.unit_data.get_localized_name()}), TURN_BANNER_ENEMY_COLOR)
 		# Coop: tah nepřítele běží jen na hostovi, klient čeká na RPC se stavem
 		if _is_coop_run() and has_node("/root/MultiplayerManager") and not MultiplayerManager.is_server():
 			_current_battle_state = BattleState.ENEMY_TURN
@@ -959,6 +1057,7 @@ func start_extra_turn():
 	"""Spustí PLNOHODNOTNÝ extra tah hráče"""
 	DebugLogger.log_info("SPOUŠTÍM EXTRA TAH!")
 	_is_extra_turn = false # Reset flag
+	_show_turn_banner(tr("ui.battle.banner_your_turn"), TURN_BANNER_PLAYER_COLOR)
 	
 	# 1. ODHOĎ SOUČASNÉ KARTY (jako konec normálního tahu)
 	PlayerData.discard_hand()
@@ -1342,10 +1441,11 @@ func _on_unit_died(unit_node: Unit):
 	if _enemy_units.has(unit_node):
 		_enemy_units.erase(unit_node)
 		_refresh_goblin_pack_bonuses()
-		if _current_battle_state == BattleState.PLAYER_TURN:
-			_refresh_hand_playability()
 	
 	battle_grid_instance.remove_object_by_instance(unit_node)
+	# After grid removal, so the corpse no longer blocks line of sight / occupies its cell.
+	if _current_battle_state == BattleState.PLAYER_TURN:
+		_refresh_hand_playability()
 	
 	# Odregistruj IHNED (před animací), ať TurnManager nepracuje se zombie jednotkou
 	if has_node("/root/TurnManager"):
@@ -1631,6 +1731,9 @@ func _on_player_hand_card_drag_released(card_ui_node: Control, _card_data_resour
 	if _current_battle_state != BattleState.PLAYER_TURN:
 		return
 	if _is_action_processing:
+		# Otherwise the selection outlives the drag and the arrow keeps following the cursor.
+		if _selected_card_ui == card_ui_node:
+			_reset_player_selection()
 		return
 	if _player_action_state != PlayerActionState.CARD_SELECTED:
 		return
@@ -1926,8 +2029,9 @@ func _apply_overuse_debuff(card: CardData):
 	# Status efekt
 	if debuff.has("status") and not debuff.status.is_empty():
 		var duration = debuff.get("status_duration", 1)
+		var status_value = debuff.get("status_value", 1)
 		if _player_unit_node.has_method("apply_status"):
-			_player_unit_node.apply_status(debuff.status, duration)
+			_player_unit_node.apply_status(debuff.status, status_value, duration)
 			messages.append(tr("status." + debuff.status))
 	
 	# Vizuální feedback
@@ -2263,7 +2367,8 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 				base_value += bonus_value
 				if effect.condition_type == "damage_per_block" and is_instance_valid(_player_unit_node):
 					base_value += _player_unit_node.current_block * effect.conditional_bonus_value
-				if effect.damage_type == CardEffectData.DamageType.HOLY and is_instance_valid(_player_unit_node) and _player_unit_node.active_statuses.has("consecrated_weapon"):
+				if effect.damage_type == CardEffectData.DamageType.HOLY and is_instance_valid(_player_unit_node) and _player_unit_node.active_statuses.has("consecrated_weapon") \
+						and not _card_grants_consecration(card_ref):
 					var status_data = _player_unit_node.active_statuses["consecrated_weapon"]
 					base_value += status_data.value
 					_player_unit_node.active_statuses.erase("consecrated_weapon")
@@ -2709,6 +2814,8 @@ func _clear_card_selection_state_before_play():
 	Skryjeme i enemy range (červený pod nepřítelem), aby po odehrání karty nezůstal a nevyzýval k druhému kliku."""
 	_player_action_state = PlayerActionState.IDLE
 	_selected_card_data = null
+	_clear_card_damage_preview()
+	_hide_targeting_arrow()
 	battle_grid_instance.hide_movable_range()
 	battle_grid_instance.hide_targetable_cells()
 	battle_grid_instance.hide_aoe_highlight()
@@ -2721,10 +2828,12 @@ func _reset_player_selection():
 	if is_instance_valid(_selected_unit):
 		_selected_unit.set_selected_visual(false)
 		_selected_unit = null
+	_hide_targeting_arrow()
 	if is_instance_valid(_selected_card_ui):
 		player_hand_ui_instance.set_selected_card(null)
 		_selected_card_ui = null
 		_selected_card_data = null
+	_clear_card_damage_preview()
 	battle_grid_instance.hide_movable_range()
 	battle_grid_instance.hide_targetable_cells()
 	battle_grid_instance.hide_aoe_highlight()
@@ -2799,6 +2908,8 @@ func _on_end_turn_button_pressed():
 	# ============================================
 
 func _physics_process(_delta):
+	if OS.has_feature("web"):
+		return
 	# Raycast pro enemy hover (card target preview je už v _process, nevolat 2×)
 	var grid_cell = get_grid_cell_under_mouse() 
 	var unit_under_mouse = battle_grid_instance.get_object_on_cell(grid_cell)
@@ -2883,7 +2994,7 @@ func _dismiss_summoned_units(summoner: Unit) -> void:
 	var to_kill: Array[Unit] = []
 	if summoner.has_meta("summoned_units"):
 		for unit in summoner.get_meta("summoned_units"):
-			if unit is Unit and is_instance_valid(unit) and unit.current_health > 0:
+			if is_instance_valid(unit) and unit is Unit and unit.current_health > 0:
 				to_kill.append(unit)
 	for enemy in _enemy_units:
 		if not is_instance_valid(enemy) or enemy.current_health <= 0:
@@ -3130,7 +3241,92 @@ func _evaluate_card_playability(card: CardData) -> Dictionary:
 	return {"playable": true, "reason": ""}
 
 func _refresh_hand_playability() -> void:
-	pass
+	if not is_instance_valid(player_hand_ui_instance) or not player_hand_ui_instance.has_method("refresh_all_playability"):
+		return
+	_hand_has_playable_card = false
+	player_hand_ui_instance.refresh_all_playability(_evaluate_card_playability_tracked)
+
+## Same as _evaluate_card_playability, but records whether any hand card is playable (End Turn pulse).
+func _evaluate_card_playability_tracked(card: CardData) -> Dictionary:
+	var result := _evaluate_card_playability(card)
+	if bool(result.get("playable", false)):
+		_hand_has_playable_card = true
+	return result
+
+## Pulses End Turn while the player could still do something useful (energy left + a playable card).
+func _update_end_turn_pulse() -> void:
+	if not is_instance_valid(end_turn_button):
+		return
+	var should_pulse := _current_battle_state == BattleState.PLAYER_TURN \
+			and not end_turn_button.disabled \
+			and PlayerData.current_energy > 0 \
+			and _hand_has_playable_card
+	var is_pulsing := _end_turn_pulse_tween != null and _end_turn_pulse_tween.is_valid()
+	if should_pulse == is_pulsing:
+		return
+	if should_pulse:
+		end_turn_button.pivot_offset = end_turn_button.size * 0.5
+		_end_turn_pulse_tween = create_tween().set_loops().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		_end_turn_pulse_tween.tween_property(end_turn_button, "modulate", END_TURN_PULSE_COLOR, END_TURN_PULSE_HALF_PERIOD)
+		_end_turn_pulse_tween.parallel().tween_property(end_turn_button, "scale", END_TURN_PULSE_SCALE, END_TURN_PULSE_HALF_PERIOD)
+		_end_turn_pulse_tween.tween_property(end_turn_button, "modulate", Color.WHITE, END_TURN_PULSE_HALF_PERIOD)
+		_end_turn_pulse_tween.parallel().tween_property(end_turn_button, "scale", Vector2.ONE, END_TURN_PULSE_HALF_PERIOD)
+	else:
+		_end_turn_pulse_tween.kill()
+		_end_turn_pulse_tween = null
+		end_turn_button.modulate = Color.WHITE
+		end_turn_button.scale = Vector2.ONE
+
+func _build_turn_banner() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "TurnBannerLayer"
+	layer.layer = TARGETING_ARROW_LAYER
+	add_child(layer)
+	_turn_banner = PanelContainer.new()
+	_turn_banner.name = "TurnBanner"
+	_turn_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.05, 0.08, 0.82)
+	style.border_color = Color(1, 1, 1, 0.25)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(6)
+	style.content_margin_left = 36
+	style.content_margin_right = 36
+	style.content_margin_top = 6
+	style.content_margin_bottom = 6
+	_turn_banner.add_theme_stylebox_override("panel", style)
+	_turn_banner_label = Label.new()
+	_turn_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_turn_banner_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_turn_banner_label.add_theme_font_override("font", TURN_BANNER_FONT)
+	_turn_banner_label.add_theme_font_size_override("font_size", 44)
+	_turn_banner_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	_turn_banner_label.add_theme_constant_override("outline_size", 8)
+	_turn_banner_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_turn_banner.add_child(_turn_banner_label)
+	_turn_banner.visible = false
+	layer.add_child(_turn_banner)
+
+## Short fade-in / hold / fade-out (~1.1 s). A new banner replaces one still on screen.
+func _show_turn_banner(text: String, color: Color) -> void:
+	if not is_instance_valid(_turn_banner):
+		return
+	if _turn_banner_tween and _turn_banner_tween.is_valid():
+		_turn_banner_tween.kill()
+	_turn_banner_label.text = text
+	_turn_banner_label.add_theme_color_override("font_color", color)
+	_turn_banner.reset_size()
+	var screen := get_viewport().get_visible_rect().size
+	_turn_banner.position = Vector2((screen.x - _turn_banner.size.x) * 0.5, TURN_BANNER_TOP)
+	# Replacing a banner still on screen continues from its current alpha (no flicker).
+	if not _turn_banner.visible:
+		_turn_banner.modulate.a = 0.0
+	_turn_banner.visible = true
+	_turn_banner_tween = create_tween()
+	_turn_banner_tween.tween_property(_turn_banner, "modulate:a", 1.0, 0.12)
+	_turn_banner_tween.tween_interval(TURN_BANNER_HOLD)
+	_turn_banner_tween.tween_property(_turn_banner, "modulate:a", 0.0, 0.25)
+	_turn_banner_tween.tween_callback(_turn_banner.hide)
 
 func _clear_enemy_hover_highlights():
 	if battle_grid_instance and battle_grid_instance.has_method("clear_highlights"):
@@ -3288,6 +3484,240 @@ func _update_card_target_preview():
 			if battle_grid_instance.is_cell_active(cell): final_aoe_cells.append(cell)
 			
 	battle_grid_instance.show_aoe_highlight(final_aoe_cells)
+
+func _update_card_damage_preview(hover_cell: Vector2i) -> void:
+	if not is_instance_valid(_selected_card_data) or not is_instance_valid(_player_unit_node):
+		_clear_card_damage_preview()
+		return
+	var key := "%d|%s|%s" % [_selected_card_data.get_instance_id(), str(hover_cell), str(_targeting_arrow_active)]
+	if key == _damage_preview_key:
+		return
+	_clear_card_damage_preview()
+	_damage_preview_key = key
+	var previews: Dictionary = _compute_card_damage_preview(_selected_card_data, hover_cell)
+	_damage_preview_results = previews
+	var arrow_target: Unit = _get_arrow_readout_unit(hover_cell)
+	for unit in previews:
+		var preview: Dictionary = previews[unit]
+		unit.set_damage_preview(int(preview["hp_loss"]), bool(preview["lethal"]), unit != arrow_target)
+		_damage_preview_units.append(unit)
+
+func _clear_card_damage_preview() -> void:
+	for unit in _damage_preview_units:
+		if is_instance_valid(unit):
+			unit.clear_damage_preview()
+	_damage_preview_units.clear()
+	_damage_preview_results = {}
+	_damage_preview_key = ""
+
+func _build_targeting_arrow() -> void:
+	var layer := CanvasLayer.new()
+	layer.name = "TargetingArrowLayer"
+	layer.layer = TARGETING_ARROW_LAYER
+	add_child(layer)
+	_targeting_arrow = TargetingArrow.new()
+	_targeting_arrow.name = "TargetingArrow"
+	layer.add_child(_targeting_arrow)
+
+## Self-only cards (Defend) and auto-target AoE are played without aiming, so they get no arrow.
+func _refresh_arrow_card_cache(card: CardData) -> void:
+	if card.get_instance_id() == _arrow_card_id:
+		return
+	_arrow_card_id = card.get_instance_id()
+	var info: Dictionary = _collect_valid_targets_for_card(card)
+	_arrow_valid_cells = info.get("cells", []).duplicate()
+	# Same rule as _try_play_selected_card_at_cell: a card with an enemy effect can't be dropped on the player.
+	_arrow_is_attack = _card_has_enemy_play_target(card)
+	if _arrow_is_attack and is_instance_valid(_player_unit_node):
+		_arrow_valid_cells.erase(_player_unit_node.grid_position)
+	_arrow_uses_arrow = card.range_type != CardData.EffectRangeType.PLAYER_CENTERED_AOE \
+			and card.range_type != CardData.EffectRangeType.FULL_BOARD
+	if _arrow_uses_arrow and not _arrow_is_attack and is_instance_valid(_player_unit_node) \
+			and _arrow_valid_cells.size() == 1 and _arrow_valid_cells[0] == _player_unit_node.grid_position:
+		_arrow_uses_arrow = false
+
+func _update_targeting_arrow(hover_cell: Vector2i) -> void:
+	if _targeting_arrow == null or not is_instance_valid(_selected_card_ui) or not (_selected_card_ui is CardUI) \
+			or not is_instance_valid(_selected_card_data):
+		_hide_targeting_arrow()
+		return
+	var card_ui := _selected_card_ui as CardUI
+	_refresh_arrow_card_cache(_selected_card_data)
+	if not _arrow_uses_arrow:
+		if _targeting_arrow_active:
+			_targeting_arrow.hide_arrow()
+			_targeting_arrow_active = false
+		return
+	var mouse_pos := get_viewport().get_mouse_position()
+	if card_ui.is_dragging:
+		var screen := get_viewport().get_visible_rect().size
+		var park_y := screen.y * arrow_park_screen_ratio
+		# Hysteresis so the card doesn't flicker between parked and following at the threshold.
+		if card_ui.has_drag_anchor() and mouse_pos.y > park_y + 40.0:
+			card_ui.clear_drag_anchor()
+		elif not card_ui.has_drag_anchor() and mouse_pos.y < park_y:
+			card_ui.set_drag_anchor(Vector2(screen.x * 0.5, screen.y - 16.0))
+		if not card_ui.has_drag_anchor():
+			_targeting_arrow.hide_arrow()
+			_targeting_arrow_active = false
+			return
+	var card_rect := card_ui.get_global_rect()
+	var from := Vector2(card_rect.get_center().x, card_rect.position.y + 10.0)
+	var to := mouse_pos
+	var color := ARROW_INVALID_COLOR
+	if _arrow_valid_cells.has(hover_cell):
+		color = ARROW_ATTACK_COLOR if _arrow_is_attack else ARROW_UTILITY_COLOR
+		var unit := _resolve_living_unit_on_cell(hover_cell) as Unit
+		if unit != null:
+			to = unit.get_aim_screen_position(camera_3d)
+		else:
+			to = camera_3d.unproject_position(battle_grid_instance.get_world_position_for_cell(hover_cell))
+	_targeting_arrow.update_arrow(from, to, color)
+	_targeting_arrow_active = true
+
+func _get_arrow_readout_unit(hover_cell: Vector2i) -> Unit:
+	if not _targeting_arrow_active or not _arrow_valid_cells.has(hover_cell):
+		return null
+	return _resolve_living_unit_on_cell(hover_cell) as Unit
+
+func _update_targeting_arrow_readout(hover_cell: Vector2i) -> void:
+	if not _targeting_arrow_active:
+		return
+	var unit := _get_arrow_readout_unit(hover_cell)
+	if unit != null and _damage_preview_results.has(unit):
+		var preview: Dictionary = _damage_preview_results[unit]
+		_targeting_arrow.set_damage_readout(int(preview["hp_loss"]), bool(preview["lethal"]))
+	else:
+		_targeting_arrow.set_damage_readout(-1, false)
+
+func _hide_targeting_arrow() -> void:
+	if is_instance_valid(_selected_card_ui) and _selected_card_ui is CardUI:
+		(_selected_card_ui as CardUI).clear_drag_anchor()
+	if _targeting_arrow != null:
+		_targeting_arrow.hide_arrow()
+	_targeting_arrow_active = false
+	_arrow_card_id = 0
+
+## Side-effect-free mirror of try_play_card damage resolution (no crit roll, no dodge roll).
+## Returns { Unit: {"hp_loss": int, "lethal": bool} } for every enemy the card would hit.
+func _compute_card_damage_preview(card: CardData, hover_cell: Vector2i) -> Dictionary:
+	var result := {}
+	if card == null or not is_instance_valid(battle_grid_instance):
+		return result
+	var is_auto_target := card.range_type == CardData.EffectRangeType.PLAYER_CENTERED_AOE \
+			or card.range_type == CardData.EffectRangeType.FULL_BOARD
+	var hovered: Node3D = null
+	if not is_auto_target:
+		if not battle_grid_instance.is_valid_grid_position(hover_cell):
+			return result
+		var valid_cells: Array = _collect_valid_targets_for_card(card).get("cells", [])
+		if not valid_cells.has(hover_cell):
+			return result
+		hovered = _resolve_living_unit_on_cell(hover_cell)
+	var initial_target: Node3D = _player_unit_node if is_auto_target else hovered
+
+	# Non-damage effects resolve first, so Vulnerable from the same card already counts.
+	var temp_vulnerable: Array = []
+	var consecrated_bonus: int = 0
+	if _player_unit_node.active_statuses.has("consecrated_weapon") and not _card_grants_consecration(card):
+		consecrated_bonus = int(_player_unit_node.active_statuses["consecrated_weapon"].value)
+	for effect in card.effects:
+		if effect == null or effect.trigger != CardEffectData.EffectTrigger.ON_PLAY:
+			continue
+		if effect.effect_type != CardEffectData.EffectType.APPLY_STATUS:
+			continue
+		if effect.string_value == "vulnerable":
+			for t in _get_targets_for_effect(effect, initial_target, card, hover_cell):
+				if is_instance_valid(t) and t is Unit and not t.active_statuses.has("vulnerable") and not temp_vulnerable.has(t):
+					temp_vulnerable.append(t)
+
+	# Temporary entries so DamageCalculator/conditions see them; all erased below, no signals emitted.
+	for t in temp_vulnerable:
+		t.active_statuses["vulnerable"] = { "id": "vulnerable", "value": 1, "duration": 1 }
+	var totals := {}
+	for effect in card.effects:
+		if effect == null or effect.trigger != CardEffectData.EffectTrigger.ON_PLAY:
+			continue
+		if not _is_damage_effect(effect):
+			continue
+		for target in _get_targets_for_effect(effect, initial_target, card, hover_cell):
+			if not is_instance_valid(target) or not (target is Unit) or target.current_health <= 0:
+				continue
+			if target.get_unit_data().faction != UnitData.Faction.ENEMY:
+				continue
+			var hit: Dictionary = _preview_effect_damage(effect, target, card, consecrated_bonus)
+			if bool(hit["used_consecrated"]):
+				consecrated_bonus = 0
+			if not totals.has(target):
+				totals[target] = {"normal": 0, "pierce": 0}
+			var bucket: String = "pierce" if hit["pierce"] else "normal"
+			totals[target][bucket] = int(totals[target][bucket]) + int(hit["damage"])
+	for t in temp_vulnerable:
+		if is_instance_valid(t):
+			t.active_statuses.erase("vulnerable")
+
+	for target in totals:
+		var t: Dictionary = totals[target]
+		var hp_loss: int = int(t["pierce"]) + maxi(0, int(t["normal"]) - target.current_block)
+		result[target] = {"hp_loss": hp_loss, "lethal": hp_loss >= target.current_health}
+	return result
+
+## Consecrated Weapon buffs the NEXT Holy attack, so the granting card's own hit must not consume it.
+func _card_grants_consecration(card: CardData) -> bool:
+	if not is_instance_valid(card):
+		return false
+	for e in card.effects:
+		if e != null and e.effect_type == CardEffectData.EffectType.APPLY_STATUS and e.string_value == "consecrated_weapon":
+			return true
+	return false
+
+func _is_damage_effect(effect: CardEffectData) -> bool:
+	return effect.effect_type == CardEffectData.EffectType.DEAL_DAMAGE \
+		or effect.effect_type == CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK \
+		or effect.effect_type == CardEffectData.EffectType.DEAL_DOUBLE_DAMAGE_FROM_BLOCK
+
+## Mirrors the damage branches of _apply_single_effect without consuming statuses or rolling RNG.
+## consecrated_bonus is consumed by the first Holy hit (caller zeroes it when used_consecrated is true).
+func _preview_effect_damage(effect: CardEffectData, target: Unit, card: CardData, consecrated_bonus: int = 0) -> Dictionary:
+	var none := {"damage": 0, "pierce": false, "used_consecrated": false}
+	match effect.effect_type:
+		CardEffectData.EffectType.DEAL_DAMAGE:
+			if effect.string_value == "holy_bonus_only":
+				if not is_instance_valid(target.unit_data):
+					return none
+				var ut: int = target.unit_data.unit_type
+				if ut != UnitData.UnitType.UNDEAD and ut != UnitData.UnitType.DEMON:
+					return none
+				return {"damage": maxi(0, UnitData.get_holy_damage_bonus(CardEffectData.DamageType.HOLY, ut) + PlayerData.holy_damage_bonus), "pierce": false, "used_consecrated": false}
+			var base_value: int = effect.value
+			if _check_condition(effect, target):
+				base_value += effect.conditional_bonus_value
+			if effect.condition_type == "damage_per_block":
+				base_value += _player_unit_node.current_block * effect.conditional_bonus_value
+			var used_consecrated: bool = effect.damage_type == CardEffectData.DamageType.HOLY and consecrated_bonus > 0
+			if used_consecrated:
+				base_value += consecrated_bonus
+			var damage := DamageCalculator.get_final_damage(base_value, _player_unit_node, target, effect.damage_type, false, true, 0)
+			var pierce := false
+			if has_node("/root/ArtifactManager"):
+				pierce = ArtifactManager.attacks_ignore_block(target, card)
+			return {"damage": damage, "pierce": pierce, "used_consecrated": used_consecrated}
+		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK:
+			var block_base: int = _player_unit_node.current_block
+			if effect.string_value == "half_block" or (is_instance_valid(card) and card.card_id.begins_with("shield_push")):
+				block_base = block_base / 2
+			if block_base <= 0:
+				return none
+			var block_damage := DamageCalculator.get_final_damage(block_base, _player_unit_node, target, CardEffectData.DamageType.NORMAL, false, true, 0)
+			if is_instance_valid(card) and card.card_id == "shield_bash":
+				block_damage = mini(block_damage, 15)
+			return {"damage": block_damage, "pierce": false, "used_consecrated": false}
+		CardEffectData.EffectType.DEAL_DOUBLE_DAMAGE_FROM_BLOCK:
+			var double_damage := DamageCalculator.get_final_damage(_player_unit_node.current_block, _player_unit_node, target, CardEffectData.DamageType.NORMAL, false, true, _player_unit_node.current_block)
+			if is_instance_valid(card) and card.card_id == "shield_bash+":
+				double_damage = mini(double_damage, 20)
+			return {"damage": double_damage, "pierce": false, "used_consecrated": false}
+	return none
 
 func _try_play_selected_card_at_cell(clicked_grid_cell: Vector2i) -> bool:
 	if _player_action_state != PlayerActionState.CARD_SELECTED:
@@ -3449,7 +3879,7 @@ func _apply_terrain_effect(unit: Node3D, terrain: TerrainData):
 	match terrain.effect_type:
 		TerrainData.TerrainEffect.APPLY_STATUS_ON_ENTER:
 			if unit.has_method("apply_status") and not terrain.effect_string_value.is_empty():
-				unit.apply_status(terrain.effect_string_value, terrain.effect_duration)
+				unit.apply_status(terrain.effect_string_value, terrain.effect_numeric_value, terrain.effect_duration)
 		TerrainData.TerrainEffect.MODIFY_DEFENSE_ON_TILE:
 			if unit.has_method("add_block"): unit.add_block(terrain.effect_numeric_value)
 		TerrainData.TerrainEffect.DAMAGE_ON_ENTER:
@@ -3791,7 +4221,7 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 			var all_units = battle_grid_instance.get_all_objects_on_grid()
 			
 			for unit in all_units:
-				if unit is Unit:
+				if is_instance_valid(unit) and unit is Unit:
 					var damage = DamageCalculator.get_final_damage(
 						base_dmg, enemy_unit, unit,
 						CardEffectData.DamageType.NORMAL, false, false, extra
@@ -3876,7 +4306,7 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 			var duration = action.special_data.get("duration", 2)
 			var all_units = battle_grid_instance.get_all_objects_on_grid()
 			for unit in all_units:
-				if unit is Unit and unit != enemy_unit and is_instance_valid(unit):
+				if is_instance_valid(unit) and unit is Unit and unit != enemy_unit:
 					if unit.unit_data.faction == enemy_unit.unit_data.faction:
 						var dist = battle_grid_instance.get_distance(enemy_unit.grid_position, unit.grid_position)
 						if dist <= buff_range:
@@ -3911,7 +4341,7 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 			var heal_amount = action.special_data.get("heal_amount", 4)
 			var all_units = battle_grid_instance.get_all_objects_on_grid()
 			for unit in all_units:
-				if unit is Unit and unit != enemy_unit and is_instance_valid(unit):
+				if is_instance_valid(unit) and unit is Unit and unit != enemy_unit:
 					if unit.unit_data.faction == enemy_unit.unit_data.faction:
 						var dist = battle_grid_instance.get_distance(enemy_unit.grid_position, unit.grid_position)
 						if dist <= heal_range:
@@ -3930,7 +4360,7 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 			extra += enemy_unit.get_bonus_attack_damage()
 			var all_units = battle_grid_instance.get_all_objects_on_grid()
 			for unit in all_units:
-				if unit is Unit and unit != enemy_unit and is_instance_valid(unit):
+				if is_instance_valid(unit) and unit is Unit and unit != enemy_unit:
 					if unit.unit_data.faction != enemy_unit.unit_data.faction:
 						var dist = battle_grid_instance.get_distance(enemy_unit.grid_position, unit.grid_position)
 						if dist <= tremor_range:
@@ -3981,7 +4411,7 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 			var extra = _damage_multiplier_to_extra(enemy_unit, mult)
 			var all_units = battle_grid_instance.get_all_objects_on_grid()
 			for unit in all_units:
-				if unit is Unit and unit != enemy_unit and is_instance_valid(unit):
+				if is_instance_valid(unit) and unit is Unit and unit != enemy_unit:
 					if unit.unit_data.faction != enemy_unit.unit_data.faction:
 						var dist = battle_grid_instance.get_distance(enemy_unit.grid_position, unit.grid_position)
 						if dist <= hellfire_range:
@@ -4032,7 +4462,7 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 			var duration = action.special_data.get("duration", 3)
 			var all_units = battle_grid_instance.get_all_objects_on_grid()
 			for unit in all_units:
-				if unit is Unit and unit != enemy_unit and is_instance_valid(unit):
+				if is_instance_valid(unit) and unit is Unit and unit != enemy_unit:
 					if unit.unit_data.faction == enemy_unit.unit_data.faction:
 						unit.apply_status("monk_blessing", buff_amount, duration)
 						unit.show_status_text("EMPOWERED!", "heal")

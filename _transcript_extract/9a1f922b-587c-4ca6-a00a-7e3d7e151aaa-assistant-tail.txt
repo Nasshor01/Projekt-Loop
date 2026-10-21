@@ -1,0 +1,42 @@
+===== ASSISTANT SNIP 69/73 =====
+Už existuje wipe podle `META_SCHEMA_VERSION`. Dočtu přesně, jak se teď chová u starých savů bez verze — tam je riziko, že se reset vůbec nespustí.
+
+===== ASSISTANT SNIP 70/73 =====
+Při prvním spuštění nového buildu se **starý meta save smaže** a začne se od nuly. Ať už někdo hrál předchozí verzi, nebo měl rozestavěnou vesnici — Well/Chapel/shardy/levely se nepřenesou a nemají z čeho spadnout.
+
+**Co se maže**
+- střepy, levely budov, hero XP, odemčené karty
+- rozjetý run (`current_run.sav`) — starý run by si tahal staré HP/deck
+
+**Co zůstane**
+- jazyk, hlasitost, fullscreen
+- `tutorial_completed` (nemusí znovu tutoriál)
+
+Funguje to bumpem `META_SCHEMA_VERSION` na **2**. Chybějící verze u starých savů se bere jako 0, takže se wipe spustí i lidem, co ještě schema v souboru neměli. Druhé a další spuštění už meta nechá.
+
+Jednou stačí hru zapnout (u tebe i u ostatních s old save). V konzoli uvidíš `META SCHEMA MIGRATION`.
+
+===== ASSISTANT SNIP 71/73 =====
+Nejdřív zjistím, jak v repo vypadají dokumenty a GitHub issues k vesnici, pak plán uložím, commitnu celý stav, okomentuju issues a pushnu.
+
+===== ASSISTANT SNIP 72/73 =====
+Zapíšu další village plán do `docs/`, zarovnám lore tabulku budov se splitem a pak commitnu, okomentuju issues a pushnu.
+
+===== ASSISTANT SNIP 73/73 =====
+Další village plán je v [`docs/VILLAGE_PLAN.md`](docs/VILLAGE_PLAN.md). Celý projekt je na GitHubu.
+
+**Commit:** `9d2c829` na `main`  
+https://github.com/Nasshor01/Projekt-Loop/commit/9d2c829
+
+**Dokument** pokrývá, co už běží (spatial hub, Chapel vs Well, meta schema 2 wipe) a pořadí dál: polish #49 → Tavern #47 → companion #36 → materiály #35 → Lodge/Trapper #37 → Chapel L5 relikvie.
+
+**Issues okomentované**
+- [#49](https://github.com/Nasshor01/Projekt-Loop/issues/49#issuecomment-5309357845) hub MVP v kódu  
+- [#48](https://github.com/Nasshor01/Projekt-Loop/issues/48#issuecomment-5309357942) Chapel slice shipped, Lodge později  
+- [#47](https://github.com/Nasshor01/Projekt-Loop/issues/47#issuecomment-5309358021) Tavern art / coming soon  
+- [#36](https://github.com/Nasshor01/Projekt-Loop/issues/36#issuecomment-5309358109) companion až po Tavern  
+- [#35](https://github.com/Nasshor01/Projekt-Loop/issues/35#issuecomment-5309358188) extract pořád 0.4.5  
+- [#37](https://github.com/Nasshor01/Projekt-Loop/issues/37#issuecomment-5309358305) Lodge šedá do unlocku  
+
+Nikdo z nich se nezavíral — #49 má ještě polish, zbytek je další fáze.
+

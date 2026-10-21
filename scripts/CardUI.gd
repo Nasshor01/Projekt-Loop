@@ -156,6 +156,12 @@ var is_dragging: bool = false
 var is_draggable: bool = true
 var _drag_released: bool = false
 var _drag_start_pos: Vector2 = Vector2.ZERO
+var _drag_anchor_active: bool = false
+var _drag_anchor_bottom_center: Vector2 = Vector2.ZERO
+var _playability_tint: Color = Color.WHITE
+
+const UNPLAYABLE_TINT := Color(0.5, 0.5, 0.55)
+const NO_ENERGY_COST_TINT := Color(1.0, 0.35, 0.35)
 
 signal drag_started(card_ui: CardUI, original_pos: Vector2)
 signal drag_released(card_ui: CardUI, release_pos: Vector2)
@@ -885,6 +891,8 @@ func _process(delta):
 		scale = scale.lerp(target_scale, delta * 12.0)
 		var visual_size = custom_minimum_size * scale
 		var target_global_pos = mouse_pos - visual_size / 2
+		if _drag_anchor_active:
+			target_global_pos = _drag_anchor_bottom_center - Vector2(visual_size.x * 0.5, visual_size.y)
 		global_position = global_position.lerp(target_global_pos, delta * 15.0)
 		return
 
@@ -936,7 +944,19 @@ func _start_drag():
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	drag_started.emit(self, _drag_start_pos)
 
+## While dragging, park the card (bottom-center at [param bottom_center], global) instead of following the mouse.
+func set_drag_anchor(bottom_center: Vector2) -> void:
+	_drag_anchor_bottom_center = bottom_center
+	_drag_anchor_active = true
+
+func clear_drag_anchor() -> void:
+	_drag_anchor_active = false
+
+func has_drag_anchor() -> bool:
+	return _drag_anchor_active
+
 func _end_drag():
+	_drag_anchor_active = false
 	if is_dragging:
 		is_dragging = false
 		target_scale = base_scale
@@ -946,6 +966,7 @@ func _end_drag():
 		drag_released.emit(self, global_position)
 
 func cancel_drag():
+	_drag_anchor_active = false
 	if is_dragging:
 		is_dragging = false
 		target_scale = base_scale
@@ -963,4 +984,14 @@ func _modulate_click_feedback():
 	modulate = Color.RED
 	await get_tree().process_frame
 	if is_inside_tree():
-		modulate = Color(1, 1, 1, 0.8) if is_dragging else Color.WHITE
+		_apply_playability_modulate()
+
+## Dims the card face when it can't be played right now; [param reason] matches BattleScene._evaluate_card_playability.
+func set_playability_visual(playable: bool, reason: String = "") -> void:
+	_playability_tint = Color.WHITE if playable else UNPLAYABLE_TINT
+	_apply_playability_modulate()
+	if is_instance_valid(cost_label):
+		cost_label.self_modulate = NO_ENERGY_COST_TINT if (not playable and reason == "energy") else Color.WHITE
+
+func _apply_playability_modulate() -> void:
+	modulate = Color(_playability_tint, 0.8 if is_dragging else 1.0)

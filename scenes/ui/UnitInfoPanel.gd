@@ -3,25 +3,6 @@
 # Panel se AUTOMATICKY roztáhne podle obsahu; scroll jen když už není kam růst.
 extends PanelContainer
 
-const ICON_BURNING = preload("res://art/icons/status/Bleed.png")
-const ICON_CHILLED = preload("res://art/icons/status/Freeze.png")
-const ICON_SHOCKED = preload("res://art/icons/status/Stunned.png")
-const ICON_FROZEN = preload("res://art/icons/status/Freeze.png")
-const ICON_ENTANGLED = preload("res://art/icons/status/Slow_Down.png")
-const ICON_MONK_BLESSING = preload("res://art/icons/status/Strenght.png")
-const ICON_REGENERATION = preload("res://art/icons/status/Regeneration.png")
-const ICON_SLOW = preload("res://art/icons/status/Slow_Down.png")
-const ICON_VULNERABLE = preload("res://art/icons/status/Vulnerable.png")
-const ICON_AIMING = preload("res://art/icons/status/Aim.png")
-const ICON_AURA_DEVOTION = preload("res://art/icons/status/block.png")
-const ICON_POISON = preload("res://art/icons/status/Poison.png")
-const ICON_WEAKNESS = preload("res://art/icons/status/Weakness.png")
-const ICON_THORNS = preload("res://art/icons/status/Thorns.png")
-const ICON_BLOCK = preload("res://art/icons/status/block.png")
-const ICON_RAGE = preload("res://art/icons/status/Rage_rush.png")
-const ICON_LEECH = preload("res://art/icons/status/Leech.png")
-const ICON_DEFAULT = preload("res://art/icons/status/Poison.png")
-
 const PANEL_WIDTH := 260.0
 const PANEL_MARGIN_V := 20.0 # top+bottom content margins
 const VIEWPORT_MARGIN := 12.0
@@ -407,42 +388,7 @@ func _clear_container(container: Node) -> void:
 		child.queue_free()
 
 func _get_status_icon(status_id: String) -> Texture2D:
-	match status_id:
-		"burning":
-			return ICON_BURNING
-		"chilled":
-			return ICON_CHILLED
-		"shocked":
-			return ICON_SHOCKED
-		"frozen":
-			return ICON_FROZEN
-		"entangled":
-			return ICON_ENTANGLED
-		"monk_blessing":
-			return ICON_MONK_BLESSING
-		"regeneration":
-			return ICON_REGENERATION
-		"Slow":
-			return ICON_SLOW
-		"vulnerable":
-			return ICON_VULNERABLE
-		"aiming":
-			return ICON_AIMING
-		"aura_devotion", "aura_devotion_plus":
-			return ICON_AURA_DEVOTION
-		"weakness":
-			return ICON_WEAKNESS
-		"thorns":
-			return ICON_THORNS
-		"poison":
-			return ICON_POISON
-		"rage":
-			return ICON_RAGE
-		"defensive_stance":
-			return ICON_BLOCK
-		"leech":
-			return ICON_LEECH
-	return ICON_DEFAULT
+	return StatusIcons.get_icon(status_id)
 
 func _get_status_display_info(status_id: String, status_data: Dictionary) -> Dictionary:
 	var dur = status_data.get("duration", 0)

@@ -1,0 +1,115 @@
+===== LINE 1 ROLE=user LEN=119 =====
+<timestamp>Saturday, Aug 15, 2026, 11:31 PM (UTC+2)</timestamp>
+<user_query>
+chci se pobavit ohledně loru
+</user_query>
+
+===== LINE 6 ROLE=user LEN=484 =====
+<timestamp>Saturday, Aug 15, 2026, 11:37 PM (UTC+2)</timestamp>
+<user_query>
+je prostě jako pro mě vývojáře musím nějak určit ten lore... vymyslet, zatím je to taková kostra v kabátu nic extra já vidět tohle tak mám stále mega moc otázek ale žádnou odpověd skládám si obrázek kámen po kamínku doslova 
+
+musí to mít celé hlavu i patu.. skvělý smysl zápletky, i pád, mind fuck klidně .. ale udržet lore jednoduchý pro roguelike hru.. není to příběhovka kde se jede na noty
+</user_query>
+
+===== LINE 10 ROLE=user LEN=1198 =====
+<timestamp>Saturday, Aug 15, 2026, 11:46 PM (UTC+2)</timestamp>
+<user_query>
+jelikož je to dark fantasy dává volnost co se týče experimentů enemy... doslova mužu dělat cokoliv draci monstra, duchové, anděle a demoni, nemrtví  bestie, harpie atd... 
+
+to že je boss zatím demon girl je takov´prozatimní experiment ne hotový boss ale zatím funguje 
+
+co se týče momentálních enemy klidně bych to nechal a rožšiřoval... jelikož new game+ později zanikne budou klasický acty a již podstatě od act 2 se budou moci potkávat varianti
+
+Varianti jsou geneticky upravený monstra obecně enemy kteří mají speciální vlastnosti jako třeba že hoří takže dávají burn, elektriku tě stunnou, atd.. prostě elementální varianti 
+
+to je další věc do lore které by díky tomu mohlo být nenápadný to by mohlo být pak navázání na dialogy ve vesnici prohození slov při cestách jsem potakala zvláštní mutace že hořeeeel atd... a díky tomu se hráč dozví že jsou to vlastně varianti nebo nějaký nazev jiný experiemnti idk 
+
+ale pořád act 2 je nakombený 
+act 3 je již hard to by podstatě měli být samý varianti a ultra silný boss a pak asi nic prozatimního nebude po act 3
+
+ale to je jedno zatím 
+
+jsme tu kvuli loru
+</user_query>
+
+===== LINE 14 ROLE=user LEN=318 =====
+<timestamp>Sunday, Aug 16, 2026, 10:29 AM (UTC+2)</timestamp>
+<user_query>
+ale na druhou stranu jde to udělat jinak abych se přece jen trochu lišil StS jelikož sts je living prison přece, a je tam ta verlyba která ho vzkřísuje pořád a je to rozdělený na acty 
+
+a zda jde udělat jinak než na acty nebo tak
+</user_query>
+
+===== LINE 18 ROLE=user LEN=135 =====
+<timestamp>Sunday, Aug 16, 2026, 10:31 AM (UTC+2)</timestamp>
+<user_query>
+nejmenuje se to LOOP
+
+ale doslova Projekt LOOP
+</user_query>
+
+===== LINE 21 ROLE=user LEN=196 =====
+<timestamp>Sunday, Aug 16, 2026, 10:34 AM (UTC+2)</timestamp>
+<user_query>
+já ale nemám nci mezi akty... do vesnice jdeš mimo run buď před ním nebo po tom co umřeš nebo porazíš bosse
+</user_query>
+
+===== LINE 24 ROLE=user LEN=281 =====
+<timestamp>Sunday, Aug 16, 2026, 10:39 AM (UTC+2)</timestamp>
+<user_query>
+ano prostě act 1;2;3 jeden run prostě 
+
+vesice je prostě metaprogresse.. místo na najmout si nové heroes, na vylepšení postavy pomocí upgrade budov čím více upgrade tím silnější v příštím runu
+</user_query>
+
+===== LINE 27 ROLE=user LEN=879 =====
+<timestamp>Sunday, Aug 16, 2026, 10:44 AM (UTC+2)</timestamp>
+<user_query>
+jenže... teď otázka.. StS má vzkřísení když upomřeš meow tě oživý a jdeš znovu 
+
+tady to musí fungovat jinak.. třeba něco jako prostě jsi jendotka ... oooo něco jak seriál půjčovna masa.. že prostě jsi perfektní jednotka která když umře vytvoří se nová stejná možná i lepší právě podle toho zda upgraduješ 
+
+aby prostě byla lepší v dalším runu a dostala se dále 
+
+když dojdeš uplně na konec a porazíš bosse nikdy se nevrátíš do vesnice jako ten kdo to celé prošel prostě umřeš nebo utečeš jako klon ale víš že se do vesnice znovu nikdy již nevrátíš 
+
+do vesnice se nedá vrátit, je to jednosměrka, odtamtuď chodí units .. pouze přes extraction dokážeš přinést suroviny do vesnice aby jsi mohl upgradovat budovi, to jest 50% na campfire, 25% se automaticky pošle když umřeš, a 100% na bossovi
+</user_query>
+
+===== LINE 30 ROLE=user LEN=146 =====
+<timestamp>Sunday, Aug 16, 2026, 10:46 AM (UTC+2)</timestamp>
+<user_query>
+ale pozor stále je to dakr fantasy ne tech nebo cyberpunk
+</user_query>
+
+===== LINE 33 ROLE=user LEN=319 =====
+<timestamp>Sunday, Aug 16, 2026, 10:48 AM (UTC+2)</timestamp>
+<user_query>
+a díky tomu že Projekt LOOP stále běží vlastně je jednoduchý.... neexistuje nikdo kdo by zastavil výdej jednotek ven 
+
+jelikžo je to jednosměrka není nic co by dalo to STOP a právě proto se pořád odesílají na výpravu nové jednotky
+</user_query>
+
+===== LINE 36 ROLE=user LEN=274 =====
+<timestamp>Sunday, Aug 16, 2026, 10:49 AM (UTC+2)</timestamp>
+<user_query>
+a jak tedy vesnice tedy ví že nikdo stále nepřicházi a stále tedy vysílají ?
+
+to musí být nějaká třeba přísaha ? 
+
+takže teď musíme kolem toho udělat ten lore z t=ehle základní myšlenky
+</user_query>
+
+===== LINE 40 ROLE=user LEN=120 =====
+<timestamp>Sunday, Aug 16, 2026, 10:51 AM (UTC+2)</timestamp>
+<user_query>
+uprav tedy lore bibli kompletně
+</user_query>
+
+===== LINE 42 ROLE=user LEN=139 =====
+<timestamp>Sunday, Aug 16, 2026, 10:52 AM (UTC+2)</timestamp>
+<user_query>
+uprav lore bibli kompletně z toho co jsme si řekli
+</user_query>
+

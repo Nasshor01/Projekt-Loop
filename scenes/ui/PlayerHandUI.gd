@@ -143,11 +143,20 @@ func clear_hand():
 		if child is CardUI:
 			child.queue_free()
 
-func set_card_playability(_playable: bool, _reason: String, _card_node: Control) -> void:
-	pass
+func set_card_playability(playable: bool, reason: String, card_node: Control) -> void:
+	if is_instance_valid(card_node) and card_node is CardUI:
+		(card_node as CardUI).set_playability_visual(playable, reason)
 
-func refresh_all_playability(_evaluator: Callable) -> void:
-	pass
+## [param evaluator] takes CardData and returns {"playable": bool, "reason": String}.
+func refresh_all_playability(evaluator: Callable) -> void:
+	for child in get_children():
+		if not (child is CardUI) or child.is_queued_for_deletion():
+			continue
+		var card: CardUI = child
+		if card.card_data == null:
+			continue
+		var result: Dictionary = evaluator.call(card.card_data)
+		set_card_playability(bool(result.get("playable", true)), str(result.get("reason", "")), card)
 
 func set_selected_card(card_node: Control):
 	_selected_card = card_node

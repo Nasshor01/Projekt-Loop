@@ -1,0 +1,84 @@
+===== Q1 len=43 =====
+co podle issues a project máme dále dělat ?
+
+===== Q2 len=809 =====
+ono paladin run již za mě funguje dobře ale ano je třeba to řádně otestovat do poslední kapky takzvaně....
+
+ale než vydám alfu 
+
+já si myslím že encounterů by mělo být více 
+
+to samé artefaktů rozdělené do těch rarit skutečně 
+
+a myslím si že podstatnou část je to mít opravdu alpha verze že již se budou přidávat konent a balancovat 
+
+ne měnit mechanika hry 
+
+to znamená že jak já hraju paladina on moc není taktický na grid prostě 
+
+chtělo by to přece jen před alphou něco přidat aby to bylo opravdu taktické i pro nudné postavy  trapper je naopak vynikající za mě tam ta taktika funguje skvěle musíš jít zpět používat trapky a lákat enemy do nich 
+
+ale paladin je prostě takovej přibliž se k enemy a fighti bez nutnosti dělat taktiku vždycky pořádný close range 
+
+idk zda to tak nechat nebo něco vymyslet ?
+
+===== Q3 len=349 =====
+něco ti pošlu všechny staré dokumenty jo c:\Users\Jirka\Downloads\projekt loop, herní a obchodní plán.docx c:\Users\Jirka\Downloads\Refaktoring bojového systému pro iniciativu.docx c:\Users\Jirka\Downloads\plan postav v2.docx c:\Users\Jirka\Downloads\plán postav.docx 
+
+jsou to staré moc si z toho teď neber příkald jenom jsem chtěl aby jsi to viděl
+
+===== Q4 len=82 =====
+ale co si o tom myslíš ? kompletně ? jak to bereš ty dokumenty vs jaký to je teď ?
+
+===== Q5 len=225 =====
+teď my řekni jak přesně to má vymyšlený sts 2 co se týče encounteru na patrech.. jelikož tam nikdy nepotkáš přece stejné encountery a otazník není vždy event ale cokoliv ve sts 2 to je enemy normal, elite nebo event nebo shop
+
+===== Q6 len=113 =====
+já nechám u nás otazník jako event... myslím si že později u nás event muže být cokoliv ale vždycky to bude event
+
+===== Q7 len=85 =====
+a co ty enemy ? mám pocit že v dokumentech co jsem poslal tam byly takové zmínky ne ?
+
+===== Q8 len=219 =====
+tak my tedy řekni jaké nové encountery udělat ? já udělám či najdu přesné sprity a pak začneme dávat buď stavající AI nebo vytvoříme nové .. jelikož všechny ostatní AI + encounteři byli puvodně jako placeholder podstatě
+
+===== Q9 len=103 =====
+dej my kvalitní prompt abych toho golbina proměnil v goblin archera nebo toho hobgoblina ale sexy verze
+
+===== Q10 len=134 =====
+a nebo na základě goblinu co máme  ve hře my mužešš dát samostatný prompt aby my ho asesprite pixellab vygeneroval dle našich představ
+
+===== Q11 len=97 =====
+a kde je náše sexy archerka ? to je muj reálný hook proč to dělám aby charakteři ve hře byly sexy
+
+===== Q12 len=77 =====
+exportnul jsem 2 archery... dále co vygenerovat dej my prompty a já to udělám
+
+===== Q13 len=53 =====
+dobre přidal jsem zatím tohle více zatím nebudu dělat
+
+===== Q14 len=186 =====
+taky bych chtěl aby první 3 encounteři na mapě prostě první 3 patra byly tak nějak lehé enemy protože když dostanu hned na začátku 2x demon assasin s monkem tak to není uplně lehký start
+
+===== Q15 len=200 =====
+dále takový ten victory label co jsi kdysi dělal když vyhraju fight umře poslední enemy je tak torchu divnej více dole skoro mezi kartama .. a já nikde v projektu ten laben nenašel abych si ho upravil
+
+===== Q16 len=65 =====
+a karty v reward scene mají hned nazačátku hover že jsou zvětšené
+
+===== Q17 len=122 =====
+ukládám teď push na github.. pokud jsme udělali milník chce to další verze, upravit issues a dát my text verze pro discord
+
+
+
+######## LAST ASSISTANT (up to 3) ########
+
+----- ASSIST -----
+Našel jsem ho: `scenes/battle/BattleScene.tscn` → uzel **`CanvasLayer/VictoryLabel`**. Problém: sahal skoro přes celou výšku obrazovky a text měl `vertical_alignment = center`, takže „Výhra“ seděla mezi deskou a kartama. Teď je nahoře (y ≈ 150–230), přes celou šířku, `z_index = 50`. V editoru: otevři `BattleScene.tscn` → `VictoryLabel` a případně posuň dál.
+
+----- ASSIST -----
+Opraveno v `RewardScene.gd`. **Příčina:** při spawn karet pod kurzorem GridContainer spustí `mouse_entered` hned → karty se zvětší, jako bys na ně najel. **Fix:** hover se zapne až po 2 framech layoutu, scale se nejdřív resetne na normál, a hoverí vždy jen jedna karta. Po výhře by měly startovat v klidu a zvětšit se až při najetí myší.
+
+----- ASSIST -----
+**Pre-Alpha 0.3.7** je na GitHubu (`c31014e`). Tohle ještě **není Alpha 0.4** — jen content patch v gate. ## Issues - **#30** uzavřeno (encounter pack) - **#34** checklist update — zbývá #39 #40 #31 #32 #33 - **#39 / #40** pořád open (další fokus) --- ## Discord (copy-paste) ``` 🛠️ Projekt LOOP — Pre-Alpha 0.3.7 Content patch směrem k Alphě (pořád Pre-Alpha, ne 0.4). ✨ Nové • Fortress goblini: lovkyně, střelec, nájezdnice, surovec • Nové encountery (scouts / bowline / bruiser / pack + elite warband) • Lehký start: první 3 fighty (a raná patra) berou easy pool — už ne hned assassin squad 🔧 Opravy • Victory label je nahoře, ne mezi kartama • Reward karty se nespawní už „hovernuté“ • Spawn respektuje pozice z encounteru ➡️ Dál k Alphě: víc Common/Uncommon artefaktů, Paladin holy ground, QA runy, GIFy. ```
+

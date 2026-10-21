@@ -1,0 +1,70 @@
+===== Q1 len=287 =====
+hele je začít skládat příběh toho proč se hra jmenuje Projekt LOOP 
+
+proč se to odehrává ve světě dark fantasy, proč hrdinky jsou sexy waifu,
+proč musíš zabíjet monstra nebo prostě enemy
+co je to za svět 
+prostě vytvořit backround, příběh, pozadí toho co se reálně děje 
+
+nějaké návrhy ?
+
+===== Q2 len=126 =====
+proč bereš jako loop jako časovou smyčku ? nehleď na to co řekl ve feedbacku hledáme něco originálního co bude sedět do té hry
+
+===== Q3 len=102 =====
+hlavně ber to že ta hra se jmenuje Projekt LOOP ne jenom loop nebo že je to project ale  
+Projekt LOOP
+
+===== Q4 len=947 =====
+Projekt LOOP byl oficiální program.
+Měl vyrobit, vycvičit a nasazovat specifické bojovnice — ženy schopné nést a používat nestabilní moc (karty, artefakty, „ozvěny“).
+Projekt oficiálně skončil. Nebo selhal. Nebo byl utajen a pohřben.
+Ale infrastruktura se nikdy nevypnula.
+
+Vesnice = zbylá základna / administrační uzel projektu.
+Ty = pořád aktivní jednotka. Systém tě pořád posílá ven.
+Mise = staré protokoly, které už nikdo nepřepsal.
+Shardy / materiál = zbytky zdrojů, které se projekt naučil recyklovat.
+Budovy = původní oddělení projektu (kaple = kondicionování, hospoda = nábor, knihovna = záznamy…).
+Enemy = to, co projekt nedokázal uklidit, nebo co vzniklo jako vedlejší produkt.
+Boss = něco, co protokol pořád označuje jako prioritní cíl — i když už dávno neví proč.
+
+LOOP tedy není časová smyčka.
+Je to uzavřený pracovní cyklus, který se nikdy nevypnul:
+vyjít → splnit → vrátit se → nahlásit / odevzdat → jít znovu.
+A ty v něm pořád jsi.
+
+===== Q5 len=926 =====
+Máš pevný základ, ale spoustu věcí záměrně necháváš otevřených. Díky tomu můžeš odpovědi dávkovat postupně a přirozeně:
+Jak to rozšiřovat
+
+MístoCo odhalovatDialogy postavOsobní vztah k projektu („já si pamatuju jen výcvik“, „některé protokoly už neberu vážně“)Vesnice / budovyCo jednotlivá oddělení dřív dělala, co z nich zbyloEventyStaré záznamy, poškozené direktivy, místa kde protokol selhalPo bossoviProč tenhle cíl pořád visí v prioritách, co projekt nedokázal uzavřítUnlock nové postavyJiná řada / specializace, jiný pohled na stejný systém
+Důležité pravidlo
+Nikdy nevysvětluj všechno najednou.
+Hráč má nejdřív pochopit jen:
+
+Jsem jednotka.
+Vesnice je základna.
+Cyklus pořád běží.
+
+Teprve později (přes eventy, bossy, dialogy) dostává:
+
+Projekt byl pohřben.
+Už nemusí existovat nikdo, kdo by ho měl právo vypnout.
+Některé cíle pořád běží ze setrvačnosti.
+
+Tím pádem lore roste s hrou, místo aby bylo všechno v tutorialu.
+
+
+
+######## LAST ASSISTANT (up to 3) ########
+
+----- ASSIST -----
+Tohle sedí. A hlavně: **Projekt LOOP** teď znamená něco konkrétního — program, ne metaforu. ### Kanon (zkráceně) **Projekt LOOP** byl oficiální program na výrobu, výcvik a nasazení bojovnic schopných nést nestabilní moc (karty, artefakty, ozvěny). Oficiálně skončil / selhal / byl pohřben. **Infrastruktura ne.** - **Vesnice** = zbylá základna a administrační uzel - **Ty** = pořád aktivní jednotka - **Mise** = staré protokoly bez nového zadavatele - **Shardy** = recyklovaný materiál projektu - **Budovy** = bývalá oddělení - **Enemy** = neuklizený odpad / vedlejší produkty - **Boss** = prioritní cíl, který protokol pořád drží, i bez důvodu **LOOP** = uzavřený pracovní cyklus: vyjít → splnit → vrátit → odevzdat → znovu. --- ### Proč to drží celou hru Roguelike run = **nasazení**. Meta vesnice = **základna, která se sama udržuje**. Karty/artefakty = **nestabilní výzbroj projektu**. Death/retry = jednotka se vrací do cyklu, ne „čas se resetuje“. Dark fantasy = svět po projektu, který se stal krajinou. Sexy waifu = záměrný design výstupu programu (nositelky moci), ne náhodný art style. --- ### 3 díry, co ještě dřív doplnit (ať to drží) 1. **Kdo projekt spustil?** (církev / říše / řád / konsorcium) — určí tón. 2. **Proč právě ženy?** (jedna věta diegeticky — biologie moci, rituál, politika, „lépe drží ozvěny“…). 3. **Co LOOP oficiálně znamenalo uvnitř projektu?** (kód oddělení? název cyklu? zkratka?) — i když hráč uvidí jen razítko. Když chceš, z toho hned sepíšu **1stránkový lore bible** + mapování budov vesnice na oddělení + 5 vět do tutorialu v tomto tónu.
+
+----- ASSIST -----
+Hotovo: [`docs/LORE_BIBLE_PROJEKT_LOOP.md`](docs/LORE_BIBLE_PROJEKT_LOOP.md) Páteř: - **Projekt LOOP** = oficiální program (výroba / výcvik / nasazení) - **LOOP** = uzavřený pracovní cyklus, ne čas - **Vesnice** = základna; budovy = oddělení - **Ty** = aktivní jednotka v běžícím systému bez zadavatele - gameplay (run, karty, střepy, boss) má lore mapování - výslovný anti-kánon proti time-loop Dočasně doplněné (označené jako v1 / otevřené): proč ženy, zakladatel projektu, jestli jde LOOP vypnout. Chceš jako další krok tutorial texty, popisy budov, nebo rozhodnutí o zakladateli?
+
+----- ASSIST -----
+Do lore bible je to zapsané jako **§10 Dávkování lore** + úpravy tónu, anti-kánonu a dalších kroků. Jádro: - **Nikdy všechno najednou** - Tutorial = jen *jednotka / základna / cyklus* - Dialogy, budovy, eventy, boss, unlock postav = kanály pozdějších odhalení - Otevřené otázky zůstávají otevřené, dokud je nepřinese konkrétní obsah Tutorial příklad v §9 je teď úmyslně „slabší“ — bez „projekt byl pohřben“.
+

@@ -1,0 +1,46 @@
+===== Q1 len=71 =====
+push aktuálního guthubu přešti commity a dokumenty nové a změny a plány
+
+===== Q2 len=251 =====
+prvně výběr postavy  tak se my nelíbí teĎ ten screen sice je hezký jak je to zašednutý ale ten text se my tam nelíbí 
+
+možná bych chtěl mít výběr postavy podobný jako má sts 2 jestli víš jak vypadá? 
+
+takové ty obrázky dokážu udělat to pozadí statický
+
+===== Q3 len=73 =====
+mám tam to pozadí vložil jsem ho tam ale je to kodově udělaný předpoládám
+
+===== Q4 len=118 =====
+takže ten text co tam je chci větší čitelnější s obrysem černým outline 
+
+a co tam napíšeme reálně ? dej plánovací mod
+
+===== Q5 len=337 =====
+Výběr postavy — čitelnost + reálný text
+
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+===== Q6 len=296 =====
+Implement the plan as specified, it is attached for your reference. Do NOT edit the plan file itself.
+
+To-do's from the plan have already been created. Do not create them again. Mark them as in_progress as you work, starting with the first one. Don't stop until you have completed all the to-dos.
+
+===== Q7 len=129 =====
+a charakter setup asi dáme tím pádem pryč, a ty XP a levely přesuneme do toho charakter selekt do toho boxu ? nebo lepšíá nápad ?
+
+
+
+######## LAST ASSISTANT (up to 3) ########
+
+----- ASSIST -----
+Jo, přesně tak — **kód to přepisoval**. Do scény jsi dal `paladin_backround.png` na HeroArt, ale při startu skript hodil zpátky starý malý portrét. To už nedělá. Teď: - **Velká malba** = tvoje `paladin_backround.png` - **Dolní čtverečky** = pořád malé portréty - Stará katedrála za tím je pryč (černé pozadí, ať to sedí k tvé malbě) Až budeš mít Trappera, hoď soubor vedle (třeba `trapper_backround.png`) a v inspectoru na `CharacterSelectScreen` nastav `trapper_select_art`. Do té doby Trapper pořád ukáže ten malý portrét.
+
+----- ASSIST -----
+Panel je teď jen jméno, HP/zlato a jak se hraje. Výzva / Medvědí past je pryč. Text je větší a s černým outline: jméno 52 (outline 8), HP/zlato 28 (outline 6), flavor 24 (outline 6). **Paladin:** Drží linii, nabírá Block a tahá nepřítele k sobě. **Trapper:** Pasti, kite a jed. Nepřátelé platí za každý krok.
+
+----- ASSIST -----
+Jo — Character setup pryč. Byl to jen zbytečný klik (skill tree je stejně schovaný). Level a XP jsou v tom levém boxu u vybrané postavy: - **Paladin** vpravo **Level: 1** - dole tenká XP lišta + `XP: 0 / 80` Přepneš na Trappera → uvidíš *jeho* level/XP, ne Paladinovy. **Pokračovat** teď rovnou startuje run. Ta meziscéna se přeskočí.
+

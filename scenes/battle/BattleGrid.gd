@@ -107,6 +107,8 @@ var _artifact_zones: Dictionary = {}
 ## Gilded Dragonheart line tint cells
 var _artifact_line_cells: Array[Vector2i] = []
 
+var _last_billboard_yaw: float = INF
+
 func _ready():
 	_terrain_container = Node3D.new()
 	_terrain_container.name = "TerrainContainer"
@@ -137,6 +139,9 @@ func _process(_delta: float) -> void:
 	if not camera or _yaw_follow_sprites.is_empty():
 		return
 	var yaw := camera.global_rotation.y
+	if absf(yaw - _last_billboard_yaw) < 0.0008:
+		return
+	_last_billboard_yaw = yaw
 	for i in range(_yaw_follow_sprites.size() - 1, -1, -1):
 		var spr := _yaw_follow_sprites[i]
 		if not is_instance_valid(spr):

@@ -1,0 +1,596 @@
+===== LINE 1 ROLE=user LEN=127 =====
+<timestamp>Friday, Aug 14, 2026, 9:54 PM (UTC+2)</timestamp>
+<user_query>
+potřebuji stáhnout pull aktuální github
+</user_query>
+
+===== LINE 9 ROLE=user LEN=147 =====
+<timestamp>Friday, Aug 14, 2026, 9:57 PM (UTC+2)</timestamp>
+<user_query>
+je toho spoustu nového v issues dostal jsem velké feedbacky
+</user_query>
+
+===== LINE 14 ROLE=user LEN=49396 =====
+<timestamp>Friday, Aug 14, 2026, 10:00 PM (UTC+2)</timestamp>
+<user_query>
+c:\Users\Jirka\Downloads\Projekt LOOP.docx 
+
+Projekt LOOP Playtest Impressions and Gameplay Feedback
+2 zdroje
+·
+14. 8. 2026
+Texty popisují vývoj nezávislé videohry Projekt LOOP, která kombinuje karetní roguelike s taktickým pohybem po mřížce. Technická dokumentace podrobně rozebírá ekonomiku vesnice, systém vylepšování budov a unikátní herní artefakty ovlivňující bojové statistiky. Produktová roadmapa stanovuje strategii pro uvolňování verzí, cenotvorbu a etický přístup k využití umělé inteligence v herním umění. Zpětná vazba od testerů identifikuje kritické chyby v tutoriálu, nedostatky v popiscích karet a problémy s tempem soubojů u postav pro boj zblízka. Přiložený přepis z playtestu tyto výtky potvrzuje a zdůrazňuje rozpor mezi očekáváním hráčů a skutečnými mechanikami v rané alfa verzi. Celkově zdroje poskytují komplexní pohled na design, plánování a aktuální stav vývoje tohoto českého herního projektu.
+
+Dnes • 7:45
+Blok A — Tutorial / bugy (blocker)
+Popiš přesně, co se stalo u campfire / upgrade obrazovky v tutoriálu: co viděl, co klikal, proč uvízl.
+Co přesně udělal po soft-locku (Restart / Menu / Close)? Kam ho to poslalo?
+Byly i jiné bugy nebo soft-locky mimo tutorial campfire? Seznam s časovými značkami pokud jsou.
+
+Thoughts
+Campfire / upgrade obrazovka v tutoriálu
+Co viděl: Hráč se dostal na obrazovku kempu (campsite/campfire), kde měl vybrat kartu k vylepšení ("choose card to upgrade")
+. Na obrazovce však nebylo vůbec nic na výběr ("there's nothing to choose here")
+. Viděl pouze přepínač "show upgrades off on" a tlačítko pro potvrzení "click to confirm"
+.
+Co klikal: Zkoušel klikat všude možně – zkoušel klikat pravým tlačítkem ("right click it here")
+, přepínat zobrazení vylepšení ("show upgrades off on")
+ a opakovaně klikal na tlačítko pro potvrzení ("click to confirm")
+. Zkoušel také, zda se dá z lokace odejít ("can I leave this place then")
+, a pokoušel se klikat na cokoli dalšího, co by ho posunulo dál (zmiňuje "close floor loop"), ale bez úspěchu
+.
+Proč uvízl: Hra po něm vyžadovala, aby v rámci tutoriálu vybral kartu, zobrazil její upgrade a potvrdil ho. Protože se mu ale žádné karty k výběru nenačetly, nemohl akci dokončit a hra ho nepustila dál, čímž došlo k soft-locku
+.
+Reakce na soft-lock a kam ho to poslalo
+První pokus (Restart): Hráč klikl na tlačítko Restart
+. To ho však nevrátilo na začátek tutoriálu, ale poslalo ho to rovnou do nového běžného průchodu hrou (new run)
+.
+Druhý pokus (Opakování tutoriálu): Rozhodl se dát tutoriálu ještě jednu šanci a spustil ho znovu
+. Odehrál souboj přesně podle pokynů hry, ale u upgradu karty v kempu skončil opět ve stejném soft-locku
+.
+Kam ho to poslalo dál: Po druhém záseku se krátce podíval na webovou stránku hry, zda tam o tutoriálu nejsou nějaké informace
+. Následně tutoriál definitivně opustil a v menu si vybral třídu Paladina, se kterým spustil klasickou hru (mapu s elitními souboji, událostmi, obchodem a bossem)
+.
+Jiné bugy nebo nedostatky mimo campfire v tutoriálu
+Zdrojový přepis neobsahuje explicitní časové značky, proto jsou níže uvedeny pouze popisy chyb v pořadí, jak se ve videu objevily:
+Nepříjemné překrývání textu (vizuální bug): Hráč narazil na problém, kdy se mu textové vrstvy překrývaly přes sebe ("annoying text overlay there how the overlays top of that")
+.
+Chybějící text s popisem efektu na kartě: U karty, která měla udělovat 8 poškození všem nepřátelům v oblasti 3x3 ("deal eight damage to enemies in 3 three area around you"), chyběl na samotné kartě jakýkoli text, který by tento plošný efekt popisoval ("doesn't say anything on the card itself that has some area effect to it")
+.
+Zcela prázdný obchod: Když hráč navštívil obchod, byl úplně prázdný ("empty quite empty")
+. Sám spekuloval, zda je to bug, nebo záměrná mechanika, která má hráče donutit investovat zlato až do upgradů ve vesnici
+.
+Mimo výše zmíněné vizuální a funkční nedostatky hráč na žádný další soft-lock, který by mu zcela zabránil pokračovat v hraní, nenarazil. Hru nakonec ukončil sám dobrovolně kvůli únavě ze zdlouhavých soubojů
+.
+⚔️ Můžeme se podívat na to, jaké konkrétní výhrady měl hráč k hratelnosti, pohybu po gridu nebo k tempu soubojů s nepřáteli.
+Blok B — Combat pacing
+Kde v boji říkal, že je to zdlouhavé? První fight, pozdější, melee vs ranged?
+Co přesně dělal během „prázdných“ tahů (jen pohyb + End Turn)? Kolik tahů odhadem než se dostal do range?
+Co říkal o iniciativě (BG3 bar), brnění/blocku a pozicování na gridu — chválil / nechápal / frustrovalo?
+
+Thoughts
+Zdlouhavost boje (Combat pacing)
+Kde v boji to říkal: Hráč označil boj za zdlouhavý především v pozdějším souboji proti druidovi (vyvolávači), který neustále vyvolával vlky a aplikoval na něj znehybňující efekty
+. Tento střet popsal jako „souboj trpělivosti“ (battle of patience) a uvedl, že se pohyboval na hranici čisté otravnosti („bordering on tedium“)
+.
+Melee vs. Ranged: Problém se zdlouhavostí přímo spojoval s hraním za melee postavu (Paladina)
+. Poznamenal, že s bojovníkem na blízko je ve hře (minimálně v této rané fázi) příliš mnoho prázdných tahů
+. U nepřátelského ranged (střeleckého) druida ho naopak frustrovalo, že před ním neustále utíkal a držel si odstup
+.
+„Prázdné“ tahy (Dead turns)
+Co přesně dělal: Během těchto tahů hráč pouze popošel dopředu (využil pohyb zdarma) a klikl na ukončení tahu (End Turn)
+. Nemohl dělat nic jiného, protože nepřátelé byli příliš daleko a on neměl dostatek možností k akci, takže jen čekal, až se k němu přiblíží
+. Popsal to jako frustrující „mrtvý čas“ (dead air)
+.
+Odhad počtu tahů do range: Přepis neobsahuje přesný číselný odhad počtu tahů, než se dostal k nepříteli. Hráč pouze obecně mluví o „spoustě mrtvých tahů“ („so many dead turns“)
+ a již v tutoriálu si všiml, že nepřátelé mají obrovskou mobilitu a pohybují se téměř třikrát dál než on sám
+.
+Iniciativa, brnění a pozicování na gridu
+Iniciativa (BG3 bar): Při prvním pohledu na lištu usoudil, že jde o iniciativu ve stylu Baldur's Gate 3, což mu přišlo jako dobré řešení („fair enough“)
+. Později se ale krátce zmatil – myslel si, že lišta ukazuje životy nepřátel, protože hodnota jejich HP se shodovala s jejich iniciativou
+. Jakmile si uvědomil svůj omyl, zhodnotil iniciativu jako silný prvek („initiative strong“), který mu umožňuje jednat před nepřáteli
+.
+Brnění/Block: Zjistil, že brnění absorbuje poškození
+. Velmi ho překvapilo a potěšilo, že brnění přetrvává mezi jednotlivými tahy („armor stays between turns“)
+. Zkoušel ho záměrně hromadit (stackovat), aby otestoval, jak dlouho vydrží, což považoval za zajímavou mechaniku
+. Díky silné obraně a léčení pro něj nebyla správa životů žádný problém
+.
+Pozicování na gridu (Frustrace): Hráč byl z gridu spíše frustrovaný a mechanics mu přišly bezduché („mindless“)
+. Vadilo mu několik věcí:
+Nemožnost útočit diagonálně, což ho omezovalo v boji
+.
+Zaseknutí na překážkách a debuffy: Když vstoupil na políčko se sutinami (boulder/rubble), ztratil veškerý pohyb
+. Nepřátelé ho navíc dokázali nepříjemně obklíčit („surrounded in annoying way“)
+ nebo ho znehybnit (efekt nature's grasp / kořeny), takže se nemohl pohnout a boj se jen natahoval
+.
+Nutnost zahánět nepřátele do kouta: Kvůli tomu, že měl nepřítel větší pohyb, ho musel složitě nahánět po mapě a manévrovat jako při partii šachů, což ho kvůli neustálým nepřátelským debuffům otravovalo
+.
+🎨 Mohli bychom se podívat na to, jak hráč hodnotil vizuální stránku hry, nesourodé grafické styly (anime postavy vs. klasický pixel art) nebo celkovou hudební kulisu.
+Blok C — LOOP / meta / village
+Co přesně říkal o názvu LOOP / „co je ten loop“? Citace pokud jdou.
+Co řekl o vesnici / osadě / meta-progresi / shardech / budovách?
+Dokončil runu? Jak skončila (boss / death) a co říkal na konci?
+
+Thoughts
+Názor na název LOOP / „co je ten loop“
+Hráč byl zmatený z toho, jakou roli vlastně "loop" (smyčka) v hratelnosti hraje, a původně hru popsal jako „Slay the Spire, ale s loop mechanikou, o které ještě nevím, co dělá“
+. Později během hraní konstatoval, že o této mechanice stále nic neví, a měl pocit, že mu tato klíčová funkce nebyla vůbec ukázána: „supposedly big enough content with this game wasn't really showcased me at all that being the loop feature what is it even was there a loop feature“
+.
+Na základě názvu očekával nějakou herní mechaniku spojenou s časovou smyčkou nebo manipulací s časem: „giving me some sort of a time management time loop mechanic assumption that's not really here“
+. Nakonec dospěl k názoru, že slovo „loop“ v názvu pravděpodobně odkazuje pouze na samotný roguelike princip opakovaného procházení hrou dokola: „it's more just the rog like nature I suppose that's being messed with that word“
+.
+Vesnice / meta-progrese / budovy
+Hráč na začátku videa zmínil, že ve vesnici lze provádět vylepšení
+. Detailněji se na meta-progresi podíval až na úplném konci po opuštění runu
+. Všiml si, že vylepšení ve vesnici mu mohou odemknout věci jako:
+Vyšší maximální životy („max HP“)
+,
+Lepší obchod („better shop“)
+,
+Více zlata do začátku („more gold / starting gold“)
+,
+Více možností při výběru odměn („more choices for rewards in general“)
+,
+Zisk bloku (brnění) na začátku bitvy („blocked at the start of the battle“)
+.
+Uvědomil si také, že obchod přímo během průchodu hrou byl úplně prázdný pravděpodobně záměrně – aby hra hráče motivovala investovat do upgradů obchodu právě ve vesnici
+. O konkrétních budovách, surovinách nebo shardech se však přepis blíže nezmiňuje.
+Dokončení runy a konec hry
+Hráč runu nedokončil a ani v ní neumřel. Rozhodl se z ní dobrovolně odejít a vypnout ji po dokončení úmorného souboje s druidem
+.
+Jako hlavní důvod uvedl, že se bojí dalších zdlouhavých a únavných soubojů plných prázdných tahů: „I'm not going to make it that far because I don't want to play anymore i'm too afraid to get into another dry out fight like that where I'm just like I mentioned before with those death turns but uh multiplied by uh a couple of... yeah just multiplied a bunch“
+. Po krátkém zhodnocení vesnice hru vypnul se slovy: „All right I am done here good luck with Devon [devs] cheers.“
+🧠 Můžeme se podívat na to, co hráč říkal o grafické stránce hry, konkrétně o nesourodém stylu postav (anime design vs. pixel art).
+Blok D — Art / audio / overall
+Konkrétní stížnosti na vizuál (které postavy, UI, „temporary“ grafika)?
+Co přesně chválil na hudbě / SFX?
+Shrň top 5 věcí, které by podle něj měly vývojáři opravit nejdřív (jeho slovy).
+
+Thoughts
+Konkrétní stížnosti na vizuál
+Dočasné pozadí (placeholder): Hned v úvodu hry si hráč stěžoval na grafické pozadí, které na něj působilo jako nepříjemná optická iluze. Poznamenal, že pokud by se na něj díval příliš dlouho, jeho oči by dostaly zabrat způsobem, který by se jim vůbec nelíbil
+.
+Nesourodé styly postav (Art clashing): Hráč velmi výrazně kritizoval kontrast mezi ženskými postavami, které mají čistý anime styl, a zbytkem hry, který je vyveden v klasickém fantasy pixel artu
+. Prohlásil, že tyto dva styly vedle sebe bijí do očí („stand out like a sore thumb“)
+. Doufá však, že se jedná pouze o dočasnou záležitost rané verze hry
+.
+Uživatelské rozhraní (UI) a textové vrstvy: Narazil na nepříjemný vizuální bug, kdy se mu překrývaly textové vrstvy přes sebe („annoying text overlay“)
+. Zmínil také, že okna s informacemi a rozlišení hry celkově by zasloužily lepší škálování
+.
+Chybějící grafika na kartách: Posteskl si, že každá karta v těchto typech her mívá svůj jedinečný a krásný art, což zde zatím chybí
+.
+Hodnocení hudby a SFX
+Hudba byla pro hráče nejoblíbenější částí celé hry a velmi ji chválil
+. Ocenil zejména tyto věci:
+Výborná rozmanitost: Na to, v jak rané fázi se build nachází, je hudební doprovod velmi pestrý
+.
+Atmosféra a styl: Hudba mu přišla velmi atmosférická (moody) a mile ho překvapilo zapojení houslí
+.
+Zajímavé motivy: V tutoriálu si všiml lehkého nádechu hudby z „egyptské pouště“ doprovázeného flétnami
+. V běžném průchodu hrou (ve vesmírném pozadí) si zase užíval skvělou a hutnou basovou 
+...[TRUNCATED]...
+
+===== LINE 18 ROLE=user LEN=118 =====
+<timestamp>Friday, Aug 14, 2026, 10:24 PM (UTC+2)</timestamp>
+<user_query>
+takže co máme dále za práci ?
+</user_query>
+
+===== LINE 21 ROLE=user LEN=291 =====
+<timestamp>Friday, Aug 14, 2026, 10:28 PM (UTC+2)</timestamp>
+<user_query>
+tak jak vylepšit náš interaktivní tutorial ? 
+
+i co se týče ovládání udělal bych to více méně pomocí dialogu ze strany training dummy dokážeš to udělat ? pořádně a robustně? jako ten nejlepší tutorial ?
+</user_query>
+
+===== LINE 60 ROLE=user LEN=5651 =====
+<timestamp>Friday, Aug 14, 2026, 10:43 PM (UTC+2)</timestamp>
+<user_query>
+Godot Engine v4.4.1.stable.official (c) 2007-present Juan Linietsky, Ariel Manzur & Godot Contributors.
+--- Debug adapter server started on port 6006 ---
+--- GDScript language server started on port 6005 ---
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/ui/TutorialSpeech.gd" with error "Parse error".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scripts/map/Map.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scripts/map/Map.gd" with error "Parse error".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scripts/map/Map.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/camp/RestScene.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/camp/RestScene.gd" with error "Parse error".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/camp/RestScene.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/rewards/RewardScene.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/rewards/RewardScene.gd" with error "Parse error".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/rewards/RewardScene.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/Tutorial.gd:0 - Compile Error: Failed to compile depended scripts.
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/ui/Tutorial.gd" with error "Parse error".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:29 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/TutorialSpeech.gd:30 - Parse Error: Cannot call non-static function "tr()" from the static function "mount_dummy_line()".
+  ERROR: res://scenes/ui/Tutorial.gd:0 - Compile Error: Failed to compile depended scripts.
+</user_query>
+
+===== LINE 64 ROLE=user LEN=460 =====
+<timestamp>Friday, Aug 14, 2026, 10:56 PM (UTC+2)</timestamp>
+<user_query>
+E 0:01:19:352   step: Infinite loop detected. Check set_loops() description for more info.
+  <C++ Error>   Method/function failed. Returning: false
+  <C++ Source>  scene/animation/tween.cpp:408 @ step()
+
+super jenom dummy neměl žádnou intent ikonku 
+
+a taky když jsem jenom kliknul na ovládání jakékoliv wasd myš tak to automaticky skočilo dále aniž bch já dal pokračovat
+</user_query>
+
+===== LINE 78 ROLE=user LEN=726 =====
+<timestamp>Friday, Aug 14, 2026, 10:59 PM (UTC+2)</timestamp>
+<user_query>
+--- Debugging process stopped ---
+  ERROR: res://scenes/ui/Tutorial.gd:138 - Parse Error: Identifier "_terrain_placed" not declared in the current scope.
+  ERROR: res://scenes/ui/Tutorial.gd:157 - Parse Error: Identifier "_terrain_placed" not declared in the current scope.
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/ui/Tutorial.gd" with error "Parse error".
+  ERROR: res://scenes/ui/Tutorial.gd:138 - Parse Error: Identifier "_terrain_placed" not declared in the current scope.
+  ERROR: res://scenes/ui/Tutorial.gd:157 - Parse Error: Identifier "_terrain_placed" not declared in the current scope.
+</user_query>
+
+===== LINE 82 ROLE=user LEN=281 =====
+<timestamp>Friday, Aug 14, 2026, 11:04 PM (UTC+2)</timestamp>
+<user_query>
+skvělí tutoriál je bombastický a funguje za mě skvěle 
+
+ale co takhle začít napojovat náš lehčí lore již zasadit do tutorialu nějak ? 
+
+d:\Games\projekt-loop-v2\docs\LORE_BIBLE_PROJEKT_LOOP.md
+</user_query>
+
+===== LINE 88 ROLE=user LEN=130 =====
+<timestamp>Friday, Aug 14, 2026, 11:09 PM (UTC+2)</timestamp>
+<user_query>
+co přesně je v tom tutorialu za dialogy ?
+</user_query>
+
+===== LINE 91 ROLE=user LEN=167 =====
+<timestamp>Friday, Aug 14, 2026, 11:12 PM (UTC+2)</timestamp>
+<user_query>
+jo to by asi šlo... je to takové nenápadne a myslím si že by to mohlo fungovat
+</user_query>
+
+===== LINE 93 ROLE=user LEN=255 =====
+<timestamp>Friday, Aug 14, 2026, 11:13 PM (UTC+2)</timestamp>
+<user_query>
+a aby později nebyl zamtek v dialogách... kde jsou uchovaný dialogy? nebo je na to nějaký manager? já nechci mít bordel v tom a potřebuji aby všechno mělo svoje místo
+</user_query>
+
+===== LINE 94 ROLE=user LEN=3150 =====
+<mcp_meta_tools>
+You have access to MCP (Model Context Protocol) tools through `GetMcpTools` and `CallMcpTool`.
+
+## MCP Tool Discovery and Invocation
+
+Use `GetMcpTools` to discover tool schemas, then `CallMcpTool` to invoke them. Aim to minimize round-trips: ideally one `GetMcpTools` call followed by one `CallMcpTool` call.
+
+If the user mentions, references, or links to a product or service that corresponds to an available MCP server, and the request likely depends on information from that service, proactively inspect that MCP server before answering. Do not wait for the user to explicitly ask you to use MCP. If you are unsure which server matches, use `GetMcpTools` with a pattern based on the service name.
+
+`GetMcpTools` supports four modes:
+
+1. `{"server":"<id>"}`: returns full input schemas and full descriptions for every tool on that server. Preferred when you know which server to use.
+2. `{"server":"<id>","toolName":"<name>"}`: returns the full schema and full description for one tool.
+3. `{"pattern":"<regex>"}`: searches tool and server names across all servers using RE2 syntax (no backreferences, lookahead, or lookbehind). Use when you're unsure which server has the tool you need.
+4. No arguments: returns a catalog of all servers with tool names and short descriptions. Only use this if you have no idea which server or tool to look for — in most cases, prefer fetching by server or pattern instead.
+
+Pattern-search and catalog results shorten long descriptions, marked by a trailing "... [truncated]"; server and single-tool lookups always return the complete description.
+
+MANDATORY - Always call `GetMcpTools` to discover a tool's schema before invoking it with `CallMcpTool`. If you already know the server, go directly to it rather than listing the full catalog first.
+
+If the available MCP tools do not fully support what the user asked you to do, complete the work you can with the current tool set. In your work summary, include what you were unable to do with MCP and why. Do not use browser automation to work around missing or unavailable MCP tools unless the user explicitly asks you to use the browser.
+
+Available MCP servers:
+
+<mcp_meta_tool_servers>
+<mcp_meta_tool_server name="cursor-app-control" tools="move_agent_to_root, move_agent_to_cloned_root, create_project, rename_chat, cursor_dialog, open_resource, open_automation" serverUseInstructions="Controls the Cursor application itself (workspace root, projects, opening resources, automations, and local task drafts, user rules, chat title). See each tool description for usage." />
+</mcp_meta_tool_servers>
+
+## MCP Resource Access
+
+You also have access to MCP resources via `FetchMcpResource`.
+If a relevant server is marked as needing authentication, or if an MCP tool call fails with an authentication/authorization error, call `mcp_auth` for that server, then inspect that server again and retry the original request if appropriate. Do not call `mcp_auth` just because it is listed, and do not repeatedly call it if authentication did not fix the failure. Do not call `mcp_auth` in parallel; authenticate only one server at a time.
+</mcp_meta_tools>
+
+===== LINE 95 ROLE=user LEN=255 =====
+<timestamp>Friday, Aug 14, 2026, 11:13 PM (UTC+2)</timestamp>
+<user_query>
+a aby později nebyl zamtek v dialogách... kde jsou uchovaný dialogy? nebo je na to nějaký manager? já nechci mít bordel v tom a potřebuji aby všechno mělo svoje místo
+</user_query>
+
+===== LINE 117 ROLE=user LEN=861 =====
+<timestamp>Friday, Aug 14, 2026, 11:19 PM (UTC+2)</timestamp>
+<user_query>
+Dva drobné detaily k dočesání (návrhy):
+Reakce na chybu (Fail barks):
+
+Píšeš: „Ještě ne.“ / „Moc daleko...“ / „Potřebuješ ruku? Drž se pokynu.“
+
+Návrh: Ten třetí bark zní trochu moc lidsky/moderně. Aby dál držel chladný tón protokolu, mohl by znát spíš jako automatická výzva trenažéru:
+
+„Odchylka od protokolu. Drž se pokynu.“ nebo „Sled úkonů neodpovídá. Zkusu to znovu.“
+
+Drobnost u vysvětlení Armoru:
+
+Figurína říká: „Brnění zůstává mezi tahy — nezmizí.“
+
+Pokud v tvojí hře brnění skutečně přetrvává do dalšího tahu (na rozdíl od Slay the Spire, kde se na konci tahu maže), je to v pořádku! Pokud se ale na konci tahu maže, tak pozor na formulaci, aby to hráče nemátlo. (Z textu vyplývá, že ho chceš naučit, že ho trefí v tahu soupeře, takže v nepřátelském tahu drží).
+</user_query>
+
+===== LINE 123 ROLE=user LEN=183 =====
+<timestamp>Friday, Aug 14, 2026, 11:21 PM (UTC+2)</timestamp>
+<user_query>
+a ty barky v tom tutorialu by mohly být klidně delší jelikžo člověk si to ani nestihne přečíst
+</user_query>
+
+===== LINE 133 ROLE=user LEN=152 =====
+<timestamp>Friday, Aug 14, 2026, 11:28 PM (UTC+2)</timestamp>
+<user_query>
+vynikající tutorial to je přesně insane a vysvětluje za mě core
+</user_query>
+
+===== LINE 136 ROLE=user LEN=124 =====
+<timestamp>Friday, Aug 14, 2026, 11:30 PM (UTC+2)</timestamp>
+<user_query>
+to znamená dokončený další issues ?
+</user_query>
+
+===== LINE 142 ROLE=user LEN=156 =====
+<timestamp>Friday, Aug 14, 2026, 11:34 PM (UTC+2)</timestamp>
+<user_query>
+69 zavři a 67 ještě nech a okomentuj
+
+nová verze hry, commit a push
+</user_query>
+
+===== LINE 156 ROLE=user LEN=122 =====
+<timestamp>Friday, Aug 14, 2026, 11:36 PM (UTC+2)</timestamp>
+<user_query>
+potřebuji seznam změn pro discord
+</user_query>
+
+===== LINE 160 ROLE=user LEN=1687 =====
+<timestamp>Friday, Aug 14, 2026, 11:38 PM (UTC+2)</timestamp>
+<user_query>
+takhle nějak 
+
+🔧 Patch 0.3.8.2 (mezi buildy / export)
+
+🎵 Export • Soundtrack v exportu — playlist přes ResourceLoader (DirAccess v exportu nefunguje)
+
+🧿 Artefakty / boj • Chalice: draw reshuffle discard pile; prompt výš nad rukou • Další artifact wiring: Bloodrage, Heart of the Loop, Hellchain, Molten Heart, Fractured Bulwark, Verdant Scale…
+
+💾 Save / Continue • Seal / cost karet + loop_level se ukládají a načítají při Continue • Opravy mid-turn draw soft-locku, AoE targetingu, energy refundů, curse cest
+🔧 Patch 0.3.8.3
+
+📚 Tutorial • Camp upgrade + restart tutorial flow — už žádný soft-lock
+
+🌐 i18n • Crash recovery dialog, MP/coop/run prep UI přeložené • TranslationBootstrap — překlady z translations.csv hned při startu (EN/CS)
+🔧 Patch 0.3.8.4
+
+🛠️ Kritické opravy z playtestu • Smrt → New Run: full HP + energie + startovní gold (už ne leftover HP 0 / falešný game-over) • #43 Intenty: threat-first — move-then-attack ukazuje ATTACK jako primární (ne jen MOVE) • Divine Judgment / Divine Protection: FULL_BOARD auto-play + správné highlighty • #66 Druid spirits: dismiss při smrti summoner / spiritů
+
+🃏 Karty • #56 AoE na líci: 3×3 / řada / sloupec / všem (Consecration atd.) • #68 Kletby: cost —, tooltip „Nehratelné“, ON_DRAW / END_OF_TURN triggery (Weakness, Pain) • Všechny .tres — trigger metadata (ON_PLAY / ON_DRAW / END_OF_TURN)
+
+🗺️ Terén (#67) • Hover tooltip na skálu/bahno (název + popis) • Vizuální tint: neprůchodné vs. bahno (zpomalení)
+
+🖥️ UI drobnosti • Initiative bar — tooltip jméno + iniciativa • Enemy panel: Melee / Ranged • Dual intent spacing + zoom fix
+</user_query>
+
+===== LINE 163 ROLE=user LEN=398 =====
+<timestamp>Friday, Aug 14, 2026, 11:42 PM (UTC+2)</timestamp>
+<user_query>
+Set application/file_version
+Set application/product_version
+rcedit (../Builds/0.3.8.5/Projekt_LOOP_v0.3.8.5.exe): 
+  WARNING: scene/resources/resource_format_text.cpp:447 - res://scenes/ui/Tutorial.tscn:4 - ext_resource, invalid UID: uid://b40v0y5l2r6jw - using text path instead: res://scenes/ui/Tutorial.gd
+</user_query>
+
+===== LINE 170 ROLE=user LEN=142 =====
+<timestamp>Friday, Aug 14, 2026, 11:43 PM (UTC+2)</timestamp>
+<user_query>
+spíše si říkám zda by podstatě tohle nemělo být 0.3.9
+</user_query>
+
+===== LINE 173 ROLE=user LEN=133 =====
+<timestamp>Friday, Aug 14, 2026, 11:44 PM (UTC+2)</timestamp>
+<user_query>
+ano a projistotu pak znovu commitni ap ushni
+</user_query>
+
+===== LINE 183 ROLE=user LEN=3976 =====
+<timestamp>Friday, Aug 14, 2026, 11:50 PM (UTC+2)</timestamp>
+<user_query>
+jak to teď upravit? a pak napsat po tom co vložímnovou verzi nový devlog ohledně toho co se dělo, o feedbacku a momentálním zpracování a halvně nový navoněný tutoriál vysvětlucíjí více věcí 
+
+<h1>Projekt LOOP</h1>
+<h2>Position is not a bonus mechanic.<br>It's the core of everything.</h2>
+<p><strong>Most deckbuilders let you stand still and play cards.<br>
+Projekt LOOP makes you think twice about where you stand.</strong></p>
+<hr>
+<h2>What is Projekt LOOP?</h2>
+<p>
+Projekt LOOP is a <strong>tactical roguelike deckbuilder</strong> where movement and positioning matter as much as the cards in your hand.
+Build your deck, travel a branching procedural map, and outsmart enemies that react to distance, health, and battlefield position.
+</p>
+<p>
+This is not a traditional card battler with movement added on top &mdash; combat is built around the <strong>grid</strong>.
+Every card, every AoE, every ability cares about where you stand.
+</p>
+<hr>
+<h2>Key Features</h2>
+<ul>
+<li><strong>Position is power</strong> &mdash; AoE, rows, columns and control tools depend on your placement. Move first, think second, play third.</li>
+<li><strong>Smart enemies with real roles</strong> &mdash; Fighters close in, Archers kite, Assassins flank, Berserkers escalate, supports keep fights ugly.</li>
+<li><strong>Procedural branching runs</strong> &mdash; risk vs reward every node.</li>
+<li><strong>Build-breaking artifacts</strong> &mdash; designed for wild synergies.</li>
+<li><strong>Village meta progression</strong> &mdash; earn shards and invest between runs.</li>
+<li><strong>BG3-style Initiative</strong> &mdash; clear turn order with current + next round preview.</li>
+<li><strong>Real New Game+</strong> &mdash; continue your build and push deeper into the LOOP.</li>
+</ul>
+<hr>
+<h2>Playable Now</h2>
+<p><strong>Paladin</strong> &mdash; holy frontliner and grid controller. Bonus damage vs Undead and Demon. <strong>Recommended starting experience.</strong></p>
+<p><strong>Trapper</strong> &mdash; Experimental class focused on traps and terrain control.<br>
+You can try it, but it currently has only a small set of cards due to the new mechanic, so you most likely won’t reach the boss.</p>
+<p><em>Challenge:</em> If you somehow reach the boss with Trapper and send me a screenshot, I’ll put your name in the game credits.</p>
+<hr>
+<h2>Current Status &mdash; Pre-Alpha 0.3.8.3</h2>
+<p>-HOTFIX with tutorial in new version</p>
+<p>
+The game is now <strong>playable end-to-end</strong>. You can finish runs and progress in the Village.
+A large part of what you see here is expected to make it into Alpha.
+</p>
+<p>
+Bugs will still appear &mdash; this is still Pre-Alpha.
+</p>
+<hr>
+<h2>Important Notes</h2>
+<p><strong>Card readability</strong><br>
+I am still fighting with card readability (fonts, sizes, scaling). This is currently my biggest pain point.<br>
+<strong>Right-click any card</strong> to open a full tooltip if the text is hard to read.</p>
+<p><strong>Controls (short)</strong><br>
+• Play card → Drag from hand onto target/tile<br>
+• Card tooltip → Right-click<br>
+• Move unit → Click unit → click green tile<br>
+• Camera → WASD + Q/E (rotate) + mouse wheel<br>
+• End Turn → Button in UI<br>•Map scrolling mouse wheel</p>
+<hr>
+<h2>What’s new since 0.3.2</h2>
+<ul>
+<li>some SFX + music playlist</li>
+<li>Village hub + shard progression</li>
+<li>~36 artifacts with real behavior</li>
+<li>BG3-style Initiative bar</li>
+<li>Much better card tooltips & UI</li>
+<li>New goblin encounters + smoother early game</li>
+<li>Shop / reward / event UX improvements</li>
+<li>Major playtest polish pass</li>
+</ul>
+<hr>
+<h2>Feedback</h2>
+<p>
+If you find a bug, unclear UI, or have any thoughts &mdash; please tell me.
+Even short feedback helps a lot.
+</p>
+<p>
+Discord: <a href="https://discord.gg/BbP8WBVMkT">https://discord.gg/BbP8WBVMkT</a>
+</p>
+<hr>
+<p><strong>Move. Think. Play.</strong></p>
+</user_query>
+
+===== LINE 187 ROLE=user LEN=3976 =====
+<timestamp>Friday, Aug 14, 2026, 11:50 PM (UTC+2)</timestamp>
+<user_query>
+jak to teď upravit? a pak napsat po tom co vložímnovou verzi nový devlog ohledně toho co se dělo, o feedbacku a momentálním zpracování a halvně nový navoněný tutoriál vysvětlucíjí více věcí 
+
+<h1>Projekt LOOP</h1>
+<h2>Position is not a bonus mechanic.<br>It's the core of everything.</h2>
+<p><strong>Most deckbuilders let you stand still and play cards.<br>
+Projekt LOOP makes you think twice about where you stand.</strong></p>
+<hr>
+<h2>What is Projekt LOOP?</h2>
+<p>
+Projekt LOOP is a <strong>tactical roguelike deckbuilder</strong> where movement and positioning matter as much as the cards in your hand.
+Build your deck, travel a branching procedural map, and outsmart enemies that react to distance, health, and battlefield position.
+</p>
+<p>
+This is not a traditional card battler with movement added on top &mdash; combat is built around the <strong>grid</strong>.
+Every card, every AoE, every ability cares about where you stand.
+</p>
+<hr>
+<h2>Key Features</h2>
+<ul>
+<li><strong>Position is power</strong> &mdash; AoE, rows, columns and control tools depend on your placement. Move first, think second, play third.</li>
+<li><strong>Smart enemies with real roles</strong> &mdash; Fighters close in, Archers kite, Assassins flank, Berserkers escalate, supports keep fights ugly.</li>
+<li><strong>Procedural branching runs</strong> &mdash; risk vs reward every node.</li>
+<li><strong>Build-breaking artifacts</strong> &mdash; designed for wild synergies.</li>
+<li><strong>Village meta progression</strong> &mdash; earn shards and invest between runs.</li>
+<li><strong>BG3-style Initiative</strong> &mdash; clear turn order with current + next round preview.</li>
+<li><strong>Real New Game+</strong> &mdash; continue your build and push deeper into the LOOP.</li>
+</ul>
+<hr>
+<h2>Playable Now</h2>
+<p><strong>Paladin</strong> &mdash; holy frontliner and grid controller. Bonus damage vs Undead and Demon. <strong>Recommended starting experience.</strong></p>
+<p><strong>Trapper</strong> &mdash; Experimental class focused on traps and terrain control.<br>
+You can try it, but it currently has only a small set of cards due to the new mechanic, so you most likely won’t reach the boss.</p>
+<p><em>Challenge:</em> If you somehow reach the boss with Trapper and send me a screenshot, I’ll put your name in the game credits.</p>
+<hr>
+<h2>Current Status &mdash; Pre-Alpha 0.3.8.3</h2>
+<p>-HOTFIX with tutorial in new version</p>
+<p>
+The game is now <strong>playable end-to-end</strong>. You can finish runs and progress in the Village.
+A large part of what you see here is expected to make it into Alpha.
+</p>
+<p>
+Bugs will still appear &mdash; this is still Pre-Alpha.
+</p>
+<hr>
+<h2>Important Notes</h2>
+<p><strong>Card readability</strong><br>
+I am still fighting with card readability (fonts, sizes, scaling). This is currently my biggest pain point.<br>
+<strong>Right-click any card</strong> to open a full tooltip if the text is hard to read.</p>
+<p><strong>Controls (short)</strong><br>
+• Play card → Drag from hand onto target/tile<br>
+• Card tooltip → Right-click<br>
+• Move unit → Click unit → click green tile<br>
+• Camera → WASD + Q/E (rotate) + mouse wheel<br>
+• End Turn → Button in UI<br>•Map scrolling mouse wheel</p>
+<hr>
+<h2>What’s new since 0.3.2</h2>
+<ul>
+<li>some SFX + music playlist</li>
+<li>Village hub + shard progression</li>
+<li>~36 artifacts with real behavior</li>
+<li>BG3-style Initiative bar</li>
+<li>Much better card tooltips & UI</li>
+<li>New goblin encounters + smoother early game</li>
+<li>Shop / reward / event UX improvements</li>
+<li>Major playtest polish pass</li>
+</ul>
+<hr>
+<h2>Feedback</h2>
+<p>
+If you find a bug, unclear UI, or have any thoughts &mdash; please tell me.
+Even short feedback helps a lot.
+</p>
+<p>
+Discord: <a href="https://discord.gg/BbP8WBVMkT">https://discord.gg/BbP8WBVMkT</a>
+</p>
+<hr>
+<p><strong>Move. Think. Play.</strong></p>
+</user_query>
+
+===== LINE 190 ROLE=user LEN=118 =====
+<timestamp>Saturday, Aug 15, 2026, 9:48 AM (UTC+2)</timestamp>
+<user_query>
+co si navrhoval dále dělat ?
+</user_query>
+

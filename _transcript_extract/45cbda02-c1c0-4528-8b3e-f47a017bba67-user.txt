@@ -1,0 +1,1350 @@
+===== LINE 1 ROLE=user LEN=313 =====
+<timestamp>Saturday, Aug 15, 2026, 9:46 AM (UTC+2)</timestamp>
+<user_query>
+taaakže co máme z issues dále na pořadí? každý task vbyužívej více agentů rozdělení prací, když potřebuješ povolení neco kodově vyhledávání atd mužeš máš automatické povolení nechci to všechno odklikávat aby jsi čekal na mě
+</user_query>
+
+===== LINE 6 ROLE=user LEN=1060 =====
+<timestamp>Saturday, Aug 15, 2026, 9:50 AM (UTC+2)</timestamp>
+<user_query>
+Po #69 (hotovo) a #67 (jen tutorial slice) byla další vlna tahle:
+
+#53 Early melee pacing
+Míň „pohni se / End Turn / čekej“. Bližší spawny, Druid míň kite/root smyčka. Tohle LeySpot vypnul.
+
+#44 + #64 Cheese
+Oltář upgrade-all, 0-cost štíty, stall-heal, burn→síla. Pořád free win.
+
+#58 + #54
+Settings: drag vs click + dokumentace ovládání; LOOP naming (NG+ není jen placeholder).
+
+Drobnosti z #67, co zbyly
+Cover telegraph (+50 %) a Cover Fire karta (název vs efekt).
+
+Pak až Mid/Alpha směr: overlay/resolution (#57), mapa (#62), Trapper (#37), spatial village (#49), art (#59/#60).
+
+Prakticky teď: #53 pacing → #44+#64 cheese → #58 settings toggle.
+
+jenže jak to udělat.. já nechci meele pacing... bližší enemy spawny.. jenom proto že paladin je meele jednotka basic tank že prý museli dělat dead turny protože všichni byly moc daleko.. ale za mě je to špatně si myslím... v heroes 3 taky všichni se spawnují na druhé straně a nikdo si nestěžoval že jsou mco daleko že ?
+</user_query>
+
+===== LINE 9 ROLE=user LEN=622 =====
+<timestamp>Saturday, Aug 15, 2026, 9:57 AM (UTC+2)</timestamp>
+<user_query>
+je fakt že by se to dalo vyřešit základníma pool karet pro paladina, sice v poolu reward se dá najít nimble move ale je to jenom RNG takže to chce aby měl rovnou v základu asi kartu taunt a bude to mít range s tím že při kartě zahrání se okamžitě podle pathingu AI přiblíží o 1 pole blíže a příští kolo když enemy je na tahu tak se přiblíží dle jeho movemntu ? to by šlo a zároveň budou další karty push a pull do poolu 
+
+a asi víme že to budou jednoduché karty hlavně za 0 energie ! a dále dle návrhu někde bude ten holy push karta
+</user_query>
+
+===== LINE 12 ROLE=user LEN=137 =====
+<timestamp>Saturday, Aug 15, 2026, 9:59 AM (UTC+2)</timestamp>
+<user_query>
+ne tohle uděláme před alphou... to je must be !
+</user_query>
+
+===== LINE 33 ROLE=user LEN=132 =====
+<timestamp>Saturday, Aug 15, 2026, 10:05 AM (UTC+2)</timestamp>
+<user_query>
+tak jako řekni my více o těch kartách....
+</user_query>
+
+===== LINE 36 ROLE=user LEN=4343 =====
+<timestamp>Saturday, Aug 15, 2026, 10:06 AM (UTC+2)</timestamp>
+<user_query>
+Godot Engine v4.4.1.stable.official (c) 2007-present Juan Linietsky, Ariel Manzur & Godot Contributors.
+--- Debug adapter server started on port 6006 ---
+--- GDScript language server started on port 6005 ---
+  ERROR: Unrecognized UID: "uid://cvowf7ots6iwu".
+  ERROR: Unrecognized UID: "uid://cvowf7ots6iwv".
+  ERROR: Unrecognized UID: "uid://cvo1lwxo3dywu".
+  ERROR: Unrecognized UID: "uid://cvo1lwxo3dywv".
+  ERROR: Unrecognized UID: "uid://cvpde1trpliwu".
+  ERROR: Unrecognized UID: "uid://cvpde1trpliwv".
+  ERROR: Unrecognized UID: "uid://cvpd66ms8liwu".
+  ERROR: Unrecognized UID: "uid://cvpd66ms8liwv".
+  ERROR: scene/resources/resource_format_text.cpp:39 - res://data/cards/paladin/taunt_upgraded.tres:35 - Parse Error: .
+  ERROR: Failed loading resource: res://data/cards/paladin/taunt_upgraded.tres. Make sure resources have been imported by opening the project in the editor at least once.
+  ERROR: scene/resources/resource_format_text.cpp:39 - res://data/cards/paladin/taunt.tres:36 - Parse Error: .
+  ERROR: Failed loading resource: res://data/cards/paladin/taunt.tres. Make sure resources have been imported by opening the project in the editor at least once.
+  ERROR: scene/resources/resource_format_text.cpp:39 - res://data/classes/Paladin.tres:32 - Parse Error: .
+  ERROR: Failed loading resource: res://data/classes/Paladin.tres. Make sure resources have been imported by opening the project in the editor at least once.
+  ERROR: res://scenes/battle/BattleScene.gd:1581 - Parse Error: Cannot find member "PUSH" in base "CardEffectData.EffectType".
+  ERROR: res://scenes/battle/BattleScene.gd:1582 - Parse Error: Cannot find member "PULL" in base "CardEffectData.EffectType".
+  ERROR: res://scenes/battle/BattleScene.gd:1583 - Parse Error: Cannot find member "TAUNT" in base "CardEffectData.EffectType".
+  ERROR: res://scenes/battle/BattleScene.gd:1581 - Parse Error: Cannot infer the type of "is_displace" variable because the value doesn't have a set type.
+  ERROR: res://scenes/battle/BattleScene.gd:2267 - Parse Error: Cannot find member "PUSH" in base "CardEffectData.EffectType".
+  ERROR: res://scenes/battle/BattleScene.gd:2271 - Parse Error: Cannot find member "PULL" in base "CardEffectData.EffectType".
+  ERROR: res://scenes/battle/BattleScene.gd:2275 - Parse Error: Cannot find member "TAUNT" in base "CardEffectData.EffectType".
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://scenes/battle/BattleScene.gd" with error "Parse error".
+  ERROR: res://scenes/battle/BattleScene.gd:1581 - Parse Error: Cannot find member "PUSH" in base "CardEffectData.EffectType".
+  ERROR: res://scenes/battle/BattleScene.gd:1582 - Parse Error: Cannot find member "PULL" in base "CardEffectData.EffectType".
+  ERROR: res://scenes/battle/BattleScene.gd:1583 - Parse Error: Cannot find member "TAUNT" in base "CardEffectData.EffectType".
+  ERROR: res://scenes/battle/BattleScene.gd:1581 - Parse Error: Cannot infer the type of "is_displace" variable because the value doesn't have a set type.
+  ERROR: res://scenes/battle/BattleScene.gd:2267 - Parse Error: Cannot find member "PUSH" in base "CardEffectData.EffectType".
+  ERROR: res://scenes/battle/BattleScene.gd:2271 - Parse Error: Cannot find member "PULL" in base "CardEffectData.EffectType".
+  ERROR: res://scenes/battle/BattleScene.gd:2275 - Parse Error: Cannot find member "TAUNT" in base "CardEffectData.EffectType".
+  ERROR: res://data/cards/CardData.gd:446 - Parse Error: Cannot find member "PUSH" in base "CardEffectData.EffectType".
+  ERROR: res://data/cards/CardData.gd:449 - Parse Error: Cannot find member "PULL" in base "CardEffectData.EffectType".
+  ERROR: res://data/cards/CardData.gd:452 - Parse Error: Cannot find member "TAUNT" in base "CardEffectData.EffectType".
+  ERROR: modules/gdscript/gdscript.cpp:3022 - Failed to load script "res://data/cards/CardData.gd" with error "Parse error".
+  ERROR: res://data/cards/CardData.gd:446 - Parse Error: Cannot find member "PUSH" in base "CardEffectData.EffectType".
+  ERROR: res://data/cards/CardData.gd:449 - Parse Error: Cannot find member "PULL" in base "CardEffectData.EffectType".
+  ERROR: res://data/cards/CardData.gd:452 - Parse Error: Cannot find member "TAUNT" in base "CardEffectData.EffectType".
+</user_query>
+
+===== LINE 42 ROLE=user LEN=466 =====
+<timestamp>Saturday, Aug 15, 2026, 10:10 AM (UTC+2)</timestamp>
+<user_query>
+taunt asi prostě ok klasický taunt
+ale pod shield push bych si představil něco že je mezi námi mezera 1 pole například tak k němu rushnu trefím ho když mám shield třeba 10 tak mu dám 5 dmg a odstrčím ho o jedno pole třeba 
+
+divine pull si představuji jako holy věc že ho přitáhnu a pokud je právě demon nebo undead tak mu dám těch pouze bonusový dmg  HOLY 
+
+to samý holy push
+</user_query>
+
+===== LINE 52 ROLE=user LEN=21213 =====
+<timestamp>Saturday, Aug 15, 2026, 10:21 AM (UTC+2)</timestamp>
+<user_query>
+jakoby přišlo my že jsem ho tím tauntem i odstrčil 
+
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+Vulkan 1.4.329 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 3060
+
+[10:18:42] [INFO] [GAME] Translations loaded from CSV: en, cs
+[10:18:42] [INFO] [GAME] DialogueCatalog loaded 18 lines from res://data/dialogue/dialogue.csv
+[10:18:42] [INFO] [GAME] DebugLogger inicializován
+[10:18:42] [INFO] [GAME] Log soubor: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP/game_debug_log.txt
+[10:18:42] [INFO] [GAME] === SYSTEM INFO ===
+[10:18:42] [INFO] [GAME] Godot verze: 4.4.1-stable (official)
+[10:18:42] [INFO] [GAME] OS: Windows
+[10:18:42] [INFO] [GAME] Procesor: 12 cores
+[10:18:42] [INFO] [GAME] Video adapter: NVIDIA GeForce RTX 3060
+[10:18:42] [INFO] [GAME] Screen size: (1920, 1080)
+[10:18:42] [INFO] [GAME] User data dir: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP
+[10:18:42] [INFO] [GAME] FPS Limit: 0
+[10:18:42] [INFO] [GAME] VSync: 1
+[10:18:42] [INFO] [GAME] Memory Usage: 81.07 MB
+[10:18:42] [INFO] [GAME] ==================
+[10:18:42] [INFO] [GAME] === GAME MANAGER STARTED ===
+[10:18:42] [INFO] [GAME] === SYSTEM INFO ===
+[10:18:42] [INFO] [GAME] Godot verze: 4.4.1-stable (official)
+[10:18:42] [INFO] [GAME] OS: Windows
+[10:18:42] [INFO] [GAME] Procesor: 12 cores
+[10:18:42] [INFO] [GAME] Video adapter: NVIDIA GeForce RTX 3060
+[10:18:42] [INFO] [GAME] Screen size: (1920, 1080)
+[10:18:42] [INFO] [GAME] User data dir: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP
+[10:18:42] [INFO] [GAME] FPS Limit: 0
+[10:18:42] [INFO] [GAME] VSync: 1
+[10:18:42] [INFO] [GAME] Memory Usage: 145.10 MB
+[10:18:42] [INFO] [GAME] ==================
+[10:18:42] [INFO] [GAME] Language preference loaded: en
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+MultiplayerManager: Disconnected
+[10:18:42] [INFO] [SCENE] Scene change: none -> res://scenes/ui/MainMenu.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/ui/MainMenu.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: MainMenu
+EventManager: Inicializace...
+[10:18:47] [INFO] [SCENE] Scene change: res://scenes/ui/MainMenu.tscn -> res://scenes/ui/Settings.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/ui/Settings.tscn
+DEBUG: Načtená scéna - typ: CanvasLayer
+DEBUG: Načtená scéna - název: Settings
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+MultiplayerManager: Disconnected
+[10:18:48] [INFO] [SCENE] Scene change: res://scenes/ui/Settings.tscn -> res://scenes/ui/MainMenu.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/ui/MainMenu.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: MainMenu
+[10:19:06] [INFO] [SCENE] Scene change: res://scenes/ui/MainMenu.tscn -> res://scenes/CharSelect/CharacterSelectScreen.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/CharSelect/CharacterSelectScreen.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: CharacterSelectScreen
+MultiplayerManager: Disconnected
+[10:19:07] [INFO] [SCENE] Scene change: res://scenes/CharSelect/CharacterSelectScreen.tscn -> res://scenes/ui/MainMenu.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/ui/MainMenu.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: MainMenu
+[10:19:08] [INFO] [SCENE] Scene change: res://scenes/ui/MainMenu.tscn -> res://scenes/CharSelect/CharacterSelectScreen.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/CharSelect/CharacterSelectScreen.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: CharacterSelectScreen
+[10:19:09] [INFO] [CHAR_SELECT] === CHARACTER SELECTED ===
+[10:19:09] [INFO] [CHAR_SELECT] Class: res://data/classes/Tank.tres
+[10:19:09] [INFO] [CHAR_SELECT] Subclass: class.paladin
+[10:19:09] [INFO] [SCENE] Scene change: res://scenes/CharSelect/CharacterSelectScreen.tscn -> res://scenes/CharSelect/RunPrepScreen.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/CharSelect/RunPrepScreen.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: RunPrepScreen
+Pasivní strom: Žádný aktivní strom dovedností nenalezen.
+=== INICIALIZACE HRÁČE ===
+Třída načtena
+Podtřída načtena
+✅ Načteno 0 odemčených karet
+=== INICIALIZACE DOKONČENA (skill tree disabled) ===
+[10:19:10] [INFO] [GAME_FLOW] === STARTING NEW RUN ===
+[10:19:10] [INFO] [GAME_FLOW] Seed: 3941955945
+EventManager: Reset pro nový run
+[10:19:10] [INFO] [SKILLS] === APPLYING RUN BONUSES (village + artifacts) ===
+[10:19:10] [INFO] [SKILLS] Finální staty: HP 70/70, Gold 90, Energy 3/3, StartBlock 4
+[10:19:10] [INFO] [ARTIFACTS] Artifacts changed, new count: 0
+[10:19:10] [INFO] [ARTIFACTS] No artifacts
+[10:19:10] [INFO] [INIT] === PLAYER INITIALIZED ===
+[10:19:10] [INFO] [FULL_STATE] ==========================================
+[10:19:10] [INFO] [FULL_STATE] === FULL GAME STATE DUMP ===
+[10:19:10] [INFO] [FULL_STATE] Time: 2026-08-15T10:19:10
+[10:19:10] [INFO] [FULL_STATE] ==========================================
+[10:19:10] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:19:10] [INFO] [PLAYER_STATS] HP: 70/70
+[10:19:10] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:19:10] [INFO] [PLAYER_STATS] Gold: 90
+[10:19:10] [INFO] [PLAYER_STATS] Floors cleared: 0
+[10:19:10] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:19:10] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:19:10] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:19:10] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:19:10] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:19:10] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:19:10] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:19:10] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:19:10] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:19:10] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:19:10] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:19:10] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:19:10] [INFO] [PLAYER_STATS] Block per card: 0
+[10:19:10] [INFO] [PLAYER_STATS] Has revive: false
+[10:19:10] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:19:10] [INFO] [SKILLS] === SKILL TREE STATE ===
+[10:19:10] [INFO] [SKILLS] Žádný aktivní skill tree (disabled).
+[10:19:10] [INFO] [DECK] === DECK STATE ===
+[10:19:10] [INFO] [DECK] Master deck: 7 cards
+[10:19:10] [INFO] [DECK] Hand: 0 cards
+[10:19:10] [INFO] [DECK] Draw pile: 7 cards
+[10:19:10] [INFO] [DECK] Discard pile: 0 cards
+[10:19:10] [INFO] [DECK] Exhaust pile: 0 cards
+[10:19:10] [INFO] [DECK] === END DECK STATE ===
+[10:19:10] [INFO] [ARTIFACTS] No artifacts
+[10:19:10] [INFO] [MAP] No map data available
+[10:19:10] [INFO] [META] === META PROGRESS ===
+[10:19:10] [INFO] [META] Hero paladin — Level 12, XP 170
+[10:19:10] [INFO] [META] Hero trapper — Level 1, XP 0
+[10:19:10] [INFO] [META] Unlocked skills: 0
+[10:19:10] [INFO] [META] === END META PROGRESS ===
+[10:19:10] [INFO] [FULL_STATE] ==========================================
+[10:19:10] [INFO] [FULL_STATE] === END FULL GAME STATE DUMP ===
+[10:19:10] [INFO] [FULL_STATE] ==========================================
+Pasivní strom: Žádný aktivní strom dovedností nenalezen.
+[10:19:10] [INFO] [FULL_STATE] ==========================================
+[10:19:10] [INFO] [FULL_STATE] === FULL GAME STATE DUMP ===
+[10:19:10] [INFO] [FULL_STATE] Time: 2026-08-15T10:19:10
+[10:19:10] [INFO] [FULL_STATE] ==========================================
+[10:19:10] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:19:10] [INFO] [PLAYER_STATS] HP: 70/70
+[10:19:10] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:19:10] [INFO] [PLAYER_STATS] Gold: 90
+[10:19:10] [INFO] [PLAYER_STATS] Floors cleared: 0
+[10:19:10] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:19:10] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:19:10] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:19:10] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:19:10] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:19:10] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:19:10] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:19:10] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:19:10] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:19:10] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:19:10] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:19:10] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:19:10] [INFO] [PLAYER_STATS] Block per card: 0
+[10:19:10] [INFO] [PLAYER_STATS] Has revive: false
+[10:19:10] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:19:10] [INFO] [SKILLS] === SKILL TREE STATE ===
+[10:19:10] [INFO] [SKILLS] Žádný aktivní skill tree (disabled).
+[10:19:10] [INFO] [DECK] === DECK STATE ===
+[10:19:10] [INFO] [DECK] Master deck: 7 cards
+[10:19:10] [INFO] [DECK] Hand: 0 cards
+[10:19:10] [INFO] [DECK] Draw pile: 7 cards
+[10:19:10] [INFO] [DECK] Discard pile: 0 cards
+[10:19:10] [INFO] [DECK] Exhaust pile: 0 cards
+[10:19:10] [INFO] [DECK] === END DECK STATE ===
+[10:19:10] [INFO] [ARTIFACTS] No artifacts
+[10:19:10] [INFO] [MAP] No map data available
+[10:19:10] [INFO] [META] === META PROGRESS ===
+[10:19:10] [INFO] [META] Hero paladin — Level 12, XP 170
+[10:19:10] [INFO] [META] Hero trapper — Level 1, XP 0
+[10:19:10] [INFO] [META] Unlocked skills: 0
+[10:19:10] [INFO] [META] === END META PROGRESS ===
+[10:19:10] [INFO] [FULL_STATE] ==========================================
+[10:19:10] [INFO] [FULL_STATE] === END FULL GAME STATE DUMP ===
+[10:19:10] [INFO] [FULL_STATE] ==========================================
+[10:19:10] [INFO] [SCENE] Scene change: res://scenes/CharSelect/RunPrepScreen.tscn -> res://scenes/map/Map.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/map/Map.tscn
+DEBUG: Načtená scéna - typ: Node2D
+DEBUG: Načtená scéna - název: Map
+Přidána legenda pro: Common battle
+Přidána legenda pro: Elite battle
+Přidána legenda pro: Event
+Přidána legenda pro: Rest
+Přidána legenda pro: Shop
+Přidána legenda pro: Treasure
+Přidána legenda pro: Boss
+Legenda dokončena s 7 položkami
+[10:19:59] [INFO] [PROGRESSION] Shards +1 (total 1, run 1)
+[10:19:59] [INFO] [SAVE] Save/Load: save_meta_progress - SUCCESS | Hero paladin Level: 12, XP: 170
+[10:19:59] [INFO] [BATTLE] === STARTING BATTLE ===
+[10:19:59] [INFO] [BATTLE] Encounter: res://data/encounters/fortress_bruiser.tres
+[10:19:59] [INFO] [BATTLE] Encounter type: 0
+[10:19:59] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:19:59] [INFO] [PLAYER_STATS] HP: 70/70
+[10:19:59] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:19:59] [INFO] [PLAYER_STATS] Gold: 90
+[10:19:59] [INFO] [PLAYER_STATS] Floors cleared: 1
+[10:19:59] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:19:59] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:19:59] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:19:59] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:19:59] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:19:59] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:19:59] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:19:59] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:19:59] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:19:59] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:19:59] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:19:59] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:19:59] [INFO] [PLAYER_STATS] Block per card: 0
+[10:19:59] [INFO] [PLAYER_STATS] Has revive: false
+[10:19:59] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:19:59] [INFO] [DECK] === DECK STATE ===
+[10:19:59] [INFO] [DECK] Master deck: 7 cards
+[10:19:59] [INFO] [DECK] Hand: 0 cards
+[10:19:59] [INFO] [DECK] Draw pile: 7 cards
+[10:19:59] [INFO] [DECK] Discard pile: 0 cards
+[10:19:59] [INFO] [DECK] Exhaust pile: 0 cards
+[10:19:59] [INFO] [DECK] === END DECK STATE ===
+[10:19:59] [INFO] [SCENE] Scene change: res://scenes/map/Map.tscn -> res://scenes/battle/BattleScene.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/battle/BattleScene.tscn
+DEBUG: Načtená scéna - typ
+...[TRUNCATED]...
+
+===== LINE 56 ROLE=user LEN=359 =====
+<timestamp>Saturday, Aug 15, 2026, 10:27 AM (UTC+2)</timestamp>
+<user_query>
+proč vlastně když máš v kodech ty emote ikonky proč se nenahradí stejnýma ikonkama jako mají intent jako napříkald když dáš block tak tam se zobrazuje zkurvená emote ikonka namísto intent ikonky stejné.... upřímně chci nahradit všechny ty EMOTE ikonky za reálný ikonky
+</user_query>
+
+===== LINE 67 ROLE=user LEN=161 =====
+<timestamp>Saturday, Aug 15, 2026, 10:30 AM (UTC+2)</timestamp>
+<user_query>
+takže všechny emote ikonky se již nepoužívají  a byly reálné náhrady ?
+</user_query>
+
+===== LINE 70 ROLE=user LEN=12649 =====
+<timestamp>Saturday, Aug 15, 2026, 10:33 AM (UTC+2)</timestamp>
+<user_query>
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+Vulkan 1.4.329 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 3060
+
+[10:31:36] [INFO] [GAME] Translations loaded from CSV: en, cs
+[10:31:36] [INFO] [GAME] DialogueCatalog loaded 18 lines from res://data/dialogue/dialogue.csv
+[10:31:36] [INFO] [GAME] DebugLogger inicializován
+[10:31:36] [INFO] [GAME] Log soubor: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP/game_debug_log.txt
+[10:31:36] [INFO] [GAME] === SYSTEM INFO ===
+[10:31:36] [INFO] [GAME] Godot verze: 4.4.1-stable (official)
+[10:31:36] [INFO] [GAME] OS: Windows
+[10:31:36] [INFO] [GAME] Procesor: 12 cores
+[10:31:36] [INFO] [GAME] Video adapter: NVIDIA GeForce RTX 3060
+[10:31:36] [INFO] [GAME] Screen size: (1920, 1080)
+[10:31:36] [INFO] [GAME] User data dir: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP
+[10:31:36] [INFO] [GAME] FPS Limit: 0
+[10:31:36] [INFO] [GAME] VSync: 1
+[10:31:36] [INFO] [GAME] Memory Usage: 81.11 MB
+[10:31:36] [INFO] [GAME] ==================
+[10:31:36] [INFO] [GAME] === GAME MANAGER STARTED ===
+[10:31:36] [INFO] [GAME] === SYSTEM INFO ===
+[10:31:36] [INFO] [GAME] Godot verze: 4.4.1-stable (official)
+[10:31:36] [INFO] [GAME] OS: Windows
+[10:31:36] [INFO] [GAME] Procesor: 12 cores
+[10:31:36] [INFO] [GAME] Video adapter: NVIDIA GeForce RTX 3060
+[10:31:36] [INFO] [GAME] Screen size: (1920, 1080)
+[10:31:36] [INFO] [GAME] User data dir: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP
+[10:31:36] [INFO] [GAME] FPS Limit: 0
+[10:31:36] [INFO] [GAME] VSync: 1
+[10:31:36] [INFO] [GAME] Memory Usage: 145.14 MB
+[10:31:36] [INFO] [GAME] ==================
+[10:31:36] [INFO] [GAME] Language preference loaded: en
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+MultiplayerManager: Disconnected
+[10:31:36] [INFO] [SCENE] Scene change: none -> res://scenes/ui/MainMenu.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/ui/MainMenu.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: MainMenu
+EventManager: Inicializace...
+[10:31:39] [INFO] [SCENE] Scene change: res://scenes/ui/MainMenu.tscn -> res://scenes/CharSelect/CharacterSelectScreen.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/CharSelect/CharacterSelectScreen.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: CharacterSelectScreen
+[10:31:40] [INFO] [CHAR_SELECT] === CHARACTER SELECTED ===
+[10:31:40] [INFO] [CHAR_SELECT] Class: res://data/classes/Tank.tres
+[10:31:40] [INFO] [CHAR_SELECT] Subclass: class.paladin
+[10:31:40] [INFO] [SCENE] Scene change: res://scenes/CharSelect/CharacterSelectScreen.tscn -> res://scenes/CharSelect/RunPrepScreen.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/CharSelect/RunPrepScreen.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: RunPrepScreen
+Pasivní strom: Žádný aktivní strom dovedností nenalezen.
+=== INICIALIZACE HRÁČE ===
+Třída načtena
+Podtřída načtena
+✅ Načteno 0 odemčených karet
+=== INICIALIZACE DOKONČENA (skill tree disabled) ===
+[10:31:41] [INFO] [GAME_FLOW] === STARTING NEW RUN ===
+[10:31:41] [INFO] [GAME_FLOW] Seed: 1325255033
+EventManager: Reset pro nový run
+[10:31:41] [INFO] [SKILLS] === APPLYING RUN BONUSES (village + artifacts) ===
+[10:31:41] [INFO] [SKILLS] Finální staty: HP 70/70, Gold 90, Energy 3/3, StartBlock 4
+[10:31:41] [INFO] [ARTIFACTS] Artifacts changed, new count: 0
+[10:31:41] [INFO] [ARTIFACTS] No artifacts
+[10:31:41] [INFO] [INIT] === PLAYER INITIALIZED ===
+[10:31:41] [INFO] [FULL_STATE] ==========================================
+[10:31:41] [INFO] [FULL_STATE] === FULL GAME STATE DUMP ===
+[10:31:41] [INFO] [FULL_STATE] Time: 2026-08-15T10:31:41
+[10:31:41] [INFO] [FULL_STATE] ==========================================
+[10:31:41] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:31:41] [INFO] [PLAYER_STATS] HP: 70/70
+[10:31:41] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:31:41] [INFO] [PLAYER_STATS] Gold: 90
+[10:31:41] [INFO] [PLAYER_STATS] Floors cleared: 0
+[10:31:41] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:31:41] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:31:41] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:31:41] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:31:41] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:31:41] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:31:41] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:31:41] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:31:41] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:31:41] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:31:41] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:31:41] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:31:41] [INFO] [PLAYER_STATS] Block per card: 0
+[10:31:41] [INFO] [PLAYER_STATS] Has revive: false
+[10:31:41] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:31:41] [INFO] [SKILLS] === SKILL TREE STATE ===
+[10:31:41] [INFO] [SKILLS] Žádný aktivní skill tree (disabled).
+[10:31:41] [INFO] [DECK] === DECK STATE ===
+[10:31:41] [INFO] [DECK] Master deck: 7 cards
+[10:31:41] [INFO] [DECK] Hand: 0 cards
+[10:31:41] [INFO] [DECK] Draw pile: 7 cards
+[10:31:41] [INFO] [DECK] Discard pile: 0 cards
+[10:31:41] [INFO] [DECK] Exhaust pile: 0 cards
+[10:31:41] [INFO] [DECK] === END DECK STATE ===
+[10:31:41] [INFO] [ARTIFACTS] No artifacts
+[10:31:41] [INFO] [MAP] No map data available
+[10:31:41] [INFO] [META] === META PROGRESS ===
+[10:31:41] [INFO] [META] Hero paladin — Level 12, XP 170
+[10:31:41] [INFO] [META] Hero trapper — Level 1, XP 0
+[10:31:41] [INFO] [META] Unlocked skills: 0
+[10:31:41] [INFO] [META] === END META PROGRESS ===
+[10:31:41] [INFO] [FULL_STATE] ==========================================
+[10:31:41] [INFO] [FULL_STATE] === END FULL GAME STATE DUMP ===
+[10:31:41] [INFO] [FULL_STATE] ==========================================
+Pasivní strom: Žádný aktivní strom dovedností nenalezen.
+[10:31:41] [INFO] [FULL_STATE] ==========================================
+[10:31:41] [INFO] [FULL_STATE] === FULL GAME STATE DUMP ===
+[10:31:41] [INFO] [FULL_STATE] Time: 2026-08-15T10:31:41
+[10:31:41] [INFO] [FULL_STATE] ==========================================
+[10:31:41] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:31:41] [INFO] [PLAYER_STATS] HP: 70/70
+[10:31:41] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:31:41] [INFO] [PLAYER_STATS] Gold: 90
+[10:31:41] [INFO] [PLAYER_STATS] Floors cleared: 0
+[10:31:41] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:31:41] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:31:41] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:31:41] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:31:41] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:31:41] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:31:41] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:31:41] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:31:41] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:31:41] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:31:41] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:31:41] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:31:41] [INFO] [PLAYER_STATS] Block per card: 0
+[10:31:41] [INFO] [PLAYER_STATS] Has revive: false
+[10:31:41] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:31:41] [INFO] [SKILLS] === SKILL TREE STATE ===
+[10:31:41] [INFO] [SKILLS] Žádný aktivní skill tree (disabled).
+[10:31:41] [INFO] [DECK] === DECK STATE ===
+[10:31:41] [INFO] [DECK] Master deck: 7 cards
+[10:31:41] [INFO] [DECK] Hand: 0 cards
+[10:31:41] [INFO] [DECK] Draw pile: 7 cards
+[10:31:41] [INFO] [DECK] Discard pile: 0 cards
+[10:31:41] [INFO] [DECK] Exhaust pile: 0 cards
+[10:31:41] [INFO] [DECK] === END DECK STATE ===
+[10:31:41] [INFO] [ARTIFACTS] No artifacts
+[10:31:41] [INFO] [MAP] No map data available
+[10:31:41] [INFO] [META] === META PROGRESS ===
+[10:31:41] [INFO] [META] Hero paladin — Level 12, XP 170
+[10:31:41] [INFO] [META] Hero trapper — Level 1, XP 0
+[10:31:41] [INFO] [META] Unlocked skills: 0
+[10:31:41] [INFO] [META] === END META PROGRESS ===
+[10:31:41] [INFO] [FULL_STATE] ==========================================
+[10:31:41] [INFO] [FULL_STATE] === END FULL GAME STATE DUMP ===
+[10:31:41] [INFO] [FULL_STATE] ==========================================
+[10:31:41] [INFO] [SCENE] Scene change: res://scenes/CharSelect/RunPrepScreen.tscn -> res://scenes/map/Map.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/map/Map.tscn
+DEBUG: Načtená scéna - typ: Node2D
+DEBUG: Načtená scéna - název: Map
+Přidána legenda pro: Common battle
+Přidána legenda pro: Elite battle
+Přidána legenda pro: Event
+Přidána legenda pro: Rest
+Přidána legenda pro: Shop
+Přidána legenda pro: Treasure
+Přidána legenda pro: Boss
+Legenda dokončena s 7 položkami
+[10:31:43] [INFO] [PROGRESSION] Shards +1 (total 4, run 1)
+[10:31:43] [INFO] [SAVE] Save/Load: save_meta_progress - SUCCESS | Hero paladin Level: 12, XP: 170
+[10:31:43] [INFO] [BATTLE] === STARTING BATTLE ===
+[10:31:43] [INFO] [BATTLE] Encounter: res://data/encounters/first_battle.tres
+[10:31:43] [INFO] [BATTLE] Encounter type: 0
+[10:31:43] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:31:43] [INFO] [PLAYER_STATS] HP: 70/70
+[10:31:43] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:31:43] [INFO] [PLAYER_STATS] Gold: 90
+[10:31:43] [INFO] [PLAYER_STATS] Floors cleared: 1
+[10:31:43] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:31:43] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:31:43] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:31:43] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:31:43] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:31:43] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:31:43] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:31:43] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:31:43] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:31:43] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:31:43] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:31:43] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:31:43] [INFO] [PLAYER_STATS] Block per card: 0
+[10:31:43] [INFO] [PLAYER_STATS] Has revive: false
+[10:31:43] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:31:43] [INFO] [DECK] === DECK STATE ===
+[10:31:43] [INFO] [DECK] Master deck: 7 cards
+[10:31:43] [INFO] [DECK] Hand: 0 cards
+[10:31:43] [INFO] [DECK] Draw pile: 7 cards
+[10:31:43] [INFO] [DECK] Discard pile: 0 cards
+[10:31:43] [INFO] [DECK] Exhaust pile: 0 cards
+[10:31:43] [INFO] [DECK] === END DECK STATE ===
+[10:31:43] [INFO] [SCENE] Scene change: res://scenes/map/Map.tscn -> res://scenes/battle/BattleScene.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/battle/BattleScene.tscn
+DEBUG: Načtená scéna - typ: Node3D
+DEBUG: Načtená scéna - název: BattleScene
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+[10:31:43] [INFO] [BATTLE] Battle scene loaded
+[10:31:44] [INFO] [GAME] ArtifactManager: Spouštím START_OF_COMBAT artefakty...
+=== TurnManager: START COMBAT ===
+TurnManager: Zaregistrováno 2 jednotek
+=== TurnManager: KOLO 1 ===
+TurnManager: Pořadí tahů pro kolo 1:
+  1. unit.goblin (Základ: 15, Bonus: 0, Celkem: 15)
+  2. unit.paladin (Základ: 12, Bonus: 0, Celkem: 12)
+[10:31:44] [INFO] [GAME] === KOLO 1 ===
+TurnManager: Tah jednotky unit.goblin
+--- Goblin STARTS TURN ---
+--- Goblin ENDS TURN ---
+TurnManager: Tah jednotky unit.paladin
+--- Paladin STARTS TURN ---
+[10:31:45] [INFO] [GAME] ArtifactManager: Spouštím START_OF_TURN artefakty...
+--- Paladin ENDS TURN ---
+=== TurnManager: KOLO 2 ===
+TurnManager: Pořadí tahů pro kolo 2:
+  1. unit.goblin (Základ: 15, Bonus: 0, Celkem: 15)
+  2. unit.paladin (Základ: 12, Bonus: 0, Celkem: 12)
+[10:32:18] [INFO] [GAME] === KOLO 2 ===
+TurnManager: Tah jednotky unit.goblin
+--- Goblin STARTS TURN ---
+--- Goblin ENDS TURN ---
+TurnManager: Tah jednotky unit.paladin
+--- Paladin STARTS TURN ---
+[10:32:19] [INFO] [GAME] ArtifactManager: Spouštím START_OF_TURN artefakty...
+[10:32:23] [
+...[TRUNCATED]...
+
+===== LINE 73 ROLE=user LEN=416 =====
+<timestamp>Saturday, Aug 15, 2026, 10:36 AM (UTC+2)</timestamp>
+<user_query>
+ale ano vidíš kde byl spawnutý že ? a já to viděl on byl na stejné lince na druhé straně mapy.. a ano začínal on a zničeho nic se my objevil za zády prostě se tam přesunul to je více než 3 move a méně než 1 tah 
+
+a pak jsem použil taunt protože mě zajímaly ty ikonky a dal jsem ukončit kolo protože mě zajímalo co se bude dít
+</user_query>
+
+===== LINE 76 ROLE=user LEN=173 =====
+<timestamp>Saturday, Aug 15, 2026, 10:40 AM (UTC+2)</timestamp>
+<user_query>
+to bude težký ..a víš že enemy se mají vždy spawnovat na druhé straně mapy ode mně
+</user_query>
+
+===== LINE 82 ROLE=user LEN=12169 =====
+[Image]
+<image_files>
+The following images were provided by the user and saved to the workspace for future use:
+1. C:\Users\Jirka\.cursor\projects\d-Games-projekt-loop-v2/assets/c__Users_Jirka_AppData_Roaming_Cursor_User_workspaceStorage_b081fe53ff88fb52763c2a1a0d55eefa_images_image-75a41482-c347-4cf5-84e6-0c9a163589ea.png
+
+These images can be copied for use in other locations.
+</image_files>
+<timestamp>Saturday, Aug 15, 2026, 10:43 AM (UTC+2)</timestamp>
+<user_query>
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+Vulkan 1.4.329 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 3060
+
+[10:42:13] [INFO] [GAME] Translations loaded from CSV: en, cs
+[10:42:13] [INFO] [GAME] DialogueCatalog loaded 18 lines from res://data/dialogue/dialogue.csv
+[10:42:13] [INFO] [GAME] DebugLogger inicializován
+[10:42:13] [INFO] [GAME] Log soubor: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP/game_debug_log.txt
+[10:42:13] [INFO] [GAME] === SYSTEM INFO ===
+[10:42:13] [INFO] [GAME] Godot verze: 4.4.1-stable (official)
+[10:42:13] [INFO] [GAME] OS: Windows
+[10:42:13] [INFO] [GAME] Procesor: 12 cores
+[10:42:13] [INFO] [GAME] Video adapter: NVIDIA GeForce RTX 3060
+[10:42:13] [INFO] [GAME] Screen size: (1920, 1080)
+[10:42:13] [INFO] [GAME] User data dir: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP
+[10:42:13] [INFO] [GAME] FPS Limit: 0
+[10:42:13] [INFO] [GAME] VSync: 1
+[10:42:13] [INFO] [GAME] Memory Usage: 81.11 MB
+[10:42:13] [INFO] [GAME] ==================
+[10:42:13] [INFO] [GAME] === GAME MANAGER STARTED ===
+[10:42:13] [INFO] [GAME] === SYSTEM INFO ===
+[10:42:13] [INFO] [GAME] Godot verze: 4.4.1-stable (official)
+[10:42:13] [INFO] [GAME] OS: Windows
+[10:42:13] [INFO] [GAME] Procesor: 12 cores
+[10:42:13] [INFO] [GAME] Video adapter: NVIDIA GeForce RTX 3060
+[10:42:13] [INFO] [GAME] Screen size: (1920, 1080)
+[10:42:13] [INFO] [GAME] User data dir: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP
+[10:42:13] [INFO] [GAME] FPS Limit: 0
+[10:42:13] [INFO] [GAME] VSync: 1
+[10:42:13] [INFO] [GAME] Memory Usage: 145.14 MB
+[10:42:13] [INFO] [GAME] ==================
+[10:42:13] [INFO] [GAME] Language preference loaded: en
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+MultiplayerManager: Disconnected
+[10:42:13] [INFO] [SCENE] Scene change: none -> res://scenes/ui/MainMenu.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/ui/MainMenu.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: MainMenu
+EventManager: Inicializace...
+[10:42:40] [INFO] [SCENE] Scene change: res://scenes/ui/MainMenu.tscn -> res://scenes/CharSelect/CharacterSelectScreen.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/CharSelect/CharacterSelectScreen.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: CharacterSelectScreen
+[10:42:41] [INFO] [CHAR_SELECT] === CHARACTER SELECTED ===
+[10:42:41] [INFO] [CHAR_SELECT] Class: res://data/classes/Tank.tres
+[10:42:41] [INFO] [CHAR_SELECT] Subclass: class.paladin
+[10:42:41] [INFO] [SCENE] Scene change: res://scenes/CharSelect/CharacterSelectScreen.tscn -> res://scenes/CharSelect/RunPrepScreen.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/CharSelect/RunPrepScreen.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: RunPrepScreen
+Pasivní strom: Žádný aktivní strom dovedností nenalezen.
+=== INICIALIZACE HRÁČE ===
+Třída načtena
+Podtřída načtena
+✅ Načteno 0 odemčených karet
+=== INICIALIZACE DOKONČENA (skill tree disabled) ===
+[10:42:42] [INFO] [GAME_FLOW] === STARTING NEW RUN ===
+[10:42:42] [INFO] [GAME_FLOW] Seed: 2657461463
+EventManager: Reset pro nový run
+[10:42:42] [INFO] [SKILLS] === APPLYING RUN BONUSES (village + artifacts) ===
+[10:42:42] [INFO] [SKILLS] Finální staty: HP 70/70, Gold 90, Energy 3/3, StartBlock 4
+[10:42:42] [INFO] [ARTIFACTS] Artifacts changed, new count: 0
+[10:42:42] [INFO] [ARTIFACTS] No artifacts
+[10:42:42] [INFO] [INIT] === PLAYER INITIALIZED ===
+[10:42:42] [INFO] [FULL_STATE] ==========================================
+[10:42:42] [INFO] [FULL_STATE] === FULL GAME STATE DUMP ===
+[10:42:42] [INFO] [FULL_STATE] Time: 2026-08-15T10:42:42
+[10:42:42] [INFO] [FULL_STATE] ==========================================
+[10:42:42] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:42:42] [INFO] [PLAYER_STATS] HP: 70/70
+[10:42:42] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:42:42] [INFO] [PLAYER_STATS] Gold: 90
+[10:42:42] [INFO] [PLAYER_STATS] Floors cleared: 0
+[10:42:42] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:42:42] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:42:42] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:42:42] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:42:42] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:42:42] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:42:42] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:42:42] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:42:42] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:42:42] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:42:42] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:42:42] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:42:42] [INFO] [PLAYER_STATS] Block per card: 0
+[10:42:42] [INFO] [PLAYER_STATS] Has revive: false
+[10:42:42] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:42:42] [INFO] [SKILLS] === SKILL TREE STATE ===
+[10:42:42] [INFO] [SKILLS] Žádný aktivní skill tree (disabled).
+[10:42:42] [INFO] [DECK] === DECK STATE ===
+[10:42:42] [INFO] [DECK] Master deck: 7 cards
+[10:42:42] [INFO] [DECK] Hand: 0 cards
+[10:42:42] [INFO] [DECK] Draw pile: 7 cards
+[10:42:42] [INFO] [DECK] Discard pile: 0 cards
+[10:42:42] [INFO] [DECK] Exhaust pile: 0 cards
+[10:42:42] [INFO] [DECK] === END DECK STATE ===
+[10:42:42] [INFO] [ARTIFACTS] No artifacts
+[10:42:42] [INFO] [MAP] No map data available
+[10:42:42] [INFO] [META] === META PROGRESS ===
+[10:42:42] [INFO] [META] Hero paladin — Level 12, XP 170
+[10:42:42] [INFO] [META] Hero trapper — Level 1, XP 0
+[10:42:42] [INFO] [META] Unlocked skills: 0
+[10:42:42] [INFO] [META] === END META PROGRESS ===
+[10:42:42] [INFO] [FULL_STATE] ==========================================
+[10:42:42] [INFO] [FULL_STATE] === END FULL GAME STATE DUMP ===
+[10:42:42] [INFO] [FULL_STATE] ==========================================
+Pasivní strom: Žádný aktivní strom dovedností nenalezen.
+[10:42:42] [INFO] [FULL_STATE] ==========================================
+[10:42:42] [INFO] [FULL_STATE] === FULL GAME STATE DUMP ===
+[10:42:42] [INFO] [FULL_STATE] Time: 2026-08-15T10:42:42
+[10:42:42] [INFO] [FULL_STATE] ==========================================
+[10:42:42] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:42:42] [INFO] [PLAYER_STATS] HP: 70/70
+[10:42:42] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:42:42] [INFO] [PLAYER_STATS] Gold: 90
+[10:42:42] [INFO] [PLAYER_STATS] Floors cleared: 0
+[10:42:42] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:42:42] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:42:42] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:42:42] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:42:42] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:42:42] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:42:42] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:42:42] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:42:42] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:42:42] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:42:42] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:42:42] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:42:42] [INFO] [PLAYER_STATS] Block per card: 0
+[10:42:42] [INFO] [PLAYER_STATS] Has revive: false
+[10:42:42] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:42:42] [INFO] [SKILLS] === SKILL TREE STATE ===
+[10:42:42] [INFO] [SKILLS] Žádný aktivní skill tree (disabled).
+[10:42:42] [INFO] [DECK] === DECK STATE ===
+[10:42:42] [INFO] [DECK] Master deck: 7 cards
+[10:42:42] [INFO] [DECK] Hand: 0 cards
+[10:42:42] [INFO] [DECK] Draw pile: 7 cards
+[10:42:42] [INFO] [DECK] Discard pile: 0 cards
+[10:42:42] [INFO] [DECK] Exhaust pile: 0 cards
+[10:42:42] [INFO] [DECK] === END DECK STATE ===
+[10:42:42] [INFO] [ARTIFACTS] No artifacts
+[10:42:42] [INFO] [MAP] No map data available
+[10:42:42] [INFO] [META] === META PROGRESS ===
+[10:42:42] [INFO] [META] Hero paladin — Level 12, XP 170
+[10:42:42] [INFO] [META] Hero trapper — Level 1, XP 0
+[10:42:42] [INFO] [META] Unlocked skills: 0
+[10:42:42] [INFO] [META] === END META PROGRESS ===
+[10:42:42] [INFO] [FULL_STATE] ==========================================
+[10:42:42] [INFO] [FULL_STATE] === END FULL GAME STATE DUMP ===
+[10:42:42] [INFO] [FULL_STATE] ==========================================
+[10:42:42] [INFO] [SCENE] Scene change: res://scenes/CharSelect/RunPrepScreen.tscn -> res://scenes/map/Map.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/map/Map.tscn
+DEBUG: Načtená scéna - typ: Node2D
+DEBUG: Načtená scéna - název: Map
+Přidána legenda pro: Common battle
+Přidána legenda pro: Elite battle
+Přidána legenda pro: Event
+Přidána legenda pro: Rest
+Přidána legenda pro: Shop
+Přidána legenda pro: Treasure
+Přidána legenda pro: Boss
+Legenda dokončena s 7 položkami
+[10:42:44] [INFO] [PROGRESSION] Shards +1 (total 8, run 1)
+[10:42:44] [INFO] [SAVE] Save/Load: save_meta_progress - SUCCESS | Hero paladin Level: 12, XP: 170
+[10:42:44] [INFO] [BATTLE] === STARTING BATTLE ===
+[10:42:44] [INFO] [BATTLE] Encounter: res://data/encounters/goblin_duo.tres
+[10:42:44] [INFO] [BATTLE] Encounter type: 0
+[10:42:44] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:42:44] [INFO] [PLAYER_STATS] HP: 70/70
+[10:42:44] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:42:44] [INFO] [PLAYER_STATS] Gold: 90
+[10:42:44] [INFO] [PLAYER_STATS] Floors cleared: 1
+[10:42:44] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:42:44] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:42:44] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:42:44] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:42:44] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:42:44] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:42:44] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:42:44] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:42:44] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:42:44] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:42:44] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:42:44] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:42:44] [INFO] [PLAYER_STATS] Block per card: 0
+[10:42:44] [INFO] [PLAYER_STATS] Has revive: false
+[10:42:44] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:42:44] [INFO] [DECK] === DECK STATE ===
+[10:42:44] [INFO] [DECK] Master deck: 7 cards
+[10:42:44] [INFO] [DECK] Hand: 0 cards
+[10:42:44] [INFO] [DECK] Draw pile: 7 cards
+[10:42:44] [INFO] [DECK] Discard pile: 0 cards
+[10:42:44] [INFO] [DECK] Exhaust pile: 0 cards
+[10:42:44] [INFO] [DECK] === END DECK STATE ===
+[10:42:44] [INFO] [SCENE] Scene change: res://scenes/map/Map.tscn -> res://scenes/battle/BattleScene.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/battle/BattleScene.tscn
+DEBUG: Načtená scéna - typ: Node3D
+DEBUG: Načtená scéna - název: BattleScene
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+[10:42:44] [INFO] [BATTLE] Battle scene loaded
+[10:42:45] [INFO] [GAME] ArtifactManager: Spouštím START_OF_COMBAT artefakty...
+=== TurnManager: START COMBAT ===
+TurnManager: Zaregistrováno 3 jednotek
+=== TurnManager: KOLO 1 ===
+TurnManager: Pořadí tahů pro kolo 1:
+  1. unit.goblin (Základ: 15, Bonus: 0, Celkem: 15)
+  2. unit.goblin (Základ: 15, Bonus: 0, Celkem: 15)
+  3. unit.paladin (Základ: 12, Bonus: 0, Celkem: 12)
+[10:42:45] [INFO] [GAME] === KOLO 1 ===
+TurnManager: Tah jednotky unit.goblin
+--- Goblin STARTS TURN ---
+--- Goblin ENDS TURN ---
+TurnManager: Tah jednotky unit.goblin
+--- Goblin STARTS TURN ---
+--- Goblin ENDS TURN ---
+TurnManager: Tah jednotky unit.paladin
+--- Paladin STARTS TURN ---
+[10:42:49] [INFO] [GAME] 
+...[TRUNCATED]...
+
+===== LINE 86 ROLE=user LEN=31057 =====
+[Image]
+<image_files>
+The following images were provided by the user and saved to the workspace for future use:
+1. C:\Users\Jirka\.cursor\projects\d-Games-projekt-loop-v2/assets/c__Users_Jirka_AppData_Roaming_Cursor_User_workspaceStorage_b081fe53ff88fb52763c2a1a0d55eefa_images_image-ebc89954-4d1a-455f-9dbc-039592058021.png
+
+These images can be copied for use in other locations.
+</image_files>
+<timestamp>Saturday, Aug 15, 2026, 10:46 AM (UTC+2)</timestamp>
+<user_query>
+teď ten goblin female šel 2 pole dozadu za orca a další 3. krok se obejvil u mě 
+
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+Vulkan 1.4.329 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 3060
+
+[10:45:07] [INFO] [GAME] Translations loaded from CSV: en, cs
+[10:45:07] [INFO] [GAME] DialogueCatalog loaded 18 lines from res://data/dialogue/dialogue.csv
+[10:45:07] [INFO] [GAME] DebugLogger inicializován
+[10:45:07] [INFO] [GAME] Log soubor: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP/game_debug_log.txt
+[10:45:07] [INFO] [GAME] === SYSTEM INFO ===
+[10:45:07] [INFO] [GAME] Godot verze: 4.4.1-stable (official)
+[10:45:07] [INFO] [GAME] OS: Windows
+[10:45:07] [INFO] [GAME] Procesor: 12 cores
+[10:45:07] [INFO] [GAME] Video adapter: NVIDIA GeForce RTX 3060
+[10:45:07] [INFO] [GAME] Screen size: (1920, 1080)
+[10:45:07] [INFO] [GAME] User data dir: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP
+[10:45:07] [INFO] [GAME] FPS Limit: 0
+[10:45:07] [INFO] [GAME] VSync: 1
+[10:45:07] [INFO] [GAME] Memory Usage: 81.11 MB
+[10:45:07] [INFO] [GAME] ==================
+[10:45:08] [INFO] [GAME] === GAME MANAGER STARTED ===
+[10:45:08] [INFO] [GAME] === SYSTEM INFO ===
+[10:45:08] [INFO] [GAME] Godot verze: 4.4.1-stable (official)
+[10:45:08] [INFO] [GAME] OS: Windows
+[10:45:08] [INFO] [GAME] Procesor: 12 cores
+[10:45:08] [INFO] [GAME] Video adapter: NVIDIA GeForce RTX 3060
+[10:45:08] [INFO] [GAME] Screen size: (1920, 1080)
+[10:45:08] [INFO] [GAME] User data dir: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP
+[10:45:08] [INFO] [GAME] FPS Limit: 0
+[10:45:08] [INFO] [GAME] VSync: 1
+[10:45:08] [INFO] [GAME] Memory Usage: 145.14 MB
+[10:45:08] [INFO] [GAME] ==================
+[10:45:08] [INFO] [GAME] Language preference loaded: en
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+MultiplayerManager: Disconnected
+[10:45:08] [INFO] [SCENE] Scene change: none -> res://scenes/ui/MainMenu.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/ui/MainMenu.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: MainMenu
+EventManager: Inicializace...
+[10:45:09] [INFO] [SCENE] Scene change: res://scenes/ui/MainMenu.tscn -> res://scenes/CharSelect/CharacterSelectScreen.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/CharSelect/CharacterSelectScreen.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: CharacterSelectScreen
+[10:45:10] [INFO] [CHAR_SELECT] === CHARACTER SELECTED ===
+[10:45:10] [INFO] [CHAR_SELECT] Class: res://data/classes/Tank.tres
+[10:45:10] [INFO] [CHAR_SELECT] Subclass: class.paladin
+[10:45:10] [INFO] [SCENE] Scene change: res://scenes/CharSelect/CharacterSelectScreen.tscn -> res://scenes/CharSelect/RunPrepScreen.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/CharSelect/RunPrepScreen.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: RunPrepScreen
+Pasivní strom: Žádný aktivní strom dovedností nenalezen.
+=== INICIALIZACE HRÁČE ===
+Třída načtena
+Podtřída načtena
+✅ Načteno 0 odemčených karet
+=== INICIALIZACE DOKONČENA (skill tree disabled) ===
+[10:45:11] [INFO] [GAME_FLOW] === STARTING NEW RUN ===
+[10:45:11] [INFO] [GAME_FLOW] Seed: 2380113383
+EventManager: Reset pro nový run
+[10:45:11] [INFO] [SKILLS] === APPLYING RUN BONUSES (village + artifacts) ===
+[10:45:11] [INFO] [SKILLS] Finální staty: HP 70/70, Gold 90, Energy 3/3, StartBlock 4
+[10:45:11] [INFO] [ARTIFACTS] Artifacts changed, new count: 0
+[10:45:11] [INFO] [ARTIFACTS] No artifacts
+[10:45:11] [INFO] [INIT] === PLAYER INITIALIZED ===
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [FULL_STATE] === FULL GAME STATE DUMP ===
+[10:45:11] [INFO] [FULL_STATE] Time: 2026-08-15T10:45:11
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:45:11] [INFO] [PLAYER_STATS] HP: 70/70
+[10:45:11] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:45:11] [INFO] [PLAYER_STATS] Gold: 90
+[10:45:11] [INFO] [PLAYER_STATS] Floors cleared: 0
+[10:45:11] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:45:11] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:45:11] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:45:11] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:45:11] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:45:11] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:45:11] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:45:11] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:45:11] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:45:11] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:45:11] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:45:11] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:45:11] [INFO] [PLAYER_STATS] Block per card: 0
+[10:45:11] [INFO] [PLAYER_STATS] Has revive: false
+[10:45:11] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:45:11] [INFO] [SKILLS] === SKILL TREE STATE ===
+[10:45:11] [INFO] [SKILLS] Žádný aktivní skill tree (disabled).
+[10:45:11] [INFO] [DECK] === DECK STATE ===
+[10:45:11] [INFO] [DECK] Master deck: 7 cards
+[10:45:11] [INFO] [DECK] Hand: 0 cards
+[10:45:11] [INFO] [DECK] Draw pile: 7 cards
+[10:45:11] [INFO] [DECK] Discard pile: 0 cards
+[10:45:11] [INFO] [DECK] Exhaust pile: 0 cards
+[10:45:11] [INFO] [DECK] === END DECK STATE ===
+[10:45:11] [INFO] [ARTIFACTS] No artifacts
+[10:45:11] [INFO] [MAP] No map data available
+[10:45:11] [INFO] [META] === META PROGRESS ===
+[10:45:11] [INFO] [META] Hero paladin — Level 12, XP 170
+[10:45:11] [INFO] [META] Hero trapper — Level 1, XP 0
+[10:45:11] [INFO] [META] Unlocked skills: 0
+[10:45:11] [INFO] [META] === END META PROGRESS ===
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [FULL_STATE] === END FULL GAME STATE DUMP ===
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+Pasivní strom: Žádný aktivní strom dovedností nenalezen.
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [FULL_STATE] === FULL GAME STATE DUMP ===
+[10:45:11] [INFO] [FULL_STATE] Time: 2026-08-15T10:45:11
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:45:11] [INFO] [PLAYER_STATS] HP: 70/70
+[10:45:11] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:45:11] [INFO] [PLAYER_STATS] Gold: 90
+[10:45:11] [INFO] [PLAYER_STATS] Floors cleared: 0
+[10:45:11] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:45:11] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:45:11] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:45:11] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:45:11] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:45:11] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:45:11] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:45:11] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:45:11] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:45:11] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:45:11] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:45:11] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:45:11] [INFO] [PLAYER_STATS] Block per card: 0
+[10:45:11] [INFO] [PLAYER_STATS] Has revive: false
+[10:45:11] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:45:11] [INFO] [SKILLS] === SKILL TREE STATE ===
+[10:45:11] [INFO] [SKILLS] Žádný aktivní skill tree (disabled).
+[10:45:11] [INFO] [DECK] === DECK STATE ===
+[10:45:11] [INFO] [DECK] Master deck: 7 cards
+[10:45:11] [INFO] [DECK] Hand: 0 cards
+[10:45:11] [INFO] [DECK] Draw pile: 7 cards
+[10:45:11] [INFO] [DECK] Discard pile: 0 cards
+[10:45:11] [INFO] [DECK] Exhaust pile: 0 cards
+[10:45:11] [INFO] [DECK] === END DECK STATE ===
+[10:45:11] [INFO] [ARTIFACTS] No artifacts
+[10:45:11] [INFO] [MAP] No map data available
+[10:45:11] [INFO] [META] === META PROGRESS ===
+[10:45:11] [INFO] [META] Hero paladin — Level 12, XP 170
+[10:45:11] [INFO] [META] Hero trapper — Level 1, XP 0
+[10:45:11] [INFO] [META] Unlocked skills: 0
+[10:45:11] [INFO] [META] === END META PROGRESS ===
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [FULL_STATE] === END FULL GAME STATE DUMP ===
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [SCENE] Scene change: res://scenes/CharSelect/RunPrepScreen.tscn -> res://scenes/map/Map.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/map/Map.tscn
+DEBUG: Načtená scéna - typ: Node2D
+DEBUG: Načtená scéna - název: Map
+Přidána legenda pro: Common battle
+Přidána legenda pro: Elite battle
+Přidána legenda pro: Event
+Přidána legenda pro: Rest
+Přidána legenda pro: Shop
+Přidána legenda pro: Treasure
+Přidána legenda pro: Boss
+Legenda dokončena s 7 položkami
+[10:45:12] [INFO] [PROGRESSION] Shards +1 (total 9, run 1)
+[10:45:12] [INFO] [SAVE] Save/Load: save_meta_progress - SUCCESS | Hero paladin Level: 12, XP: 170
+[10:45:12] [INFO] [BATTLE] === STARTING BATTLE ===
+[10:45:12] [INFO] [BATTLE] Encounter: res://data/encounters/goblin_duo.tres
+[10:45:12] [INFO] [BATTLE] Encounter type: 0
+[10:45:12] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:45:12] [INFO] [PLAYER_STATS] HP: 70/70
+[10:45:12] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:45:12] [INFO] [PLAYER_STATS] Gold: 90
+[10:45:12] [INFO] [PLAYER_STATS] Floors cleared: 1
+[10:45:12] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:45:12] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:45:12] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:45:12] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:45:12] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:45:12] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:45:12] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:45:12] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:45:12] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:45:12] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:45:12] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:45:12] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:45:12] [INFO] [PLAYER_STATS] Block per card: 0
+[10:45:12] [INFO] [PLAYER_STATS] Has revive: false
+[10:45:12] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:45:12] [INFO] [DECK] === DECK STATE ===
+[10:45:12] [INFO] [DECK] Master deck: 7 cards
+[10:45:12] [INFO] [DECK] Hand: 0 cards
+[10:45:12] [INFO] [DECK] Draw pile: 7 cards
+[10:45:12] [INFO] [DECK] Discard pile: 0 cards
+[10:45:12] [INFO] [DECK] Exhaust pile: 0 cards
+[10:45:12] [INFO] [DECK] === END DECK STATE ===
+[10:45:12] [INFO] [SCENE] Scene change: res://scenes/map/Map.tscn -> res://scenes/battle/BattleScene.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/battle/BattleScene.tscn
+DEBUG: Načtená scéna - typ: Node3D
+DEBUG: Načtená scéna - název: BattleScene
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+[10:45:12] [INFO] [BATTLE] Battle scene loaded
+[10:45:14] [INFO] [GAME] ArtifactManager: Spouštím START_OF_COMBAT artefakty...
+=== TurnManager: START COMBAT ===
+TurnManager: Zaregistrováno 3 jednotek
+=== TurnManager: KOLO 1 ===
+TurnManager: Pořadí tahů pro kolo 1:
+  1. unit.goblin (Základ: 15, Bonus: 0, Celkem: 15)
+  2. unit.goblin (Základ: 15, Bonus: 0, Celkem: 15)
+  3. unit.paladin (Základ: 12, Bonus: 0, Celkem: 12)
+[10:45:14] [INFO] [GAME] === KOLO 1 ===
+TurnManager: Tah jednotky unit.goblin
+--- Goblin STARTS TURN ---
+--- Goblin ENDS TURN ---
+TurnManager: Tah jednotky unit.goblin
+--- Goblin STARTS TURN ---
+--- Goblin ENDS TURN ---
+TurnManage
+...[TRUNCATED]...
+
+===== LINE 88 ROLE=user LEN=3150 =====
+<mcp_meta_tools>
+You have access to MCP (Model Context Protocol) tools through `GetMcpTools` and `CallMcpTool`.
+
+## MCP Tool Discovery and Invocation
+
+Use `GetMcpTools` to discover tool schemas, then `CallMcpTool` to invoke them. Aim to minimize round-trips: ideally one `GetMcpTools` call followed by one `CallMcpTool` call.
+
+If the user mentions, references, or links to a product or service that corresponds to an available MCP server, and the request likely depends on information from that service, proactively inspect that MCP server before answering. Do not wait for the user to explicitly ask you to use MCP. If you are unsure which server matches, use `GetMcpTools` with a pattern based on the service name.
+
+`GetMcpTools` supports four modes:
+
+1. `{"server":"<id>"}`: returns full input schemas and full descriptions for every tool on that server. Preferred when you know which server to use.
+2. `{"server":"<id>","toolName":"<name>"}`: returns the full schema and full description for one tool.
+3. `{"pattern":"<regex>"}`: searches tool and server names across all servers using RE2 syntax (no backreferences, lookahead, or lookbehind). Use when you're unsure which server has the tool you need.
+4. No arguments: returns a catalog of all servers with tool names and short descriptions. Only use this if you have no idea which server or tool to look for — in most cases, prefer fetching by server or pattern instead.
+
+Pattern-search and catalog results shorten long descriptions, marked by a trailing "... [truncated]"; server and single-tool lookups always return the complete description.
+
+MANDATORY - Always call `GetMcpTools` to discover a tool's schema before invoking it with `CallMcpTool`. If you already know the server, go directly to it rather than listing the full catalog first.
+
+If the available MCP tools do not fully support what the user asked you to do, complete the work you can with the current tool set. In your work summary, include what you were unable to do with MCP and why. Do not use browser automation to work around missing or unavailable MCP tools unless the user explicitly asks you to use the browser.
+
+Available MCP servers:
+
+<mcp_meta_tool_servers>
+<mcp_meta_tool_server name="cursor-app-control" tools="move_agent_to_root, move_agent_to_cloned_root, create_project, rename_chat, cursor_dialog, open_resource, open_automation" serverUseInstructions="Controls the Cursor application itself (workspace root, projects, opening resources, automations, and local task drafts, user rules, chat title). See each tool description for usage." />
+</mcp_meta_tool_servers>
+
+## MCP Resource Access
+
+You also have access to MCP resources via `FetchMcpResource`.
+If a relevant server is marked as needing authentication, or if an MCP tool call fails with an authentication/authorization error, call `mcp_auth` for that server, then inspect that server again and retry the original request if appropriate. Do not call `mcp_auth` just because it is listed, and do not repeatedly call it if authentication did not fix the failure. Do not call `mcp_auth` in parallel; authenticate only one server at a time.
+</mcp_meta_tools>
+
+===== LINE 89 ROLE=user LEN=31057 =====
+[Image]
+<image_files>
+The following images were provided by the user and saved to the workspace for future use:
+1. C:\Users\Jirka\.cursor\projects\d-Games-projekt-loop-v2/assets/c__Users_Jirka_AppData_Roaming_Cursor_User_workspaceStorage_b081fe53ff88fb52763c2a1a0d55eefa_images_image-ebc89954-4d1a-455f-9dbc-039592058021.png
+
+These images can be copied for use in other locations.
+</image_files>
+<timestamp>Saturday, Aug 15, 2026, 10:46 AM (UTC+2)</timestamp>
+<user_query>
+teď ten goblin female šel 2 pole dozadu za orca a další 3. krok se obejvil u mě 
+
+Godot Engine v4.4.1.stable.official.49a5bc7b6 - https://godotengine.org
+Vulkan 1.4.329 - Forward+ - Using Device #0: NVIDIA - NVIDIA GeForce RTX 3060
+
+[10:45:07] [INFO] [GAME] Translations loaded from CSV: en, cs
+[10:45:07] [INFO] [GAME] DialogueCatalog loaded 18 lines from res://data/dialogue/dialogue.csv
+[10:45:07] [INFO] [GAME] DebugLogger inicializován
+[10:45:07] [INFO] [GAME] Log soubor: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP/game_debug_log.txt
+[10:45:07] [INFO] [GAME] === SYSTEM INFO ===
+[10:45:07] [INFO] [GAME] Godot verze: 4.4.1-stable (official)
+[10:45:07] [INFO] [GAME] OS: Windows
+[10:45:07] [INFO] [GAME] Procesor: 12 cores
+[10:45:07] [INFO] [GAME] Video adapter: NVIDIA GeForce RTX 3060
+[10:45:07] [INFO] [GAME] Screen size: (1920, 1080)
+[10:45:07] [INFO] [GAME] User data dir: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP
+[10:45:07] [INFO] [GAME] FPS Limit: 0
+[10:45:07] [INFO] [GAME] VSync: 1
+[10:45:07] [INFO] [GAME] Memory Usage: 81.11 MB
+[10:45:07] [INFO] [GAME] ==================
+[10:45:08] [INFO] [GAME] === GAME MANAGER STARTED ===
+[10:45:08] [INFO] [GAME] === SYSTEM INFO ===
+[10:45:08] [INFO] [GAME] Godot verze: 4.4.1-stable (official)
+[10:45:08] [INFO] [GAME] OS: Windows
+[10:45:08] [INFO] [GAME] Procesor: 12 cores
+[10:45:08] [INFO] [GAME] Video adapter: NVIDIA GeForce RTX 3060
+[10:45:08] [INFO] [GAME] Screen size: (1920, 1080)
+[10:45:08] [INFO] [GAME] User data dir: C:/Users/Jirka/AppData/Roaming/Godot/app_userdata/Projekt LOOP
+[10:45:08] [INFO] [GAME] FPS Limit: 0
+[10:45:08] [INFO] [GAME] VSync: 1
+[10:45:08] [INFO] [GAME] Memory Usage: 145.14 MB
+[10:45:08] [INFO] [GAME] ==================
+[10:45:08] [INFO] [GAME] Language preference loaded: en
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+MultiplayerManager: Disconnected
+[10:45:08] [INFO] [SCENE] Scene change: none -> res://scenes/ui/MainMenu.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/ui/MainMenu.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: MainMenu
+EventManager: Inicializace...
+[10:45:09] [INFO] [SCENE] Scene change: res://scenes/ui/MainMenu.tscn -> res://scenes/CharSelect/CharacterSelectScreen.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/CharSelect/CharacterSelectScreen.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: CharacterSelectScreen
+[10:45:10] [INFO] [CHAR_SELECT] === CHARACTER SELECTED ===
+[10:45:10] [INFO] [CHAR_SELECT] Class: res://data/classes/Tank.tres
+[10:45:10] [INFO] [CHAR_SELECT] Subclass: class.paladin
+[10:45:10] [INFO] [SCENE] Scene change: res://scenes/CharSelect/CharacterSelectScreen.tscn -> res://scenes/CharSelect/RunPrepScreen.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/CharSelect/RunPrepScreen.tscn
+DEBUG: Načtená scéna - typ: Control
+DEBUG: Načtená scéna - název: RunPrepScreen
+Pasivní strom: Žádný aktivní strom dovedností nenalezen.
+=== INICIALIZACE HRÁČE ===
+Třída načtena
+Podtřída načtena
+✅ Načteno 0 odemčených karet
+=== INICIALIZACE DOKONČENA (skill tree disabled) ===
+[10:45:11] [INFO] [GAME_FLOW] === STARTING NEW RUN ===
+[10:45:11] [INFO] [GAME_FLOW] Seed: 2380113383
+EventManager: Reset pro nový run
+[10:45:11] [INFO] [SKILLS] === APPLYING RUN BONUSES (village + artifacts) ===
+[10:45:11] [INFO] [SKILLS] Finální staty: HP 70/70, Gold 90, Energy 3/3, StartBlock 4
+[10:45:11] [INFO] [ARTIFACTS] Artifacts changed, new count: 0
+[10:45:11] [INFO] [ARTIFACTS] No artifacts
+[10:45:11] [INFO] [INIT] === PLAYER INITIALIZED ===
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [FULL_STATE] === FULL GAME STATE DUMP ===
+[10:45:11] [INFO] [FULL_STATE] Time: 2026-08-15T10:45:11
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:45:11] [INFO] [PLAYER_STATS] HP: 70/70
+[10:45:11] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:45:11] [INFO] [PLAYER_STATS] Gold: 90
+[10:45:11] [INFO] [PLAYER_STATS] Floors cleared: 0
+[10:45:11] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:45:11] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:45:11] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:45:11] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:45:11] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:45:11] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:45:11] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:45:11] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:45:11] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:45:11] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:45:11] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:45:11] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:45:11] [INFO] [PLAYER_STATS] Block per card: 0
+[10:45:11] [INFO] [PLAYER_STATS] Has revive: false
+[10:45:11] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:45:11] [INFO] [SKILLS] === SKILL TREE STATE ===
+[10:45:11] [INFO] [SKILLS] Žádný aktivní skill tree (disabled).
+[10:45:11] [INFO] [DECK] === DECK STATE ===
+[10:45:11] [INFO] [DECK] Master deck: 7 cards
+[10:45:11] [INFO] [DECK] Hand: 0 cards
+[10:45:11] [INFO] [DECK] Draw pile: 7 cards
+[10:45:11] [INFO] [DECK] Discard pile: 0 cards
+[10:45:11] [INFO] [DECK] Exhaust pile: 0 cards
+[10:45:11] [INFO] [DECK] === END DECK STATE ===
+[10:45:11] [INFO] [ARTIFACTS] No artifacts
+[10:45:11] [INFO] [MAP] No map data available
+[10:45:11] [INFO] [META] === META PROGRESS ===
+[10:45:11] [INFO] [META] Hero paladin — Level 12, XP 170
+[10:45:11] [INFO] [META] Hero trapper — Level 1, XP 0
+[10:45:11] [INFO] [META] Unlocked skills: 0
+[10:45:11] [INFO] [META] === END META PROGRESS ===
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [FULL_STATE] === END FULL GAME STATE DUMP ===
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+Pasivní strom: Žádný aktivní strom dovedností nenalezen.
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [FULL_STATE] === FULL GAME STATE DUMP ===
+[10:45:11] [INFO] [FULL_STATE] Time: 2026-08-15T10:45:11
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:45:11] [INFO] [PLAYER_STATS] HP: 70/70
+[10:45:11] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:45:11] [INFO] [PLAYER_STATS] Gold: 90
+[10:45:11] [INFO] [PLAYER_STATS] Floors cleared: 0
+[10:45:11] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:45:11] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:45:11] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:45:11] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:45:11] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:45:11] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:45:11] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:45:11] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:45:11] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:45:11] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:45:11] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:45:11] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:45:11] [INFO] [PLAYER_STATS] Block per card: 0
+[10:45:11] [INFO] [PLAYER_STATS] Has revive: false
+[10:45:11] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:45:11] [INFO] [SKILLS] === SKILL TREE STATE ===
+[10:45:11] [INFO] [SKILLS] Žádný aktivní skill tree (disabled).
+[10:45:11] [INFO] [DECK] === DECK STATE ===
+[10:45:11] [INFO] [DECK] Master deck: 7 cards
+[10:45:11] [INFO] [DECK] Hand: 0 cards
+[10:45:11] [INFO] [DECK] Draw pile: 7 cards
+[10:45:11] [INFO] [DECK] Discard pile: 0 cards
+[10:45:11] [INFO] [DECK] Exhaust pile: 0 cards
+[10:45:11] [INFO] [DECK] === END DECK STATE ===
+[10:45:11] [INFO] [ARTIFACTS] No artifacts
+[10:45:11] [INFO] [MAP] No map data available
+[10:45:11] [INFO] [META] === META PROGRESS ===
+[10:45:11] [INFO] [META] Hero paladin — Level 12, XP 170
+[10:45:11] [INFO] [META] Hero trapper — Level 1, XP 0
+[10:45:11] [INFO] [META] Unlocked skills: 0
+[10:45:11] [INFO] [META] === END META PROGRESS ===
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [FULL_STATE] === END FULL GAME STATE DUMP ===
+[10:45:11] [INFO] [FULL_STATE] ==========================================
+[10:45:11] [INFO] [SCENE] Scene change: res://scenes/CharSelect/RunPrepScreen.tscn -> res://scenes/map/Map.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/map/Map.tscn
+DEBUG: Načtená scéna - typ: Node2D
+DEBUG: Načtená scéna - název: Map
+Přidána legenda pro: Common battle
+Přidána legenda pro: Elite battle
+Přidána legenda pro: Event
+Přidána legenda pro: Rest
+Přidána legenda pro: Shop
+Přidána legenda pro: Treasure
+Přidána legenda pro: Boss
+Legenda dokončena s 7 položkami
+[10:45:12] [INFO] [PROGRESSION] Shards +1 (total 9, run 1)
+[10:45:12] [INFO] [SAVE] Save/Load: save_meta_progress - SUCCESS | Hero paladin Level: 12, XP: 170
+[10:45:12] [INFO] [BATTLE] === STARTING BATTLE ===
+[10:45:12] [INFO] [BATTLE] Encounter: res://data/encounters/goblin_duo.tres
+[10:45:12] [INFO] [BATTLE] Encounter type: 0
+[10:45:12] [INFO] [PLAYER_STATS] === PLAYER STATS ===
+[10:45:12] [INFO] [PLAYER_STATS] HP: 70/70
+[10:45:12] [INFO] [PLAYER_STATS] Energy: 3/3
+[10:45:12] [INFO] [PLAYER_STATS] Gold: 90
+[10:45:12] [INFO] [PLAYER_STATS] Floors cleared: 1
+[10:45:12] [INFO] [PLAYER_STATS] Class: res://data/classes/Tank.tres
+[10:45:12] [INFO] [PLAYER_STATS] Subclass: class.paladin
+[10:45:12] [INFO] [PLAYER_STATS] === PASSIVE EFFECTS ===
+[10:45:12] [INFO] [PLAYER_STATS] Card damage bonus: +0
+[10:45:12] [INFO] [PLAYER_STATS] Starting retained block: 4
+[10:45:12] [INFO] [PLAYER_STATS] Critical chance: 0%
+[10:45:12] [INFO] [PLAYER_STATS] Heal per turn: 0
+[10:45:12] [INFO] [PLAYER_STATS] Aura enhancement: 0%
+[10:45:12] [INFO] [PLAYER_STATS] Avatar block multiplier: 0x
+[10:45:12] [INFO] [PLAYER_STATS] Thorns damage: 0
+[10:45:12] [INFO] [PLAYER_STATS] Healing bonus: 0%
+[10:45:12] [INFO] [PLAYER_STATS] Energy on kill: 0
+[10:45:12] [INFO] [PLAYER_STATS] Block per card: 0
+[10:45:12] [INFO] [PLAYER_STATS] Has revive: false
+[10:45:12] [INFO] [PLAYER_STATS] === END PLAYER STATS ===
+[10:45:12] [INFO] [DECK] === DECK STATE ===
+[10:45:12] [INFO] [DECK] Master deck: 7 cards
+[10:45:12] [INFO] [DECK] Hand: 0 cards
+[10:45:12] [INFO] [DECK] Draw pile: 7 cards
+[10:45:12] [INFO] [DECK] Discard pile: 0 cards
+[10:45:12] [INFO] [DECK] Exhaust pile: 0 cards
+[10:45:12] [INFO] [DECK] === END DECK STATE ===
+[10:45:12] [INFO] [SCENE] Scene change: res://scenes/map/Map.tscn -> res://scenes/battle/BattleScene.tscn
+DEBUG: Pokouším se změnit scénu na: res://scenes/battle/BattleScene.tscn
+DEBUG: Načtená scéna - typ: Node3D
+DEBUG: Načtená scéna - název: BattleScene
+Embedded window only supports Windowed mode.
+Embedded window only supports Windowed mode.
+[10:45:12] [INFO] [BATTLE] Battle scene loaded
+[10:45:14] [INFO] [GAME] ArtifactManager: Spouštím START_OF_COMBAT artefakty...
+=== TurnManager: START COMBAT ===
+TurnManager: Zaregistrováno 3 jednotek
+=== TurnManager: KOLO 1 ===
+TurnManager: Pořadí tahů pro kolo 1:
+  1. unit.goblin (Základ: 15, Bonus: 0, Celkem: 15)
+  2. unit.goblin (Základ: 15, Bonus: 0, Celkem: 15)
+  3. unit.paladin (Základ: 12, Bonus: 0, Celkem: 12)
+[10:45:14] [INFO] [GAME] === KOLO 1 ===
+TurnManager: Tah jednotky unit.goblin
+--- Goblin STARTS TURN ---
+--- Goblin ENDS TURN ---
+TurnManager: Tah jednotky unit.goblin
+--- Goblin STARTS TURN ---
+--- Goblin ENDS TURN ---
+TurnManage
+...[TRUNCATED]...
+
+===== LINE 95 ROLE=user LEN=176 =====
+<timestamp>Saturday, Aug 15, 2026, 10:49 AM (UTC+2)</timestamp>
+<user_query>
+ale tak to mohli vesměs uplně všichni když šli přes okraj mapy že se objevili za mnou
+</user_query>
+
+===== LINE 98 ROLE=user LEN=163 =====
+<timestamp>Saturday, Aug 15, 2026, 10:49 AM (UTC+2)</timestamp>
+<user_query>
+koukni na to zda jsi ty změny udělal mě to asi napsalo failed to modifiy
+</user_query>
+
+===== LINE 102 ROLE=user LEN=131 =====
+<timestamp>Saturday, Aug 15, 2026, 10:49 AM (UTC+2)</timestamp>
+<user_query>
+takže tento bug už by nikdy neměl nastat
+</user_query>
+
+===== LINE 105 ROLE=user LEN=272 =====
+<timestamp>Saturday, Aug 15, 2026, 10:51 AM (UTC+2)</timestamp>
+<user_query>
+unbreakable fait karta by měla mít na kartě napsáno že gain block to your current health nějak.. je tma pouze číslo a block a tooltip právě ukazuje gain blcok to your current health
+</user_query>
+
