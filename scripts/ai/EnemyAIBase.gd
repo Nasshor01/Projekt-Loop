@@ -329,6 +329,67 @@ func find_path_to_adjacent(from_unit: Unit, to_unit: Unit, battle_grid: BattleGr
 	
 	return best_path
 
+## Krátký ústup od bodu. Cesta obsahuje start. Prázdné pole = není kam.
+func find_retreat_path(unit: Unit, from_cell: Vector2i, away_from: Vector2i, battle_grid: BattleGrid, max_steps: int) -> Array[Vector2i]:
+	var best := from_cell
+	var best_dist := battle_grid.get_distance(from_cell, away_from)
+	var came: Dictionary = {}
+	var steps_at := {from_cell: 0}
+	var queue: Array[Vector2i] = [from_cell]
+	var head := 0
+	while head < queue.size():
+		var current: Vector2i = queue[head]
+		head += 1
+		var steps: int = int(steps_at[current])
+		if steps >= max_steps:
+			continue
+		for offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+			var nxt: Vector2i = current + offset
+			if steps_at.has(nxt) or not battle_grid.is_cell_active(nxt):
+				continue
+			var occ = battle_grid.get_object_on_cell(nxt)
+			if is_instance_valid(occ) and occ != unit:
+				continue
+			var terrain = battle_grid.get_terrain_on_cell(nxt)
+			if terrain and not terrain.is_walkable:
+				continue
+			steps_at[nxt] = steps + 1
+			came[nxt] = current
+			queue.append(nxt)
+			var dist := battle_grid.get_distance(nxt, away_from)
+			if dist > best_dist:
+				best_dist = dist
+				best = nxt
+	if best == from_cell:
+		return []
+	var rev: Array[Vector2i] = [best]
+	var cursor: Vector2i = best
+	while cursor != from_cell:
+		cursor = came[cursor]
+		rev.append(cursor)
+	rev.reverse()
+	return rev
+
+## Jedno volné pole dál od origin. (-999, -999) = není kam.
+func find_push_cell(from_cell: Vector2i, away_from: Vector2i, battle_grid: BattleGrid) -> Vector2i:
+	var invalid := Vector2i(-999, -999)
+	var best := invalid
+	var best_dist := battle_grid.get_distance(from_cell, away_from)
+	for offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+		var nxt: Vector2i = from_cell + offset
+		if not battle_grid.is_cell_active(nxt):
+			continue
+		if is_instance_valid(battle_grid.get_object_on_cell(nxt)):
+			continue
+		var terrain = battle_grid.get_terrain_on_cell(nxt)
+		if terrain and not terrain.is_walkable:
+			continue
+		var dist := battle_grid.get_distance(nxt, away_from)
+		if dist > best_dist:
+			best_dist = dist
+			best = nxt
+	return best
+
 # Pathfinding z konkrétní pozice (pro simulaci pohybu)
 func find_path_from_position(from_pos: Vector2i, to_cell: Vector2i, moving_unit: Unit, battle_grid: BattleGrid) -> Array[Vector2i]:
 	var astar_grid = AStar2D.new()

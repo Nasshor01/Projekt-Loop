@@ -32,8 +32,9 @@ const CLASS_HERO := {
 	HUNTERS_LODGE: "trapper",
 }
 
-const CHAPEL_UNLOCK_CARD_ID := "pious_defense"
-const CHAPEL_UNLOCK_CARD_PATH := "res://data/cards/paladin/pious_defense.tres"
+const CHAPEL_UNLOCK_CARD_PATH := "res://data/cards/paladin/holy_strike.tres"
+## Cards hidden from reward pools until their village unlock. Empty = no gating.
+const REWARD_GATED_CARDS: Dictionary = {}
 
 const BASE_REWARD_CARDS := 3
 const BASE_SHOP_CARDS := 3
@@ -102,12 +103,13 @@ static func meets_hero_level_gate(building_id: String) -> bool:
 
 
 static func is_reward_gated_card(card_id: String) -> bool:
-	return card_id == CHAPEL_UNLOCK_CARD_ID
+	return REWARD_GATED_CARDS.has(card_id)
 
 
 static func is_gated_card_unlocked(card_id: String) -> bool:
-	if card_id == CHAPEL_UNLOCK_CARD_ID:
-		return get_level(CHAPEL) >= 3
+	if REWARD_GATED_CARDS.has(card_id):
+		var gate: Array = REWARD_GATED_CARDS[card_id]
+		return get_level(String(gate[0])) >= int(gate[1])
 	return true
 
 
@@ -490,7 +492,7 @@ static func _chapel_current_lines(level: int) -> PackedStringArray:
 		parts.append(_tr("village.effect.chapel_starter_plus"))
 	if level >= 3:
 		parts.append(TranslationHelper.tr_format("village.effect.chapel_unlock_card", {
-			"card": _tr("card.pious_defense")
+			"card": _tr("card.holy_strike")
 		}))
 	if level >= 4:
 		parts.append(_tr("village.effect.chapel_move"))
@@ -511,7 +513,7 @@ static func _chapel_gain_lines(next_level: int) -> PackedStringArray:
 			parts.append(_tr("village.effect.chapel_starter_plus"))
 		3:
 			parts.append(TranslationHelper.tr_format("village.effect.chapel_unlock_card", {
-				"card": _tr("card.pious_defense")
+				"card": _tr("card.holy_strike")
 			}))
 		4:
 			parts.append(_tr("village.effect.chapel_move"))
@@ -533,15 +535,9 @@ static func apply_starting_deck_bonuses(deck: Array) -> void:
 				deck[i] = PlayerData.duplicate_card_for_deck(card.upgraded_version)
 				break
 	if lv >= 3:
-		var already := false
-		for card in deck:
-			if card is CardData and (card as CardData).card_id == CHAPEL_UNLOCK_CARD_ID:
-				already = true
-				break
-		if not already:
-			var template: CardData = load(CHAPEL_UNLOCK_CARD_PATH) as CardData
-			if is_instance_valid(template):
-				deck.append(PlayerData.duplicate_card_for_deck(template))
+		var template: CardData = load(CHAPEL_UNLOCK_CARD_PATH) as CardData
+		if is_instance_valid(template):
+			deck.append(PlayerData.duplicate_card_for_deck(template))
 
 static func _bbcode_escape(text: String) -> String:
 	return text.replace("[", " ").replace("]", " ")

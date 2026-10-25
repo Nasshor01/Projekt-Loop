@@ -34,28 +34,22 @@ const HOVER_MODULATE := Color(1.12, 1.12, 1.02)
 const EASY_MONSTER_FIGHT_LIMIT := 3
 const EASY_MONSTER_MAX_ROW := 2  # row 0..2 = první 3 patra
 
-var easy_monster_encounters = [
-	"res://data/encounters/first_battle.tres",
-	"res://data/encounters/goblin_duo.tres",
-	"res://data/encounters/fortress_scouts.tres",
-	"res://data/encounters/fortress_bowline.tres",
-	"res://data/encounters/fortress_bruiser.tres",
-]
-var hard_monster_encounters = [
-	"res://data/encounters/one_orc.tres",
-	"res://data/encounters/Skeleton.tres",
-	"res://data/encounters/demon_assassin.tres",
-	"res://data/encounters/assassin_squad.tres",
-	"res://data/encounters/fortress_pack.tres",
-]
-var elite_encounters = [
-	"res://data/encounters/elite_battle.tres",
-	"res://data/encounters/Skeleton_army.tres",
-	"res://data/encounters/support_team.tres",
-	"res://data/encounters/elite_mix.tres",
-	"res://data/encounters/fortress_warband.tres",
-]
-var boss_encounters = ["res://data/encounters/boss_battle.tres"]
+## Patra 3..8 = těžké rané, 9+ = těžké pozdní.
+const HARD_EARLY_MAX_ROW := 8
+## Patro 0 je vždy úvodní souboj (nelosuje se).
+const FIRST_BATTLE_PATH := "res://data/encounters/first_battle.tres"
+## Anti-repeat fallback: když dojdou nepoužité, aspoň ne posledních N odehraných.
+const ENCOUNTER_RECENT_BLOCK := 2
+## Váha kandidáta se stejným hlavním tagem jako minulý souboj (ostatní mají 1.0).
+const SAME_TAG_WEIGHT := 1.0 / 3.0
+
+const ENCOUNTER_POOL_PATHS := {
+	EncounterData.Tier.EASY: "res://data/encounters/pools/easy_pool.tres",
+	EncounterData.Tier.HARD_EARLY: "res://data/encounters/pools/hard_early_pool.tres",
+	EncounterData.Tier.HARD_LATE: "res://data/encounters/pools/hard_late_pool.tres",
+	EncounterData.Tier.ELITE: "res://data/encounters/pools/elite_pool.tres",
+	EncounterData.Tier.BOSS: "res://data/encounters/pools/boss_pool.tres",
+}
 
 var node_textures = {
 	MapNodeResource.NodeType.MONSTER: preload("res://art/sprites/map/icon/monster.png"),
@@ -348,12 +342,10 @@ func _get_node_action_payload(node_data: MapNodeResource) -> Dictionary:
 			result.encounter = _pick_monster_encounter(node_data)
 		MapNodeResource.NodeType.ELITE:
 			result.action_type = "battle"
-			if not elite_encounters.is_empty():
-				result.encounter = load(elite_encounters.pick_random()) as EncounterData
+			result.encounter = _roll_encounter([EncounterData.Tier.ELITE], node_data)
 		MapNodeResource.NodeType.BOSS:
 			result.action_type = "battle"
-			if not boss_encounters.is_empty():
-				result.encounter = load(boss_encounters[0]) as EncounterData
+			result.encounter = _roll_encounter([EncounterData.Tier.BOSS], node_data)
 		MapNodeResource.NodeType.TREASURE:
 			result.action_type = "treasure"
 		MapNodeResource.NodeType.SHOP:
@@ -372,15 +364,70 @@ func _count_path_nodes_of_type(node_type: MapNodeResource.NodeType) -> int:
 	return count
 
 func _pick_monster_encounter(node_data: MapNodeResource) -> EncounterData:
-	"""První 3 normal fighty + první 3 patra = easy pool. Jinak hard."""
+	"""Patro 0 = vždy first_battle. První 3 normal fighty + patra 0..2 = easy, pak hard rané / pozdní podle patra."""
+	if node_data.row == 0:
+		var first := load(FIRST_BATTLE_PATH) as EncounterData
+		PlayerData.record_encounter(first)
+		return first
 	var monster_fight_index := _count_path_nodes_of_type(MapNodeResource.NodeType.MONSTER)
 	var use_easy := monster_fight_index <= EASY_MONSTER_FIGHT_LIMIT or node_data.row <= EASY_MONSTER_MAX_ROW
-	var pool: Array = easy_monster_encounters if use_easy else hard_monster_encounters
-	if pool.is_empty():
-		pool = hard_monster_encounters if not hard_monster_encounters.is_empty() else easy_monster_encounters
-	if pool.is_empty():
+	if use_easy:
+		return _roll_encounter([EncounterData.Tier.EASY, EncounterData.Tier.HARD_EARLY], node_data)
+	if node_data.row <= HARD_EARLY_MAX_ROW:
+		return _roll_encounter([EncounterData.Tier.HARD_EARLY, EncounterData.Tier.HARD_LATE, EncounterData.Tier.EASY], node_data)
+	return _roll_encounter([EncounterData.Tier.HARD_LATE, EncounterData.Tier.HARD_EARLY], node_data)
+
+func _load_pool(tier: EncounterData.Tier) -> Array[EncounterData]:
+	var out: Array[EncounterData] = []
+	var pool_path: String = ENCOUNTER_POOL_PATHS.get(tier, "")
+	if pool_path.is_empty() or not ResourceLoader.exists(pool_path):
+		return out
+	var pool := load(pool_path) as EncounterPool
+	if pool == null:
+		return out
+	for enc in pool.encounters:
+		if enc != null:
+			out.append(enc)
+	return out
+
+func _roll_encounter(tier_order: Array, node_data: MapNodeResource) -> EncounterData:
+	"""Seedované losování (stejný run + uzel = stejný fight i po Continue).
+	tier_order = preferovaný pool a záložní pooly, kdyby byl prázdný.
+	Anti-repeat: nepoužité v runu > ne posledních N > cokoli. Jiný hlavní tag než minulý fight má 3× větší váhu."""
+	var candidates: Array = []
+	var unfiltered_fallback: Array = []
+	for tier in tier_order:
+		var pool_all := Array(_load_pool(tier))
+		if unfiltered_fallback.is_empty():
+			unfiltered_fallback = pool_all
+		candidates = pool_all.filter(func(e: EncounterData): return e.fits_row(node_data.row))
+		if not candidates.is_empty():
+			break
+	if candidates.is_empty():
+		candidates = unfiltered_fallback
+	if candidates.is_empty():
 		return null
-	return load(pool.pick_random()) as EncounterData
+
+	var used: Array = Array(PlayerData.used_encounter_ids)
+	var fresh: Array = candidates.filter(func(e: EncounterData): return not used.has(e.get_encounter_id()))
+	if fresh.is_empty():
+		var recent: Array = used.slice(maxi(0, used.size() - ENCOUNTER_RECENT_BLOCK))
+		fresh = candidates.filter(func(e: EncounterData): return not recent.has(e.get_encounter_id()))
+	if fresh.is_empty():
+		fresh = candidates
+
+	var weights := PackedFloat32Array()
+	for enc: EncounterData in fresh:
+		var w := maxf(0.01, enc.weight)
+		if not PlayerData.last_encounter_tag.is_empty() and enc.main_tag == PlayerData.last_encounter_tag:
+			w *= SAME_TAG_WEIGHT
+		weights.append(w)
+
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash([str(GameManager.current_seed), node_data.row, node_data.column, PlayerData.loop_level, "encounter"])
+	var picked: EncounterData = fresh[rng.rand_weighted(weights)]
+	PlayerData.record_encounter(picked)
+	return picked
 
 func _trigger_node_action(node_data: MapNodeResource):
 	var payload = _get_node_action_payload(node_data)

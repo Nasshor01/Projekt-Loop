@@ -16,6 +16,25 @@ extends CanvasLayer
 
 var _deck_tooltip_card_data: CardData = null
 var _seal_pick_active: bool = false
+## Battle-only: ArtifactsStrip default top, restored when the fight ends.
+var _artifact_strip_top_default: float = -1.0
+const ARTIFACT_INITIATIVE_GAP := 8.0
+
+func reserve_space_below(global_bottom_y: float) -> void:
+	"""Posune pruh artefaktů pod danou Y (iniciativní bar). Mimo bitvu se vrací zpět."""
+	var strip := get_node_or_null("ArtifactsStrip") as Control
+	if strip == null:
+		return
+	if _artifact_strip_top_default < 0.0:
+		_artifact_strip_top_default = strip.offset_top
+	strip.offset_top = maxf(_artifact_strip_top_default, global_bottom_y + ARTIFACT_INITIATIVE_GAP)
+
+func release_top_reservation() -> void:
+	if _artifact_strip_top_default < 0.0:
+		return
+	var strip := get_node_or_null("ArtifactsStrip") as Control
+	if strip:
+		strip.offset_top = _artifact_strip_top_default
 
 func _ready():
 	# Připojení k signálům z PlayerData pro aktualizaci UI

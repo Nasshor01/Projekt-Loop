@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://h6v2t5nfaand"]
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://h6v2t5nfaand"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_ipsbq"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_fs3rr"]
@@ -7,7 +7,7 @@
 [sub_resource type="Resource" id="Resource_mmxbr"]
 script = ExtResource("1_ipsbq")
 effect_type = 0
-value = 10
+value = 8
 string_value = ""
 target_type = 3
 area_of_effect_type = 3
@@ -21,21 +21,39 @@ condition_value = 0
 conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
+[sub_resource type="Resource" id="Resource_consec_weak"]
+script = ExtResource("1_ipsbq")
+effect_type = 5
+value = 1
+string_value = "weakness"
+target_type = 3
+area_of_effect_type = 3
+aoe_param_x = 3
+aoe_param_y = 3
+damage_type = 0
+trigger = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
 [resource]
 script = ExtResource("2_fs3rr")
 card_id = "consecration+"
 card_name = "card.consecration+"
 card_description = "card.consecration+.desc"
-editor_description = "Deal 10 damage to enemies in a 3x3 area around you."
+editor_description = "Deal 8 damage to enemies in a 3×3 area around you. Enemies hit get Weakness for 3 turns (-25% damage). Holy."
 cost = 2
 range_type = 7
 range_value = 1
 tags = Array[int]([0])
 rarity = 0
 required_subclass = ExtResource("3_reqpal")
-effects = Array[ExtResource("1_ipsbq")]([SubResource("Resource_mmxbr")])
+effects = Array[ExtResource("1_ipsbq")]([SubResource("Resource_mmxbr"), SubResource("Resource_consec_weak")])
 is_upgraded = true
 max_uses_per_turn = -1
 debuff_on_overuse = {}
 max_uses_before_removal = -1
+retain_in_hand = false
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

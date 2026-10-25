@@ -66,6 +66,12 @@ func get_final_damage(
 	# Holy damage: base +5 vs Undead/Demon (UnitData) + skill tree bonus (vždy při Holy útoku)
 	if damage_type == 1:  # CardEffectData.DamageType.HOLY
 		total += PlayerData.holy_damage_bonus
+		# Hněv (Paladin power): +stacky ke svatým útokům
+		if attacker is Unit and attacker.active_statuses.has("fury"):
+			total += int(attacker.active_statuses["fury"].get("value", 0))
+		# Posvěcená zbraň+: svaté útoky +X do konce boje
+		if attacker is Unit and attacker.active_statuses.has("holy_edge"):
+			total += int(attacker.active_statuses["holy_edge"].get("value", 0))
 	if target and target is Unit and target.has_method("get_unit_data"):
 		var target_data = target.get_unit_data()
 		if target_data:
@@ -88,6 +94,9 @@ func get_final_damage(
 
 	# Defensive Stance: 50% less damage (card description: "The next attack against you deals 50% less damage")
 	if target is Unit and target.active_statuses.has("defensive_stance"):
+		total = int(total * 0.5)
+	# Defensive Stance+: 50% from every attack until the start of your next turn
+	if target is Unit and target.active_statuses.has("defensive_stance_turn"):
 		total = int(total * 0.5)
 
 	return max(1, total)

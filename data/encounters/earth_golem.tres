@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=5 format=3 uid="uid://cpf5uf42uem0k"]
+
+[ext_resource type="Script" path="res://data/encounters/EncounterEntry.gd" id="1_entry"]
+[ext_resource type="Script" path="res://data/encounters/EncounterData.gd" id="2_data"]
+[ext_resource type="Resource" path="res://data/units/earth_golem.tres" id="3_unit"]
+
+[sub_resource type="Resource" id="Resource_earth"]
+script = ExtResource("1_entry")
+unit_data = ExtResource("3_unit")
+grid_position = Vector2i(7, 2)
+
+[resource]
+script = ExtResource("2_data")
+encounter_type = 0
+xp_reward = 40
+enemies = Array[ExtResource("1_entry")]([SubResource("Resource_earth")])
+encounter_id = "earth_golem"
+display_name = "encounter.earth_golem"
+tier = 2
+min_row = 0
+max_row = 99
+main_tag = "constructs"
+tags = Array[String](["construct", "tank"])
+weight = 1.0

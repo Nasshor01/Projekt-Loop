@@ -62,6 +62,12 @@ enum CardRarity {
 ## -1 = bez limitu (normální/exhaust), 1 = jednorázová, 2 = 2× použití pak zmizí. Zobrazuje se jako "usage x/x".
 @export var max_uses_before_removal: int = -1
 
+## Ponechání: karta na konci tahu zůstane v ruce (vlastnost karty; Oathbreaker dává totéž přes meta).
+@export var retain_in_hand: bool = false
+
+func has_retain() -> bool:
+	return retain_in_hand or (has_meta("artifact_retain") and bool(get_meta("artifact_retain")))
+
 
 # Enum pro typy dosahu - PŘESUNUTO SEM z CardEffectData, protože dosah je spíše vlastnost karty jako celku
 # než jednotlivého efektu (i když i to by šlo modelovat). Pro zjednodušení zatím takto.
@@ -121,15 +127,18 @@ func get_keywords_from_effects() -> Array[String]:
 			if not keys.has("exhaust"):
 				keys.append("exhaust")
 		if effect.effect_type == CardEffectData.EffectType.APPLY_STATUS:
-			if effect.string_value == "vulnerable":
+			if effect.string_value == "vulnerable" or effect.string_value == "radiance_vulnerable":
 				if not keys.has("vulnerable"):
 					keys.append("vulnerable")
-			elif effect.string_value == "regeneration":
+			elif effect.string_value == "regeneration" or effect.string_value == "regeneration_permanent":
 				if not keys.has("regeneration"):
 					keys.append("regeneration")
 			elif effect.string_value == "aura_devotion" or effect.string_value == "aura_devotion_plus":
 				if not keys.has("aura_devotion"):
 					keys.append("aura_devotion")
+			elif effect.string_value == "block_on_attack":
+				if not keys.has("block"):
+					keys.append("block")
 			elif effect.string_value == "consecrated_weapon":
 				if not keys.has("consecrated_weapon"):
 					keys.append("consecrated_weapon")
@@ -138,7 +147,7 @@ func get_keywords_from_effects() -> Array[String]:
 					keys.append("poison")
 	if max_uses_before_removal > 0 and not keys.has("usage"):
 		keys.append("usage")
-	if has_meta("artifact_retain") and bool(get_meta("artifact_retain")) and not keys.has("retain"):
+	if has_retain() and not keys.has("retain"):
 		keys.append("retain")
 	return keys
 
@@ -208,6 +217,7 @@ const SHORTHAND_ICONS: Dictionary = {
 	"heal": "res://art/icons/status/Heal.png",
 	"heart": "res://art/icons/status/Heal.png",
 	"vulnerable": "res://art/icons/status/Vulnerable.png",
+	"weakness": "res://art/icons/status/Weakness.png",
 	"regeneration": "res://art/icons/status/Regeneration.png",
 	"poison": "res://art/icons/status/Poison.png",
 	"gold": "res://art/icons/status/gold_coin.png",
@@ -255,7 +265,8 @@ func generate_compact_description(icon_px: int = ICON_SIZE) -> String:
 		if effect.trigger != CardEffectData.EffectTrigger.ON_PLAY:
 			continue
 		if effect.effect_type == CardEffectData.EffectType.DEAL_DAMAGE \
-				and effect.damage_type == CardEffectData.DamageType.HOLY:
+				and effect.damage_type == CardEffectData.DamageType.HOLY \
+				and effect.string_value != "holy_bonus_only":
 			has_holy_damage = true
 		var line := _format_effect_shorthand(effect)
 		if line.is_empty():
@@ -273,7 +284,7 @@ func generate_compact_description(icon_px: int = ICON_SIZE) -> String:
 			"line": _format_holy_keyword_line(),
 		})
 	# Oathbreaker (and similar): permanent Retain stamped as meta on this instance.
-	if has_meta("artifact_retain") and bool(get_meta("artifact_retain")):
+	if has_retain():
 		entries.append({
 			"prio": FACE_PRIO_VERBAL,
 			"index": 9999,
@@ -304,6 +315,9 @@ func _face_line_priority(effect: CardEffectData) -> int:
 	"""damage → block → heal/regen → keyword icons → verbal (Exhaust…)."""
 	if effect == null:
 		return FACE_PRIO_VERBAL
+	if effect.effect_type == CardEffectData.EffectType.DEAL_DAMAGE and effect.string_value == "holy_bonus_only":
+		# Control cards (pull/push): the conditional holy bonus reads after the displacement line.
+		return FACE_PRIO_VERBAL + 1
 	match effect.effect_type:
 		CardEffectData.EffectType.DEAL_DAMAGE, \
 		CardEffectData.EffectType.DEAL_DAMAGE_FROM_BLOCK, \
@@ -316,10 +330,10 @@ func _face_line_priority(effect: CardEffectData) -> int:
 			return FACE_PRIO_HEAL
 		CardEffectData.EffectType.APPLY_STATUS:
 			match effect.string_value:
-				"regeneration":
+				"regeneration", "regeneration_permanent":
 					return FACE_PRIO_HEAL
-				"vulnerable", "poison", "consecrated_weapon", "burning", "chilled", "aiming", \
-				"aura_devotion", "aura_devotion_plus":
+				"vulnerable", "weakness", "poison", "consecrated_weapon", "burning", "chilled", "aiming", \
+				"aura_devotion", "aura_devotion_plus", "block_on_attack":
 					return FACE_PRIO_KEYWORD_ICON
 				_:
 					return FACE_PRIO_VERBAL
@@ -372,7 +386,12 @@ func _aoe_face_prefix(effect: CardEffectData) -> String:
 
 func _turns(x: int) -> String:
 	"""Turns: [b]X turns[/b] - NO icon."""
-	return "[b]%d %s[/b]" % [x, tr("card.effect.turns")]
+	var key := "card.effect.turns"
+	if x == 1:
+		key = "card.effect.turns_one"
+	elif x >= 2 and x <= 4:
+		key = "card.effect.turns_few"
+	return "[b]%d %s[/b]" % [x, tr(key)]
 
 func _format_effect_shorthand(effect: CardEffectData) -> String:
 	"""Formats a single effect as shorthand: [Value] [Icon]. NO full sentences."""
@@ -393,17 +412,28 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 				return "[b]%s[/b]" % tr("card.effect.block_equal_current_hp")
 			if effect.string_value == "max_hp":
 				return "[b]%s[/b]" % tr("card.effect.block_equal_max_hp")
+			if effect.string_value == "holy_damage_this_turn":
+				var holy_line := "[b]%s[/b]" % tr("card.effect.block_equal_holy_damage")
+				if effect.value > 0:
+					holy_line += " +" + _num(effect.value) + " " + _img("block")
+				return holy_line
 			var block_val := effect.value
 			var cond := _get_condition_shorthand(effect, "block")
+			var block_line := _num(block_val) + " " + _img("block")
 			if cond != "":
-				return _num(block_val) + " " + _img("block") + " " + cond
-			return _num(block_val) + " " + _img("block")
+				block_line += " " + cond
+			if effect.string_value.contains("retain"):
+				block_line += "\n[b]%s[/b]" % tr("card.effect.block_next_turn")
+			return block_line
 		
 		CardEffectData.EffectType.DEAL_DAMAGE:
 			# HOLY: base value + normal damage icon; keyword "Holy" is a separate face line.
 			# +5 vs Undead/Demon stays in tooltip / combat math.
 			if effect.string_value == "holy_bonus_only":
-				return "[b]%s[/b]" % tr("card.effect.holy_bonus_only")
+				var bonus := UnitData.get_holy_damage_bonus(CardEffectData.DamageType.HOLY, UnitData.UnitType.UNDEAD)
+				if not Engine.is_editor_hint():
+					bonus += PlayerData.holy_damage_bonus
+				return "[b]%s[/b]" % TranslationHelper.tr_format("card.effect.holy_bonus_only", {"value": bonus})
 			var dmg_val: int
 			if effect.damage_type == CardEffectData.DamageType.HOLY:
 				dmg_val = effect.value
@@ -424,11 +454,17 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 			return "[b]" + tr("card.effect.deal_double_damage_from_block") + "[/b]"
 		
 		CardEffectData.EffectType.DRAW_CARDS:
-			var t := TranslationHelper.tr_single("card.effect.draw_cards", effect.value)
-			t = t.replace("card", "cards") if effect.value > 1 else t
+			var draw_key := "card.effect.draw_cards"
+			if effect.value >= 5:
+				draw_key = "card.effect.draw_cards_many"
+			elif effect.value > 1:
+				draw_key = "card.effect.draw_cards_few"
+			var t := TranslationHelper.tr_single(draw_key, effect.value)
 			return "[b]" + t + "[/b]"
 		
 		CardEffectData.EffectType.GAIN_ENERGY:
+			if effect.string_value == "on_kill":
+				return "[b]%s[/b] %s" % [tr("card.effect.on_kill"), _energy(effect.value)]
 			return _energy(effect.value)
 		
 		CardEffectData.EffectType.APPLY_STATUS:
@@ -459,7 +495,12 @@ func _format_effect_shorthand(effect: CardEffectData) -> String:
 		CardEffectData.EffectType.TAUNT:
 			var steps := maxi(1, effect.value)
 			var dur := effect.aoe_param_x if effect.aoe_param_x > 0 else 1
-			return "[b]%s %d · %s %s[/b]" % [
+			var taunt_prefix := ""
+			if effect.area_of_effect_type != CardEffectData.AreaOfEffectType.SINGLE_TARGET:
+				# AoE Výzva (Svatyně): aoe_param = tvar čtverce kolem hráče, Výzva trvá 1 kolo
+				dur = 1
+				taunt_prefix = TranslationHelper.tr_format("card.effect.enemies_within", {"value": maxi(1, effect.aoe_param_x >> 1)}) + " "
+			return taunt_prefix + "[b]%s %d · %s %s[/b]" % [
 				tr("card.effect.pull"),
 				steps,
 				tr("card.effect.taunt_keyword"),
@@ -474,6 +515,26 @@ func _format_status_shorthand(effect: CardEffectData) -> String:
 	match effect.string_value:
 		"vulnerable":
 			return _img("vulnerable") + " " + _turns(effect.value)
+		"weakness":
+			var weak_turns := effect.aoe_param_x if effect.aoe_param_x > 0 else 1
+			var weak_prefix := ""
+			if effect.target_type == CardEffectData.TargetType.ALL_ENEMY_UNITS:
+				weak_prefix = tr("card.effect.all_hit") + " "
+			return weak_prefix + _img("weakness") + " [b]%s[/b] " % tr("status.weakness.short") + _turns(weak_turns)
+		"holy_edge":
+			return "[b]" + _get_status_display_description(effect) + "[/b]"
+		"radiance_vulnerable":
+			return "[b]" + _get_status_display_description(effect) + "[/b]"
+		"defensive_stance_turn":
+			return "[b]" + tr("status.defensive_stance_turn.short") + "[/b]"
+		"block_on_attack_carry":
+			return "[b]" + tr("status.block_on_attack_carry") + "[/b]"
+		"regeneration_permanent":
+			return _num(effect.value) + " " + _img("regeneration") + " [b]" + tr("card.effect.until_combat_end") + "[/b]"
+		"fury_engine":
+			return "[b]%s[/b]\n[b]%s[/b]" % [_get_status_display_description(effect), tr("card.effect.fury_holy")]
+		"radiance":
+			return "[b]" + _get_status_display_description(effect) + "[/b]"
 		"regeneration":
 			return _num(effect.value) + " " + _img("regeneration")
 		"poison":
@@ -482,6 +543,8 @@ func _format_status_shorthand(effect: CardEffectData) -> String:
 			return _num(effect.value) + " " + _img("poison") + " " + _turns(turns)
 		"aura_devotion", "aura_devotion_plus":
 			return _num(effect.value) + " " + _img("block")
+		"block_on_attack":
+			return "[b]%s[/b] %s %s" % [tr("card.effect.block_on_attack"), _num(effect.value), _img("block")]
 		"consecrated_weapon":
 			return _num(effect.value) + " " + _img("holy")
 		"burning", "chilled", "aiming":
@@ -591,6 +654,14 @@ func _get_status_display_description(effect: CardEffectData) -> String:
 			return TranslationHelper.tr_format("status.aura_devotion", {"value": effect.value})
 		"aura_devotion_plus":
 			return TranslationHelper.tr_format("status.aura_devotion_plus", {"value": effect.value})
+		"block_on_attack":
+			return TranslationHelper.tr_format("status.block_on_attack", {"value": effect.value})
+		"fury_engine":
+			return TranslationHelper.tr_format("status.fury_engine", {"value": effect.value})
+		"radiance":
+			return TranslationHelper.tr_format("status.radiance", {"value": effect.value})
+		"weakness":
+			return tr("status.weakness.short")
 		"regeneration":
 			return TranslationHelper.tr_format("status.regeneration", {"value": effect.value})
 		"consecrated_weapon":
@@ -610,6 +681,14 @@ func _get_status_display_description(effect: CardEffectData) -> String:
 			return tr("status.remove_all_debuffs")
 		"defensive_stance":
 			return tr("status.defensive_stance.short")
+		"defensive_stance_turn":
+			return tr("status.defensive_stance_turn.short")
+		"holy_edge":
+			return TranslationHelper.tr_format("status.holy_edge", {"value": effect.value})
+		"radiance_vulnerable":
+			return TranslationHelper.tr_format("status.radiance_vulnerable", {"value": effect.value})
+		"block_on_attack_carry":
+			return tr("status.block_on_attack_carry")
 		"draw_plus_one":
 			return tr("status.draw_plus_one.short")
 		_:
@@ -627,9 +706,9 @@ func _get_condition_description(cond_type: String, cond_value: int) -> String:
 		"health_below_percent":
 			return TranslationHelper.tr_format("card.condition.if_you_below_hp", {"value": cond_value})
 		"block_above":
-			return TranslationHelper.tr_format("card.condition.if_block_above", {"value": cond_value})
+			return TranslationHelper.tr_format("card.condition.if_block_above", {"value": cond_value}).trim_suffix(":")
 		"block_below":
-			return TranslationHelper.tr_format("card.condition.if_block_below", {"value": cond_value})
+			return TranslationHelper.tr_format("card.condition.if_block_below", {"value": cond_value}).trim_suffix(":")
 		"target_has_debuff":
 			return tr("card.condition.if_has_debuff").trim_suffix(":")
 		"took_damage_last_turn":

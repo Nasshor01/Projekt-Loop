@@ -6,7 +6,7 @@
 
 [resource]
 script = ExtResource("1_4hpl7")
-unit_id = "unique_unit_id"
+unit_id = "skeleton_archer"
 unit_name = "unit.skeleton_archer"
 description = "unit.skeleton_archer.desc"
 faction = 1

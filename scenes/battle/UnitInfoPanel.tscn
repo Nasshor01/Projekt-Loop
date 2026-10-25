@@ -30,6 +30,14 @@ size_flags_horizontal = 3
 size_flags_vertical = 0
 theme_override_constants/separation = 6
 
+[node name="WhoHeader" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.76, 0.84, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 17
+text = "KDO"
+
 [node name="HeaderRow" type="HBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot"]
 layout_mode = 2
 theme_override_constants/separation = 8
@@ -131,6 +139,14 @@ theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "Energie: 0"
 
+[node name="WhoDescription" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.84, 0.9, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 17
+autowrap_mode = 3
+
 [node name="EnemySection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot"]
 unique_name_in_owner = true
 layout_mode = 2
@@ -173,25 +189,6 @@ theme_override_font_sizes/font_size = 17
 text = "Detail"
 autowrap_mode = 3
 
-[node name="PassivesSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/separation = 3
-
-[node name="PassivesHeader" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/PassivesSection"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.76, 0.84, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 17
-text = "PASSIVES"
-
-[node name="PassivesFlow" type="HFlowContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/PassivesSection"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_constants/h_separation = 4
-theme_override_constants/v_separation = 4
-
 [node name="AlertsSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection"]
 unique_name_in_owner = true
 visible = false
@@ -200,6 +197,7 @@ theme_override_constants/separation = 3
 
 [node name="AlertsHeader" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/AlertsSection"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.72, 0.55, 1)
 theme_override_fonts/font = ExtResource("2_font")
@@ -211,6 +209,24 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 4
+
+[node name="PassivesSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 3
+
+[node name="PassivesHeader" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/PassivesSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.76, 0.84, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 17
+text = "UMÍ"
+
+[node name="PassivesFlow" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/PassivesSection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
 
 [node name="StatusSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot"]
 unique_name_in_owner = true

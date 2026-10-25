@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="EncounterData" load_steps=7 format=3]
+[gd_resource type="Resource" script_class="EncounterData" load_steps=9 format=3 uid="uid://0g7epgg4c66l"]
 
 [ext_resource type="Script" uid="uid://tp0lo3xqiiqb" path="res://data/encounters/EncounterEntry.gd" id="1_entry"]
 [ext_resource type="Script" uid="uid://dq86v2djx6q1m" path="res://data/encounters/EncounterData.gd" id="2_data"]
@@ -26,3 +26,11 @@ script = ExtResource("2_data")
 encounter_type = 1
 xp_reward = 70
 enemies = Array[ExtResource("1_entry")]([SubResource("Resource_front"), SubResource("Resource_af"), SubResource("Resource_am")])
+encounter_id = "fortress_warband"
+display_name = "encounter.fortress_warband"
+tier = 3
+min_row = 0
+max_row = 99
+main_tag = "goblins"
+tags = Array[String](["rush", "ranged"])
+weight = 1.0

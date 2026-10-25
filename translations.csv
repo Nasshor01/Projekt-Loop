@@ -124,7 +124,7 @@
 "damage.effective","Effective!","EFEKTIVNÍ!"
 "status.aura_devotion","At start of turn: +{value} block","Na začátku tahu: +{value} blok"
 "status.aura_devotion_plus","At start of turn: +{value} permanent block","Na začátku tahu: +{value} permanentní blok"
-"status.regeneration","At end of turn: +{value} HP","Na konci tahu: +{value} HP"
+"status.regeneration","Turn start: +{value} HP","Začátek tahu: +{value} HP"
 "status.consecrated_weapon","Next attack: +{value} holy dmg","Příští útok: +{value} svatého dmg"
 "status.vulnerable","Vulnerable ({value})","Zranitelný ({value})"
 "status.burning","Burning ({value})","Hoření ({value})"
@@ -309,8 +309,9 @@
 "ui.unit_info.passives_none","Passives: None","Pasiva: —"
 "ui.unit_info.counters_none","Counters: None","Počítadla: —"
 "ui.unit_info.intent_unknown","Next move: Unknown","Úmysl: —"
-"ui.unit_info.section.intent","NEXT","DALŠÍ"
-"ui.unit_info.section.passives","PASSIVES","PASIVA"
+"ui.unit_info.section.who","WHO","KDO"
+"ui.unit_info.section.intent","NOW","TEĎ"
+"ui.unit_info.section.passives","KIT","UMÍ"
 "ui.unit_info.section.alerts","ALERTS","VÝSTRAHY"
 "ui.unit_info.section.status","STATUS","STAVY"
 "enemy.label.passives","Passives: ","Pasiva: "
@@ -638,8 +639,10 @@ Lízni si 1 kartu."
 Holy","Způsob 8 poškození nepřátelům v oblasti 3×3 kolem tebe.
 Svaté"
 "card.consecration+","Consecration+","Svěcení+"
-"card.consecration+.desc","Deal 10 damage to enemies in a 3×3 area around you.
-Holy","Způsob 10 poškození nepřátelům v oblasti 3×3 kolem tebe.
+"card.consecration+.desc","Deal 8 damage to enemies in a 3×3 area around you.
+Enemies hit get Weakness for 3 turns (-25% damage).
+Holy","Způsob 8 poškození nepřátelům v oblasti 3×3 kolem tebe.
+Zasažení nepřátelé získají Slabost na 3 kola (-25 % poškození).
 Svaté"
 "card.divine_wrath","Divine Wrath","Boží hněv"
 "card.divine_wrath.desc","Deal 8 damage to enemies in a 3×3 area around you.
@@ -665,10 +668,10 @@ Svaté
 Vyčerpání"
 "card.divine_justice","Divine Justice","Božská Spravedlnost"
 "card.divine_justice.desc","Deal 14 damage.
-If the enemy has more than 50% health, deal +8 damage.
+If the target has more than 50% HP, deal +8 damage.
 Holy
 Exhaust","Způsob 14 poškození.
-Pokud má nepřítel více než 50% zdraví, způsob +8 poškození.
+Pokud má cíl víc než 50 % životů, způsob +8 poškození.
 Svaté
 Vyčerpání"
 "card.divine_protection","Divine Protection","Božská Ochrana"
@@ -677,29 +680,27 @@ Heal 8 HP.
 Deal 8 damage to all enemies.
 Holy
 Exhaust","Získej 12 Blok.
-Vyléč se za 8 HP.
+Vyléč si 8 životů.
 Způsob 8 poškození všem nepřátelům.
 Svaté
 Vyčerpání"
 "card.excommunication","Excommunication","Exkomunikace"
 "card.excommunication.desc","Deal 6 damage.
-The enemy gains Vulnerable for 2 turns.
+The enemy gets Vulnerable for 2 turns (+50% damage taken).
 Holy","Způsob 6 poškození.
-Nepřítel získá Zranitelnost na 2 kola.
+Nepřítel získá Zranitelnost na 2 kola (+50 % přijatého poškození).
 Svaté"
 "card.gods_lightning","God's Lightning","Boží Blesk"
 "card.gods_lightning.desc","Deal 10 damage.
-If you kill an enemy, gain 1 energy.
-Gain +2 Initiative.
+If the target dies, gain 1 Energy.
 Holy","Způsob 10 poškození.
-Pokud zabiješ nepřítele, získej 1 energii.
-Získej +2 Iniciativu.
+Pokud cíl zemře, získej 1 energii.
 Svaté"
-"card.gods_wrath","God's Wrath","Boží Hněv"
+"card.gods_wrath","Penance","Pokání"
 "card.gods_wrath.desc","Deal 10 damage.
-If the enemy has a debuff, deal +4 damage.
+If the target has any debuff, deal +4 damage.
 Holy","Způsob 10 poškození.
-Pokud má nepřítel debuff, způsob +4 poškození.
+Pokud má cíl nějaký debuff, způsob +4 poškození.
 Svaté"
 "card.holy_armor","Holy Armor","Svatá Zbroj"
 "card.holy_armor.desc","Gain 5 Block.
@@ -707,7 +708,7 @@ If you have more than 20 Block, gain +2 Block.","Získej 5 Blok.
 Pokud máš více než 20 Blok, získej +2 Blok navíc."
 "card.holy_blessing","Holy Blessing","Svaté Požehnání"
 "card.holy_blessing.desc","Heal 8 HP.
-Gain 3 Block.","Vyléč se za 8 HP.
+Gain 3 Block.","Vyléč si 8 životů.
 Získej 3 Blok."
 "card.holy_defense","Holy Defense","Svatá Obrana"
 "card.holy_defense.desc","Gain 10 Block.
@@ -716,40 +717,34 @@ Holy","Získej 10 Blok.
 Způsob 5 poškození.
 Svaté"
 "card.holy_knight","Holy Knight","Svatý Rytíř"
-"card.holy_knight.desc","Gain 6 Block.
-Deal 6 damage.
-Heal 4 HP.
-Holy","Získej 6 Blok.
-Způsob 6 poškození.
-Vyléč se za 4 HP.
-Svaté"
+"card.holy_knight.desc","Until end of combat: gain 3 Block whenever you play an attack.","Do konce boje: za každý zahraný útok získej 3 Blok."
 "card.holy_shield","Holy Shield","Svatý Štít"
 "card.holy_shield.desc","Gain 10 Block.
-If you have less than 50% health, gain +5 Block.","Získej 10 Blok.
-Pokud máš méně než 50% zdraví, získej +5 Blok."
+If you have less than 50% HP, gain +5 Block.","Získej 10 Blok.
+Pokud máš méně než 50 % životů, získej +5 Blok."
 "card.holy_strike","Holy Strike","Svatý Úder"
 "card.holy_strike.desc","Deal 6 damage.
 Holy","Způsob 6 poškození.
 Svaté"
 "card.holy_vengeance","Holy Vengeance","Svatá Pomsta"
 "card.holy_vengeance.desc","Deal 5 damage.
-For each Block you have, deal +1 damage.
+Deal +1 damage for each Block you have.
 Holy","Způsob 5 poškození.
-Za každý Blok, který máš, způsob +1 poškození.
+Za každý tvůj Blok způsob +1 poškození.
 Svaté"
 "card.holy_wave","Holy Wave","Svatá Vlna"
 "card.holy_wave.desc","Deal 8 damage to all enemies in your row.
-Holy","Způsob 8 poškození všem nepřátelům na tvém řádku.
+Holy","Způsob 8 poškození všem nepřátelům ve tvém řádku.
 Svaté"
 "card.holy_wave+","Holy Wave+","Svatá Vlna+"
 "card.holy_wave+.desc","Deal 10 damage to all enemies in your row.
-Holy","Způsob 10 poškození všem nepřátelům na tvém řádku.
+Holy","Způsob 10 poškození všem nepřátelům ve tvém řádku.
 Svaté"
-"card.holy_wrath","Holy Wrath","Svatý Hněv"
+"card.holy_wrath","Shield's Reprisal","Odplata štítu"
 "card.holy_wrath.desc","Deal 8 damage.
 If you have more than 15 Block, deal +4 damage.
 Holy","Způsob 8 poškození.
-Pokud máš více než 15 Blok, způsob +4 poškození.
+Pokud máš víc než 15 Blok, způsob +4 poškození.
 Svaté"
 "card.healing_aura","Healing Aura","Léčivá Aura"
 "card.healing_aura.desc","Heal 8 HP.
@@ -759,32 +754,32 @@ Všichni spojenci se vyléčí za 3 HP."
 "card.healing_light.desc","Heal 8 HP.","Vyléč se za 8 HP."
 "card.massive_healing","Massive Healing","Masivní Léčení"
 "card.massive_healing.desc","Heal 15 HP.
-If you have less than 30% health, heal 20 HP.
-Single use per run – then removed from deck.","Vyléč se za 15 HP.
-Pokud máš méně než 30% zdraví, vyléč se za 20 HP.
-Jednorázová za run – poté se odstraní z balíčku."
+If you have less than 30% HP, heal 20 more.
+Single use per run, then removed from your deck.","Vyléč si 15 životů.
+Pokud máš méně než 30 % životů, vyléč si navíc 20.
+Jen 1× za run, pak karta zmizí z balíčku."
 "card.consecrated_barrier","Consecrated Barrier","Posvěcená Bariéra"
 "card.consecrated_barrier.desc","Gain 5 Block.
 If you took damage last turn, gain +3 Block.","Získej 5 Blok.
-Pokud jsi v posledním tahu utrpěl poškození, získej +3 Blok."
+Pokud jsi v minulém kole utrpěl poškození, získej +3 Blok."
 "card.consecrated_weapon","Consecrated Weapon","Posvěcená Zbraň"
 "card.consecrated_weapon.desc","Deal 4 damage.
-Your next Holy attack deals +5 damage.
+Your next holy attack deals +5 damage.
 Holy","Způsob 4 poškození.
-Příští svatý útok způsobí +5 poškození.
+Tvůj příští svatý útok způsobí +5 poškození.
 Svaté"
 "card.defensive_stance","Defensive Stance","Obranný Postoj"
 "card.defensive_stance.desc","Gain 4 Block.
 The next attack against you deals 50% less damage.","Získej 4 Blok.
-Příští útok proti tobě způsobí o 50% méně poškození."
+Příští útok proti tobě způsobí o 50 % méně poškození."
 "card.fortification","Fortification","Opevnění"
 "card.fortification.desc","Gain 10 Block.
-This Block doesn't disappear at end of turn.","Získej 10 Blok.
-Tento Blok nezmizí na konci tahu."
+This Block lasts through your next turn.","Získej 10 Blok.
+Tento Blok vydrží i přes tvůj další tah."
 "card.impregnable_shield","Impenetrable Shield","Neprůstřelný Štít"
 "card.impregnable_shield.desc","Gain 10 Block.
-Remove all debuffs.","Získej 10 Blok.
-Odstraň všechny debuffy."
+Remove all your debuffs.","Získej 10 Blok.
+Odstraň ze sebe všechny debuffy."
 "card.protective_aura","Protective Aura","Ochranná Aura"
 "card.protective_aura.desc","Gain 3 Block.
 All allies gain 1 Block.","Získej 3 Blok.
@@ -794,17 +789,19 @@ Všichni spojenci získají 1 Blok."
 Heal 5 HP.","Získej 8 Blok.
 Vyléč se za 5 HP."
 "card.purification","Purification","Očista"
-"card.purification.desc","Remove all debuffs and gain 4 Block.","Odstraň všechny debuffy a získej 4 Blok."
+"card.purification.desc","Remove all your debuffs.
+Gain 4 Block.","Odstraň ze sebe všechny debuffy.
+Získej 4 Blok."
 "card.regeneration","Regeneration","Regenerace"
-"card.regeneration.desc","Gain Regeneration (heals 2 HP at the end of each turn) for 3 turns.","Získej status 'Regenerace' (léčí 2 HP na konci každého tahu) na 3 kola."
+"card.regeneration.desc","At the start of your next 2 turns, heal 2 HP.","Na začátku tvých dalších 2 tahů si vyléč 2 životy."
 "card.sacred_healing","Sacred Healing","Posvátné Vyléčení"
 "card.sacred_healing.desc","Heal 12 HP.
 Remove all debuffs.","Vyléč se za 12 HP.
 Odstraň všechny debuffy."
 "card.shield_bash","Shield Bash","Úder štítem"
-"card.shield_bash.desc","Deal damage equal to your current Block (max 15).","Způsob poškození rovné tvému aktuálnímu Blok (max 15)."
+"card.shield_bash.desc","Deal damage equal to your current Block (max 15).","Způsob poškození rovné tvému aktuálnímu Bloku (max 15)."
 "card.shield_bash+","Shield Bash+","Úder štítem+"
-"card.shield_bash+.desc","Deal double damage equal to your current Block (max 20).","Způsob dvojnásobné poškození rovné tvému aktuálnímu Blok (max 20)."
+"card.shield_bash+.desc","Deal double your current Block as damage (max 20).","Způsob dvojnásobek tvého aktuálního Bloku jako poškození (max 20)."
 "card.shield_strike","Shield Strike","Štítový Úder"
 "card.shield_strike.desc","Gain 4 Block.
 Deal 5 damage.","Získej 4 Blok.
@@ -818,21 +815,21 @@ Svaté"
 Holy","Způsob 9 poškození.
 Svaté"
 "card.lay_on_hands","Lay on Hands","Vkládání rukou"
-"card.lay_on_hands.desc","Heal to full health.
-Can be used 2 times per run – then removed from deck.
+"card.lay_on_hands.desc","Heal to full HP.
+Usable 2× per run, then removed from your deck.
 Exhaust","Vyléč se do plných životů.
-Lze použít 2× za run – poté se odstraní z balíčku.
+Lze použít 2× za run, pak karta zmizí z balíčku.
 Vyčerpání"
 "card.lay_on_hands+","Lay on Hands+","Vkládání rukou+"
-"card.lay_on_hands+.desc","Heal to full health.
-Usage: 3/3 – after 3 uses, removed from deck permanently.
-Exhaust","Vyléč se do plných životů.
-Použití: 3/3 – po 3 použitích trvale pryč z balíčku.
+"card.lay_on_hands+.desc","Heal to full HP and remove all your debuffs.
+Usable 2× per run, then removed from your deck.
+Exhaust","Vyléč se do plných životů a odstraň ze sebe všechny debuffy.
+Lze použít 2× za run, pak karta zmizí z balíčku.
 Vyčerpání"
 "card.lesser_heal","Lesser Heal","Menší léčení"
 "card.lesser_heal.desc","Heal 4 HP.","Vyléč si 4 životy."
 "card.lesser_heal+","Lesser Heal+","Menší léčení+"
-"card.lesser_heal+.desc","Heal 6 HP.","Vyléč si 6 životy."
+"card.lesser_heal+.desc","Heal 6 HP.","Vyléč si 6 životů."
 "card.light_pillar","Pillar of Light","Sloup Světla"
 "card.light_pillar.desc","Deal 8 damage to all enemies in your column.
 Holy","Způsob 8 poškození všem nepřátelům ve tvém sloupci.
@@ -855,7 +852,7 @@ Holy","Způsob 7 poškození nepřátelům v oblasti 2×2 kolem tebe.
 Svaté"
 "card.unbreakable_faith","Unbreakable Faith","Neprůstřelná Víra"
 "card.unbreakable_faith.desc","Gain Block equal to your current HP.
-Exhaust","Získej Blok rovný tvému aktuálnímu HP.
+Exhaust","Získej Blok rovný tvým aktuálním životům.
 Vyčerpání"
 "card.curse_basic","Curse","Prokletí"
 "card.curse_basic.desc","A useless card that only takes space in your hand.","Zbytečná karta, která ti jen zabírá místo na ruce."
@@ -984,7 +981,7 @@ Vyčerpání"
 "village.effect.chapel_next","Next: +{value} block at battle start","Další: +{value} blok na začátku bitvy"
 "village.effect.chapel_hp","+{value} max HP","+{value} max HP"
 "village.effect.chapel_starter_plus","Starting Defend is upgraded (Defend+)","Startovní Defend je vylepšený (Defend+)"
-"village.effect.chapel_unlock_card","{card} unlocked in rewards and added to the starting deck","{card} odemčena v odměnách a 1 kopie ve startovním balíčku"
+"village.effect.chapel_unlock_card","+1 {card} in the starting deck","+1× {card} ve startovním balíčku"
 "village.effect.chapel_move","Movement 2 → 3","Pohyb 2 → 3"
 "village.effect.chapel_relic_later","Starting Paladin relic (coming later)","Startovní relikvie Paladina (později)"
 "village.effect.library_choices","{value} card choices","{value} voleb karet"
@@ -1013,46 +1010,44 @@ Vyčerpání"
 "card.quick_step+","Quick Step+","Rychlý krok+"
 "card.quick_step+.desc","Increase your initiative by 8 for the next round.","Zvyš svou iniciativu o 8 pro další kolo."
 "card.holy_strike+","Holy Strike+","Svatý Úder+"
-"card.holy_strike+.desc","Deal 8 damage.
-Holy","Způsob 8 poškození.
+"card.holy_strike+.desc","Pull the enemy 1 tile toward you and deal 6 damage.
+Holy","Přitáhni nepřítele o 1 pole a způsob mu 6 poškození.
 Svaté"
 "card.excommunication+","Excommunication+","Exkomunikace+"
-"card.excommunication+.desc","Deal 8 damage.
-The enemy gains Vulnerable for 2 turns.
-Holy","Způsob 8 poškození.
-Nepřítel získá Zranitelnost na 2 kola.
+"card.excommunication+.desc","Deal 6 damage.
+The enemy gets Vulnerable for 3 turns (+50% damage taken).
+Holy","Způsob 6 poškození.
+Nepřítel získá Zranitelnost na 3 kola (+50 % přijatého poškození).
 Svaté"
-"card.gods_wrath+","God's Wrath+","Boží Hněv+"
+"card.gods_wrath+","Penance+","Pokání+"
 "card.gods_wrath+.desc","Deal 12 damage.
-If the enemy has a debuff, deal +4 damage.
+If the target has any debuff, deal +4 damage.
 Holy","Způsob 12 poškození.
-Pokud má nepřítel debuff, způsob +4 poškození.
+Pokud má cíl nějaký debuff, způsob +4 poškození.
 Svaté"
 "card.gods_lightning+","God's Lightning+","Boží Blesk+"
 "card.gods_lightning+.desc","Deal 12 damage.
-If you kill an enemy, gain 1 energy.
-Gain +2 Initiative.
+If the target dies, gain 1 Energy.
 Holy","Způsob 12 poškození.
-Pokud zabiješ nepřítele, získej 1 energii.
-Získej +2 Iniciativu.
+Pokud cíl zemře, získej 1 energii.
 Svaté"
-"card.holy_wrath+","Holy Wrath+","Svatý Hněv+"
+"card.holy_wrath+","Shield's Reprisal+","Odplata štítu+"
 "card.holy_wrath+.desc","Deal 10 damage.
 If you have more than 15 Block, deal +4 damage.
 Holy","Způsob 10 poškození.
-Pokud máš více než 15 Blok, způsob +4 poškození.
+Pokud máš víc než 15 Blok, způsob +4 poškození.
 Svaté"
 "card.holy_vengeance+","Holy Vengeance+","Svatá Pomsta+"
 "card.holy_vengeance+.desc","Deal 6 damage.
-For each Block you have, deal +1 damage.
+Deal +1 damage for each Block you have.
 Holy","Způsob 6 poškození.
-Za každý Blok způsob +1 poškození.
+Za každý tvůj Blok způsob +1 poškození.
 Svaté"
 "card.consecrated_weapon+","Consecrated Weapon+","Posvěcená Zbraň+"
 "card.consecrated_weapon+.desc","Deal 4 damage.
-Your next Holy attack deals +7 damage.
+For the rest of combat, your holy attacks deal +2 damage.
 Holy","Způsob 4 poškození.
-Tvůj další svatý útok způsobí +7 poškození.
+Do konce boje způsobí tvé svaté útoky +2 poškození.
 Svaté"
 "card.shield_strike+","Shield Strike+","Štítový Úder+"
 "card.shield_strike+.desc","Gain 4 Block.
@@ -1065,41 +1060,39 @@ Holy","Získej 10 Blok.
 Způsob 7 poškození.
 Svaté"
 "card.holy_knight+","Holy Knight+","Svatý Rytíř+"
-"card.holy_knight+.desc","Gain 6 Block.
-Deal 8 damage.
-Heal 4 HP.
-Holy","Získej 6 Blok.
-Způsob 8 poškození.
-Vyléč 4 HP.
-Svaté"
+"card.holy_knight+.desc","Until end of combat: gain 3 Block whenever you play an attack.
+This Block lasts through your next turn.","Do konce boje: za každý zahraný útok získej 3 Blok.
+Tento Blok vydrží i přes tvůj další tah."
 "card.divine_justice+","Divine Justice+","Božská Spravedlnost+"
 "card.divine_justice+.desc","Deal 16 damage.
-If the enemy has more than 50% health, deal +8 damage.
+If the target has more than 50% HP, deal +8 damage.
 Holy
 Exhaust","Způsob 16 poškození.
-Pokud má nepřítel více než 50 % života, způsob +8 poškození.
+Pokud má cíl víc než 50 % životů, způsob +8 poškození.
 Svaté
 Vyčerpání"
 "card.consecrated_barrier+","Consecrated Barrier+","Posvěcená Bariéra+"
 "card.consecrated_barrier+.desc","Gain 7 Block.
 If you took damage last turn, gain +3 Block.","Získej 7 Blok.
-Pokud jsi minulé kolo utrpěl poškození, získej +3 Blok."
+Pokud jsi v minulém kole utrpěl poškození, získej +3 Blok."
 "card.defensive_stance+","Defensive Stance+","Obranný Postoj+"
-"card.defensive_stance+.desc","Gain 6 Block.
-The next attack against you deals 50% less damage.","Získej 6 Blok.
-Další útok proti tobě způsobí o 50 % méně poškození."
+"card.defensive_stance+.desc","Gain 4 Block.
+Until your next turn, all attacks against you deal 50% less damage.","Získej 4 Blok.
+Do tvého dalšího tahu ti všechny útoky způsobí o 50 % méně poškození."
 "card.holy_armor+","Holy Armor+","Svatá Zbroj+"
 "card.holy_armor+.desc","Gain 7 Block.
 If you have more than 20 Block, gain +2 Block.","Získej 7 Blok.
 Pokud máš více než 20 Blok, získej +2 Blok."
 "card.holy_shield+","Holy Shield+","Svatý Štít+"
 "card.holy_shield+.desc","Gain 12 Block.
-If you have less than 50% health, gain +5 Block.","Získej 12 Blok.
-Pokud máš méně než 50 % života, získej +5 Blok."
+If you have less than 50% HP, gain +5 Block.","Získej 12 Blok.
+Pokud máš méně než 50 % životů, získej +5 Blok."
 "card.fortification+","Fortification+","Opevnění+"
-"card.fortification+.desc","Gain 13 Block.
-This Block doesn't disappear at end of turn.","Získej 13 Blok.
-Tento Blok nezmizí na konci tahu."
+"card.fortification+.desc","Gain 10 Block.
+This Block lasts through your next turn.
+Retain: stays in your hand at end of turn.","Získej 10 Blok.
+Tento Blok vydrží i přes tvůj další tah.
+Ponechání: na konci tahu zůstane v ruce."
 "card.protective_aura+","Protective Aura+","Ochranná Aura+"
 "card.protective_aura+.desc","Gain 5 Block.
 All allies gain 1 Block.","Získej 5 Blok.
@@ -1110,13 +1103,17 @@ Heal 5 HP.","Získej 10 Blok.
 Vyléč 5 HP."
 "card.impregnable_shield+","Impenetrable Shield+","Neprůstřelný Štít+"
 "card.impregnable_shield+.desc","Gain 12 Block.
-Remove all debuffs.","Získej 12 Blok.
-Odstraň všechny debuffy."
+Remove all your debuffs.","Získej 12 Blok.
+Odstraň ze sebe všechny debuffy."
 "card.purification+","Purification+","Očista+"
-"card.purification+.desc","Remove all debuffs and gain 6 Block.","Odstraň všechny debuffy a získej 6 Blok."
+"card.purification+.desc","Remove all your debuffs.
+Gain 6 Block.","Odstraň ze sebe všechny debuffy.
+Získej 6 Blok."
 "card.unbreakable_faith+","Unbreakable Faith+","Neprůstřelná Víra+"
 "card.unbreakable_faith+.desc","Gain Block equal to your current HP.
-Exhaust","Získej Blok rovný aktuálnímu HP.
+Draw 1 card.
+Exhaust","Získej Blok rovný tvým aktuálním životům.
+Lízni 1 kartu.
 Vyčerpání"
 "card.healing_light+","Healing Light+","Léčivé Světlo+"
 "card.healing_light+.desc","Heal 10 HP.","Vyléč 10 HP."
@@ -1126,28 +1123,28 @@ All allies heal 3 HP.","Vyléč 10 HP.
 Všichni spojenci se vyléčí o 3 HP."
 "card.holy_blessing+","Holy Blessing+","Svaté Požehnání+"
 "card.holy_blessing+.desc","Heal 10 HP.
-Gain 3 Block.","Vyléč 10 HP.
+Gain 3 Block.","Vyléč si 10 životů.
 Získej 3 Blok."
 "card.sacred_healing+","Sacred Healing+","Posvátné Vyléčení+"
 "card.sacred_healing+.desc","Heal 14 HP.
 Remove all debuffs.","Vyléč 14 HP.
 Odstraň všechny debuffy."
 "card.regeneration+","Regeneration+","Regenerace+"
-"card.regeneration+.desc","Gain Regeneration (heals 3 HP at the end of each turn) for 3 turns.","Získej Regeneraci (léčí 3 HP na konci každého tahu) na 3 kola."
+"card.regeneration+.desc","At the start of each of your turns until end of combat, heal 2 HP.","Na začátku každého tvého tahu až do konce boje si vyléč 2 životy."
 "card.massive_healing+","Massive Healing+","Masivní Léčení+"
 "card.massive_healing+.desc","Heal 18 HP.
-If you have less than 30% health, heal 20 HP.
-Usage: 1/1 – after use, removed from deck permanently.","Vyléč 18 HP.
-Pokud máš méně než 30 % života, vyléč 20 HP.
-Použití: 1/1 – po použití trvale pryč z balíčku."
+If you have less than 30% HP, heal 20 more.
+Single use per run, then removed from your deck.","Vyléč si 18 životů.
+Pokud máš méně než 30 % životů, vyléč si navíc 20.
+Jen 1× za run, pak karta zmizí z balíčku."
 "card.divine_grace+","Divine Grace+","Božská Milost+"
 "card.divine_grace+.desc","Heal to full health.
 Exhaust","Vyléč se do plných životů.
 Vyčerpání"
 "card.divine_judgment+","Divine Judgment+","Božský Soud+"
-"card.divine_judgment+.desc","Deal 18 damage to all enemies.
+"card.divine_judgment+.desc","Deal 15 damage to all enemies.
 Holy
-Exhaust","Způsob 18 poškození všem nepřátelům.
+Exhaust","Způsob 15 poškození všem nepřátelům.
 Svaté
 Vyčerpání"
 "card.divine_protection+","Divine Protection+","Božská Ochrana+"
@@ -1156,7 +1153,7 @@ Heal 8 HP.
 Deal 10 damage to all enemies.
 Holy
 Exhaust","Získej 12 Blok.
-Vyléč 8 HP.
+Vyléč si 8 životů.
 Způsob 10 poškození všem nepřátelům.
 Svaté
 Vyčerpání"
@@ -1213,32 +1210,286 @@ Vyčerpání"
 "ui.coop.waiting_start","Connected. Waiting for host to start.","Připojeno. Čekej na start."
 "ui.coop.start","Start","Start"
 "ui.run_prep.waiting_host","Waiting for host…","Čekám na hostitele…"
-"card.effect.push","Push","Odtlačení"
-"card.effect.pull","Pull","Přitáhnutí"
+"card.effect.push","Push","Odstrč"
+"card.effect.pull","Pull","Přitáhni"
 "card.effect.taunt_keyword","Taunt","Výzva"
 "status.taunted","Taunted — must approach","Výzva — musí se přiblížit"
 "keyword.taunted.title","Taunted","Výzva"
 "keyword.taunted.description","On their next turn, this enemy approaches you (normal movement) instead of kiting.","V příštím tahu se nepřítel přiblíží (normální pohyb) místo kite."
 "card.taunt","Taunt","Výzva"
-"card.taunt.desc","Pull enemy 1 toward you.
-Taunted: approaches you next turn.","Přitáhni nepřítele o 1 pole.
-Výzva: příští tah se přiblíží."
+"card.taunt.desc","Pull the enemy 1 tile toward you.
+Taunt: on its next turn it comes at you.","Přitáhni nepřítele o 1 pole.
+Výzva: ve svém příštím tahu půjde po tobě."
 "card.taunt+","Taunt+","Výzva+"
-"card.taunt+.desc","Pull enemy 2 toward you.
-Taunted: approaches you next turn.","Přitáhni nepřítele o 2 pole.
-Výzva: příští tah se přiblíží."
+"card.taunt+.desc","Pull the enemy 2 tiles toward you.
+Taunt: on its next turn it comes at you.
+Gain 5 Block.","Přitáhni nepřítele o 2 pole.
+Výzva: ve svém příštím tahu půjde po tobě.
+Získej 5 Blok."
 "card.shield_push","Shield Push","Štítový tlak"
-"card.shield_push.desc","Rush if 1 tile gap. Deal half your Block as damage. Push 1.","Rush přes mezeru 1. Dej dmg = polovina Bloku. Push 1."
+"card.shield_push.desc","If there is a 1-tile gap, rush to the enemy.
+Deal damage equal to half your Block.
+Push the enemy 1 tile.","Pokud je mezi vámi 1 volné pole, přiskoč k nepříteli.
+Způsob poškození rovné polovině tvého Bloku.
+Odstrč nepřítele o 1 pole."
 "card.shield_push+","Shield Push+","Štítový tlak+"
-"card.shield_push+.desc","Rush if 1 tile gap. Deal half your Block as damage. Push 2.","Rush přes mezeru 1. Dej dmg = polovina Bloku. Push 2."
+"card.shield_push+.desc","If there is a 1-tile gap, rush to the enemy.
+Deal damage equal to half your Block.
+Push the enemy 2 tiles.","Pokud je mezi vámi 1 volné pole, přiskoč k nepříteli.
+Způsob poškození rovné polovině tvého Bloku.
+Odstrč nepřítele o 2 pole."
 "card.divine_pull","Divine Pull","Božské přitažení"
-"card.divine_pull.desc","Pull 1. If Undead/Demon: holy bonus damage only.","Přitáhni o 1. Vs Undead/Demon: jen holy bonus dmg."
+"card.divine_pull.desc","Pull the enemy 1 tile toward you.
+Against undead and demons: also deal 5 holy damage.","Přitáhni nepřítele o 1 pole.
+Proti nemrtvým a démonům navíc způsob 5 svatého poškození."
 "card.divine_pull+","Divine Pull+","Božské přitažení+"
-"card.divine_pull+.desc","Pull 2. If Undead/Demon: holy bonus damage only.","Přitáhni o 2. Vs Undead/Demon: jen holy bonus dmg."
+"card.divine_pull+.desc","Pull the enemy 2 tiles toward you.
+Against undead and demons: also deal 5 holy damage.","Přitáhni nepřítele o 2 pole.
+Proti nemrtvým a démonům navíc způsob 5 svatého poškození."
 "card.holy_push","Holy Push","Svatý tlak"
-"card.holy_push.desc","If Undead/Demon: holy bonus damage. Push 1.","Vs Undead/Demon: jen holy bonus dmg. Push 1."
+"card.holy_push.desc","Push the enemy 1 tile.
+Against undead and demons: also deal 5 holy damage.","Odstrč nepřítele o 1 pole.
+Proti nemrtvým a démonům navíc způsob 5 svatého poškození."
 "card.holy_push+","Holy Push+","Svatý tlak+"
-"card.holy_push+.desc","If Undead/Demon: holy bonus damage. Push 2.","Vs Undead/Demon: jen holy bonus dmg. Push 2."
-"card.effect.holy_bonus_only","Holy bonus (Undead/Demon)","Holy bonus (Undead/Demon)"
+"card.holy_push+.desc","Push the enemy 2 tiles.
+Against undead and demons: also deal 5 holy damage.","Odstrč nepřítele o 2 pole.
+Proti nemrtvým a démonům navíc způsob 5 svatého poškození."
+"card.effect.holy_bonus_only","+{value} Holy vs Undead/Demon","+{value} svatého proti nemrtvým a démonům"
 "card.effect.half_block_damage","½ Block dmg","½ Blok dmg"
 "card.effect.rush","Rush","Rush"
+"card.effect.block_next_turn","Lasts +1 round","Vydrží +1 kolo"
+"card.effect.on_kill","Execute:","Poprava:"
+"card.effect.block_on_attack","Each Attack:","Každý útok:"
+"status.block_on_attack","Attacks: +{value} Block","Útoky: +{value} Blok"
+"card.fury","Fury","Hněv"
+"card.fury.desc","Whenever you lose HP, gain 1 Fury until end of combat.
+Holy attacks deal +1 damage per Fury.","Když ztratíš životy, získej 1 Hněv do konce boje.
+Svaté útoky způsobí +1 poškození za každý Hněv."
+"card.fury+","Fury+","Hněv+"
+"card.fury+.desc","Whenever you lose HP, gain 1 Fury until end of combat.
+Holy attacks deal +1 damage per Fury.","Když ztratíš životy, získej 1 Hněv do konce boje.
+Svaté útoky způsobí +1 poškození za každý Hněv."
+"card.litany","Litany","Litanie"
+"card.litany.desc","Draw 2 cards.
+Exhaust","Lízni 2 karty.
+Vyčerpání"
+"card.litany+","Litany+","Litanie+"
+"card.litany+.desc","Draw 2 cards.","Lízni 2 karty."
+"card.rebuke","Rebuke","Pokárání"
+"card.rebuke.desc","Deal 4 damage.
+The enemy gets Weakness for 2 turns (-25% damage).
+Holy","Způsob 4 poškození.
+Nepřítel získá Slabost na 2 kola (-25 % poškození).
+Svaté"
+"card.rebuke+","Rebuke+","Pokárání+"
+"card.rebuke+.desc","Deal 6 damage.
+The enemy gets Weakness for 2 turns (-25% damage).
+Holy","Způsob 6 poškození.
+Nepřítel získá Slabost na 2 kola (-25 % poškození).
+Svaté"
+"card.aegis","Aegis","Aegis"
+"card.aegis.desc","Gain Block equal to the holy damage you dealt this turn.","Získej Blok rovný svatému poškození, které jsi tento tah způsobil."
+"card.aegis+","Aegis+","Aegis+"
+"card.aegis+.desc","Gain Block equal to the holy damage you dealt this turn, +4.","Získej Blok rovný svatému poškození, které jsi tento tah způsobil, +4."
+"card.sanctuary","Sanctuary","Svatyně"
+"card.sanctuary.desc","Taunt all enemies within 2 tiles: pull them 1 tile, for 1 turn.
+Gain 5 Block.","Výzva všem nepřátelům do vzdálenosti 2: přitáhni je o 1 pole, na 1 kolo.
+Získej 5 Blok."
+"card.sanctuary+","Sanctuary+","Svatyně+"
+"card.sanctuary+.desc","Taunt all enemies within 2 tiles: pull them 1 tile, for 1 turn.
+Gain 8 Block.","Výzva všem nepřátelům do vzdálenosti 2: přitáhni je o 1 pole, na 1 kolo.
+Získej 8 Blok."
+"card.radiance","Radiance","Záře"
+"card.radiance.desc","Your next holy attack also hits enemies next to the target.","Tvůj příští svatý útok zasáhne i nepřátele vedle cíle."
+"card.radiance+","Radiance+","Záře+"
+"card.radiance+.desc","Your next holy attack also hits enemies next to the target.
+Everyone hit gets Vulnerable for 2 turns.","Tvůj příští svatý útok zasáhne i nepřátele vedle cíle.
+Všichni zasažení získají Zranitelnost na 2 kola."
+"status.fury_engine","Lose HP: +{value} Fury","Ztráta HP: +{value} Hněv"
+"status.fury","Fury: +{value} holy damage","Hněv: +{value} svaté poškození"
+"status.radiance","Next holy attacks ({value}): also hit adjacent","Příští svaté útoky ({value}): zasáhnou i sousedy"
+"status.weakness.short","Weak","Slabost"
+"card.effect.block_equal_holy_damage","Block = holy damage this turn","Blok = svaté poškození tento tah"
+"card.effect.enemies_within","Enemies within {value}:","Nepřátelé v okolí {value}:"
+"card.effect.draw_cards_few","+{value} cards","+{value} karty"
+"card.effect.draw_cards_many","+{value} cards","+{value} karet"
+"card.effect.fury_holy","Holy attacks: +Fury","Svaté útoky: +Hněv"
+"status.holy_edge","Holy attacks: +{value} dmg (combat)","Svaté útoky: +{value} dmg (boj)"
+"status.radiance_vulnerable","Radiance: hit get Vulnerable ({value})","Záře: zasažení Zranitelní ({value})"
+"status.defensive_stance_turn.short","½ dmg until your turn","½ dmg do tvého tahu"
+"status.block_on_attack_carry","Attack Block lasts +1 turn","Blok z útoků vydrží +1 kolo"
+"card.effect.all_hit","Hit:","Zasažení:"
+"card.effect.until_combat_end","until end of combat","do konce boje"
+"card.effect.turns_one","turn","kolo"
+"card.effect.turns_few","turns","kola"
+"ui.battle.encounter_intro","You face: {name}","Čelíš: {name}"
+"ui.battle.encounter_intro_elite","Elite: {name}","Elita: {name}"
+"ui.battle.encounter_intro_boss","Boss: {name}","Boss: {name}"
+"encounter.tag.goblins","Goblins","Goblini"
+"encounter.tag.undead","Undead","Nemrtví"
+"encounter.tag.demons","Demons","Démoni"
+"encounter.tag.beasts","Beasts","Bestie"
+"encounter.tag.elves","Elves","Elfové"
+"encounter.tag.orcs","Orcs","Orkové"
+"encounter.tag.pack","Pack","Smečka"
+"encounter.tag.ranged","Ranged","Střelci"
+"encounter.tag.support","Support","Podpora"
+"encounter.tag.summon","Summons","Vyvolávání"
+"encounter.tag.rush","Rush","Nájezd"
+"encounter.tag.magic","Magic","Kouzla"
+"encounter.tag.ambush","Ambush","Přepad"
+"encounter.first_battle","Goblin Sentry","Goblinní hlídka"
+"encounter.tutorial_final_battle","Final Trial","Poslední zkouška"
+"encounter.goblin_duo","Goblin Pair","Goblinní dvojice"
+"encounter.fortress_scouts","Fortress Scouts","Zvědové pevnosti"
+"encounter.one_orc","Lone Orc","Osamělý ork"
+"encounter.grave_watch","Grave Watch","Hrobová stráž"
+"encounter.bone_patrol","Bone Patrol","Kostlivá hlídka"
+"encounter.wolf_trail","Wolf Trail","Vlčí stopa"
+"encounter.monk_and_pupil","Monk and Pupil","Mnich a učeň"
+"encounter.sheltered_archer","Sheltered Archer","Lučištník v závětří"
+"encounter.fortress_bowline","Bow Line","Střelecká linie"
+"encounter.fortress_bruiser","Fortress Bruiser","Pevnostní rváč"
+"encounter.demon_assassin","Shadow at Your Back","Stín v zádech"
+"encounter.druid_grove","Druid Grove","Druidský háj"
+"encounter.blood_hunt","Blood Hunt","Krvavý lov"
+"encounter.raging_brothers","Raging Brothers","Zuřiví bratři"
+"encounter.assassin_squad","Assassin Circle","Asasínský kroužek"
+"encounter.fortress_pack","Fortress Pack","Pevnostní smečka"
+"encounter.undead_line","Undead Line","Nemrtvá linie"
+"encounter.ring_of_fire","Ring of Fire","Ohnivý kruh"
+"encounter.field_hospital","Field Hospital","Polní lazaret"
+"encounter.shadow_and_mage","Shadow and Mage","Stín a mág"
+"encounter.dark_beast_pack","Dark Beast's Pack","Smečka temné šelmy"
+"encounter.skeleton_army","Skeleton Army","Kostlivá armáda"
+"encounter.fortress_warband","Warband","Válečná družina"
+"encounter.support_team","Support Squad","Podpůrný oddíl"
+"encounter.elven_circle","Elven Circle","Elfí kruh"
+"encounter.war_temple","War Temple","Válečný chrám"
+"encounter.boss_demon","Demon Mistress","Démonka"
+"unit.frost_elemental","Frost Elemental","Ledový elementál"
+"unit.frost_elemental.desc","Ice elemental. A hit slows you, and the next hit against a slowed target hurts more.","Ledový elementál. Zásah zpomalí a další úder do zpomaleného cíle bolí víc."
+"encounter.frost_elemental","Frost Elemental","Ledový elementál"
+"enemy.class.frost","Elemental","Elementál"
+"enemy.frost.frostbite.text","Frostbite: a hit reduces movement by 2 for 2 turns.","Omrzliny: zásah na 2 tahy sníží pohyb o 2."
+"enemy.frost.deep_freeze.text","Deep Freeze: deals 3 more damage to a slowed target.","Hluboký mráz: proti zpomalenému cíli způsobí o 3 poškození víc."
+"enemy.frost.intent_bonus","Attack {value}. Target is slowed, Deep Freeze adds 3.","Útok {value}. Cíl je zpomalený, hluboký mráz přidá 3."
+"status.float.slow","SLOW −2","POMALÝ −2"
+"status.sentence.slow","Movement is reduced by {value}. {duration} turns left.","Pohyb je o {value} nižší. Zbývá {duration} tahů."
+"status.sentence.shocked","Shocked for {duration} turns. Movement and cards stay available.","Šok na {duration} tahů. Pohyb ani karty tím nejsou zamčené."
+"status.sentence.entangled","Cannot move. {duration} turns left.","Nemůže se pohnout. Zbývá {duration} tahů."
+"status.sentence.monk_blessing","Attacks deal +{value} damage. {duration} turns left.","Útoky způsobují o {value} víc. Zbývá {duration} tahů."
+"status.sentence.weakness","Deals 25% less damage. {duration} turns left.","Způsobuje o čtvrtinu menší poškození. Zbývá {duration} tahů."
+"status.sentence.thorns","When hit, the attacker takes {value} damage.","Když dostane zásah, útočník dostane {value} poškození."
+"status.sentence.rage","Attacks deal +{value} damage. {duration} turns left.","Útoky způsobují o {value} víc. Zbývá {duration} tahů."
+"status.sentence.regeneration_permanent","Heals {value} at the start of each turn.","Na začátku každého tahu vyléčí {value}."
+"status.sentence.aura_devotion_plus","Gains {value} block at the start of the turn.","Na začátku tahu dostane {value} bloku."
+"status.sentence.defensive_stance_turn","Attacks against this unit deal half damage until its next turn.","Útoky proti této jednotce způsobují poloviční poškození do jejího dalšího tahu."
+"unit.fire_elemental","Fire Elemental","Ohnivý elementál"
+"unit.fire_elemental.desc","Melee elemental. Hits burn, and death bursts for 5 on adjacent tiles.","Kontaktní elementál. Zásah pálí a smrt vybuchne za 5 na sousedních polích."
+"encounter.fire_elemental","Fire Elementals","Ohniví elementálové"
+"enemy.class.fire","Elemental","Elementál"
+"enemy.fire.burning_touch.text","Burning Touch: a hit applies burning. At end of turn it deals damage and the burn drops by 1.","Hořící dotek: zásah přidá hoření. Na konci tahu ubere život a síla hoření klesne o 1."
+"enemy.fire.volatile_core.text","Volatile Core: on death, deals 5 damage to adjacent tiles.","Těkavé jádro: při smrti způsobí 5 poškození na sousedních polích."
+"unit.earth_golem","Earth Golem","Kamenný golem"
+"unit.earth_golem.desc","Slow wall. Gains block if it stood still, and slams adjacent tiles.","Pomalá zeď. Dostane blok, když stál, a udeří na sousední pole."
+"encounter.earth_golem","Earth Golem","Kamenný golem"
+"enemy.class.earth","Golem","Golem"
+"enemy.earth.stone_stance.text","Stone Stance: at the start of its turn it gains 6 block if it did not move last turn.","Kamenný postoj: na začátku tahu dostane 6 bloku, pokud se minulý tah nepohnul."
+"enemy.earth.seismic_slam.text","Seismic Slam: 5 damage to adjacent tiles. Again in 3 turns.","Seismický úder: 5 poškození na sousední pole. Další za 3 tahy."
+"enemy.earth.intent_slam","Seismic Slam: 5 damage on adjacent tiles.","Seismický úder: 5 poškození na sousední pole."
+"enemy.earth.intent_stance","+6 block","+6 blok"
+"enemy.earth.slam_cd","Slam in {value}","Úder za {value}"
+"unit.lancer","Lancer","Kopinice"
+"unit.lancer.desc","Line fighter. Full damage down the line, a weaker poke up close.","Bojovnice v řadě. V přímce plný zásah, v kontaktu jen slabší píchnutí."
+"encounter.lancer","Lancer","Kopinice"
+"enemy.class.lancer","Lancer","Kopinice"
+"enemy.lancer.pierce.text","Piercing Thrust: the first target in a line takes 7, the unit directly behind takes 4.","Probodnutí: první cíl v přímce dostane 7, jednotka přímo za ním 4."
+"enemy.lancer.close.text","In close contact she deals only 4 and steps back one tile.","V těsném kontaktu způsobí jen 4 a ustoupí o pole."
+"enemy.lancer.intent_pierce","Piercing thrust down the line.","Probodnutí v přímce."
+"enemy.lancer.intent_behind","The unit behind takes the weaker hit.","Jednotka za ním dostane slabší zásah."
+"enemy.lancer.intent_close","Close poke, then a step back.","Píchnutí zblízka a ústup."
+"enemy.lancer.intent_retreat","Steps back one tile.","Ustoupí o pole."
+"enemy.lancer.intent_stuck","No room to step back.","Není kam ustoupit."
+"unit.harpy","Harpy","Harpyje"
+"unit.harpy.desc","Fast skirmisher. Dives for 6 and retreats, or shoves you if she cannot.","Rychlá harpyje. Střemhlav za 6 a ústup, nebo tě odstrčí, když ustoupit nemůže."
+"encounter.harpy_pair","Harpies","Harpyje"
+"encounter.harpy_and_goblin","Harpy and Goblin","Harpyje a goblin"
+"enemy.class.harpy","Harpy","Harpyje"
+"enemy.harpy.dive.text","Dive Attack: deals 6 and retreats up to 2 tiles.","Střemhlavý útok: způsobí 6 a ustoupí až o 2 pole."
+"enemy.harpy.gust.text","Wing Gust: if she cannot retreat, she pushes you back 1 tile.","Poryv křídel: když ustoupit nemůže, odstrčí tě o 1 pole."
+"enemy.harpy.intent_dive","Dive for 6, then fall back.","Střemhlav za 6 a ústup."
+"enemy.harpy.intent_retreat","Retreats up to 2 tiles.","Ustoupí až o 2 pole."
+"enemy.harpy.intent_gust","Pushes you back 1 tile.","Odstrčí tě o 1 pole."
+"enemy.harpy.gust_short","1","1"
+"unit.dwarf_guardian","Dwarf Guardian","Trpasličí stráž"
+"unit.dwarf_guardian.desc","Holds the line beside an ally and raises a shield each turn.","Drží linii vedle spojence a každý tah zvedne štít."
+"encounter.dwarf_guardian","Dwarf Guardian","Trpasličí stráž"
+"enemy.class.dwarf","Guardian","Stráž"
+"enemy.dwarf.shield_wall.text","Shield Wall: gains 8 block at the start of its turn.","Štítová hradba: na začátku tahu dostane 8 bloku."
+"status.float.burning","BURN","HOŘÍ"
+"status.float.slam","SLAM","ÚDER"
+"status.float.gust","PUSH","PORYV"
+"unit.storm_elemental","Storm Elemental","Bouřný elementál"
+"unit.storm_elemental.desc","A charged spirit that strikes from a distance and jumps the bolt.","Nabité stvoření, které bije z dálky a blesk nechává přeskočit."
+"encounter.storm_elemental","Storm Elemental","Bouřný elementál"
+"enemy.class.storm","Storm Elemental","Bouřný elementál"
+"enemy.storm.chain.text","Chain Lightning: after a hit, jumps to another unit within 2 for 60% damage.","Řetězový blesk: po zásahu přeskočí na další jednotku ve vzdálenosti 2 za 60 % poškození."
+"enemy.storm.charged.text","Charged State: every other turn it deals 9 instead of 6.","Nabitý stav: každý druhý tah způsobí 9 místo 6."
+"enemy.storm.intent_kite","Keeps its distance.","Drží si odstup."
+"enemy.storm.intent_shot","Lightning strike.","Bleskový zásah."
+"enemy.storm.intent_chain","The bolt jumps.","Blesk přeskočí."
+"unit.crystal_serpent","Crystal Serpent","Křišťálový had"
+"unit.crystal_serpent.desc","Leaves shards on the tiles it leaves. A bite on a shard hits harder.","Na projetých polích nechává střepy. Kousnutí na střepu bolí víc."
+"encounter.crystal_serpent","Crystal Serpent","Křišťálový had"
+"enemy.class.serpent","Crystal Serpent","Křišťálový had"
+"enemy.serpent.trail.text","Shard Trail: tiles it crosses keep a shard. Entering deals 3 damage and the shard vanishes.","Střepinová stopa: na projetých polích zůstane střep. Vstup způsobí 3 poškození a střep zmizí."
+"enemy.serpent.bite.text","Crystal Bite: if the target stands on a shard, the attack is a quarter stronger.","Křišťálové kousnutí: stojí-li cíl na střepu, útok je o čtvrtinu silnější."
+"enemy.serpent.intent_bite","Bite on a shard.","Kousnutí na střepu."
+"status.float.shard","SHARD","STŘEP"
+"unit.minotaur","Minotaur","Minotaur"
+"unit.minotaur.desc","Lines up, then charges three tiles. Anything in the way stops the rush.","Srovná se do přímky a pak projede tři pole. Cokoli v cestě výpad zastaví."
+"encounter.minotaur","Minotaur","Minotaur"
+"enemy.class.minotaur","Minotaur","Minotaur"
+"enemy.minotaur.rush.text","Bull Rush: next turn it charges 3 tiles in a line for 13. Step aside to dodge it.","Býčí výpad: příští tah projede 3 pole v přímce za 13. Úkrokem se mu vyhneš."
+"enemy.minotaur.crash.text","Collision: a unit on the path takes the hit, the charge stops, and the minotaur takes 4.","Náraz: jednotka na trase schytá úder, výpad se zastaví a minotaur dostane 4."
+"enemy.minotaur.intent_prep","Winding up a charge.","Chystá výpad."
+"enemy.minotaur.intent_go","Charges in a straight line.","Projede přímku."
+"ui.banner.bull_rush","CHARGE","VÝPAD"
+"unit.cyclops","Cyclops","Kyklop"
+"unit.cyclops.desc","Marks a tile, then crushes it and splashes the neighbors.","Označí pole a příští tah ho rozdrtí i se sousedy."
+"encounter.cyclops","Cyclops","Kyklop"
+"enemy.class.cyclops","Cyclops","Kyklop"
+"enemy.cyclops.blow.text","Crushing Blow: next turn it deals 22 on the marked tile. Step aside to dodge it.","Drtivý úder: příští tah způsobí 22 na označeném poli. Úkrokem se mu vyhneš."
+"enemy.cyclops.splash.text","Impact: the four neighboring tiles take 11.","Dopad: čtyři sousední pole dostanou 11."
+"enemy.cyclops.intent_prep","Winding up a crushing blow.","Chystá drtivý úder."
+"enemy.cyclops.intent_go","Crushes the marked tile.","Rozdrtí označené pole."
+"ui.banner.crush","CRUSHING BLOW","DRTIVÝ ÚDER"
+"unit.banshee","Banshee","Banshee"
+"unit.banshee.desc","Winds up a wail. A hit to her health breaks the cast.","Chystá nářek. Zásah do života přípravu zruší."
+"encounter.banshee","Banshee","Banshee"
+"enemy.class.banshee","Banshee","Banshee"
+"enemy.banshee.wail.text","Wail: next turn it deals 8 damage and weakness. A hit to her health cancels the cast.","Nářek: příští tah způsobí 8 poškození a slabost. Zásah do života přípravu zruší."
+"enemy.banshee.weak.text","Weakness: the unit deals a quarter less damage.","Slabost: jednotka způsobuje o čtvrtinu menší poškození."
+"enemy.banshee.intent_prep","Winding up a wail.","Chystá nářek."
+"enemy.banshee.intent_go","The wail lands.","Nářek dopadne."
+"ui.banner.wail","WAIL","NÁŘEK"
+"status.float.interrupted","INTERRUPTED","PŘERUŠENO"
+"status.float.weakness","WEAK","SLABOST"
+"unit.siren","Siren","Siréna"
+"unit.siren.desc","Sings a silence, then pulls her prey one tile closer.","Zazpívá ticho a pak kořist přitáhne o pole blíž."
+"encounter.siren","Siren","Siréna"
+"enemy.class.siren","Siren","Siréna"
+"enemy.siren.song.text","Enchanting Song: next turn it deals 3 damage and silence. A hit to her health cancels it.","Píseň: příští tah způsobí 3 poškození a ticho. Zásah do života ji zruší."
+"enemy.siren.silence.text","Silence: you cannot play a card this turn. You can still move.","Ticho: tento tah nemůžeš zahrát kartu. Hýbat se můžeš."
+"enemy.siren.pull.text","Temptation: pulls the target 1 tile toward her.","Pokušení: přitáhne cíl o 1 pole k sobě."
+"enemy.siren.intent_prep","Winding up a song.","Chystá píseň."
+"enemy.siren.intent_song","The song lands.","Píseň dopadne."
+"enemy.siren.intent_pull","Pulls you closer.","Přitahuje tě blíž."
+"ui.banner.song","SONG","PÍSEŇ"
+"status.float.silence","SILENCE","TICHO"
+"status.sentence.silenced","You cannot play a card. You can still move. {duration} turns left.","Nemůžeš zahrát kartu. Hýbat se můžeš. Zbývá {duration} tahů."
+"enemy.dwarf.interpose.text","Steps in for an ally on a neighboring tile and takes the hit. Ready again in 3 turns.","Zastoupí spojence na vedlejším poli a sebere mu zásah. Znovu za 3 tahy."
+"enemy.dwarf.interpose_cd","Cover in {value}","Zástup za {value}"
+"enemy.counter.windup_lock","Cast locked for {value}","Příprava za {value}"
+

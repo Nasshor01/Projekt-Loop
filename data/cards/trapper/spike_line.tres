@@ -37,3 +37,4 @@ is_upgraded = false
 max_uses_per_turn = -1
 debuff_on_overuse = {}
 max_uses_before_removal = -1
+retain_in_hand = false

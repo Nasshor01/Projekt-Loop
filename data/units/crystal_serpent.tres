@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=4 format=3 uid="uid://0xwmuligml4w"]
+
+[ext_resource type="Script" path="res://scripts/ai/CrystalSerpentAI.gd" id="1_ai"]
+[ext_resource type="Script" uid="uid://celcfyrl033bg" path="res://data/units/UnitData.gd" id="1_unitdata"]
+[ext_resource type="Texture2D" uid="uid://bet4q6c4k7swa" path="res://art/sprites/units/crystal_serpent.png" id="3_nyn1p"]
+
+[resource]
+script = ExtResource("1_unitdata")
+unit_id = "crystal_serpent"
+unit_name = "unit.crystal_serpent"
+description = "unit.crystal_serpent.desc"
+faction = 1
+unit_type = 3
+max_health = 21
+attack_damage = 4
+movement_range = 4
+attack_range = 1
+initiative = 16
+sprite_texture = ExtResource("3_nyn1p")
+sprite_display_scale = 1.0
+sprite_offset_y = 80.0
+ai_script = ExtResource("1_ai")

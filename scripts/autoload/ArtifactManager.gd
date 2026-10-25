@@ -124,7 +124,7 @@ func restore_behavior_runtime(artifact_id: String, runtime_values: Dictionary) -
 
 
 func card_has_retain(card: CardData) -> bool:
-	return card != null and card.has_meta("artifact_retain") and bool(card.get_meta("artifact_retain"))
+	return card != null and card.has_retain()
 
 
 func card_is_alchemy_temp(card: CardData) -> bool:

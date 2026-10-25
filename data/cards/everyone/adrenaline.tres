@@ -60,4 +60,5 @@ debuff_on_overuse = {
 "status_duration": 2
 }
 max_uses_before_removal = -1
+retain_in_hand = false
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

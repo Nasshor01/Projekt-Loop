@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=5 format=3 uid="uid://clancer001enc"]
+
+[ext_resource type="Script" path="res://data/encounters/EncounterEntry.gd" id="1_entry"]
+[ext_resource type="Script" path="res://data/encounters/EncounterData.gd" id="2_data"]
+[ext_resource type="Resource" path="res://data/units/lancer.tres" id="3_unit"]
+
+[sub_resource type="Resource" id="Resource_lancer"]
+script = ExtResource("1_entry")
+unit_data = ExtResource("3_unit")
+grid_position = Vector2i(7, 2)
+
+[resource]
+script = ExtResource("2_data")
+encounter_type = 0
+xp_reward = 28
+enemies = Array[ExtResource("1_entry")]([SubResource("Resource_lancer")])
+encounter_id = "lancer"
+display_name = "encounter.lancer"
+tier = 1
+min_row = 0
+max_row = 99
+main_tag = "humans"
+tags = Array[String](["human", "line"])
+weight = 1.0

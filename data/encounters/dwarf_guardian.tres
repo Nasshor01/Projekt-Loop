@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=7 format=3 uid="uid://cdwarfgu01enc"]
+
+[ext_resource type="Script" path="res://data/encounters/EncounterEntry.gd" id="1_entry"]
+[ext_resource type="Script" path="res://data/encounters/EncounterData.gd" id="2_data"]
+[ext_resource type="Resource" path="res://data/units/dwarf_guardian.tres" id="3_dwarf"]
+[ext_resource type="Resource" path="res://data/units/Orc_unit.tres" id="4_orc"]
+
+[sub_resource type="Resource" id="Resource_dwarf"]
+script = ExtResource("1_entry")
+unit_data = ExtResource("3_dwarf")
+grid_position = Vector2i(7, 2)
+
+[sub_resource type="Resource" id="Resource_orc"]
+script = ExtResource("1_entry")
+unit_data = ExtResource("4_orc")
+grid_position = Vector2i(6, 2)
+
+[resource]
+script = ExtResource("2_data")
+encounter_type = 0
+xp_reward = 38
+enemies = Array[ExtResource("1_entry")]([SubResource("Resource_dwarf"), SubResource("Resource_orc")])
+encounter_id = "dwarf_guardian"
+display_name = "encounter.dwarf_guardian"
+tier = 2
+min_row = 0
+max_row = 99
+main_tag = "humans"
+tags = Array[String](["human", "defense"])
+weight = 1.0

@@ -31,6 +31,9 @@ extends Node3D
 @export var movement_warning_color: Color = Color(0.88, 0.72, 0.18, 0.45)
 @export var danger_zone_color: Color = Color(0.85, 0.25, 0.22, 0.4)
 @export var enemy_range_highlight_color: Color = Color(0.25, 0.5, 0.9, 0.5) # modrá – move enemy
+@export var intent_damage_color: Color = Color(0.95, 0.16, 0.14, 0.78)
+@export var intent_ember_color: Color = Color(1.0, 0.45, 0.1, 0.38)
+@export var intent_control_color: Color = Color(0.25, 0.72, 1.0, 0.8)
 @export var highlight_color: Color = Color(1.0, 0.92, 0.25, 0.28)
 @export var initiative_hover_color: Color = Color(1.0, 0.82, 0.08, 0.78) # zlatá – hover v initiative baru
 @export var artifact_throne_color: Color = Color(0.98, 0.82, 0.12, 0.85)
@@ -95,6 +98,11 @@ var _warning_cells: Array[Vector2i] = []
 var _danger_cells: Array[Vector2i] = []
 var _enemy_range_cells: Array[Vector2i] = []       # modrá = kam může nepřítel dojít (move)
 var _enemy_attack_range_cells: Array[Vector2i] = [] # červená = kam může nepřítel udeřit (attack)
+var _intent_damage_cells: Array[Vector2i] = []
+var _intent_ember_cells: Array[Vector2i] = []
+var _intent_cell_labels: Dictionary = {}
+var _intent_control_cells: Array[Vector2i] = []
+var _shard_cells: Dictionary = {}
 var _targetable_cells_color: Color = attack_highlight_color
 var _spawn_highlight_nodes: Array[MeshInstance3D] = []
 var _spawn_pulse_active: bool = false
@@ -381,6 +389,8 @@ func update_visual_highlights():
 			put.call(cell, terrain_impassable_color, 0.45)
 		elif td.stops_movement_on_enter:
 			put.call(cell, terrain_slow_color, 0.5)
+	for cell in _shard_cells.keys():
+		put.call(cell, Color(0.62, 0.92, 1.0), 1.45)
 	for cell in _coop_selected_spawns:
 		put.call(cell, _coop_selected_spawns[cell], 2.0)
 
@@ -425,6 +435,19 @@ func update_visual_highlights():
 	_spawn_region_highlight(_danger_cells, danger_zone_color)
 	_spawn_region_highlight(move_only, enemy_range_highlight_color)
 	_spawn_region_highlight(_enemy_attack_range_cells, attack_highlight_color, overlap_set)
+	var damage_pulse: Dictionary = {}
+	for cell in _intent_damage_cells:
+		damage_pulse[cell] = true
+	var control_pulse: Dictionary = {}
+	for cell in _intent_control_cells:
+		control_pulse[cell] = true
+	var ember_pulse: Dictionary = {}
+	for cell in _intent_ember_cells:
+		ember_pulse[cell] = true
+	_spawn_region_highlight(_intent_ember_cells, intent_ember_color, ember_pulse)
+	_spawn_region_highlight(_intent_damage_cells, intent_damage_color, damage_pulse)
+	_spawn_region_highlight(_intent_control_cells, intent_control_color, control_pulse)
+	_spawn_intent_labels()
 	_spawn_region_highlight(movable_only, movement_highlight_color)
 	_spawn_region_highlight(_warning_cells, movement_warning_color)
 	_spawn_region_highlight(spawn_cells, player_spawn_highlight_color, {}, true)
@@ -440,6 +463,10 @@ func _compute_region_overlay_signature() -> String:
 	parts.append(_cells_signature("d", _danger_cells))
 	parts.append(_cells_signature("em", _enemy_range_cells))
 	parts.append(_cells_signature("ea", _enemy_attack_range_cells))
+	parts.append(_cells_signature("id", _intent_damage_cells))
+	parts.append(_cells_signature("ie", _intent_ember_cells))
+	parts.append(_cells_signature("ic", _intent_control_cells))
+	parts.append(_intent_labels_signature())
 	parts.append(_cells_signature("m", _movable_cells))
 	parts.append(_cells_signature("w", _warning_cells))
 	parts.append(_cells_signature("s", _player_spawn_cells))
@@ -763,6 +790,77 @@ func hide_enemy_range():
 		_enemy_attack_range_cells.clear()
 		_clear_move_preview_arrows()
 		update_visual_highlights()
+
+func has_shard(cell: Vector2i) -> bool:
+	return _shard_cells.has(cell)
+
+func place_shards(cells: Array) -> void:
+	var changed := false
+	for cell in cells:
+		if cell is Vector2i and is_cell_active(cell):
+			_shard_cells[cell] = 2
+			changed = true
+	if changed:
+		update_visual_highlights()
+
+func consume_shard(cell: Vector2i) -> bool:
+	if not _shard_cells.has(cell):
+		return false
+	_shard_cells.erase(cell)
+	update_visual_highlights()
+	return true
+
+func tick_shards() -> void:
+	if _shard_cells.is_empty():
+		return
+	var expired: Array[Vector2i] = []
+	for cell in _shard_cells.keys():
+		_shard_cells[cell] = int(_shard_cells[cell]) - 1
+		if int(_shard_cells[cell]) <= 0:
+			expired.append(cell)
+	for cell in expired:
+		_shard_cells.erase(cell)
+	update_visual_highlights()
+
+func show_intent_threats(damage_cells: Array[Vector2i], control_cells: Array[Vector2i], ember_cells: Array[Vector2i] = [], labels: Dictionary = {}) -> void:
+	_intent_damage_cells = damage_cells.duplicate()
+	_intent_control_cells = control_cells.duplicate()
+	_intent_ember_cells = ember_cells.duplicate()
+	_intent_cell_labels = labels.duplicate()
+	update_visual_highlights()
+
+func clear_intent_threats() -> void:
+	if _intent_damage_cells.is_empty() and _intent_control_cells.is_empty() and _intent_ember_cells.is_empty() and _intent_cell_labels.is_empty():
+		return
+	_intent_damage_cells.clear()
+	_intent_control_cells.clear()
+	_intent_ember_cells.clear()
+	_intent_cell_labels.clear()
+	update_visual_highlights()
+
+func _intent_labels_signature() -> String:
+	var parts: PackedStringArray = []
+	for key in _intent_cell_labels.keys():
+		parts.append("%s=%s" % [str(key), str(_intent_cell_labels[key])])
+	parts.sort()
+	return "lb:" + "|".join(parts)
+
+func _spawn_intent_labels() -> void:
+	for key in _intent_cell_labels.keys():
+		var cell: Vector2i = key
+		if not is_cell_active(cell):
+			continue
+		var label := Label3D.new()
+		label.text = str(_intent_cell_labels[key])
+		label.font_size = 64
+		label.pixel_size = 0.01
+		label.modulate = Color(1, 0.95, 0.85)
+		label.outline_size = 16
+		label.outline_modulate = Color(0, 0, 0, 0.9)
+		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		label.position = Vector3(cell.x * cell_size_3d, 0.55, cell.y * cell_size_3d)
+		label.no_depth_test = true
+		_highlights_container.add_child(label)
 
 func show_movable_range(unit: Node):
 	hide_movable_range()

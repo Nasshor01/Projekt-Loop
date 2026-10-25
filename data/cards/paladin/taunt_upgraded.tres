@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=4 format=3 uid="uid://cvpd66ms8liwv"]
+[gd_resource type="Resource" script_class="CardData" load_steps=5 format=3 uid="uid://cvpd66ms8liwv"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_fx"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_cd"]
@@ -20,20 +20,38 @@ condition_value = 0
 conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
+[sub_resource type="Resource" id="Resource_taunt_block"]
+script = ExtResource("1_fx")
+effect_type = 2
+value = 5
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+trigger = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
 [resource]
 script = ExtResource("2_cd")
 card_id = "taunt+"
 card_name = "card.taunt+"
 card_description = "card.taunt+.desc"
-editor_description = "Pull enemy 2 toward you. Taunted: approaches you on their next turn."
+editor_description = "Pull the enemy 2 tiles toward you. Taunt: on its next turn it comes at you. Gain 5 Block."
 cost = 0
 range_type = 3
 range_value = 5
 tags = Array[int]([8, 4])
 rarity = 5
-effects = Array[ExtResource("1_fx")]([SubResource("Resource_taunt")])
+effects = Array[ExtResource("1_fx")]([SubResource("Resource_taunt"), SubResource("Resource_taunt_block")])
 is_upgraded = true
 max_uses_per_turn = -1
 debuff_on_overuse = {}
 max_uses_before_removal = -1
+retain_in_hand = false
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

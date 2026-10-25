@@ -38,6 +38,9 @@ var current_run_xp: int = 0
 ## Střepy získané v aktuálním runu (pro EndOfRun UI).
 var current_run_shards: int = 0
 var path_taken: Array[MapNodeResource] = []
+## Anti-repeat encounterů: encounter_id odehrané v tomto runu (v pořadí) + hlavní tag posledního souboje.
+var used_encounter_ids: Array[String] = []
+var last_encounter_tag: String = ""
 var active_skill_tree = null
 ## Počet použití karet s max_uses_before_removal za tento run (card_id -> počet použití)
 var card_usage_count: Dictionary = {}
@@ -129,6 +132,12 @@ func get_current_node() -> MapNodeResource:
 		return path_taken.back()
 	return null
 
+func record_encounter(encounter: EncounterData) -> void:
+	if encounter == null:
+		return
+	used_encounter_ids.append(encounter.get_encounter_id())
+	last_encounter_tag = encounter.main_tag
+
 func start_new_run_state():
 	EventManager.start_new_run()
 	loop_level = 0
@@ -150,11 +159,14 @@ func start_new_run_state():
 		
 		if "starting_deck" in selected_subclass:
 			for entry in selected_subclass.starting_deck:
-				if entry is DeckEntry and is_instance_valid(entry.card):
+				if not entry is DeckEntry:
+					continue
+				var entry_card: CardData = (entry as DeckEntry).get_card()
+				if is_instance_valid(entry_card):
 					for i in range(entry.count):
 						# Unique instance per slot — shared .tres refs would make Seal/meta apply to all copies.
 						# duplicate() clears resource_path; keep source_path for run save/load.
-						master_deck.append(duplicate_card_for_deck(entry.card))
+						master_deck.append(duplicate_card_for_deck(entry_card))
 		VillageBonuses.apply_starting_deck_bonuses(master_deck)
 		
 		global_shield = 0
@@ -176,6 +188,8 @@ func start_new_run_state():
 	# 3. Připravíme bojové balíčky a zbytek
 	reset_battle_stats()
 	path_taken.clear()
+	used_encounter_ids.clear()
+	last_encounter_tag = ""
 	floors_cleared = 0
 	current_run_xp = 0
 	current_run_shards = 0
@@ -194,6 +208,8 @@ func start_loop_state():
 	current_hp = max_hp
 	reset_energy()
 	path_taken.clear()
+	used_encounter_ids.clear()
+	last_encounter_tag = ""
 	floors_cleared = 0
 	current_run_xp = 0
 	current_run_shards = 0
@@ -476,7 +492,7 @@ func discard_hand():
 		return
 	var retained: Array[CardData] = []
 	for card in current_hand:
-		if card != null and card.has_meta("artifact_retain") and bool(card.get_meta("artifact_retain")):
+		if card != null and card.has_retain():
 			retained.append(card)
 		else:
 			add_card_to_discard_pile(card)

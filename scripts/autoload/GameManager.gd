@@ -287,6 +287,7 @@ func go_to_tutorial():
 	tutorial_active = true
 	tutorial_step = TUTORIAL_STEP_BATTLE_1
 	current_map_data = null
+	current_encounter = null
 	last_battle_rewards.clear()
 	_is_post_boss_reward = false
 	PlayerData.path_taken.clear()
@@ -338,6 +339,7 @@ func coop_client_follow_node(node_index: int, action_type: String, encounter_pat
 			if encounter_path != "":
 				var enc = load(encounter_path) as EncounterData
 				if enc:
+					PlayerData.record_encounter(enc)
 					current_encounter = enc
 					_change_scene(battle_scene)
 		"shop":
@@ -791,6 +793,10 @@ func load_and_start_saved_run():
 	# Restore PlayerData state (kromě HP - to načteme až po aplikaci pasivních skillů)
 	PlayerData.gold = loaded_data.get("gold", 0)
 	PlayerData.floors_cleared = loaded_data.get("floors_cleared", 0)
+	PlayerData.used_encounter_ids.clear()
+	for enc_id in loaded_data.get("used_encounter_ids", []):
+		PlayerData.used_encounter_ids.append(str(enc_id))
+	PlayerData.last_encounter_tag = str(loaded_data.get("last_encounter_tag", ""))
 	PlayerData.loop_level = loaded_data.get("loop_level", loaded_data.get("ng_plus_level", 0))
 	PlayerData.current_run_xp = loaded_data.get("current_run_xp", 0)
 	PlayerData.sealed_card_id = str(loaded_data.get("sealed_card_id", ""))

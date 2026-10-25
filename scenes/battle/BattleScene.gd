@@ -95,6 +95,7 @@ const ARROW_INVALID_COLOR := Color(0.62, 0.62, 0.68, 0.75)
 @export var arrow_park_screen_ratio: float = 0.7
 var _targeting_arrow: TargetingArrow = null
 var _targeting_arrow_active: bool = false
+var _interpose_lines: Array[Line2D] = []
 var _arrow_card_id: int = 0
 var _arrow_valid_cells: Array = []
 var _arrow_is_attack: bool = true
@@ -105,6 +106,10 @@ const TURN_BANNER_TOP := 196.0
 const TURN_BANNER_HOLD := 0.75
 const TURN_BANNER_PLAYER_COLOR := Color(1.0, 0.85, 0.35)
 const TURN_BANNER_ENEMY_COLOR := Color(1.0, 0.45, 0.4)
+## „Čelíš:“ pruh: pod turn bannerem, ať se nepřekrývají, když hned začne první tah.
+const ENCOUNTER_INTRO_TOP := 270.0
+const ENCOUNTER_INTRO_HOLD := 2.2
+var _encounter_intro_panel: PanelContainer = null
 var _turn_banner: PanelContainer = null
 var _turn_banner_label: Label = null
 var _turn_banner_tween: Tween = null
@@ -133,6 +138,8 @@ var _current_turn_number: int = 0
 var _is_extra_turn: bool = false
 var _cards_played_this_turn: Dictionary = {}  # Tracking karet za tah pro limit použití
 var _took_damage_last_turn: bool = false  # Tracking poškození pro consecrated_barrier
+var _holy_damage_this_turn: int = 0  # Skutečné svaté poškození (blok + HP) nepřátelům tento tah — Aegis
+var _on_kill_paid_this_play: bool = false  # "on_kill" energie max. jednou za zahranou kartu (i se Září)
 var _current_tooltip_card_data: CardData = null
 var _terrain_hover_panel: PanelContainer
 var _terrain_hover_label: Label
@@ -140,6 +147,7 @@ var _terrain_hover_cell: Vector2i = Vector2i(-999, -999)
 ## Avoid rebuilding All-Seeing Eye ranges every frame while mouse is off enemies.
 var _last_enemy_info_hover: Node = null
 var _last_enemy_range_shown: Node = null
+var _enemy_intent_overlay_on: bool = false
 # Coop: true = můj tah, false = tah spoluhráče (pouze když _is_coop_run())
 var _coop_my_turn: bool = true
 var _coop_spectator_mode: bool = false  # Coop: můj paladin zemřel, jsem divák
@@ -206,6 +214,7 @@ func _ready():
 	_wire_artifact_interact_ui()
 	_build_targeting_arrow()
 	_build_turn_banner()
+	call_deferred("_show_encounter_intro")
 	_update_ui_texts()
 	
 	_setup_camera_boundaries()
@@ -220,6 +229,26 @@ func _ready():
 		_cam_target_rot_x = camera_3d.rotation.x
 	
 	start_player_spawn_selection()
+	call_deferred("_reserve_artifacts_below_initiative")
+
+func _exit_tree() -> void:
+	var gm = get_node_or_null("/root/GameManager")
+	if gm and is_instance_valid(gm.global_ui_instance) and gm.global_ui_instance.has_method("release_top_reservation"):
+		gm.global_ui_instance.release_top_reservation()
+
+func _reserve_artifacts_below_initiative() -> void:
+	if not is_instance_valid(initiative_bar):
+		return
+	var gm = get_node_or_null("/root/GameManager")
+	if gm == null or not is_instance_valid(gm.global_ui_instance):
+		return
+	if not gm.global_ui_instance.has_method("reserve_space_below"):
+		return
+	var rect: Rect2 = initiative_bar.get_global_rect()
+	var bottom_y: float = rect.position.y + rect.size.y
+	if rect.size.y < 1.0:
+		bottom_y = initiative_bar.offset_bottom
+	gm.global_ui_instance.reserve_space_below(bottom_y)
 
 func _apply_web_battle_quality() -> void:
 	if not OS.has_feature("web"):
@@ -303,6 +332,7 @@ func _process(delta):
 			_clear_card_damage_preview()
 		if _targeting_arrow_active:
 			_hide_targeting_arrow()
+	_update_interpose_lines()
 	_update_end_turn_pulse()
 
 ## Called by Unit.take_damage. Trauma stacks; offset scales with trauma² so small hits stay subtle.
@@ -465,6 +495,8 @@ func _on_round_started(round_number: int):
 			initiative_bar.refresh_from_turn_manager()
 		elif has_node("/root/TurnManager"):
 			initiative_bar.update_turn_order(TurnManager.get_turn_order())
+	if is_instance_valid(battle_grid_instance) and battle_grid_instance.has_method("tick_shards"):
+		battle_grid_instance.tick_shards()
 
 func _on_turn_started(unit: Unit):
 	"""Volá se když je na řadě další jednotka"""
@@ -538,6 +570,7 @@ func _start_player_initiative_turn(_player_unit: Unit, extra_draw: int = 0):
 	
 	# Reset tracking karet za tah
 	_cards_played_this_turn.clear()
+	_holy_damage_this_turn = 0
 	
 	# POZNÁMKA: Tracking poškození se NERESETUJE na začátku tahu, ale na konci tahu hráče
 	# aby karta consecrated_barrier mohla správně zkontrolovat, zda hráč utrpěl poškození v předchozím tahu
@@ -714,9 +747,33 @@ func _execute_single_action(enemy_unit: Unit, action: EnemyAIBase.AIAction):
 				if is_instance_valid(action.target_unit):
 					await enemy_unit.attack(action.target_unit, extra, CardEffectData.DamageType.NORMAL, false)
 			else:
-				var extra = _damage_multiplier_to_extra(enemy_unit, action.damage_multiplier)
+				var extra = _action_damage_extra(enemy_unit, action)
 				var dmg_type = CardEffectData.DamageType.HOLY if action.special_data.get("holy_damage", false) else CardEffectData.DamageType.NORMAL
+				var deep_freeze := int(action.special_data.get("deep_freeze_bonus", 0))
+				var had_slow := false
+				var chain_from := action.target_unit.grid_position
+				if deep_freeze > 0 and action.target_unit is Unit and (action.target_unit as Unit).active_statuses.has("Slow"):
+					extra += deep_freeze
+					had_slow = true
 				await enemy_unit.attack(action.target_unit, extra, dmg_type, false)
+				if action.special_data.get("chain_lightning", false):
+					await _resolve_chain_lightning(enemy_unit, action.target_unit, chain_from, int(action.special_data.get("chain_damage", 0)))
+				if action.special_data.get("frostbite", false) and is_instance_valid(action.target_unit) and action.target_unit is Unit:
+					var slow_value := int(action.special_data.get("slow_value", -2))
+					var slow_duration := int(action.special_data.get("slow_duration", 2))
+					(action.target_unit as Unit).replace_status("Slow", slow_value, slow_duration)
+					action.target_unit.show_status_text(tr("status.float.slow"), "frost", StatusIcons.get_icon("Slow"))
+					if had_slow:
+						enemy_unit.show_status_text("+3", "frost")
+				if action.special_data.get("burning_touch", false) and is_instance_valid(action.target_unit) and action.target_unit is Unit and action.target_unit.current_health > 0:
+					var burn_value := int(action.special_data.get("burn_value", 2))
+					(action.target_unit as Unit).apply_status("burning", burn_value, 3)
+					action.target_unit.show_status_text(tr("status.float.burning"), "ember", StatusIcons.get_icon("burning"))
+				if action.special_data.get("piercing_thrust", false):
+					var behind := _unit_directly_behind(enemy_unit, action.target_unit)
+					if behind != null:
+						var pierce_extra := int(action.special_data.get("pierce_extra", -3))
+						await enemy_unit.attack(behind, pierce_extra, dmg_type, false)
 				
 				# DarkBeast bleeding efekt po útoku
 				if action.special_data.get("apply_bleeding", false):
@@ -742,7 +799,7 @@ func _execute_single_action(enemy_unit: Unit, action: EnemyAIBase.AIAction):
 					if is_instance_valid(action.target_unit) and can_attack_target(enemy_unit, action.target_unit, battle_grid_instance):
 						if action.target_unit == _player_unit_node:
 							_took_damage_last_turn = true
-						var extra = _damage_multiplier_to_extra(enemy_unit, action.damage_multiplier)
+						var extra = _action_damage_extra(enemy_unit, action)
 						await enemy_unit.attack(action.target_unit, extra, CardEffectData.DamageType.NORMAL, false)
 		
 		EnemyAIBase.AIAction.ActionType.MOVE:
@@ -1057,6 +1114,7 @@ func start_extra_turn():
 	"""Spustí PLNOHODNOTNÝ extra tah hráče"""
 	DebugLogger.log_info("SPOUŠTÍM EXTRA TAH!")
 	_is_extra_turn = false # Reset flag
+	_holy_damage_this_turn = 0
 	_show_turn_banner(tr("ui.battle.banner_your_turn"), TURN_BANNER_PLAYER_COLOR)
 	
 	# 1. ODHOĎ SOUČASNÉ KARTY (jako konec normálního tahu)
@@ -1079,6 +1137,8 @@ func start_extra_turn():
 	# 5. NASTAV SPRÁVNÝ STAV
 	_current_battle_state = BattleState.PLAYER_TURN
 	end_turn_button.disabled = false
+	_set_enemy_intents_visible(true)
+	set_enemy_intents()
 	
 
 
@@ -1427,6 +1487,8 @@ func _on_unit_died(unit_node: Unit):
 	
 	if unit_node.unit_data.faction == UnitData.Faction.ENEMY and _unit_may_have_summons(unit_node):
 		await _dismiss_summoned_units(unit_node)
+	if _unit_is_fire_elemental(unit_node):
+		await _detonate_volatile_core(unit_node)
 	
 	# Coop: když zemře JEDEN z hráčů, druhý pokračuje
 	if _is_coop_run() and unit_node.unit_data.faction == UnitData.Faction.PLAYER:
@@ -1777,9 +1839,9 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 	_clear_card_selection_state_before_play()
 
 	# Frozen - nemůže hrát karty
-	if is_instance_valid(_player_unit_node) and (_player_unit_node.is_frozen or _player_unit_node.active_statuses.has("frozen")):
+	if is_instance_valid(_player_unit_node) and (_player_unit_node.is_frozen or _player_unit_node.active_statuses.has("frozen") or _player_unit_node.active_statuses.has("silenced")):
 		DebugLogger.log_warning(tr("ui.battle.frozen_warning"))
-		_show_floating_notification(tr("ui.battle.frozen_notice"), Color.CYAN)
+		_show_floating_notification(tr("ui.battle.silence_notice") if _player_unit_node.active_statuses.has("silenced") else tr("ui.battle.frozen_notice"), Color.CYAN)
 		_card_play_in_progress = false
 		_reset_player_selection()
 		return
@@ -1885,6 +1947,9 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 			return
 
 	
+	var radiance_used := false
+	var radiance_hit_units: Array = []
+	_on_kill_paid_this_play = false
 	for effect_data in ordered_effects:
 		if effect_data.trigger != CardEffectData.EffectTrigger.ON_PLAY:
 			continue
@@ -1893,11 +1958,36 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 				card_played_successfully = true
 			continue
 		var targets = _get_targets_for_effect(effect_data, initial_target, card, resolved_cell)
+		if not targets.is_empty() and _effect_triggers_radiance(effect_data):
+			radiance_used = true
+			for splash_unit in _get_radiance_splash_targets(targets):
+				targets.append(splash_unit)
+			for hit_unit in targets:
+				if not radiance_hit_units.has(hit_unit):
+					radiance_hit_units.append(hit_unit)
+		# AoE přitažení (Svatyně): nejbližší první, ať vzdálenější nečekají za blokující jednotkou
+		if targets.size() > 1 and is_instance_valid(_player_unit_node) \
+				and (effect_data.effect_type == CardEffectData.EffectType.TAUNT or effect_data.effect_type == CardEffectData.EffectType.PULL):
+			var anchor: Vector2i = _player_unit_node.grid_position
+			targets.sort_custom(func(a, b):
+				if not (a is Unit and b is Unit):
+					return false
+				return (a as Unit).grid_position.distance_squared_to(anchor) < (b as Unit).grid_position.distance_squared_to(anchor))
 		if not targets.is_empty():
 			card_played_successfully = true
 			for target_unit in targets:
 				if is_instance_valid(target_unit):
 					await _apply_single_effect(effect_data, target_unit, card)
+	
+	if radiance_used:
+		# Záře+: zasažení (cíl i sousedé) dostanou Zranitelnost
+		if is_instance_valid(_player_unit_node) and _player_unit_node.active_statuses.has("radiance_vulnerable"):
+			var vuln_turns: int = int(_player_unit_node.active_statuses["radiance_vulnerable"].get("value", 1))
+			vuln_turns = clampi(vuln_turns, 1, 2)
+			for hit_unit in radiance_hit_units:
+				if is_instance_valid(hit_unit) and hit_unit is Unit and (hit_unit as Unit).current_health > 0:
+					hit_unit.apply_status("vulnerable", 1, vuln_turns)
+		_consume_radiance_charge()
 	
 	# Označ akci pouze pokud byla karta úspěšně použita
 	if card_played_successfully:
@@ -1912,6 +2002,17 @@ func try_play_card(card: CardData, initial_target: Node3D, target_cell: Vector2i
 			var artifact_results = ArtifactManager.on_card_played(card)
 			for result in artifact_results:
 				DebugLogger.log_debug("Card play artefakt aktivován: %s" % result.description)
+		
+		# Svatý rytíř (power): každý zahraný útok dá blok
+		if is_instance_valid(_player_unit_node) and card.has_tag(CardData.CardTag.ATTACK) \
+				and _player_unit_node.active_statuses.has("block_on_attack"):
+			var attack_block: int = int(_player_unit_node.active_statuses["block_on_attack"].get("value", 0))
+			if attack_block > 0:
+				_player_unit_node.add_block(attack_block)
+				# Svatý rytíř+: tento blok vydrží i přes další tah (jako Opevnění)
+				if _player_unit_node.active_statuses.has("block_on_attack_carry"):
+					_player_unit_node.carried_block = mini(_player_unit_node.carried_block + attack_block,
+							maxi(0, _player_unit_node.current_block - _player_unit_node.retained_block))
 		
 		var has_exhaust_effect = card.effects.any(func(e): return e != null and e.effect_type == CardEffectData.EffectType.EXHAUST and e.trigger == CardEffectData.EffectTrigger.ON_PLAY)
 		var max_uses = card.max_uses_before_removal if card.max_uses_before_removal > 0 else -1
@@ -2167,7 +2268,13 @@ func _move_unit_along_path(unit: Unit, path: Array[Vector2i], step_duration: flo
 				break
 			if should_stop:
 				break
+		if is_instance_valid(unit) and unit.current_health > 0 and battle_grid_instance.has_shard(cell):
+			await _trigger_shard(unit, cell)
+			if not is_instance_valid(unit) or unit.current_health <= 0:
+				break
 
+	if is_instance_valid(unit) and unit.current_health > 0:
+		_leave_serpent_shards(unit, path, final_pos)
 	if has_node("/root/ArtifactManager") and is_instance_valid(unit) and path.size() > 1:
 		ArtifactManager.on_unit_moved(unit, path[0], final_pos, path.size() - 1)
 	return final_pos
@@ -2227,8 +2334,13 @@ func _rush_unit_along_path(unit: Unit, path: Array[Vector2i]) -> Vector2i:
 				return final_pos
 			if should_stop:
 				break
+		if is_instance_valid(unit) and unit.current_health > 0 and battle_grid_instance.has_shard(cell):
+			await _trigger_shard(unit, cell)
+			if not is_instance_valid(unit) or unit.current_health <= 0:
+				return final_pos
 
 	if is_instance_valid(unit) and unit.current_health > 0:
+		_leave_serpent_shards(unit, path, final_pos)
 		if not battle_grid_instance.place_object_on_cell(unit, final_pos, false):
 			# Rush left the unit off-grid; never leave a ghost (enables summon stacking).
 			var fallback: Vector2i = path[0]
@@ -2308,6 +2420,50 @@ func _dash_unit_along_path(unit: Unit, path: Array[Vector2i]) -> Vector2i:
 func _damage_multiplier_to_extra(unit: Unit, multiplier: float) -> int:
 	var base = unit.unit_data.attack_damage
 	return int(base * (multiplier - 1.0))
+
+func _action_damage_extra(unit: Unit, action: EnemyAIBase.AIAction) -> int:
+	if action.special_data.has("flat_extra"):
+		return int(action.special_data["flat_extra"])
+	return _damage_multiplier_to_extra(unit, action.damage_multiplier)
+
+func _unit_is_fire_elemental(unit_node: Unit) -> bool:
+	return is_instance_valid(unit_node) and is_instance_valid(unit_node.unit_data) and is_instance_valid(unit_node.unit_data.ai_script) and unit_node.unit_data.ai_script.resource_path.ends_with("FireElementalAI.gd")
+
+func _detonate_volatile_core(unit_node: Unit) -> void:
+	if not is_instance_valid(unit_node) or not is_instance_valid(battle_grid_instance):
+		return
+	if unit_node.get_meta("volatile_detonated", false):
+		return
+	unit_node.set_meta("volatile_detonated", true)
+	var origin: Vector2i = unit_node.grid_position
+	var victims: Array[Unit] = []
+	for obj in battle_grid_instance.get_all_objects_on_grid():
+		if obj is Unit and obj != unit_node and obj.current_health > 0:
+			if battle_grid_instance.get_distance(origin, obj.grid_position) == 1:
+				victims.append(obj)
+	for victim in victims:
+		if is_instance_valid(victim) and victim.current_health > 0:
+			await victim.take_damage(5, true, false, false)
+
+func _unit_directly_behind(attacker: Unit, target: Unit) -> Unit:
+	if not is_instance_valid(attacker) or not is_instance_valid(target):
+		return null
+	if not is_instance_valid(battle_grid_instance):
+		return null
+	var from: Vector2i = attacker.grid_position
+	var to: Vector2i = target.grid_position
+	var step := Vector2i.ZERO
+	if from.x == to.x and from.y != to.y:
+		step = Vector2i(0, 1 if to.y > from.y else -1)
+	elif from.y == to.y and from.x != to.x:
+		step = Vector2i(1 if to.x > from.x else -1, 0)
+	else:
+		return null
+	var behind: Vector2i = to + step
+	var occ = battle_grid_instance.get_object_on_cell(behind)
+	if occ is Unit and occ != attacker and occ.current_health > 0:
+		return occ
+	return null
 
 # Kontrola podmínek pro efekt
 func _check_condition(effect: CardEffectData, target: Node3D) -> bool:
@@ -2406,18 +2562,31 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 				var pierce_block := false
 				if has_node("/root/ArtifactManager"):
 					pierce_block = ArtifactManager.attacks_ignore_block(target, card_ref)
+				var track_holy: bool = effect.damage_type == CardEffectData.DamageType.HOLY and target is Unit \
+						and target.get_unit_data().faction == UnitData.Faction.ENEMY
+				var hp_before_hit: int = target.current_health if track_holy else 0
+				var block_before_hit: int = target.current_block if track_holy else 0
 				var hit_landed: bool = await target.take_damage(damage_to_deal, true, false, true, false, pierce_block)
+				if track_holy:
+					if is_instance_valid(target):
+						_holy_damage_this_turn += maxi(0, hp_before_hit - target.current_health) \
+								+ maxi(0, block_before_hit - target.current_block)
+					else:
+						_holy_damage_this_turn += hp_before_hit + block_before_hit
 				if not hit_landed:
 					DebugLogger.log_info("DEAL_DAMAGE dodged — další efekty karty se přesto aplikují")
 					return
 				
-				# Pokud byl nepřítel zabit touto kartou, zkontroluj, zda karta má gods_lightning efekt
+				# Poprava: GAIN_ENERGY se string_value "on_kill" se vyplatí jen když tento zásah nepřítele zabil
 				if target is Unit and target.get_unit_data().faction == UnitData.Faction.ENEMY:
-					if enemy_health_before > 0 and target.current_health <= 0 and is_instance_valid(card_ref):
+					if enemy_health_before > 0 and target.current_health <= 0 and is_instance_valid(card_ref) \
+							and not _on_kill_paid_this_play:
+						_on_kill_paid_this_play = true
 						for card_effect in card_ref.effects:
-							if card_effect.effect_type == CardEffectData.EffectType.GAIN_ENERGY:
+							if card_effect.effect_type == CardEffectData.EffectType.GAIN_ENERGY \
+									and card_effect.string_value == "on_kill":
 								PlayerData.gain_energy(card_effect.value)
-								DebugLogger.log_info("⚡ Gods Lightning: Získal %d energie za zabití nepřítele!" % card_effect.value)
+								DebugLogger.log_info("⚡ Poprava: Získal %d energie za zabití nepřítele!" % card_effect.value)
 				
 				# Tracking poškození pro consecrated_barrier (pokud je target hráč)
 				if target == _player_unit_node:
@@ -2435,6 +2604,8 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 					block_amount = PlayerData.max_hp
 				elif effect.string_value == "current_hp" and is_instance_valid(_player_unit_node):
 					block_amount = PlayerData.current_hp
+				elif effect.string_value == "holy_damage_this_turn":
+					block_amount = _holy_damage_this_turn + effect.value
 				
 				# Pro podmíněné efekty: kontrolujeme blok PŘED přidáním základního bloku
 				# Pokud je podmínka splněna, přidáme bonusový blok
@@ -2451,13 +2622,13 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 				# Podpora pro retained_block (blok, který nezmizí na konci tahu)
 				# Pokud string_value obsahuje "retain", nastavíme retained_block
 				# NOTE: Never use Dictionary.has() or `"prop" in node` on Unit — both call .has() and crash on Node3D.
+				# "retain" = blok vydrží do dalšího kola (jednou), pak zmizí jako běžný blok
 				if effect.string_value.contains("retain") and target is Unit:
 					var total_block_added = block_amount
 					if condition_met_before and effect.conditional_bonus_value > 0:
 						total_block_added += effect.conditional_bonus_value
-					target.retained_block += total_block_added
-					# Ujistíme se, že retained_block nepřesáhne current_block
-					target.retained_block = mini(target.retained_block, target.current_block)
+					target.carried_block += total_block_added
+					target.carried_block = mini(target.carried_block, maxi(0, target.current_block - target.retained_block))
 			
 		CardEffectData.EffectType.HEAL_UNIT:
 			if target.has_method("heal"):
@@ -2499,9 +2670,9 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 			_draw_next_card_in_queue()
 			
 		CardEffectData.EffectType.GAIN_ENERGY: 
-			# Speciální případ: gods_lightning / gods_lightning+ — energie jen při zabití (viz DEAL_DAMAGE)
-			if is_instance_valid(card_ref) and card_ref.card_id.begins_with("gods_lightning"):
-				pass  # Energie se přidá v damage efektu, pokud byl nepřítel zabit
+			# "on_kill" — energie jen při zabití (vyplácí se v DEAL_DAMAGE)
+			if effect.string_value == "on_kill":
+				pass
 			else:
 				PlayerData.gain_energy(effect.value)
 		
@@ -2514,9 +2685,18 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 						var statuses_to_remove = []
 						var keep_buffs := [
 							"regeneration",
+							"regeneration_permanent",
 							"aura_devotion",
 							"aura_devotion_plus",
+							"block_on_attack",
+							"block_on_attack_carry",
+							"fury_engine",
+							"fury",
+							"holy_edge",
+							"radiance",
+							"radiance_vulnerable",
 							"defensive_stance",
+							"defensive_stance_turn",
 							"consecrated_weapon",
 							"aiming",
 							"monk_blessing",
@@ -2537,17 +2717,25 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 					# until-consumed (defensive_stance, consecrated_weapon): no turn tick
 					var duration = 1
 					var status_value = effect.value
+					var status_id: String = effect.string_value
 					if effect.string_value == "regeneration":
-						duration = effect.value
+						# +1: první odečet proběhne hned na konci tahu, kdy kartu zahraješ → léčí value× (na začátku dalších tahů)
+						duration = effect.value + 1
+					elif effect.string_value == "regeneration_permanent":
+						# Regenerace+: vlastní status do konce boje (nesčítá se s časovou Regenerací)
+						duration = 999
+					elif effect.string_value == "vulnerable":
+						# value = počet kol (tak to ukazuje i líc karty)
+						duration = maxi(1, effect.value)
 					elif effect.string_value == "poison":
 						duration = effect.aoe_param_x if effect.aoe_param_x > 0 else 3
 						if has_node("/root/PlayerData"):
 							status_value += PlayerData.poison_damage_bonus
-					elif effect.string_value == "defensive_stance" or effect.string_value == "consecrated_weapon":
+					elif effect.string_value in Unit.UNTIL_CONSUMED_STATUSES or effect.string_value in Unit.COMBAT_LONG_STATUSES:
 						duration = 999
 					elif effect.aoe_param_x > 0:
 						duration = effect.aoe_param_x
-					target.apply_status(effect.string_value, status_value, duration)
+					target.apply_status(status_id, status_value, duration)
 			
 		CardEffectData.EffectType.GAIN_EXTRA_MOVE:
 			if target.has_method("gain_extra_move"): target.gain_extra_move()
@@ -2588,10 +2776,57 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 				var pull_steps := maxi(1, effect.value)
 				await _force_displace_unit(target as Unit, true, pull_steps)
 				if is_instance_valid(target) and target.has_method("apply_status"):
-					var taunt_duration := effect.aoe_param_x if effect.aoe_param_x > 0 else 1
+					# Single-target: aoe_param_x = délka Výzvy. AoE (Svatyně) používá aoe_param na tvar → 1 kolo.
+					var taunt_duration := 1
+					if effect.area_of_effect_type == CardEffectData.AreaOfEffectType.SINGLE_TARGET and effect.aoe_param_x > 0:
+						taunt_duration = effect.aoe_param_x
 					target.apply_status("taunted", 1, taunt_duration)
 					if target.has_method("show_status_text"):
 						target.show_status_text(tr("card.effect.taunt_keyword"), "critical", preload("res://art/icons/status/Aim.png"))
+
+
+func _effect_triggers_radiance(effect: CardEffectData) -> bool:
+	"""Záře: jen přímý svatý útok na jeden vybraný cíl (ne AoE, ne holy_bonus_only u přitažení/tlaku)."""
+	if effect == null or not is_instance_valid(_player_unit_node):
+		return false
+	if not _player_unit_node.active_statuses.has("radiance"):
+		return false
+	return effect.effect_type == CardEffectData.EffectType.DEAL_DAMAGE \
+			and effect.damage_type == CardEffectData.DamageType.HOLY \
+			and effect.string_value != "holy_bonus_only" \
+			and effect.target_type == CardEffectData.TargetType.SELECTED_ENEMY_UNIT
+
+
+func _get_radiance_splash_targets(primary_targets: Array) -> Array:
+	"""Živí nepřátelé na 4 sousedních buňkách primárních cílů (bez duplicit)."""
+	var splash: Array = []
+	if not is_instance_valid(battle_grid_instance):
+		return splash
+	for primary in primary_targets:
+		if not (is_instance_valid(primary) and primary is Unit):
+			continue
+		for dir in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+			var neighbor = battle_grid_instance.get_object_on_cell((primary as Unit).grid_position + dir)
+			if not (is_instance_valid(neighbor) and neighbor is Unit):
+				continue
+			var unit := neighbor as Unit
+			if unit.current_health <= 0 or unit.get_unit_data().faction != UnitData.Faction.ENEMY:
+				continue
+			if unit in primary_targets or unit in splash:
+				continue
+			splash.append(unit)
+	return splash
+
+
+func _consume_radiance_charge() -> void:
+	if not is_instance_valid(_player_unit_node) or not _player_unit_node.active_statuses.has("radiance"):
+		return
+	var data: Dictionary = _player_unit_node.active_statuses["radiance"]
+	data["value"] = int(data.get("value", 1)) - 1
+	if int(data["value"]) <= 0:
+		_player_unit_node.active_statuses.erase("radiance")
+		_player_unit_node.active_statuses.erase("radiance_vulnerable")
+	_player_unit_node._update_stats_and_emit_signal()
 
 
 func _deal_holy_bonus_only_damage(target: Node3D) -> void:
@@ -2613,7 +2848,13 @@ func _deal_holy_bonus_only_damage(target: Node3D) -> void:
 	DebugLogger.log_info("✨ Holy bonus-only: %d vs Undead/Demon" % dmg)
 	if unit.has_method("_show_floating_text"):
 		unit._show_floating_text(dmg, "holy_effective")
+	var hp_before_hit: int = unit.current_health
+	var block_before_hit: int = unit.current_block
 	await unit.take_damage(dmg, true, false, true, false, false)
+	if is_instance_valid(unit):
+		_holy_damage_this_turn += maxi(0, hp_before_hit - unit.current_health) + maxi(0, block_before_hit - unit.current_block)
+	else:
+		_holy_damage_this_turn += hp_before_hit + block_before_hit
 
 
 func _try_shield_push_rush(enemy: Unit) -> bool:
@@ -3228,8 +3469,8 @@ func _evaluate_card_playability(card: CardData) -> Dictionary:
 		return {"playable": false, "reason": "unplayable"}
 	if card.is_unplayable():
 		return {"playable": false, "reason": "unplayable"}
-	if is_instance_valid(_player_unit_node) and (_player_unit_node.is_frozen or _player_unit_node.active_statuses.has("frozen")):
-		return {"playable": false, "reason": "frozen"}
+	if is_instance_valid(_player_unit_node) and (_player_unit_node.is_frozen or _player_unit_node.active_statuses.has("frozen") or _player_unit_node.active_statuses.has("silenced")):
+		return {"playable": false, "reason": "silenced" if _player_unit_node.active_statuses.has("silenced") else "frozen"}
 	if PlayerData.current_energy < _play_cost(card):
 		return {"playable": false, "reason": "energy"}
 	if card.max_uses_per_turn > 0:
@@ -3307,12 +3548,82 @@ func _build_turn_banner() -> void:
 	_turn_banner.visible = false
 	layer.add_child(_turn_banner)
 
+## „Čelíš: název“ + tagy pod ním, jednou při vstupu do boje (jen info, žádná volba).
+func _show_encounter_intro() -> void:
+	if encounter_data == null or encounter_data.display_name.is_empty() or GameManager.tutorial_active:
+		return
+	var title_key := "ui.battle.encounter_intro"
+	match encounter_data.encounter_type:
+		EncounterData.EncounterType.ELITE:
+			title_key = "ui.battle.encounter_intro_elite"
+		EncounterData.EncounterType.BOSS:
+			title_key = "ui.battle.encounter_intro_boss"
+	var tag_names: Array[String] = []
+	for tag_id in [encounter_data.main_tag] + encounter_data.tags:
+		if not String(tag_id).is_empty():
+			tag_names.append(tr("encounter.tag." + String(tag_id)))
+
+	var layer := CanvasLayer.new()
+	layer.name = "EncounterIntroLayer"
+	layer.layer = TARGETING_ARROW_LAYER
+	add_child(layer)
+	var panel := PanelContainer.new()
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.05, 0.05, 0.08, 0.82)
+	style.border_color = Color(1, 1, 1, 0.25)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(6)
+	style.content_margin_left = 32
+	style.content_margin_right = 32
+	style.content_margin_top = 6
+	style.content_margin_bottom = 8
+	panel.add_theme_stylebox_override("panel", style)
+	var box := VBoxContainer.new()
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(box)
+	var title := Label.new()
+	title.text = TranslationHelper.tr_format(title_key, {"name": tr(encounter_data.display_name)})
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", TURN_BANNER_FONT)
+	title.add_theme_font_size_override("font_size", 36)
+	title.add_theme_color_override("font_color", TURN_BANNER_ENEMY_COLOR if encounter_data.encounter_type != EncounterData.EncounterType.NORMAL else Color.WHITE)
+	title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	title.add_theme_constant_override("outline_size", 6)
+	box.add_child(title)
+	if not tag_names.is_empty():
+		var sub := Label.new()
+		sub.text = " · ".join(tag_names)
+		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sub.add_theme_font_override("font", TURN_BANNER_FONT)
+		sub.add_theme_font_size_override("font_size", 22)
+		sub.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
+		sub.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+		sub.add_theme_constant_override("outline_size", 4)
+		box.add_child(sub)
+	layer.add_child(panel)
+	_encounter_intro_panel = panel
+	panel.reset_size()
+	var screen := get_viewport().get_visible_rect().size
+	panel.position = Vector2((screen.x - panel.size.x) * 0.5, ENCOUNTER_INTRO_TOP)
+	panel.modulate.a = 0.0
+	var tween := create_tween()
+	tween.tween_property(panel, "modulate:a", 1.0, 0.2)
+	tween.tween_interval(ENCOUNTER_INTRO_HOLD)
+	tween.tween_property(panel, "modulate:a", 0.0, 0.4)
+	tween.tween_callback(layer.queue_free)
+
 ## Short fade-in / hold / fade-out (~1.1 s). A new banner replaces one still on screen.
 func _show_turn_banner(text: String, color: Color) -> void:
 	if not is_instance_valid(_turn_banner):
 		return
 	if _turn_banner_tween and _turn_banner_tween.is_valid():
 		_turn_banner_tween.kill()
+	# „Čelíš:“ pruh rychle zmizí, ať se s bannerem tahu neslévá do jednoho bloku
+	if is_instance_valid(_encounter_intro_panel):
+		var fade := create_tween()
+		fade.tween_property(_encounter_intro_panel, "modulate:a", 0.0, 0.15)
+		_encounter_intro_panel = null
 	_turn_banner_label.text = text
 	_turn_banner_label.add_theme_color_override("font_color", color)
 	_turn_banner.reset_size()
@@ -3354,6 +3665,7 @@ func set_enemy_intents():
 		for enemy_unit in _enemy_units:
 			if is_instance_valid(enemy_unit):
 				enemy_unit.show_intent()
+		_refresh_intent_threat_highlights()
 		return
 	for enemy_unit in _enemy_units:
 		if not is_instance_valid(enemy_unit):
@@ -3374,11 +3686,60 @@ func set_enemy_intents():
 				if is_instance_valid(enemy_unit) and enemy_unit.current_health > 0:
 					battle_grid_instance.show_enemy_range(enemy_unit)
 					break
+	_refresh_intent_threat_highlights()
 
 func _set_enemy_intents_visible(intents_visible: bool) -> void:
+	_enemy_intent_overlay_on = intents_visible
 	for enemy_unit in _enemy_units:
 		if is_instance_valid(enemy_unit) and enemy_unit.has_method("set_intent_visibility_allowed"):
 			enemy_unit.set_intent_visibility_allowed(intents_visible)
+	if intents_visible:
+		_refresh_intent_threat_highlights()
+	else:
+		_clear_intent_threat_highlights()
+
+func _refresh_intent_threat_highlights() -> void:
+	if not _enemy_intent_overlay_on or not is_instance_valid(battle_grid_instance):
+		return
+	if not battle_grid_instance.has_method("show_intent_threats"):
+		return
+	var damage: Array[Vector2i] = []
+	var control: Array[Vector2i] = []
+	var ember: Array[Vector2i] = []
+	var labels: Dictionary = {}
+	for enemy_unit in _enemy_units:
+		if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
+			continue
+		if not enemy_unit.has_method("get_intent_threat_cells"):
+			continue
+		for threat in enemy_unit.get_intent_threat_cells():
+			if typeof(threat) != TYPE_DICTIONARY:
+				continue
+			var cell: Vector2i = threat.get("cell", Vector2i(-999, -999))
+			if not battle_grid_instance.is_cell_active(cell):
+				continue
+			var kind := str(threat.get("kind", "damage"))
+			if kind == "control":
+				if not control.has(cell):
+					control.append(cell)
+			elif kind == "ember":
+				if not ember.has(cell):
+					ember.append(cell)
+			elif not damage.has(cell):
+				damage.append(cell)
+			var label := str(threat.get("label", ""))
+			if not label.is_empty():
+				labels[cell] = label
+	for cell in control:
+		damage.erase(cell)
+		ember.erase(cell)
+	for cell in damage:
+		ember.erase(cell)
+	battle_grid_instance.show_intent_threats(damage, control, ember, labels)
+
+func _clear_intent_threat_highlights() -> void:
+	if is_instance_valid(battle_grid_instance) and battle_grid_instance.has_method("clear_intent_threats"):
+		battle_grid_instance.clear_intent_threats()
 
 # OPRAVA: Return type je Unit (což je Node3D, takže ok, ale explicitní Unit je lepší)
 func _spawn_unit(unit_data: UnitData, grid_pos: Vector2i) -> Unit:
@@ -3570,6 +3931,9 @@ func _update_targeting_arrow(hover_cell: Vector2i) -> void:
 		var unit := _resolve_living_unit_on_cell(hover_cell) as Unit
 		if unit != null:
 			to = unit.get_aim_screen_position(camera_3d)
+			var guard := unit.find_interpose_guard()
+			if guard != null:
+				to = guard.get_aim_screen_position(camera_3d)
 		else:
 			to = camera_3d.unproject_position(battle_grid_instance.get_world_position_for_cell(hover_cell))
 	_targeting_arrow.update_arrow(from, to, color)
@@ -4028,7 +4392,7 @@ func _rpc_apply_card_result(payload: Dictionary):
 	var u1 = _coop_get_player_unit_by_index(1)
 	if is_instance_valid(u0):
 		u0.current_health = int(payload.get("player_0_hp", u0.current_health))
-		u0.current_block = int(payload.get("player_0_block", u0.current_block))
+		u0.set_synced_block(int(payload.get("player_0_block", u0.current_block)))
 		var p0_statuses: Array = payload.get("player_0_statuses", [])
 		if not p0_statuses.is_empty():
 			u0.deserialize_statuses(p0_statuses)
@@ -4036,7 +4400,7 @@ func _rpc_apply_card_result(payload: Dictionary):
 			u0._update_stats_and_emit_signal()
 	if is_instance_valid(u1):
 		u1.current_health = int(payload.get("player_1_hp", u1.current_health))
-		u1.current_block = int(payload.get("player_1_block", u1.current_block))
+		u1.set_synced_block(int(payload.get("player_1_block", u1.current_block)))
 		var p1_statuses: Array = payload.get("player_1_statuses", [])
 		if not p1_statuses.is_empty():
 			u1.deserialize_statuses(p1_statuses)
@@ -4098,7 +4462,7 @@ func _rpc_apply_enemy_turn_result(payload: Dictionary):
 	var u1 = _coop_get_player_unit_by_index(1)
 	if is_instance_valid(u0):
 		u0.current_health = int(payload.get("player_0_hp", u0.current_health))
-		u0.current_block = int(payload.get("player_0_block", u0.current_block))
+		u0.set_synced_block(int(payload.get("player_0_block", u0.current_block)))
 		var px = int(payload.get("player_0_x", u0.grid_position.x))
 		var py = int(payload.get("player_0_y", u0.grid_position.y))
 		var pc = Vector2i(px, py)
@@ -4112,7 +4476,7 @@ func _rpc_apply_enemy_turn_result(payload: Dictionary):
 			u0._update_stats_and_emit_signal()
 	if is_instance_valid(u1):
 		u1.current_health = int(payload.get("player_1_hp", u1.current_health))
-		u1.current_block = int(payload.get("player_1_block", u1.current_block))
+		u1.set_synced_block(int(payload.get("player_1_block", u1.current_block)))
 		var px = int(payload.get("player_1_x", u1.grid_position.x))
 		var py = int(payload.get("player_1_y", u1.grid_position.y))
 		var pc = Vector2i(px, py)
@@ -4170,7 +4534,7 @@ func _rpc_coop_sync_my_unit_state(player_index: int, hp: int, block: int):
 	if not is_instance_valid(unit):
 		return
 	unit.current_health = hp
-	unit.current_block = block
+	unit.set_synced_block(block)
 	unit._update_stats_and_emit_signal()
 	DebugLogger.log_debug("Coop sync unit state: player_%d hp=%d block=%d" % [player_index, hp, block])
 
@@ -4206,11 +4570,207 @@ func get_grid_cell_under_mouse() -> Vector2i:
 	
 	return Vector2i(-1, -1)
 
+func _trigger_shard(unit: Unit, cell: Vector2i) -> void:
+	if not is_instance_valid(unit) or not battle_grid_instance.consume_shard(cell):
+		return
+	unit.show_status_text(tr("status.float.shard"), "frost")
+	await unit.take_damage(3, true, false, false)
+
+func _leave_serpent_shards(unit: Unit, path: Array, final_pos: Vector2i) -> void:
+	if not is_instance_valid(unit) or unit.current_health <= 0 or not unit._ai_is("CrystalSerpentAI.gd"):
+		return
+	var left: Array[Vector2i] = []
+	for cell in path:
+		if cell == final_pos:
+			break
+		if cell is Vector2i:
+			left.append(cell)
+	battle_grid_instance.place_shards(left)
+
+func _flash_screen_line(from_cell: Vector2i, to_cell: Vector2i, color: Color, hold: float) -> void:
+	var layer := get_node_or_null("CanvasLayer")
+	if layer == null or camera_3d == null or battle_grid_instance == null:
+		return
+	var line := Line2D.new()
+	line.width = 6.0
+	line.default_color = color
+	line.joint_mode = Line2D.LINE_JOINT_ROUND
+	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	line.end_cap_mode = Line2D.LINE_CAP_ROUND
+	var from_world := battle_grid_instance.get_world_position_for_cell(from_cell) + Vector3(0, 0.7, 0)
+	var to_world := battle_grid_instance.get_world_position_for_cell(to_cell) + Vector3(0, 0.7, 0)
+	line.points = PackedVector2Array([
+		camera_3d.unproject_position(from_world),
+		camera_3d.unproject_position(to_world),
+	])
+	layer.add_child(line)
+	await get_tree().create_timer(hold).timeout
+	if is_instance_valid(line):
+		line.queue_free()
+
+func _update_interpose_lines() -> void:
+	for line in _interpose_lines:
+		if is_instance_valid(line):
+			line.queue_free()
+	_interpose_lines.clear()
+	var layer := get_node_or_null("CanvasLayer")
+	if layer == null or camera_3d == null or not is_inside_tree():
+		return
+	for node in get_tree().get_nodes_in_group("units"):
+		if not (node is Unit) or node.current_health <= 0 or not node._ai_is("DwarfGuardianAI.gd"):
+			continue
+		var cd := int(node.get_meta("interpose_cd")) if node.has_meta("interpose_cd") else 0
+		if cd > 0:
+			continue
+		for other in get_tree().get_nodes_in_group("units"):
+			if other == node or not (other is Unit) or other.current_health <= 0 or other.unit_data == null:
+				continue
+			if other.unit_data.faction != node.unit_data.faction:
+				continue
+			var dist := absi(other.grid_position.x - node.grid_position.x) + absi(other.grid_position.y - node.grid_position.y)
+			if dist != 1:
+				continue
+			var link := Line2D.new()
+			link.width = 4.0
+			link.default_color = Color(1.0, 0.82, 0.28, 0.85)
+			link.points = PackedVector2Array([
+				node.get_aim_screen_position(camera_3d),
+				other.get_aim_screen_position(camera_3d),
+			])
+			layer.add_child(link)
+			_interpose_lines.append(link)
+
+func _resolve_chain_lightning(attacker: Unit, primary: Unit, origin: Vector2i, amount: int) -> void:
+	if amount <= 0 or not is_instance_valid(attacker) or not battle_grid_instance.is_cell_active(origin):
+		return
+	var best: Unit = null
+	var best_dist := 99
+	for node in battle_grid_instance.get_all_objects_on_grid():
+		if not (node is Unit) or node == attacker or node == primary or node.current_health <= 0:
+			continue
+		if node.unit_data == null or node.unit_data.faction == attacker.unit_data.faction:
+			continue
+		var dist := battle_grid_instance.get_distance(origin, node.grid_position)
+		if dist >= 1 and dist <= 2 and dist < best_dist:
+			best_dist = dist
+			best = node
+	if best == null:
+		return
+	await _flash_screen_line(origin, best.grid_position, Color(1.0, 0.92, 0.35), 0.4)
+	if is_instance_valid(best) and best.current_health > 0:
+		await best.take_damage(amount, true, false, false)
+		if best == _player_unit_node:
+			_took_damage_last_turn = true
+
+func _resolve_combat_windup(enemy: Unit) -> void:
+	if not is_instance_valid(enemy):
+		return
+	var data := enemy.combat_windup()
+	var kind := str(data.get("kind", ""))
+	var lock_turns := int(data.get("lock_turns", 0))
+	var target: Unit = null
+	if enemy.has_meta("windup_target") and enemy.get_meta("windup_target") is Unit:
+		target = enemy.get_meta("windup_target")
+	var dir := Vector2i(int(data.get("dx", 0)), int(data.get("dy", 0)))
+	var cell := Vector2i(int(data.get("cx", -999)), int(data.get("cy", -999)))
+	enemy.clear_combat_windup()
+	if lock_turns > 0:
+		enemy.set_meta("windup_lock", lock_turns)
+	match kind:
+		"bull_rush":
+			await _resolve_bull_rush(enemy, dir)
+		"crush":
+			if is_instance_valid(enemy):
+				enemy.set_meta("crush_rest", true)
+			await _resolve_crush(enemy, cell)
+		"wail":
+			await _resolve_marked_hit(enemy, target, 8, "ui.banner.wail", "weakness", 1, 2, Color(0.72, 0.35, 1.0))
+		"song":
+			await _resolve_marked_hit(enemy, target, 3, "ui.banner.song", "silenced", 1, 1, Color(0.45, 0.62, 1.0))
+
+func _resolve_bull_rush(enemy: Unit, dir: Vector2i) -> void:
+	_show_turn_banner(tr("ui.banner.bull_rush"), Color(1.0, 0.55, 0.15))
+	if dir == Vector2i.ZERO or not is_instance_valid(enemy) or enemy.current_health <= 0:
+		return
+	var pos := enemy.grid_position
+	for _step in 3:
+		var next: Vector2i = pos + dir
+		if not battle_grid_instance.is_cell_active(next):
+			break
+		var occ = battle_grid_instance.get_object_on_cell(next)
+		if occ is Unit and occ != enemy and occ.current_health > 0:
+			await occ.take_damage(13, true, false, false)
+			if occ == _player_unit_node:
+				_took_damage_last_turn = true
+			if is_instance_valid(enemy) and enemy.current_health > 0:
+				await enemy.take_damage(4, true, false, false)
+			break
+		if is_instance_valid(occ):
+			break
+		var step_path: Array[Vector2i] = [pos, next]
+		await _move_unit_along_path(enemy, step_path, 0.12)
+		if not is_instance_valid(enemy) or enemy.current_health <= 0:
+			return
+		pos = enemy.grid_position
+		if pos != next:
+			break
+
+func _resolve_crush(enemy: Unit, cell: Vector2i) -> void:
+	_show_turn_banner(tr("ui.banner.crush"), Color(1.0, 0.45, 0.12))
+	if not is_instance_valid(enemy) or not battle_grid_instance.is_cell_active(cell):
+		return
+	var center = battle_grid_instance.get_object_on_cell(cell)
+	if center is Unit and center != enemy and center.current_health > 0:
+		await center.take_damage(22, true, false, false)
+		if center == _player_unit_node:
+			_took_damage_last_turn = true
+	if not is_instance_valid(enemy):
+		return
+	for offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+		var next: Vector2i = cell + offset
+		var splash = battle_grid_instance.get_object_on_cell(next)
+		if splash is Unit and splash != enemy and splash.current_health > 0:
+			await splash.take_damage(11, true, false, false)
+			if splash == _player_unit_node:
+				_took_damage_last_turn = true
+
+func _resolve_marked_hit(enemy: Unit, target: Unit, amount: int, banner_key: String, status_id: String, status_value: int, status_duration: int, color: Color) -> void:
+	_show_turn_banner(tr(banner_key), color)
+	if not is_instance_valid(enemy) or not is_instance_valid(target) or target.current_health <= 0:
+		return
+	await _flash_screen_line(enemy.grid_position, target.grid_position, color, 0.4)
+	if not is_instance_valid(target) or target.current_health <= 0:
+		return
+	await target.take_damage(amount, true, false, false)
+	if target == _player_unit_node:
+		_took_damage_last_turn = true
+	if is_instance_valid(target) and target.current_health > 0:
+		target.apply_status(status_id, status_value, status_duration)
+		if status_id == "silenced":
+			target.show_status_text(tr("status.float.silence"), "curse", StatusIcons.get_icon("silenced"))
+		elif status_id == "weakness":
+			target.show_status_text(tr("status.float.weakness"), "curse", StatusIcons.get_icon("weakness"))
+
 func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> void:
 	"""Zpracuje speciální akce AI (všechny typy)"""
 	var special_type = action.special_data.get("type", "")
 	
 	match special_type:
+		"begin_windup":
+			var banner_key := str(action.special_data.get("banner", ""))
+			if banner_key != "":
+				_show_turn_banner(tr(banner_key), Color(1.0, 0.55, 0.2))
+		"resolve_windup":
+			await _resolve_combat_windup(enemy_unit)
+		"temptation":
+			var pull_target: Unit = action.target_unit
+			var pull_dest: Vector2i = action.special_data.get("dest", Vector2i(-999, -999))
+			if is_instance_valid(pull_target) and pull_target.current_health > 0 and pull_dest.x > -900:
+				if battle_grid_instance.get_distance(pull_target.grid_position, pull_dest) == 1 and not is_instance_valid(battle_grid_instance.get_object_on_cell(pull_dest)):
+					await _flash_screen_line(pull_target.grid_position, pull_dest, Color(0.35, 0.65, 1.0), 0.35)
+					if is_instance_valid(pull_target) and pull_target.current_health > 0:
+						var pull_path: Array[Vector2i] = [pull_target.grid_position, pull_dest]
+						await _move_unit_along_path(pull_target, pull_path, 0.16)
 		# ===== MAGE SPELLS =====
 		"meteor":
 			enemy_unit.show_status_text("METEORIT!", "critical")
@@ -4441,6 +5001,29 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 					_took_damage_last_turn = true
 		
 		# ===== ASSASSIN ABILITIES =====
+		"seismic_slam":
+			var slam_damage := int(action.special_data.get("damage", 5))
+			enemy_unit.show_status_text(tr("status.float.slam"), "damage")
+			await get_tree().create_timer(0.35).timeout
+			var slam_units = battle_grid_instance.get_all_objects_on_grid()
+			for unit in slam_units:
+				if is_instance_valid(unit) and unit is Unit and unit != enemy_unit and unit.current_health > 0:
+					if unit.unit_data.faction != enemy_unit.unit_data.faction:
+						var dist = battle_grid_instance.get_distance(enemy_unit.grid_position, unit.grid_position)
+						if dist == 1:
+							await unit.take_damage(slam_damage, true, false, false)
+							if unit == _player_unit_node:
+								_took_damage_last_turn = true
+		"wing_gust":
+			var gust_target: Unit = action.target_unit
+			var dest: Vector2i = action.special_data.get("dest", Vector2i(-999, -999))
+			if is_instance_valid(gust_target) and gust_target.current_health > 0 and dest.x > -900:
+				if battle_grid_instance.get_distance(gust_target.grid_position, dest) == 1:
+					var occ = battle_grid_instance.get_object_on_cell(dest)
+					if not is_instance_valid(occ):
+						gust_target.show_status_text(tr("status.float.gust"), "damage")
+						var gust_path: Array[Vector2i] = [gust_target.grid_position, dest]
+						await _move_unit_along_path(gust_target, gust_path, 0.18)
 		"disengage":
 			# Assassin ústup po útoku — projít každou buňku cesty (pasti, mud)
 			var disengage_path = action.special_data.get("move_path", [])

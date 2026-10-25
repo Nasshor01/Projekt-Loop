@@ -109,7 +109,7 @@ func display_deck(deck: Array[CardData]):
 			marked = true
 		elif card_data.has_meta("artifact_oathbroken") and bool(card_data.get_meta("artifact_oathbroken")):
 			marked = true
-		elif card_data.has_meta("artifact_retain") and bool(card_data.get_meta("artifact_retain")):
+		elif card_data.has_retain():
 			marked = true
 		if marked:
 			marked_cards.append(card_data)

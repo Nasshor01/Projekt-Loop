@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=5 format=3 uid="uid://bpu8jlwhuoqs7"]
+
+[ext_resource type="Script" path="res://data/encounters/EncounterEntry.gd" id="1_entry"]
+[ext_resource type="Script" path="res://data/encounters/EncounterData.gd" id="2_data"]
+[ext_resource type="Resource" path="res://data/units/crystal_serpent.tres" id="3_unit"]
+
+[sub_resource type="Resource" id="Resource_serpent"]
+script = ExtResource("1_entry")
+unit_data = ExtResource("3_unit")
+grid_position = Vector2i(7, 2)
+
+[resource]
+script = ExtResource("2_data")
+encounter_type = 0
+xp_reward = 28
+enemies = Array[ExtResource("1_entry")]([SubResource("Resource_serpent")])
+encounter_id = "crystal_serpent"
+display_name = "encounter.crystal_serpent"
+tier = 1
+min_row = 0
+max_row = 99
+main_tag = "beasts"
+tags = Array[String](["beast", "control"])
+weight = 1.0

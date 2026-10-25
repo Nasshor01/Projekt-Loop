@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=8 format=3 uid="uid://bc864ytt7wxe3"]
+[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://bc864ytt7wxe3"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_hknight"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_hknight"]
@@ -7,43 +7,9 @@
 
 [sub_resource type="Resource" id="Resource_hknight1"]
 script = ExtResource("1_hknight")
-effect_type = 2
-value = 6
-string_value = ""
-target_type = 0
-area_of_effect_type = 0
-aoe_param_x = 1
-aoe_param_y = 1
-damage_type = 0
-trigger = 0
-has_condition = false
-condition_type = ""
-condition_value = 0
-conditional_bonus_value = 0
-metadata/_custom_type_script = "uid://bnug5os3a8rjc"
-
-[sub_resource type="Resource" id="Resource_hknight2"]
-script = ExtResource("1_hknight")
-effect_type = 0
-value = 6
-string_value = ""
-target_type = 1
-area_of_effect_type = 0
-aoe_param_x = 1
-aoe_param_y = 1
-damage_type = 1
-trigger = 0
-has_condition = false
-condition_type = ""
-condition_value = 0
-conditional_bonus_value = 0
-metadata/_custom_type_script = "uid://bnug5os3a8rjc"
-
-[sub_resource type="Resource" id="Resource_hknight3"]
-script = ExtResource("1_hknight")
-effect_type = 7
-value = 4
-string_value = ""
+effect_type = 5
+value = 3
+string_value = "block_on_attack"
 target_type = 0
 area_of_effect_type = 0
 aoe_param_x = 1
@@ -61,17 +27,18 @@ script = ExtResource("2_hknight")
 card_id = "holy_knight"
 card_name = "card.holy_knight"
 card_description = "card.holy_knight.desc"
-editor_description = "Gain 6 block. Deal 6 damage. Heal 4 HP."
+editor_description = "Until end of combat: gain 3 Block whenever you play an attack."
 cost = 2
-range_type = 2
+range_type = 1
 range_value = 1
-tags = Array[int]([0, 6, 8])
+tags = Array[int]([8, 7])
 rarity = 2
 required_subclass = ExtResource("3_hknight")
-effects = Array[ExtResource("1_hknight")]([SubResource("Resource_hknight1"), SubResource("Resource_hknight2"), SubResource("Resource_hknight3")])
+effects = Array[ExtResource("1_hknight")]([SubResource("Resource_hknight1")])
 is_upgraded = false
 upgraded_version = ExtResource("3_upglink")
 max_uses_per_turn = -1
 debuff_on_overuse = {}
 max_uses_before_removal = -1
+retain_in_hand = false
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

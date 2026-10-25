@@ -812,7 +812,7 @@ func _update_state_badges() -> void:
 		sealed = ArtifactManager.is_card_sealed(card_data)
 		retain = ArtifactManager.card_has_retain(card_data)
 	else:
-		retain = card_data.has_meta("artifact_retain") and bool(card_data.get_meta("artifact_retain"))
+		retain = card_data.has_retain()
 	_seal_badge.visible = sealed
 	_retain_badge.visible = retain
 

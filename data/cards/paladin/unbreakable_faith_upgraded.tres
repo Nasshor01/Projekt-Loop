@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="CardData" load_steps=6 format=3 uid="uid://crw4v0kfjvl8o"]
+[gd_resource type="Resource" script_class="CardData" load_steps=7 format=3 uid="uid://crw4v0kfjvl8o"]
 
 [ext_resource type="Script" uid="uid://bnug5os3a8rjc" path="res://data/cards/CardEffectData.gd" id="1_ufaith"]
 [ext_resource type="Script" uid="uid://uk53klqs1ti4" path="res://data/cards/CardData.gd" id="2_ufaith"]
@@ -38,21 +38,39 @@ condition_value = 0
 conditional_bonus_value = 0
 metadata/_custom_type_script = "uid://bnug5os3a8rjc"
 
+[sub_resource type="Resource" id="Resource_ufaith_draw"]
+script = ExtResource("1_ufaith")
+effect_type = 3
+value = 1
+string_value = ""
+target_type = 0
+area_of_effect_type = 0
+aoe_param_x = 1
+aoe_param_y = 1
+damage_type = 0
+trigger = 0
+has_condition = false
+condition_type = ""
+condition_value = 0
+conditional_bonus_value = 0
+metadata/_custom_type_script = "uid://bnug5os3a8rjc"
+
 [resource]
 script = ExtResource("2_ufaith")
 card_id = "unbreakable_faith+"
 card_name = "card.unbreakable_faith+"
 card_description = "card.unbreakable_faith+.desc"
-editor_description = "Gain block equal to your current HP. Exhaust."
+editor_description = "Gain Block equal to your current HP. Draw 1 card. Exhaust."
 cost = 2
 range_type = 1
 range_value = 1
 tags = Array[int]([8])
 rarity = 3
 required_subclass = ExtResource("3_ufaith")
-effects = Array[ExtResource("1_ufaith")]([SubResource("Resource_ufaith1"), SubResource("Resource_ufaith2")])
+effects = Array[ExtResource("1_ufaith")]([SubResource("Resource_ufaith1"), SubResource("Resource_ufaith2"), SubResource("Resource_ufaith_draw")])
 is_upgraded = true
 max_uses_per_turn = -1
 debuff_on_overuse = {}
 max_uses_before_removal = -1
+retain_in_hand = false
 metadata/_custom_type_script = "uid://uk53klqs1ti4"

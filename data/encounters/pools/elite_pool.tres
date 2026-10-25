@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="EncounterPool" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://data/encounters/EncounterPool.gd" id="1_pool"]
+[ext_resource type="Script" uid="uid://dq86v2djx6q1m" path="res://data/encounters/EncounterData.gd" id="2_data"]
+[ext_resource type="Resource" path="res://data/encounters/elite_battle.tres" id="3_enc"]
+[ext_resource type="Resource" path="res://data/encounters/Skeleton_army.tres" id="4_enc"]
+[ext_resource type="Resource" path="res://data/encounters/fortress_warband.tres" id="5_enc"]
+[ext_resource type="Resource" path="res://data/encounters/support_team.tres" id="6_enc"]
+[ext_resource type="Resource" path="res://data/encounters/elite_mix.tres" id="7_enc"]
+[ext_resource type="Resource" path="res://data/encounters/war_temple.tres" id="8_enc"]
+
+[resource]
+script = ExtResource("1_pool")
+tier = 3
+encounters = Array[ExtResource("2_data")]([ExtResource("3_enc"), ExtResource("4_enc"), ExtResource("5_enc"), ExtResource("6_enc"), ExtResource("7_enc"), ExtResource("8_enc")])

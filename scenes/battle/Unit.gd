@@ -32,7 +32,9 @@ const HIT_FLASH_HP_COLOR := Color(2.2, 0.45, 0.4)
 const HIT_FLASH_BLOCK_COLOR := Color(0.75, 1.2, 2.0)
 const HIT_FLASH_DURATION := 0.22
 ## Statusy, které netikají na konci tahu — drží se, dokud je nespotřebuje trigger (zásah / holy útok).
-const UNTIL_CONSUMED_STATUSES := ["defensive_stance", "consecrated_weapon", "aiming"]
+const UNTIL_CONSUMED_STATUSES := ["defensive_stance", "defensive_stance_turn", "consecrated_weapon", "aiming", "radiance", "radiance_vulnerable"]
+## Statusy, které drží celý boj (powery a jejich stacky) — nikdy netikají.
+const COMBAT_LONG_STATUSES := ["aura_devotion", "aura_devotion_plus", "block_on_attack", "block_on_attack_carry", "fury_engine", "fury", "holy_edge", "regeneration_permanent"]
 
 signal died(unit_node)
 signal stats_changed(unit_node)
@@ -42,6 +44,8 @@ signal stats_changed(unit_node)
 var current_health: int = 0
 var current_block: int = 0
 var retained_block: int = 0
+## Block that survives exactly one turn reset (Fortification), then expires.
+var carried_block: int = 0
 
 var grid_position: Vector2i
 var is_selected: bool = false
@@ -78,6 +82,8 @@ var is_permanently_enraged: bool = false
 # Per-enemy telegraphed bonuses (ritual stacks, goblin pack, …).
 var ritual_stacks: int = 0
 var pack_attack_bonus: int = 0
+var _intent_threats: Array = []
+var _body_pulse_on: bool = false
 
 
 func get_bonus_attack_damage() -> int:
@@ -87,17 +93,49 @@ func get_bonus_attack_damage() -> int:
 func get_telegraphed_attack_damage(extra_additive: int = 0) -> int:
 	if not is_instance_valid(unit_data):
 		return 0
-	return maxi(0, unit_data.attack_damage + extra_additive + get_bonus_attack_damage())
+	var dmg := unit_data.attack_damage + extra_additive + get_bonus_attack_damage() + _deep_freeze_bonus_vs_nearest_player()
+	# Keep in sync with DamageCalculator weakness (-25% outgoing).
+	if active_statuses.has("weakness"):
+		dmg = int(dmg * 0.75)
+	return maxi(0, dmg)
+
+
+func _refresh_attack_intent_numbers() -> void:
+	"""Přepočítá jen číslo útoku v už zobrazeném záměru (bez nového AI náhledu / rerollu)."""
+	# Archer aim telegraphs its own multiplied number (ArcherAI.show_intent) — don't overwrite it.
+	if current_intents.is_empty() or is_aiming:
+		return
+	_apply_attack_damage_to_intent_preview(current_intents)
+	_sync_primary_intent_aliases()
+	_refresh_intent_row_ui()
 
 
 func _apply_attack_damage_to_intent_preview(preview: Array) -> void:
 	if not is_instance_valid(unit_data):
 		return
-	var shown := get_telegraphed_attack_damage()
+	var extra := 0
+	if _ai_is("LancerAI.gd") and _is_in_contact_with_nearest_player():
+		extra = 4 - unit_data.attack_damage
+	elif _ai_is("HarpyAI.gd"):
+		extra = 1
+	elif _ai_is("StormElementalAI.gd") and StormElementalAI.is_charged(self):
+		extra = 3
+	var shown := get_telegraphed_attack_damage(extra)
+	var deep_freeze := _deep_freeze_bonus_vs_nearest_player()
+	var pierce_shown := get_telegraphed_attack_damage(4 - unit_data.attack_damage)
 	for i in preview.size():
 		var entry: Dictionary = preview[i]
-		if str(entry.get("id", "")) == "attack":
+		var intent_id := str(entry.get("id", ""))
+		if intent_id == "attack" or (_ai_is("HarpyAI.gd") and intent_id == "rush"):
 			entry["short_text"] = str(shown)
+			if deep_freeze > 0:
+				entry["text"] = TranslationHelper.tr_format("enemy.frost.intent_bonus", {"value": shown})
+			preview[i] = entry
+		elif intent_id == "pierce" and _ai_is("LancerAI.gd"):
+			entry["short_text"] = str(pierce_shown)
+			preview[i] = entry
+		elif intent_id == "bite":
+			entry["short_text"] = str(get_telegraphed_attack_damage(1))
 			preview[i] = entry
 #---------------------------------------------
 
@@ -230,6 +268,7 @@ func _process(_delta: float) -> void:
 	if _intent_row and _intent_row.visible:
 		_update_intent_icon_screen_position()
 		_update_intent_icon_scale()
+	_update_body_pulse()
 
 func set_last_attacker(attacker: Unit):
 	last_attacker = attacker
@@ -268,7 +307,7 @@ func attack(target: Node, extra_additive: int = 0, damage_type: int = 0, _is_hol
 ## Returns false if the hit was dodged (no HP/block change). Dodge only applies to attack hits
 ## (allow_dodge=true); DoT / terrain / forced damage should pass allow_dodge=false.
 ## skip_artifacts: used by deferred artifact damage so hooks don't double-fire.
-func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: bool = false, allow_dodge: bool = true, skip_artifacts: bool = false, ignore_block: bool = false) -> bool:
+func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: bool = false, allow_dodge: bool = true, skip_artifacts: bool = false, ignore_block: bool = false, from_interpose: bool = false) -> bool:
 	# Dodge: Assassin má 35% šanci na dodge útoku (ne DoT/pastí).
 	# Přeskočit při RPC sync (výsledek už byl rozhodnut na odesílající straně).
 	if allow_dodge and not is_rpc_sync and unit_data.ai_script and unit_data.ai_script.resource_path.contains("AssassinAI"):
@@ -284,6 +323,9 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 	var attacker = get_last_attacker() if has_method("get_last_attacker") else null
 
 	var damage_to_deal = amount
+	# Obranný postoj+: polovina ze všech útoků do začátku tvého dalšího tahu (nespotřebuje se)
+	if not already_calculated and active_statuses.has("defensive_stance_turn"):
+		damage_to_deal = max(1, int(damage_to_deal * 0.5))
 	if not already_calculated and active_statuses.has("defensive_stance"):
 		damage_to_deal = max(1, int(damage_to_deal * 0.5))
 		active_statuses.erase("defensive_stance")
@@ -292,6 +334,13 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 		active_statuses.erase("defensive_stance")
 		_update_stats_and_emit_signal()
 	
+	if not from_interpose and damage_to_deal > 0:
+		var guard := find_interpose_guard()
+		if guard != null:
+			guard.set_meta("interpose_cd", 3)
+			await guard.take_damage(damage_to_deal, true, is_rpc_sync, false, true, false, true)
+			return true
+
 	var absorbed_by_block = 0 if ignore_block else mini(damage_to_deal, current_block)
 	
 	if absorbed_by_block > 0:
@@ -316,6 +365,7 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 	damage_to_deal -= absorbed_by_block
 	
 	retained_block = mini(retained_block, current_block)
+	carried_block = clampi(carried_block, 0, current_block - retained_block)
 	
 	if absorbed_by_block > 0 and damage_to_deal > 0:
 		await get_tree().create_timer(0.3).timeout
@@ -344,9 +394,14 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 			
 			if current_health < 0:
 				current_health = 0
+			_try_interrupt_windup()
 			
 			if _is_local_player():
 				PlayerData.take_damage(damage_to_deal)
+			# Hněv (power): každá ztráta HP přidá stacky. Podle frakce, ne lokality — v coopu
+			# počítá host nepřátelský tah i za klientovu jednotku a statusy pak synchronizuje.
+			if unit_data.faction == UnitData.Faction.PLAYER and active_statuses.has("fury_engine") and current_health > 0:
+				apply_status("fury", int(active_statuses["fury_engine"].get("value", 1)), 999)
 		else:
 			_show_floating_text(damage_to_deal, "block_loss")
 	
@@ -359,8 +414,17 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 				return true
 		_die()
 	return true
+## Authoritative block from coop sync — keeps retained/carried within the new total.
+func set_synced_block(value: int) -> void:
+	current_block = maxi(0, value)
+	retained_block = mini(retained_block, current_block)
+	carried_block = clampi(carried_block, 0, current_block - retained_block)
+
 func reset_for_new_turn():
-	current_block = retained_block
+	current_block = retained_block + carried_block
+	carried_block = 0
+	if active_statuses.has("defensive_stance_turn"):
+		active_statuses.erase("defensive_stance_turn")
 	has_used_base_move = false
 	extra_moves = 0
 	
@@ -427,12 +491,150 @@ func apply_status(status_id: String, value: int, duration: int = 1):
 	if has_node("/root/DebugLogger"):
 		var unit_label = String(unit_data.unit_id) if unit_data else String(name)
 		DebugLogger.log_info("Status '%s' applied to %s (value=%d, duration=%d)" % [status_id, unit_label, value, duration])
+	if status_id == "weakness":
+		_refresh_attack_intent_numbers()
 	_update_stats_and_emit_signal()
 	if has_node("/root/ArtifactManager"):
 		ArtifactManager.on_status_applied(self, status_id, value, duration)
 
+## Nahradí status místo sčítání hodnoty. Frostbite tak zůstane na −2, ne −4, −6…
+func replace_status(status_id: String, value: int, duration: int = 1) -> void:
+	if active_statuses.has(status_id):
+		active_statuses.erase(status_id)
+	apply_status(status_id, value, duration)
+
+func _is_frost_elemental() -> bool:
+	return _ai_is("FrostElementalAI.gd")
+
+func _ai_is(file_name: String) -> bool:
+	return is_instance_valid(unit_data) and is_instance_valid(unit_data.ai_script) and unit_data.ai_script.resource_path.ends_with(file_name)
+
+func combat_windup() -> Dictionary:
+	if has_meta("combat_windup") and typeof(get_meta("combat_windup")) == TYPE_DICTIONARY:
+		return get_meta("combat_windup")
+	return {}
+
+func windup_kind() -> String:
+	return str(combat_windup().get("kind", ""))
+
+func set_combat_windup(data: Dictionary) -> void:
+	set_meta("combat_windup", data)
+
+func clear_combat_windup() -> void:
+	if has_meta("combat_windup"):
+		remove_meta("combat_windup")
+	if has_meta("windup_target"):
+		remove_meta("windup_target")
+
+func _try_interrupt_windup() -> void:
+	var data := combat_windup()
+	if data.is_empty() or not bool(data.get("interruptible", false)):
+		return
+	var kind := str(data.get("kind", ""))
+	var lock_turns := int(data.get("lock_turns", 2))
+	clear_combat_windup()
+	set_meta("windup_lock", lock_turns)
+	if kind == "song":
+		set_meta("siren_step", "song")
+	show_status_text(tr("status.float.interrupted"), "curse")
+
+func find_interpose_guard() -> Unit:
+	if not is_inside_tree() or unit_data == null or _ai_is("DwarfGuardianAI.gd"):
+		return null
+	for node in get_tree().get_nodes_in_group("units"):
+		if not (node is Unit) or node == self or node.current_health <= 0:
+			continue
+		if node.unit_data == null or node.unit_data.faction != unit_data.faction:
+			continue
+		if not node._ai_is("DwarfGuardianAI.gd"):
+			continue
+		var dist := absi(node.grid_position.x - grid_position.x) + absi(node.grid_position.y - grid_position.y)
+		if dist != 1:
+			continue
+		var cd := int(node.get_meta("interpose_cd")) if node.has_meta("interpose_cd") else 0
+		if cd > 0:
+			continue
+		return node
+	return null
+
+func _nearest_living_player() -> Unit:
+	var best: Unit = null
+	var best_dist := 999999
+	if not is_inside_tree():
+		return null
+	for node in get_tree().get_nodes_in_group("player"):
+		if not (node is Unit) or node.current_health <= 0:
+			continue
+		var dist := absi(node.grid_position.x - grid_position.x) + absi(node.grid_position.y - grid_position.y)
+		if dist < best_dist:
+			best_dist = dist
+			best = node
+	return best
+
+func _is_in_contact_with_nearest_player() -> bool:
+	var player := _nearest_living_player()
+	if player == null:
+		return false
+	var dist := absi(player.grid_position.x - grid_position.x) + absi(player.grid_position.y - grid_position.y)
+	return dist <= 1
+
+func _apply_opening_block() -> void:
+	if unit_data == null or unit_data.faction != UnitData.Faction.ENEMY:
+		return
+	if _ai_is("EarthGolemAI.gd"):
+		var moved := has_meta("earth_moved_last") and bool(get_meta("earth_moved_last"))
+		if not moved:
+			add_block(6)
+	elif _ai_is("DwarfGuardianAI.gd"):
+		add_block(8)
+
+func _update_body_pulse() -> void:
+	if not is_instance_valid(_sprite_node):
+		return
+	if _initiative_bar_hovered or _is_hit_flashing() or is_selected:
+		return
+	var tint := _body_pulse_color()
+	if tint.a <= 0.0:
+		if _body_pulse_on:
+			_sprite_node.modulate = Color.WHITE
+			_body_pulse_on = false
+		return
+	_body_pulse_on = true
+	var wave := (sin(Time.get_ticks_msec() / 320.0) + 1.0) * 0.5
+	_sprite_node.modulate = tint.lerp(Color(1, 0.97, 0.9), wave)
+
+func _body_pulse_color() -> Color:
+	if _ai_is("FireElementalAI.gd"):
+		return Color(1.0, 0.42, 0.12)
+	if _ai_is("DwarfGuardianAI.gd"):
+		return Color(1.0, 0.82, 0.28)
+	if _ai_is("StormElementalAI.gd") and StormElementalAI.is_charged(self):
+		return Color(1.0, 0.86, 0.25)
+	if _ai_is("EarthGolemAI.gd"):
+		var moved := has_meta("earth_moved_last") and bool(get_meta("earth_moved_last"))
+		if not moved:
+			return Color(1.0, 0.82, 0.28)
+	return Color(0, 0, 0, 0)
+
+func _deep_freeze_bonus_vs_nearest_player() -> int:
+	if not _is_frost_elemental() or not is_inside_tree():
+		return 0
+	var best: Unit = null
+	var best_dist := 999999
+	for node in get_tree().get_nodes_in_group("player"):
+		if not (node is Unit) or node.current_health <= 0:
+			continue
+		var dist := absi(node.grid_position.x - grid_position.x) + absi(node.grid_position.y - grid_position.y)
+		if dist < best_dist:
+			best_dist = dist
+			best = node
+	if best == null:
+		return 0
+	return FrostElementalAI.bonus_if_slowed(best)
+
 func process_turn_start_statuses() -> int:
 	var extra_draw = 0
+	_apply_opening_block()
 	if active_statuses.is_empty(): return extra_draw
 	
 	if active_statuses.has("aura_devotion_plus"):
@@ -455,6 +657,8 @@ func process_turn_start_statuses() -> int:
 		var status_data = active_statuses["regeneration"]
 		var heal_amount = status_data.value
 		heal(heal_amount)
+	if active_statuses.has("regeneration_permanent"):
+		heal(int(active_statuses["regeneration_permanent"].value))
 
 	# Poison: damage at START of turn (visible before they act), then duration -= 1
 	if active_statuses.has("poison"):
@@ -512,7 +716,7 @@ func process_turn_end_statuses() -> void:
 	var statuses_to_remove = []
 	var stats_dirty := false
 	for status_id in active_statuses.keys():
-		if status_id == "aura_devotion" or status_id == "aura_devotion_plus":
+		if status_id in COMBAT_LONG_STATUSES:
 			continue
 		# Poison ticks at start of turn — skip here so duration isn't double-decremented
 		if status_id == "poison":
@@ -877,6 +1081,7 @@ func update_intent(player_unit: Unit, battle_grid: BattleGrid) -> void:
 	if not is_instance_valid(battle_grid):
 		return
 	current_intents = _calculate_intent_list(player_unit, battle_grid)
+	_intent_threats = _build_intent_threats(player_unit, battle_grid)
 	_sync_primary_intent_aliases()
 	_refresh_intent_row_ui()
 
@@ -1035,6 +1240,51 @@ func get_intent_entries() -> Array:
 			break
 	return entries
 
+func get_intent_threat_cells() -> Array:
+	return _intent_threats
+
+func _build_intent_threats(player_unit: Unit, battle_grid: BattleGrid) -> Array:
+	var out: Array = []
+	if not is_instance_valid(player_unit) or not is_instance_valid(battle_grid):
+		return out
+	if is_instance_valid(unit_data) and is_instance_valid(unit_data.ai_script):
+		var ai = unit_data.ai_script.new()
+		if ai != null and ai.has_method("preview_threats"):
+			var custom = ai.preview_threats(self, player_unit, battle_grid)
+			if typeof(custom) == TYPE_ARRAY:
+				return custom
+	var will_strike := false
+	var is_meteor := false
+	var will_close := false
+	var is_rush := false
+	for entry in current_intents:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var intent_id := str(entry.get("id", ""))
+		if intent_id == "meteor":
+			is_meteor = true
+			will_strike = true
+		elif intent_id == "rush":
+			is_rush = true
+			will_strike = true
+		elif intent_id == "attack" or intent_id == "aiming":
+			will_strike = true
+		elif intent_id == "move":
+			will_close = true
+	if not will_strike:
+		return out
+	if is_meteor:
+		for obj in battle_grid.get_all_objects_on_grid():
+			if obj is Unit and obj != self and obj.current_health > 0 and obj.unit_data.faction != unit_data.faction:
+				out.append({"cell": obj.grid_position, "kind": "damage"})
+		return out
+	var in_range := _can_attack_player(player_unit, battle_grid)
+	if not in_range and not will_close and not is_rush:
+		return out
+	var kind := "control" if _is_frost_elemental() else "damage"
+	out.append({"cell": player_unit.grid_position, "kind": kind})
+	return out
+
 func get_intent_ui() -> Control:
 	if _intent_row and _intent_row.has_method("get_primary_intent_ui"):
 		return _intent_row.get_primary_intent_ui()
@@ -1118,6 +1368,16 @@ func get_status_counters_list() -> PackedStringArray:
 			counters.append(TranslationHelper.tr_format("enemy.counter.war_cry_cd", {"value": cd}))
 	if has_meta("has_howled") and get_meta("has_howled"):
 		counters.append(tr("enemy.counter.howled"))
+	if _ai_is("EarthGolemAI.gd") and has_meta("slam_cooldown"):
+		var slam_cd := int(get_meta("slam_cooldown"))
+		if slam_cd > 0:
+			counters.append(TranslationHelper.tr_format("enemy.earth.slam_cd", {"value": slam_cd}))
+	if _ai_is("DwarfGuardianAI.gd") and has_meta("interpose_cd"):
+		var cover_cd := int(get_meta("interpose_cd"))
+		if cover_cd > 0:
+			counters.append(TranslationHelper.tr_format("enemy.dwarf.interpose_cd", {"value": cover_cd}))
+	if has_meta("windup_lock") and int(get_meta("windup_lock")) > 0:
+		counters.append(TranslationHelper.tr_format("enemy.counter.windup_lock", {"value": int(get_meta("windup_lock"))}))
 	return counters
 
 ## Returns up to 2 player-facing intent dicts: {id, short_text, text, countdown}.
@@ -1333,9 +1593,102 @@ func _get_ai_class_name(ai_path: String) -> String:
 		return tr("Druid")
 	if ai_path.contains("MonkAI"):
 		return tr("Monk")
+	if ai_path.contains("FrostElementalAI"):
+		return tr("enemy.class.frost")
+	if ai_path.contains("FireElementalAI"):
+		return tr("enemy.class.fire")
+	if ai_path.contains("EarthGolemAI"):
+		return tr("enemy.class.earth")
+	if ai_path.contains("LancerAI"):
+		return tr("enemy.class.lancer")
+	if ai_path.contains("HarpyAI"):
+		return tr("enemy.class.harpy")
+	if ai_path.contains("DwarfGuardianAI"):
+		return tr("enemy.class.dwarf")
+	if ai_path.contains("StormElementalAI"):
+		return tr("enemy.class.storm")
+	if ai_path.contains("CrystalSerpentAI"):
+		return tr("enemy.class.serpent")
+	if ai_path.contains("MinotaurAI"):
+		return tr("enemy.class.minotaur")
+	if ai_path.contains("CyclopsAI"):
+		return tr("enemy.class.cyclops")
+	if ai_path.contains("BansheeAI"):
+		return tr("enemy.class.banshee")
+	if ai_path.contains("SirenAI"):
+		return tr("enemy.class.siren")
 	if ai_path.contains("FighterAI"):
 		return tr("Fighter")
 	return tr("Unknown")
+
+func get_enemy_ability_entries() -> Array:
+	"""Řádky bloku Umí: {title, text}. Text je jedna věta, kterou hráč čte bez tooltipu."""
+	if _is_frost_elemental():
+		return [
+			{"title": "", "text": tr("enemy.frost.frostbite.text")},
+			{"title": "", "text": tr("enemy.frost.deep_freeze.text")},
+		]
+	if _ai_is("FireElementalAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.fire.burning_touch.text")},
+			{"title": "", "text": tr("enemy.fire.volatile_core.text")},
+		]
+	if _ai_is("EarthGolemAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.earth.stone_stance.text")},
+			{"title": "", "text": tr("enemy.earth.seismic_slam.text")},
+		]
+	if _ai_is("LancerAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.lancer.pierce.text")},
+			{"title": "", "text": tr("enemy.lancer.close.text")},
+		]
+	if _ai_is("HarpyAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.harpy.dive.text")},
+			{"title": "", "text": tr("enemy.harpy.gust.text")},
+		]
+	if _ai_is("DwarfGuardianAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.dwarf.shield_wall.text")},
+			{"title": "", "text": tr("enemy.dwarf.interpose.text")},
+		]
+	if _ai_is("StormElementalAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.storm.chain.text")},
+			{"title": "", "text": tr("enemy.storm.charged.text")},
+		]
+	if _ai_is("CrystalSerpentAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.serpent.trail.text")},
+			{"title": "", "text": tr("enemy.serpent.bite.text")},
+		]
+	if _ai_is("MinotaurAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.minotaur.rush.text")},
+			{"title": "", "text": tr("enemy.minotaur.crash.text")},
+		]
+	if _ai_is("CyclopsAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.cyclops.blow.text")},
+			{"title": "", "text": tr("enemy.cyclops.splash.text")},
+		]
+	if _ai_is("BansheeAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.banshee.wail.text")},
+			{"title": "", "text": tr("enemy.banshee.weak.text")},
+		]
+	if _ai_is("SirenAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.siren.song.text")},
+			{"title": "", "text": tr("enemy.siren.silence.text")},
+			{"title": "", "text": tr("enemy.siren.pull.text")},
+		]
+	var raw := _get_passives_text().strip_edges()
+	var none_text := tr("enemy.passive.none")
+	if raw.is_empty() or raw == none_text or raw == "None" or raw == "Žádné":
+		return []
+	return [{"title": "", "text": raw}]
 
 func _get_passives_text() -> String:
 	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data.ai_script) else ""
@@ -1366,7 +1719,7 @@ func _get_intent_icon_for_id(intent_id: String) -> Texture2D:
 		"aiming": return INTENT_ICON_AIMING
 		"rush": return INTENT_ICON_RUSH
 		"meteor": return INTENT_ICON_METEOR4
-		"attack": return INTENT_ICON_ATTACK
+		"attack", "slam", "pierce", "gust", "windup", "bite": return INTENT_ICON_ATTACK
 		"heal": return INTENT_ICON_HEAL
 		"buff", "block", "defend": return INTENT_ICON_BLOCK
 		"move": return INTENT_ICON_MOVE
@@ -1460,6 +1813,14 @@ func show_status_text(text_to_show: String, color_type: String, icon: Texture2D 
 				status_icon = FLOAT_ICON_CRIT
 		"curse":
 			color = Color(0.85, 0.35, 1.0)
+		"frost":
+			color = Color(0.45, 0.9, 1.0)
+			if status_icon == null:
+				status_icon = StatusIcons.get_icon("Slow")
+		"ember":
+			color = Color(1.0, 0.45, 0.12)
+			if status_icon == null:
+				status_icon = StatusIcons.get_icon("burning")
 		_:
 			color = Color.WHITE
 
@@ -1593,6 +1954,10 @@ func serialize_ai_meta() -> Dictionary:
 		meta["mage_turn_count"] = int(get_meta("mage_turn_count"))
 	if has_meta("spell_index"):
 		meta["spell_index"] = int(get_meta("spell_index"))
+	if has_meta("slam_cooldown"):
+		meta["slam_cooldown"] = int(get_meta("slam_cooldown"))
+	if has_meta("earth_moved_last"):
+		meta["earth_moved_last"] = bool(get_meta("earth_moved_last"))
 	return meta
 
 func apply_ai_meta(meta: Dictionary):
@@ -1610,3 +1975,7 @@ func apply_ai_meta(meta: Dictionary):
 		set_meta("mage_turn_count", int(meta["mage_turn_count"]))
 	if meta.has("spell_index"):
 		set_meta("spell_index", int(meta["spell_index"]))
+	if meta.has("slam_cooldown"):
+		set_meta("slam_cooldown", int(meta["slam_cooldown"]))
+	if meta.has("earth_moved_last"):
+		set_meta("earth_moved_last", bool(meta["earth_moved_last"]))

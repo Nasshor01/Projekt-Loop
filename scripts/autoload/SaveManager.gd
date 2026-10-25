@@ -253,6 +253,8 @@ func save_run(player_data: PlayerData):
 		"selected_subclass_path": subclass_path,
 		"current_seed": GameManager.current_seed,
 		"path_taken": path_taken_data,
+		"used_encounter_ids": player_data.used_encounter_ids.duplicate(),
+		"last_encounter_tag": player_data.last_encounter_tag,
 		"sealed_card_id": player_data.sealed_card_id,
 		"sealed_card_source_path": player_data.sealed_card_source_path,
 		"card_usage_count": player_data.card_usage_count.duplicate(),

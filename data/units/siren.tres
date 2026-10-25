@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=4 format=3 uid="uid://bhr8ohahnfet0"]
+
+[ext_resource type="Script" path="res://scripts/ai/SirenAI.gd" id="1_ai"]
+[ext_resource type="Script" path="res://data/units/UnitData.gd" id="1_unitdata"]
+[ext_resource type="Texture2D" uid="uid://qyamumxxi6sf" path="res://art/sprites/units/siren_phase2.png" id="2_sprite"]
+
+[resource]
+script = ExtResource("1_unitdata")
+unit_id = "siren"
+unit_name = "unit.siren"
+description = "unit.siren.desc"
+faction = 1
+unit_type = 3
+max_health = 21
+attack_damage = 3
+movement_range = 3
+attack_range = 5
+initiative = 16
+sprite_texture = ExtResource("2_sprite")
+sprite_display_scale = 1.0
+sprite_offset_y = 80.0
+ai_script = ExtResource("1_ai")

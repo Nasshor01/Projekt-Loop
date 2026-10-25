@@ -9,6 +9,8 @@ signal hand_discard_animation_finished() # Nový signál pro dokončení odhozen
 signal hand_card_drag_started(card_ui_instance: Control, card_data_resource: CardData)
 signal hand_card_drag_released(card_ui_instance: Control, card_data_resource: CardData)
 signal hand_card_drag_cancelled(card_ui_instance: Control, card_data_resource: CardData)
+## Vějíř změnil šířku nebo výšku (včetně hoveru). Info panely se podle toho odsunou.
+signal hand_layout_changed
 
 const CardUIScene = preload("res://scenes/ui/CardUI.tscn")
 
@@ -79,7 +81,7 @@ func discard_hand_animated(to_pos: Vector2):
 	var to_discard: Array = []
 	for c in cards:
 		var data: CardData = c.card_data if "card_data" in c else null
-		if data != null and data.has_meta("artifact_retain") and bool(data.get_meta("artifact_retain")):
+		if data != null and data.has_retain():
 			continue
 		to_discard.append(c)
 	if to_discard.is_empty():
@@ -201,8 +203,9 @@ func _arrange_cards():
 	var cards = get_children().filter(func(c): return c is CardUI)
 	var num_cards = cards.size()
 	
-	if num_cards == 0: return
-	if not is_instance_valid(cards[0]): return
+	if num_cards == 0 or not is_instance_valid(cards[0]):
+		hand_layout_changed.emit()
+		return
 
 	var current_overlap = card_overlap_ratio
 	if num_cards > squish_threshold:
@@ -252,6 +255,37 @@ func _arrange_cards():
 		
 		var tween = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
 		tween.tween_property(card, "rotation_degrees", 0, 0.15)
+	hand_layout_changed.emit()
+
+## Nejvyšší bod vějíře (včetně hoveru), který zasahuje do daného globálního X rozsahu.
+## INF = žádná karta tam není.
+func get_fan_top_global_y(global_left: float, global_right: float) -> float:
+	var cards = get_children().filter(func(c): return c is CardUI)
+	var num_cards: int = cards.size()
+	if num_cards == 0 or not is_instance_valid(cards[0]):
+		return INF
+	var current_overlap: float = card_overlap_ratio
+	if num_cards > squish_threshold:
+		var excess_cards := float(num_cards - squish_threshold)
+		current_overlap = lerpf(card_overlap_ratio, max_overlap_ratio, minf(1.0, excess_cards / 5.0))
+	var card_size: Vector2 = cards[0].custom_minimum_size * cards[0].original_scale
+	var effective_card_width: float = card_size.x * (1.0 - current_overlap)
+	var total_width: float = (num_cards - 1) * effective_card_width + card_size.x
+	var start_x: float = (size.x - total_width) / 2.0
+	var hover_h: float = card_size.y * hover_scale
+	var best := INF
+	for i in range(num_cards):
+		var card_x := global_position.x + start_x + i * effective_card_width
+		var card_right := card_x + card_size.x
+		if card_right <= global_left or card_x >= global_right:
+			continue
+		var normalized_pos := 0.5
+		if num_cards > 1:
+			normalized_pos = float(i) / float(num_cards - 1)
+		var x_arc := (normalized_pos - 0.5) * 2.0
+		var top_local := size.y - hover_h + (x_arc * x_arc) * hand_arc + hover_y_offset
+		best = minf(best, global_position.y + top_local)
+	return best
 
 func _on_card_mouse_entered(card: Control):
 	"""Hover pro vizuální efekty - karta se zvedne"""
