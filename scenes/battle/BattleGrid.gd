@@ -34,6 +34,8 @@ extends Node3D
 @export var intent_damage_color: Color = Color(0.95, 0.16, 0.14, 0.78)
 @export var intent_ember_color: Color = Color(1.0, 0.45, 0.1, 0.38)
 @export var intent_control_color: Color = Color(0.25, 0.72, 1.0, 0.8)
+@export var intent_ghost_color: Color = Color(0.62, 0.78, 1.0, 0.55)
+@export var intent_plague_color: Color = Color(0.28, 0.86, 0.34, 0.5)
 @export var highlight_color: Color = Color(1.0, 0.92, 0.25, 0.28)
 @export var initiative_hover_color: Color = Color(1.0, 0.82, 0.08, 0.78) # zlatá – hover v initiative baru
 @export var artifact_throne_color: Color = Color(0.98, 0.82, 0.12, 0.85)
@@ -102,7 +104,12 @@ var _intent_damage_cells: Array[Vector2i] = []
 var _intent_ember_cells: Array[Vector2i] = []
 var _intent_cell_labels: Dictionary = {}
 var _intent_control_cells: Array[Vector2i] = []
+var _intent_ghost_cells: Array[Vector2i] = []
+var _intent_plague_cells: Array[Vector2i] = []
 var _shard_cells: Dictionary = {}
+var _corpse_marks: Dictionary = {}
+var _core_pulses: Dictionary = {}
+var _fx_container: Node3D = null
 var _targetable_cells_color: Color = attack_highlight_color
 var _spawn_highlight_nodes: Array[MeshInstance3D] = []
 var _spawn_pulse_active: bool = false
@@ -444,9 +451,17 @@ func update_visual_highlights():
 	var ember_pulse: Dictionary = {}
 	for cell in _intent_ember_cells:
 		ember_pulse[cell] = true
+	var ghost_pulse: Dictionary = {}
+	for cell in _intent_ghost_cells:
+		ghost_pulse[cell] = true
+	var plague_pulse: Dictionary = {}
+	for cell in _intent_plague_cells:
+		plague_pulse[cell] = true
 	_spawn_region_highlight(_intent_ember_cells, intent_ember_color, ember_pulse)
 	_spawn_region_highlight(_intent_damage_cells, intent_damage_color, damage_pulse)
 	_spawn_region_highlight(_intent_control_cells, intent_control_color, control_pulse)
+	_spawn_region_highlight(_intent_ghost_cells, intent_ghost_color, ghost_pulse)
+	_spawn_region_highlight(_intent_plague_cells, intent_plague_color, plague_pulse)
 	_spawn_intent_labels()
 	_spawn_region_highlight(movable_only, movement_highlight_color)
 	_spawn_region_highlight(_warning_cells, movement_warning_color)
@@ -466,6 +481,8 @@ func _compute_region_overlay_signature() -> String:
 	parts.append(_cells_signature("id", _intent_damage_cells))
 	parts.append(_cells_signature("ie", _intent_ember_cells))
 	parts.append(_cells_signature("ic", _intent_control_cells))
+	parts.append(_cells_signature("ig", _intent_ghost_cells))
+	parts.append(_cells_signature("ip", _intent_plague_cells))
 	parts.append(_intent_labels_signature())
 	parts.append(_cells_signature("m", _movable_cells))
 	parts.append(_cells_signature("w", _warning_cells))
@@ -700,6 +717,9 @@ func _accumulate_enemy_range(enemy_node: Node) -> void:
 	var start_cell = enemy_node.grid_position
 	var move_range = enemy_node.get_current_movement_range() if enemy_node.has_method("get_current_movement_range") else 0
 	var attack_range = clampi(int(enemy_node.unit_data.attack_range), 0, 15)
+	if enemy_node.unit_data.unit_id == "wraith":
+		_accumulate_ethereal_range(enemy_node, start_cell, move_range, attack_range)
+		return
 
 	var costs = {start_cell: 0}
 	var to_visit = [start_cell]
@@ -739,6 +759,33 @@ func _accumulate_enemy_range(enemy_node: Node) -> void:
 						continue
 					if is_cell_active(cell) and not _enemy_attack_range_cells.has(cell):
 						_enemy_attack_range_cells.append(cell)
+
+func _accumulate_ethereal_range(enemy_node: Node, start_cell: Vector2i, move_range: int, attack_range: int) -> void:
+	var costs := {start_cell: 0}
+	var queue: Array[Vector2i] = [start_cell]
+	var head := 0
+	while head < queue.size():
+		var current: Vector2i = queue[head]
+		head += 1
+		var cost: int = int(costs[current])
+		if cost > 0 and is_ethereal_landable(current, enemy_node) and not _enemy_range_cells.has(current):
+			_enemy_range_cells.append(current)
+		if cost >= move_range:
+			continue
+		for offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+			var nxt: Vector2i = current + offset
+			if costs.has(nxt) or blocks_ethereal(nxt):
+				continue
+			costs[nxt] = cost + 1
+			queue.append(nxt)
+	if attack_range <= 0:
+		return
+	for dx in range(-attack_range, attack_range + 1):
+		for dy in range(-attack_range, attack_range + 1):
+			if abs(dx) + abs(dy) <= attack_range:
+				var cell := start_cell + Vector2i(dx, dy)
+				if cell != start_cell and is_cell_active(cell) and not _enemy_attack_range_cells.has(cell):
+					_enemy_attack_range_cells.append(cell)
 
 func _clear_move_preview_arrows() -> void:
 	if not is_instance_valid(_artifact_markers_container):
@@ -822,21 +869,130 @@ func tick_shards() -> void:
 		_shard_cells.erase(cell)
 	update_visual_highlights()
 
-func show_intent_threats(damage_cells: Array[Vector2i], control_cells: Array[Vector2i], ember_cells: Array[Vector2i] = [], labels: Dictionary = {}) -> void:
+func show_intent_threats(damage_cells: Array[Vector2i], control_cells: Array[Vector2i], ember_cells: Array[Vector2i] = [], labels: Dictionary = {}, ghost_cells: Array[Vector2i] = [], plague_cells: Array[Vector2i] = []) -> void:
 	_intent_damage_cells = damage_cells.duplicate()
 	_intent_control_cells = control_cells.duplicate()
 	_intent_ember_cells = ember_cells.duplicate()
+	_intent_ghost_cells = ghost_cells.duplicate()
+	_intent_plague_cells = plague_cells.duplicate()
 	_intent_cell_labels = labels.duplicate()
 	update_visual_highlights()
 
 func clear_intent_threats() -> void:
-	if _intent_damage_cells.is_empty() and _intent_control_cells.is_empty() and _intent_ember_cells.is_empty() and _intent_cell_labels.is_empty():
+	if _intent_damage_cells.is_empty() and _intent_control_cells.is_empty() and _intent_ember_cells.is_empty() and _intent_ghost_cells.is_empty() and _intent_plague_cells.is_empty() and _intent_cell_labels.is_empty():
 		return
 	_intent_damage_cells.clear()
 	_intent_control_cells.clear()
 	_intent_ember_cells.clear()
+	_intent_ghost_cells.clear()
+	_intent_plague_cells.clear()
 	_intent_cell_labels.clear()
 	update_visual_highlights()
+
+## Terrain, traps, and sticky ground stop ethereal movement. Units do not.
+func blocks_ethereal(cell: Vector2i) -> bool:
+	if not is_cell_active(cell):
+		return true
+	var terrain := get_terrain_on_cell(cell)
+	if terrain == null:
+		return false
+	if not terrain.is_walkable:
+		return true
+	if terrain.stops_movement_on_enter:
+		return true
+	if terrain.effect_type == TerrainData.TerrainEffect.DAMAGE_ON_ENTER:
+		return true
+	if terrain.effect_type == TerrainData.TerrainEffect.IMPASSABLE:
+		return true
+	return false
+
+func is_ethereal_landable(cell: Vector2i, mover: Node) -> bool:
+	if blocks_ethereal(cell):
+		return false
+	var occ := get_object_on_cell(cell)
+	return not is_instance_valid(occ) or occ == mover
+
+func add_corpse(cell: Vector2i) -> void:
+	if not is_cell_active(cell) or _corpse_marks.has(cell):
+		return
+	var mark := Label3D.new()
+	mark.text = "✕"
+	mark.font_size = 128
+	mark.pixel_size = 0.012
+	mark.modulate = Color(0.62, 0.62, 0.66, 0.95)
+	mark.outline_size = 18
+	mark.outline_modulate = Color(0.08, 0.08, 0.1, 0.9)
+	mark.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	mark.position = Vector3(cell.x * cell_size_3d, 0.45, cell.y * cell_size_3d)
+	_fx_root().add_child(mark)
+	_corpse_marks[cell] = mark
+
+func has_corpse(cell: Vector2i) -> bool:
+	return _corpse_marks.has(cell)
+
+func corpse_cells() -> Array:
+	return _corpse_marks.keys()
+
+func take_corpse(cell: Vector2i) -> bool:
+	if not _corpse_marks.has(cell):
+		return false
+	var mark = _corpse_marks[cell]
+	_corpse_marks.erase(cell)
+	if is_instance_valid(mark):
+		mark.queue_free()
+	return true
+
+func flash_ground_cell(cell: Vector2i, color: Color) -> void:
+	if not is_cell_active(cell):
+		return
+	var mesh := _make_fx_cell(cell, color)
+	var tween := create_tween()
+	tween.tween_interval(0.35)
+	tween.tween_callback(func() -> void:
+		if is_instance_valid(mesh):
+			mesh.queue_free()
+	)
+
+func set_core_pulse(cell: Vector2i, enabled: bool) -> void:
+	if _core_pulses.has(cell):
+		var old = _core_pulses[cell]
+		_core_pulses.erase(cell)
+		if is_instance_valid(old):
+			old.queue_free()
+	if not enabled or not is_cell_active(cell):
+		return
+	var mesh := _make_fx_cell(cell, Color(0.62, 0.38, 1.0, 0.55))
+	_core_pulses[cell] = mesh
+	var mat := mesh.material_override as ShaderMaterial
+	if mat == null:
+		return
+	var base_fill: float = float(mat.get_shader_parameter("fill_alpha"))
+	var tween := create_tween().set_loops()
+	tween.tween_method(func(v: float) -> void:
+		if is_instance_valid(mat):
+			mat.set_shader_parameter("fill_alpha", lerpf(base_fill, minf(base_fill + 0.22, 0.6), v))
+	, 0.0, 1.0, 0.45)
+	tween.tween_method(func(v: float) -> void:
+		if is_instance_valid(mat):
+			mat.set_shader_parameter("fill_alpha", lerpf(minf(base_fill + 0.22, 0.6), base_fill, v))
+	, 0.0, 1.0, 0.45)
+
+func _fx_root() -> Node3D:
+	if is_instance_valid(_fx_container):
+		return _fx_container
+	_fx_container = Node3D.new()
+	_fx_container.name = "Phase3Fx"
+	add_child(_fx_container)
+	return _fx_container
+
+func _make_fx_cell(cell: Vector2i, color: Color) -> MeshInstance3D:
+	var mesh := MeshInstance3D.new()
+	mesh.mesh = _get_region_fill_mesh()
+	mesh.material_override = _make_region_shader_material(color, 0)
+	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mesh.position = Vector3(cell.x * cell_size_3d, region_overlay_y + 0.01, cell.y * cell_size_3d)
+	_fx_root().add_child(mesh)
+	return mesh
 
 func _intent_labels_signature() -> String:
 	var parts: PackedStringArray = []

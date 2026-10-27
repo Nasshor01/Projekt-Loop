@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/ai/PlagueDoctorAI.gd" id="1_ai"]
+[ext_resource type="Script" path="res://data/units/UnitData.gd" id="1_unitdata"]
+[ext_resource type="Texture2D" uid="uid://cpcaifyao2erg" path="res://art/sprites/units/plague_doctor.png" id="2_sprite"]
+
+[resource]
+script = ExtResource("1_unitdata")
+unit_id = "plague_doctor"
+unit_name = "unit.plague_doctor"
+description = "unit.plague_doctor.desc"
+faction = 1
+unit_type = 0
+max_health = 26
+attack_damage = 4
+movement_range = 2
+attack_range = 4
+initiative = 11
+sprite_texture = ExtResource("2_sprite")
+sprite_display_scale = 1.0
+sprite_offset_y = 80.0
+ai_script = ExtResource("1_ai")

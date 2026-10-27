@@ -656,9 +656,11 @@ func _process_enemy_actions(enemy_unit: Unit):
 	else:
 		return
 	
-	# Taunt: force Fighter-style approach (overrides kite/root AI for this turn)
+	# Taunt: force Fighter-style approach (overrides kite/root AI for this turn).
+	# Core and cocoon keep their own turn — a taunt must not make the core swing or the egg walk.
 	var actions: Array
-	if enemy_unit.active_statuses.has("taunted"):
+	var pinned := enemy_unit.has_meta("armor_core") or (enemy_unit.unit_data != null and enemy_unit.unit_data.unit_id == "cocoon")
+	if enemy_unit.active_statuses.has("taunted") and not pinned:
 		var approach_ai = load("res://scripts/ai/FighterAI.gd").new()
 		actions = approach_ai.get_actions(enemy_unit, player_units_array, battle_grid_instance)
 		DebugLogger.log_info("Taunt: %s forced to approach" % [
@@ -821,9 +823,12 @@ func _execute_single_action(enemy_unit: Unit, action: EnemyAIBase.AIAction):
 							break
 						truncated.append(path[i])
 					if truncated.size() > 1:
-						await _move_unit_along_path(enemy_unit, truncated)
-					if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
-						return
+						if enemy_unit.unit_data != null and enemy_unit.unit_data.unit_id == "wraith":
+							await _move_ethereal_along_path(enemy_unit, truncated)
+						else:
+							await _move_unit_along_path(enemy_unit, truncated)
+						if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
+							return
 		
 		EnemyAIBase.AIAction.ActionType.PASS:
 			pass
@@ -1505,6 +1510,14 @@ func _on_unit_died(unit_node: Unit):
 		_refresh_goblin_pack_bonuses()
 	
 	battle_grid_instance.remove_object_by_instance(unit_node)
+	if unit_node.unit_data and unit_node.unit_data.faction == UnitData.Faction.ENEMY:
+		var skip_corpse := unit_node.unit_data.unit_id == "wraith" or unit_node.unit_data.unit_id == "cocoon"
+		if unit_node.has_meta("no_corpse") and bool(unit_node.get_meta("no_corpse")):
+			skip_corpse = true
+		if not skip_corpse and battle_grid_instance.has_method("add_corpse"):
+			battle_grid_instance.add_corpse(unit_node.grid_position)
+	if unit_node.has_meta("armor_core") and battle_grid_instance.has_method("set_core_pulse"):
+		battle_grid_instance.set_core_pulse(unit_node.grid_position, false)
 	# After grid removal, so the corpse no longer blocks line of sight / occupies its cell.
 	if _current_battle_state == BattleState.PLAYER_TURN:
 		_refresh_hand_playability()
@@ -2279,6 +2292,50 @@ func _move_unit_along_path(unit: Unit, path: Array[Vector2i], step_duration: flo
 		ArtifactManager.on_unit_moved(unit, path[0], final_pos, path.size() - 1)
 	return final_pos
 
+func _move_ethereal_along_path(unit: Unit, path: Array[Vector2i], step_duration: float = 0.22) -> Vector2i:
+	"""Wraith slides through units. Terrain and traps are not in the path. Landing cells are empty."""
+	if not is_instance_valid(unit):
+		return Vector2i.ZERO
+	if path.is_empty():
+		return unit.grid_position
+	if path.size() == 1:
+		return path[0]
+	var anchor: Vector2i = path[0]
+	for i in range(1, path.size()):
+		if not is_instance_valid(unit) or unit.current_health <= 0:
+			break
+		var cell: Vector2i = path[i]
+		var occ = battle_grid_instance.get_object_on_cell(cell)
+		if is_instance_valid(occ) and occ != unit:
+			battle_grid_instance.flash_ground_cell(cell, Color(0.62, 0.78, 1.0, 0.55))
+			var glide := create_tween()
+			glide.tween_property(unit, "position", battle_grid_instance.get_world_position_for_cell(cell), step_duration)
+			await glide.finished
+			continue
+		battle_grid_instance.remove_object_by_instance(unit)
+		if not battle_grid_instance.place_object_on_cell(unit, cell, true, step_duration):
+			battle_grid_instance.place_object_on_cell(unit, anchor, false)
+			break
+		anchor = cell
+		if has_node("/root/AudioManager"):
+			AudioManager.play_footstep()
+		await get_tree().create_timer(step_duration).timeout
+		if not is_instance_valid(unit) or unit.current_health <= 0:
+			break
+		var terrain = battle_grid_instance.get_terrain_on_cell(cell)
+		if is_instance_valid(terrain) and unit.has_method("process_terrain_effects"):
+			await unit.process_terrain_effects(terrain)
+			if terrain.consume_on_trigger:
+				battle_grid_instance.remove_terrain(cell)
+			if not is_instance_valid(unit) or unit.current_health <= 0:
+				break
+		if is_instance_valid(unit) and unit.current_health > 0 and battle_grid_instance.has_shard(cell):
+			await _trigger_shard(unit, cell)
+	if is_instance_valid(unit) and unit.current_health > 0 and unit.grid_position != anchor:
+		battle_grid_instance.remove_object_by_instance(unit)
+		battle_grid_instance.place_object_on_cell(unit, anchor, false)
+	return anchor if is_instance_valid(unit) else path[0]
+
 func _rush_unit_along_path(unit: Unit, path: Array[Vector2i]) -> Vector2i:
 	"""Plynulý charge: jedna souvislá animace přes celou cestu (ne krokování).
 	Po dojetí vyhodnotí pasti/mud po buňkách a případně zastaví dřív."""
@@ -2544,6 +2601,8 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 					true,
 					0
 				)
+				if target is Unit and target.has_method("scale_card_damage"):
+					damage_to_deal = target.scale_card_damage(card_ref, damage_to_deal)
 				if is_critical and is_instance_valid(_player_unit_node):
 					DebugLogger.log_info("💥 KRITICKÝ ZÁSAH! Poškození: %d" % damage_to_deal)
 					_player_unit_node._show_floating_text(damage_to_deal, "critical")
@@ -2576,6 +2635,8 @@ func _apply_single_effect(effect: CardEffectData, target: Node3D, card_being_pla
 				if not hit_landed:
 					DebugLogger.log_info("DEAL_DAMAGE dodged — další efekty karty se přesto aplikují")
 					return
+				if target is Unit and target.has_method("note_card_hit"):
+					target.note_card_hit(card_ref)
 				
 				# Poprava: GAIN_ENERGY se string_value "on_kill" se vyplatí jen když tento zásah nepřítele zabil
 				if target is Unit and target.get_unit_data().faction == UnitData.Faction.ENEMY:
@@ -3706,6 +3767,8 @@ func _refresh_intent_threat_highlights() -> void:
 	var damage: Array[Vector2i] = []
 	var control: Array[Vector2i] = []
 	var ember: Array[Vector2i] = []
+	var ghost: Array[Vector2i] = []
+	var plague: Array[Vector2i] = []
 	var labels: Dictionary = {}
 	for enemy_unit in _enemy_units:
 		if not is_instance_valid(enemy_unit) or enemy_unit.current_health <= 0:
@@ -3725,17 +3788,33 @@ func _refresh_intent_threat_highlights() -> void:
 			elif kind == "ember":
 				if not ember.has(cell):
 					ember.append(cell)
+			elif kind == "ghost":
+				if not ghost.has(cell):
+					ghost.append(cell)
+			elif kind == "plague":
+				if not plague.has(cell):
+					plague.append(cell)
 			elif not damage.has(cell):
 				damage.append(cell)
 			var label := str(threat.get("label", ""))
 			if not label.is_empty():
 				labels[cell] = label
+	for node in battle_grid_instance.get_all_objects_on_grid():
+		if node is Unit and node.current_health > 0 and node.active_statuses.has("plague"):
+			for offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+				var neighbor: Vector2i = node.grid_position + offset
+				if battle_grid_instance.is_cell_active(neighbor) and not plague.has(neighbor):
+					plague.append(neighbor)
 	for cell in control:
 		damage.erase(cell)
 		ember.erase(cell)
+		ghost.erase(cell)
+		plague.erase(cell)
 	for cell in damage:
 		ember.erase(cell)
-	battle_grid_instance.show_intent_threats(damage, control, ember, labels)
+		ghost.erase(cell)
+		plague.erase(cell)
+	battle_grid_instance.show_intent_threats(damage, control, ember, labels, ghost, plague)
 
 func _clear_intent_threat_highlights() -> void:
 	if is_instance_valid(battle_grid_instance) and battle_grid_instance.has_method("clear_intent_threats"):
@@ -4751,6 +4830,109 @@ func _resolve_marked_hit(enemy: Unit, target: Unit, amount: int, banner_key: Str
 		elif status_id == "weakness":
 			target.show_status_text(tr("status.float.weakness"), "curse", StatusIcons.get_icon("weakness"))
 
+func _register_spawned_enemy(unit_data: UnitData, cell: Vector2i) -> Unit:
+	var node := _spawn_unit(unit_data, cell)
+	if not is_instance_valid(node):
+		return null
+	if node.unit_data:
+		node.unit_data.faction = UnitData.Faction.ENEMY
+	_enemy_units.append(node)
+	_all_enemy_units_ordered.append(node)
+	node.died.connect(_on_unit_died)
+	node.stats_changed.connect(_on_unit_stats_changed)
+	if has_node("/root/TurnManager"):
+		TurnManager.add_unit(node)
+	if is_instance_valid(initiative_bar) and initiative_bar.has_method("refresh_from_turn_manager"):
+		initiative_bar.refresh_from_turn_manager()
+	return node
+
+func _raise_dead(necro: Unit, cell: Vector2i) -> void:
+	_show_turn_banner(tr("ui.banner.raise"), Color(0.72, 0.72, 0.78))
+	if not is_instance_valid(necro) or not battle_grid_instance.is_cell_active(cell):
+		return
+	if is_instance_valid(battle_grid_instance.get_object_on_cell(cell)):
+		return
+	battle_grid_instance.flash_ground_cell(cell, Color(0.55, 0.55, 0.62, 0.5))
+	var data := load("res://data/units/raised_skeleton.tres") as UnitData
+	var skel := _register_spawned_enemy(data, cell)
+	if is_instance_valid(skel):
+		skel.set_meta("owner_id", necro.get_instance_id())
+	set_enemy_intents()
+
+func _harvest_corpse(necro: Unit, cell: Vector2i) -> void:
+	if not is_instance_valid(necro) or not battle_grid_instance.has_method("has_corpse"):
+		return
+	if not battle_grid_instance.has_corpse(cell):
+		return
+	await _flash_screen_line(cell, necro.grid_position, Color(0.62, 0.62, 0.68), 0.35)
+	if not is_instance_valid(necro) or necro.current_health <= 0:
+		return
+	if battle_grid_instance.take_corpse(cell):
+		necro.heal(8)
+
+func _lay_egg(mother: Unit, cell: Vector2i) -> void:
+	_show_turn_banner(tr("ui.banner.egg"), Color(0.9, 0.42, 0.14))
+	if not is_instance_valid(mother) or not battle_grid_instance.is_cell_active(cell):
+		return
+	if is_instance_valid(battle_grid_instance.get_object_on_cell(cell)):
+		return
+	battle_grid_instance.flash_ground_cell(cell, Color(1.0, 0.45, 0.12, 0.5))
+	var data := load("res://data/units/cocoon.tres") as UnitData
+	var egg := _register_spawned_enemy(data, cell)
+	if is_instance_valid(egg):
+		egg.set_meta("owner_id", mother.get_instance_id())
+		egg.set_meta("hatch_turns", 2)
+		egg.set_meta("just_laid", true)
+		egg.set_meta("no_corpse", true)
+	set_enemy_intents()
+
+func _hatch_cocoon(cocoon: Unit) -> void:
+	if not is_instance_valid(cocoon):
+		return
+	var cell := cocoon.grid_position
+	_show_turn_banner(tr("ui.banner.hatch"), Color(0.95, 0.38, 0.12))
+	cocoon.set_meta("no_corpse", true)
+	battle_grid_instance.remove_object_by_instance(cocoon)
+	var data := load("res://data/units/spiderling.tres") as UnitData
+	var spider := _register_spawned_enemy(data, cell)
+	if _enemy_units.has(cocoon):
+		_enemy_units.erase(cocoon)
+	if _all_enemy_units_ordered.has(cocoon):
+		_all_enemy_units_ordered.erase(cocoon)
+	if has_node("/root/TurnManager"):
+		TurnManager.unregister_unit(cocoon)
+	if is_instance_valid(cocoon):
+		cocoon.queue_free()
+	set_enemy_intents()
+	if not is_instance_valid(spider):
+		return
+
+func _inoculate(doctor: Unit, ally: Unit, block_amount: int) -> void:
+	_show_turn_banner(tr("ui.banner.inoculate"), Color(0.35, 0.82, 0.4))
+	if not is_instance_valid(doctor) or not is_instance_valid(ally) or ally.current_health <= 0:
+		return
+	await _flash_screen_line(doctor.grid_position, ally.grid_position, Color(0.4, 0.9, 0.45), 0.35)
+	if not is_instance_valid(ally) or ally.current_health <= 0:
+		return
+	if ally.has_method("cleanse_harmful"):
+		ally.cleanse_harmful()
+	ally.add_block(block_amount)
+
+func _plague_mark(doctor: Unit, target: Unit) -> void:
+	if not is_instance_valid(doctor) or not is_instance_valid(target) or target.current_health <= 0:
+		return
+	if battle_grid_instance.get_distance(doctor.grid_position, target.grid_position) > doctor.unit_data.attack_range:
+		return
+	await doctor.attack(target)
+	if target == _player_unit_node:
+		_took_damage_last_turn = true
+	if not is_instance_valid(target) or target.current_health <= 0:
+		return
+	if target.has_method("apply_plague"):
+		target.apply_plague()
+	target.show_status_text(tr("status.float.plague"), "plague")
+	battle_grid_instance.flash_ground_cell(target.grid_position, Color(0.28, 0.86, 0.34, 0.55))
+
 func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> void:
 	"""Zpracuje speciální akce AI (všechny typy)"""
 	var special_type = action.special_data.get("type", "")
@@ -4760,6 +4942,21 @@ func _process_special_action(enemy_unit: Unit, action: EnemyAIBase.AIAction) -> 
 			var banner_key := str(action.special_data.get("banner", ""))
 			if banner_key != "":
 				_show_turn_banner(tr(banner_key), Color(1.0, 0.55, 0.2))
+		"raise_dead":
+			_raise_dead(enemy_unit, action.special_data.get("cell", Vector2i(-999, -999)))
+		"corpse_harvest":
+			await _harvest_corpse(enemy_unit, action.special_data.get("cell", Vector2i(-999, -999)))
+		"lay_egg":
+			_lay_egg(enemy_unit, action.special_data.get("cell", Vector2i(-999, -999)))
+		"hatch_egg":
+			_hatch_cocoon(enemy_unit)
+		"armor_restore":
+			if is_instance_valid(enemy_unit) and enemy_unit.has_method("restore_armor_from_core"):
+				enemy_unit.restore_armor_from_core()
+		"inoculate":
+			await _inoculate(enemy_unit, action.target_unit, int(action.special_data.get("block", 6)))
+		"plague_mark":
+			await _plague_mark(enemy_unit, action.target_unit)
 		"resolve_windup":
 			await _resolve_combat_windup(enemy_unit)
 		"temptation":

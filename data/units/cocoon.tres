@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/ai/CocoonAI.gd" id="1_ai"]
+[ext_resource type="Script" path="res://data/units/UnitData.gd" id="1_unitdata"]
+[ext_resource type="Texture2D" uid="uid://dofutrpjlh7q5" path="res://art/sprites/units/cotton.png" id="2_sprite"]
+
+[resource]
+script = ExtResource("1_unitdata")
+unit_id = "cocoon"
+unit_name = "unit.cocoon"
+description = "unit.cocoon.desc"
+faction = 1
+unit_type = 3
+max_health = 10
+attack_damage = 0
+movement_range = 0
+attack_range = 0
+initiative = 4
+sprite_texture = ExtResource("2_sprite")
+sprite_display_scale = 0.72
+sprite_offset_y = 48.0
+ai_script = ExtResource("1_ai")

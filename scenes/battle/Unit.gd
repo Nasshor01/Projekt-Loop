@@ -58,6 +58,8 @@ var _hit_flash_color: Color = HIT_FLASH_HP_COLOR
 var _hit_flash_base_modulate: Color = Color.WHITE
 var _initiative_hover_base_scale: Vector3 = Vector3.ONE
 var active_statuses: Dictionary = {}
+var _adapt_counts: Dictionary = {}
+var _resist_tag: String = ""
 
 var has_used_base_move: bool = false
 var extra_moves: int = 0
@@ -193,6 +195,11 @@ func _ready():
 		_initiative_hover_base_scale = _sprite_node.scale
 		# Offset zůstává v pixelech (node scale ho stejně zmenší ve world space).
 		_sprite_node.offset = Vector2(0, unit_data.sprite_offset_y)
+		if unit_data.unit_id == "wraith":
+			_sprite_node.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			_sprite_node.alpha_cut = SpriteBase3D.ALPHA_CUT_DISABLED
+			_sprite_node.modulate = Color(0.78, 0.9, 1.0, 0.55)
+			_hit_flash_base_modulate = _sprite_node.modulate
 	
 	var world_ui = _get_unit_world_ui_layer()
 	if world_ui:
@@ -302,6 +309,8 @@ func attack(target: Node, extra_additive: int = 0, damage_type: int = 0, _is_hol
 		_show_floating_text(damage, "critical")
 		print("💥 KRITICKÝ ZÁSAH! %d poškození" % damage)
 	
+	if unit_data and unit_data.unit_id == "wraith" and target.has_method("set_meta"):
+		target.set_meta("incoming_soul_drain", true)
 	await target.take_damage(damage, true)
 
 ## Returns false if the hit was dodged (no HP/block change). Dodge only applies to attack hits
@@ -313,6 +322,8 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 	if allow_dodge and not is_rpc_sync and unit_data.ai_script and unit_data.ai_script.resource_path.contains("AssassinAI"):
 		var dodge_roll = randi_range(1, 100)
 		if dodge_roll <= 35:
+			if has_meta("incoming_soul_drain"):
+				remove_meta("incoming_soul_drain")
 			show_status_text("DODGE!", "heal")
 			if has_node("/root/DebugLogger"):
 				DebugLogger.log_info("💨 Assassin se vyhnul útoku! (poškození přeskočeno, ostatní efekty karty stále platí)")
@@ -338,10 +349,19 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 		var guard := find_interpose_guard()
 		if guard != null:
 			guard.set_meta("interpose_cd", 3)
+			if has_meta("incoming_soul_drain"):
+				guard.set_meta("incoming_soul_drain", true)
+				remove_meta("incoming_soul_drain")
 			await guard.take_damage(damage_to_deal, true, is_rpc_sync, false, true, false, true)
 			return true
 
-	var absorbed_by_block = 0 if ignore_block else mini(damage_to_deal, current_block)
+	var soul_drain := has_meta("incoming_soul_drain") and bool(get_meta("incoming_soul_drain"))
+	if soul_drain:
+		remove_meta("incoming_soul_drain")
+	var block_pool := 0 if ignore_block else current_block
+	if soul_drain and not ignore_block:
+		block_pool = int(current_block / 2.0)
+	var absorbed_by_block = mini(damage_to_deal, block_pool)
 	
 	if absorbed_by_block > 0:
 		_show_floating_text(absorbed_by_block, "block_loss")
@@ -389,12 +409,19 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 			deferred = bool(art_ctx.get("damage_deferred", false))
 
 		if not deferred:
+			var hp_before := current_health
 			current_health -= damage_to_deal
 			_show_floating_text(damage_to_deal, "damage")
 			
 			if current_health < 0:
 				current_health = 0
+			var hp_lost := hp_before - current_health
 			_try_interrupt_windup()
+			if soul_drain and hp_lost > 0:
+				var drainer := get_last_attacker()
+				var gained := int(round(float(hp_lost) * 0.4))
+				if gained > 0 and is_instance_valid(drainer) and drainer.has_method("heal"):
+					drainer.heal(gained)
 			
 			if _is_local_player():
 				PlayerData.take_damage(damage_to_deal)
@@ -408,6 +435,9 @@ func take_damage(amount: int, already_calculated: bool = false, is_rpc_sync: boo
 	_update_stats_and_emit_signal()
 	
 	if current_health <= 0:
+		if _try_become_armor_core():
+			_update_stats_and_emit_signal()
+			return true
 		if _is_local_player() and has_node("/root/ArtifactManager"):
 			if ArtifactManager.before_death(self):
 				_update_stats_and_emit_signal()
@@ -591,19 +621,41 @@ func _apply_opening_block() -> void:
 func _update_body_pulse() -> void:
 	if not is_instance_valid(_sprite_node):
 		return
+	if unit_data and unit_data.unit_id == "wraith":
+		if _initiative_bar_hovered or _is_hit_flashing() or is_selected:
+			return
+		var ghost_wave := (sin(Time.get_ticks_msec() / 420.0) + 1.0) * 0.5
+		_sprite_node.modulate = Color(0.75, 0.88, 1.0, lerpf(0.38, 0.68, ghost_wave))
+		return
 	if _initiative_bar_hovered or _is_hit_flashing() or is_selected:
 		return
 	var tint := _body_pulse_color()
 	if tint.a <= 0.0:
 		if _body_pulse_on:
-			_sprite_node.modulate = Color.WHITE
+			_sprite_node.modulate = _identity_modulate()
 			_body_pulse_on = false
 		return
 	_body_pulse_on = true
 	var wave := (sin(Time.get_ticks_msec() / 320.0) + 1.0) * 0.5
-	_sprite_node.modulate = tint.lerp(Color(1, 0.97, 0.9), wave)
+	var pulsed := tint.lerp(Color(1, 0.97, 0.9), wave)
+	if unit_data and unit_data.unit_id == "wraith":
+		pulsed.a = lerpf(0.38, 0.68, wave)
+	_sprite_node.modulate = pulsed
+
+func _identity_modulate() -> Color:
+	if unit_data and unit_data.unit_id == "wraith":
+		return Color(0.78, 0.9, 1.0, 0.55)
+	if has_meta("mimic_tint") and get_meta("mimic_tint") is Color:
+		return get_meta("mimic_tint")
+	if has_meta("armor_core"):
+		return Color(0.72, 0.55, 1.0)
+	return Color.WHITE
 
 func _body_pulse_color() -> Color:
+	if has_meta("armor_core"):
+		return Color(0.62, 0.38, 1.0)
+	if unit_data and unit_data.unit_id == "mimic_slime" and has_meta("mimic_tint") and get_meta("mimic_tint") is Color:
+		return get_meta("mimic_tint")
 	if _ai_is("FireElementalAI.gd"):
 		return Color(1.0, 0.42, 0.12)
 	if _ai_is("DwarfGuardianAI.gd"):
@@ -663,6 +715,8 @@ func process_turn_start_statuses() -> int:
 	# Poison: damage at START of turn (visible before they act), then duration -= 1
 	if active_statuses.has("poison"):
 		await _tick_poison_status()
+	if active_statuses.has("plague"):
+		await _tick_plague_status()
 	if not is_instance_valid(self) or current_health <= 0:
 		return extra_draw
 	
@@ -709,6 +763,191 @@ func _tick_poison_status() -> void:
 			DebugLogger.log_info("Poison on %s: %d dmg, %d turns left" % [unit_label, poison_dmg, remaining])
 	_update_stats_and_emit_signal()
 
+func apply_plague() -> void:
+	if active_statuses.has("plague"):
+		active_statuses["plague"].value = 2
+		active_statuses["plague"].duration = int(active_statuses["plague"].get("duration", 0)) + 2
+	else:
+		active_statuses["plague"] = {"id": "plague", "value": 2, "duration": 3}
+	_update_stats_and_emit_signal()
+
+func _tick_plague_status() -> void:
+	if not active_statuses.has("plague"):
+		return
+	var neighbor := _plague_neighbor()
+	show_status_text(tr("status.float.plague"), "plague")
+	await take_damage(2, true, false, false)
+	if is_instance_valid(neighbor) and neighbor.current_health > 0 and neighbor.has_method("apply_plague"):
+		neighbor.apply_plague()
+		neighbor.show_status_text(tr("status.float.plague"), "plague")
+		var grid := _get_battle_grid()
+		if grid and grid.has_method("flash_ground_cell"):
+			grid.flash_ground_cell(neighbor.grid_position, Color(0.28, 0.86, 0.34, 0.55))
+	if not is_instance_valid(self) or not active_statuses.has("plague"):
+		return
+	var remaining := int(active_statuses["plague"].get("duration", 1)) - 1
+	if remaining <= 0:
+		active_statuses.erase("plague")
+	else:
+		active_statuses["plague"].duration = remaining
+	_update_stats_and_emit_signal()
+
+func _plague_neighbor() -> Unit:
+	var grid := _get_battle_grid()
+	if grid == null:
+		return null
+	var clean: Array[Unit] = []
+	var infected: Array[Unit] = []
+	for offset in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
+		var occ = grid.get_object_on_cell(grid_position + offset)
+		if occ is Unit and occ != self and occ.current_health > 0:
+			if occ.active_statuses.has("plague"):
+				infected.append(occ)
+			else:
+				clean.append(occ)
+	for candidate in clean:
+		if candidate.unit_data and candidate.unit_data.faction == UnitData.Faction.PLAYER:
+			return candidate
+	if not clean.is_empty():
+		return clean[0]
+	if not infected.is_empty():
+		return infected[0]
+	return null
+
+func cleanse_harmful() -> void:
+	var harmful := ["plague", "poison", "burning", "weakness", "chilled", "frozen", "vulnerable", "entangled", "silenced", "bleeding", "Slow"]
+	var removed := false
+	for status_id in harmful:
+		if active_statuses.has(status_id):
+			active_statuses.erase(status_id)
+			removed = true
+	if not active_statuses.has("frozen") and not active_statuses.has("chilled"):
+		is_frozen = false
+		movement_penalty = 0
+	if removed:
+		show_status_text(tr("status.float.cleanse"), "heal")
+		_update_stats_and_emit_signal()
+
+func _try_become_armor_core() -> bool:
+	if unit_data == null or unit_data.unit_id != "living_armor" or has_meta("armor_core"):
+		return false
+	if not has_meta("armor_full_max"):
+		set_meta("armor_full_max", unit_data.max_health)
+	set_meta("armor_core", true)
+	unit_data.max_health = 8
+	current_health = 8
+	current_block = 0
+	if _sprite_node:
+		_sprite_node.scale = _initiative_hover_base_scale * Vector3(0.72, 0.72, 0.72)
+	var grid := _get_battle_grid()
+	if grid and grid.has_method("set_core_pulse"):
+		grid.set_core_pulse(grid_position, true)
+	var scene := get_tree().get_first_node_in_group("battle_scene")
+	if scene and scene.has_method("_show_turn_banner"):
+		scene._show_turn_banner(tr("ui.banner.core"), Color(0.62, 0.4, 1.0))
+	show_status_text(tr("ui.banner.core"), "curse")
+	return true
+
+func restore_armor_from_core() -> void:
+	if unit_data == null or not has_meta("armor_core"):
+		return
+	var full_max := int(get_meta("armor_full_max")) if has_meta("armor_full_max") else unit_data.max_health
+	remove_meta("armor_core")
+	unit_data.max_health = full_max
+	if _sprite_node:
+		_sprite_node.scale = _initiative_hover_base_scale
+	var grid := _get_battle_grid()
+	if grid and grid.has_method("set_core_pulse"):
+		grid.set_core_pulse(grid_position, false)
+	var missing := 16 - current_health
+	if missing > 0:
+		heal(missing)
+	else:
+		current_health = mini(current_health, 16)
+		_update_stats_and_emit_signal()
+	show_status_text(tr("status.float.restore"), "heal")
+
+func scale_card_damage(card: CardData, amount: int) -> int:
+	if amount <= 0 or unit_data == null or unit_data.unit_id != "mimic_slime":
+		return amount
+	var tag := _primary_card_tag(card)
+	if tag != "" and tag == _resist_tag:
+		return amount if amount <= 1 else maxi(1, int(round(float(amount) * 0.5)))
+	return amount
+
+func note_card_hit(card: CardData) -> void:
+	if unit_data == null or unit_data.unit_id != "mimic_slime":
+		return
+	var tag := _primary_card_tag(card)
+	if tag == "":
+		return
+	_adapt_counts[tag] = int(_adapt_counts.get(tag, 0)) + 1
+	if int(_adapt_counts[tag]) >= 3 and _resist_tag != tag:
+		_resist_tag = tag
+		for key in _adapt_counts.keys():
+			if str(key) != tag:
+				_adapt_counts[key] = 0
+		_adapt_counts[tag] = 3
+		set_meta("mimic_tint", _mimic_tint(tag))
+		heal(5)
+		show_status_text(tr("status.float.mutation"), "heal")
+	_update_stats_and_emit_signal()
+
+func _mimic_counter_text() -> String:
+	if unit_data == null or unit_data.unit_id != "mimic_slime":
+		return ""
+	var watch := ""
+	var count := 0
+	for key in _adapt_counts.keys():
+		if str(key) == _resist_tag:
+			continue
+		var hits := int(_adapt_counts[key])
+		if hits > count:
+			count = hits
+			watch = str(key)
+	if watch != "" and count > 0:
+		return TranslationHelper.tr_format("enemy.mimic.progress", {"tag": tr("enemy.tag." + watch), "current": count, "max": 3})
+	if _resist_tag != "":
+		return TranslationHelper.tr_format("enemy.mimic.resist", {"tag": tr("enemy.tag." + _resist_tag)})
+	return ""
+
+func _primary_card_tag(card: CardData) -> String:
+	if card == null:
+		return ""
+	var order: Array[int] = [
+		CardData.CardTag.ATTACK,
+		CardData.CardTag.SPELL,
+		CardData.CardTag.POWER,
+		CardData.CardTag.DEBUFF,
+		CardData.CardTag.SUMMON,
+		CardData.CardTag.HEAL,
+		CardData.CardTag.BUFF,
+		CardData.CardTag.MOVE,
+		CardData.CardTag.UTILITY,
+		CardData.CardTag.ONE_TIME_USE,
+	]
+	for tag in order:
+		if card.has_tag(tag):
+			return CardData.CardTag.keys()[tag]
+	return ""
+
+func _mimic_tint(tag: String) -> Color:
+	match tag:
+		"ATTACK":
+			return Color(1.0, 0.38, 0.32)
+		"SPELL":
+			return Color(0.62, 0.42, 1.0)
+		"POWER":
+			return Color(0.95, 0.72, 0.2)
+		"DEBUFF":
+			return Color(0.35, 0.75, 0.7)
+		"HEAL":
+			return Color(0.4, 0.9, 0.45)
+		"SUMMON":
+			return Color(0.45, 0.8, 0.35)
+		_:
+			return Color(0.75, 0.62, 0.4)
+
 func process_turn_end_statuses() -> void:
 	if active_statuses.is_empty():
 		return
@@ -718,8 +957,8 @@ func process_turn_end_statuses() -> void:
 	for status_id in active_statuses.keys():
 		if status_id in COMBAT_LONG_STATUSES:
 			continue
-		# Poison ticks at start of turn — skip here so duration isn't double-decremented
-		if status_id == "poison":
+		# Poison and plague tick at start of turn — skip here so duration isn't double-decremented
+		if status_id == "poison" or status_id == "plague":
 			continue
 		# Combat thorns (Spiral Bulwark etc.) last whole fight — cleaned on combat end
 		if status_id == "thorns":
@@ -942,13 +1181,13 @@ func set_selected_visual(selected: bool):
 	if not _sprite_node:
 		return
 	if _initiative_bar_hovered:
-		_pre_initiative_hover_modulate = SELECTED_MODULATE if selected else Color.WHITE
+		_pre_initiative_hover_modulate = SELECTED_MODULATE if selected else _identity_modulate()
 		_apply_initiative_hover_sprite()
 		return
 	if selected:
 		_sprite_node.modulate = SELECTED_MODULATE
 	else:
-		_sprite_node.modulate = Color.WHITE
+		_sprite_node.modulate = _identity_modulate()
 
 
 func _get_battle_grid() -> BattleGrid:
@@ -1378,6 +1617,16 @@ func get_status_counters_list() -> PackedStringArray:
 			counters.append(TranslationHelper.tr_format("enemy.dwarf.interpose_cd", {"value": cover_cd}))
 	if has_meta("windup_lock") and int(get_meta("windup_lock")) > 0:
 		counters.append(TranslationHelper.tr_format("enemy.counter.windup_lock", {"value": int(get_meta("windup_lock"))}))
+	var mimic_line := _mimic_counter_text()
+	if not mimic_line.is_empty():
+		counters.append(mimic_line)
+	if unit_data and unit_data.unit_id == "cocoon":
+		var left := int(get_meta("hatch_turns")) if has_meta("hatch_turns") else 2
+		counters.append(TranslationHelper.tr_format("enemy.cocoon.counter", {"value": left}))
+	if has_meta("armor_core"):
+		counters.append(tr("ui.banner.core"))
+	if _ai_is("PlagueDoctorAI.gd") and has_meta("inoculation_cd") and int(get_meta("inoculation_cd")) > 0:
+		counters.append(TranslationHelper.tr_format("enemy.plague.inoc_cd", {"value": int(get_meta("inoculation_cd"))}))
 	return counters
 
 ## Returns up to 2 player-facing intent dicts: {id, short_text, text, countdown}.
@@ -1617,6 +1866,24 @@ func _get_ai_class_name(ai_path: String) -> String:
 		return tr("enemy.class.banshee")
 	if ai_path.contains("SirenAI"):
 		return tr("enemy.class.siren")
+	if ai_path.contains("WraithAI"):
+		return tr("enemy.class.wraith")
+	if ai_path.contains("NecromancerAI"):
+		return tr("enemy.class.necromancer")
+	if ai_path.contains("BroodmotherAI"):
+		return tr("enemy.class.broodmother")
+	if ai_path.contains("CocoonAI"):
+		return tr("enemy.class.cocoon")
+	if ai_path.contains("LivingArmorAI"):
+		return tr("enemy.class.armor")
+	if ai_path.contains("MimicSlimeAI"):
+		return tr("enemy.class.mimic")
+	if ai_path.contains("PlagueDoctorAI"):
+		return tr("enemy.class.plague")
+	if unit_data and unit_data.unit_id == "spiderling":
+		return tr("enemy.class.spiderling")
+	if unit_data and unit_data.unit_id == "raised_skeleton":
+		return tr("enemy.class.skeleton")
 	if ai_path.contains("FighterAI"):
 		return tr("Fighter")
 	return tr("Unknown")
@@ -1684,6 +1951,50 @@ func get_enemy_ability_entries() -> Array:
 			{"title": "", "text": tr("enemy.siren.silence.text")},
 			{"title": "", "text": tr("enemy.siren.pull.text")},
 		]
+	if _ai_is("WraithAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.wraith.ethereal.text")},
+			{"title": "", "text": tr("enemy.wraith.drain.text")},
+		]
+	if _ai_is("NecromancerAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.necro.raise.text")},
+			{"title": "", "text": tr("enemy.necro.harvest.text")},
+		]
+	if _ai_is("BroodmotherAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.brood.egg.text")},
+			{"title": "", "text": tr("enemy.brood.cocoon.text")},
+		]
+	if _ai_is("CocoonAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.cocoon.wait.text")},
+			{"title": "", "text": tr("enemy.cocoon.hp.text")},
+		]
+	if _ai_is("LivingArmorAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.armor.core.text")},
+			{"title": "", "text": tr("enemy.armor.pass.text")},
+		]
+	if _ai_is("MimicSlimeAI.gd"):
+		var mimic_lines := [
+			{"title": "", "text": tr("enemy.mimic.adapt.text")},
+			{"title": "", "text": tr("enemy.mimic.mutate.text")},
+		]
+		var progress := _mimic_counter_text()
+		if not progress.is_empty():
+			mimic_lines.append({"title": "", "text": progress})
+		return mimic_lines
+	if _ai_is("PlagueDoctorAI.gd"):
+		return [
+			{"title": "", "text": tr("enemy.plague.mark.text")},
+			{"title": "", "text": tr("enemy.plague.spread.text")},
+			{"title": "", "text": tr("enemy.plague.inoc.text")},
+		]
+	if unit_data and unit_data.unit_id == "spiderling":
+		return [{"title": "", "text": tr("enemy.spiderling.bite.text")}]
+	if unit_data and unit_data.unit_id == "raised_skeleton":
+		return [{"title": "", "text": tr("enemy.skeleton.raised.text")}]
 	var raw := _get_passives_text().strip_edges()
 	var none_text := tr("enemy.passive.none")
 	if raw.is_empty() or raw == none_text or raw == "None" or raw == "Žádné":
@@ -1821,6 +2132,8 @@ func show_status_text(text_to_show: String, color_type: String, icon: Texture2D 
 			color = Color(1.0, 0.45, 0.12)
 			if status_icon == null:
 				status_icon = StatusIcons.get_icon("burning")
+		"plague":
+			color = Color(0.35, 0.9, 0.4)
 		_:
 			color = Color.WHITE
 

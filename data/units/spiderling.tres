@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="UnitData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/ai/FighterAI.gd" id="1_ai"]
+[ext_resource type="Script" path="res://data/units/UnitData.gd" id="1_unitdata"]
+[ext_resource type="Texture2D" uid="uid://fpaurn6lykw7" path="res://art/sprites/units/spider1.png" id="2_sprite"]
+
+[resource]
+script = ExtResource("1_unitdata")
+unit_id = "spiderling"
+unit_name = "unit.spiderling"
+description = "unit.spiderling.desc"
+faction = 1
+unit_type = 3
+max_health = 7
+attack_damage = 3
+movement_range = 3
+attack_range = 1
+initiative = 14
+sprite_texture = ExtResource("2_sprite")
+sprite_display_scale = 0.55
+sprite_offset_y = 40.0
+ai_script = ExtResource("1_ai")
