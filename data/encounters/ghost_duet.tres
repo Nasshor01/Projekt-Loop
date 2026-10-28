@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://data/encounters/EncounterEntry.gd" id="1_entry"]
+[ext_resource type="Script" path="res://data/encounters/EncounterData.gd" id="2_data"]
+[ext_resource type="Resource" path="res://data/units/banshee.tres" id="3_banshee"]
+[ext_resource type="Resource" path="res://data/units/wraith.tres" id="4_wraith"]
+
+[sub_resource type="Resource" id="Resource_banshee"]
+script = ExtResource("1_entry")
+unit_data = ExtResource("3_banshee")
+grid_position = Vector2i(6, 2)
+
+[sub_resource type="Resource" id="Resource_wraith"]
+script = ExtResource("1_entry")
+unit_data = ExtResource("4_wraith")
+grid_position = Vector2i(8, 2)
+
+[resource]
+script = ExtResource("2_data")
+encounter_type = 1
+xp_reward = 50
+enemies = Array[ExtResource("1_entry")]([SubResource("Resource_banshee"), SubResource("Resource_wraith")])
+encounter_id = "ghost_duet"
+display_name = "encounter.ghost_duet"
+tier = 3
+min_row = 9
+max_row = 99
+main_tag = "spirits"
+tags = Array[String](["spirit", "control", "elite"])
+weight = 1.0

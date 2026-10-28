@@ -1,22 +1,53 @@
-[gd_scene load_steps=3 format=3 uid="uid://bykx7qci4fkvl"]
+[gd_scene load_steps=6 format=3 uid="uid://bykx7qci4fkvl"]
 
 [ext_resource type="Script" uid="uid://dlf8mjbbts8fx" path="res://scenes/ui/UnitInfoPanel.gd" id="1_balmg"]
 [ext_resource type="FontFile" uid="uid://bhj8pjkqc1umb" path="res://art/fonts/Ithaca-LVB75.ttf" id="2_font"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+bg_color = Color(0.07, 0.08, 0.11, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.42, 0.36, 0.24, 0.95)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_rule"]
+color = Color(0.55, 0.46, 0.28, 0.7)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_now"]
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+bg_color = Color(0.2, 0.14, 0.07, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.86, 0.68, 0.3, 0.95)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
 [node name="UnitInfoPanel" type="PanelContainer"]
-custom_minimum_size = Vector2(260, 0)
+custom_minimum_size = Vector2(340, 0)
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
 script = ExtResource("1_balmg")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
-theme_override_constants/margin_left = 4
-theme_override_constants/margin_top = 4
-theme_override_constants/margin_right = 4
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
 
 [node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(236, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -28,57 +59,79 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
-theme_override_constants/separation = 6
-
-[node name="WhoHeader" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.76, 0.84, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 17
-text = "KDO"
+theme_override_constants/separation = 8
 
 [node name="HeaderRow" type="HBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
-[node name="NameCol" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/HeaderRow"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 0
-
-[node name="NameLabel" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/HeaderRow/NameCol"]
+[node name="NameLabel" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/HeaderRow"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.97, 0.95, 0.88, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 4
+theme_override_constants/outline_size = 5
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "Jméno jednotky"
 autowrap_mode = 3
 
-[node name="ClassLabel" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/HeaderRow/NameCol"]
+[node name="HpBriefLabel" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/HeaderRow"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(1, 0.62, 0.55, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 22
+text = "55/55 HP"
+horizontal_alignment = 2
+
+[node name="StatsLine" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.84, 0.68, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 20
+text = "Útok 7 · Pohyb 1 · Dosah 1"
+autowrap_mode = 3
+
+[node name="ClassLabel" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot"]
+unique_name_in_owner = true
+visible = false
 layout_mode = 2
 theme_override_colors/font_color = Color(0.72, 0.76, 0.84, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 16
 text = "Třída"
 
-[node name="HpBriefLabel" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/HeaderRow"]
+[node name="WhoHeader" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
-size_flags_vertical = 0
-theme_override_colors/font_color = Color(1, 0.55, 0.55, 0.85)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 17
-text = "0/0"
-horizontal_alignment = 2
+theme_override_font_sizes/font_size = 16
+text = "KDO"
+
+[node name="WhoDescription" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.84, 0.9, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 16
+autowrap_mode = 3
 
 [node name="VitalsRow" type="HBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 12
 
 [node name="HPSlot" type="HBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/VitalsRow"]
 unique_name_in_owner = true
@@ -89,8 +142,6 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.45, 0.45, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "HP: 0/0"
@@ -104,22 +155,19 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.78, 0.45, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "ATK 0"
 
 [node name="BlockSlot" type="HBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/VitalsRow"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 
 [node name="BlockLabel" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/VitalsRow/BlockSlot"]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.85, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "Blok: 0"
@@ -133,116 +181,134 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.55, 0.9, 1, 1)
-theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "Energie: 0"
 
-[node name="WhoDescription" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot"]
+[node name="HeaderRule" type="HSeparator" parent="MarginContainer/ScrollContainer/ContentRoot"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.82, 0.84, 0.9, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 17
-autowrap_mode = 3
+theme_override_constants/separation = 4
+theme_override_styles/separator = SubResource("StyleBoxLine_rule")
 
 [node name="EnemySection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 8
 
 [node name="IntentBox" type="PanelContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_type_variation = &"GoldPanel"
+theme_override_styles/panel = SubResource("StyleBoxFlat_now")
 
 [node name="IntentVBox" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/IntentBox"]
 layout_mode = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 4
 
 [node name="IntentHeader" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/IntentBox/IntentVBox"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.85, 0.72, 0.45, 0.9)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 17
-text = "NEXT"
-
-[node name="IntentTitleLabel" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/IntentBox/IntentVBox"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.92, 0.55, 1)
+theme_override_colors/font_color = Color(0.95, 0.78, 0.42, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 18
+text = "TEĎ"
+
+[node name="IntentList" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/IntentBox/IntentVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="IntentTitleLabel" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/IntentBox/IntentVBox"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.92, 0.55, 1)
+theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
-text = "ATTACK"
+text = "Útok"
 autowrap_mode = 3
 
 [node name="IntentDetailLabel" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/IntentBox/IntentVBox"]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(0.82, 0.84, 0.9, 1)
+theme_override_colors/font_color = Color(0.86, 0.84, 0.78, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 17
-text = "Detail"
+theme_override_font_sizes/font_size = 16
 autowrap_mode = 3
 
-[node name="AlertsSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection"]
+[node name="AlertsSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/IntentBox/IntentVBox"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 2
 
-[node name="AlertsHeader" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/AlertsSection"]
+[node name="AlertsHeader" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/IntentBox/IntentVBox/AlertsSection"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.72, 0.55, 1)
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 15
 text = "ALERTS"
 
-[node name="AlertsFlow" type="HFlowContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/AlertsSection"]
+[node name="AlertsFlow" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/IntentBox/IntentVBox/AlertsSection"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/h_separation = 4
-theme_override_constants/v_separation = 4
+theme_override_constants/separation = 2
+
+[node name="KitRule" type="HSeparator" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 4
+theme_override_styles/separator = SubResource("StyleBoxLine_rule")
 
 [node name="PassivesSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 6
 
 [node name="PassivesHeader" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/PassivesSection"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.76, 0.84, 1)
+theme_override_colors/font_color = Color(0.78, 0.8, 0.86, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 17
+theme_override_font_sizes/font_size = 18
 text = "UMÍ"
 
 [node name="PassivesFlow" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/EnemySection/PassivesSection"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 4
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
 
 [node name="StatusSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 6
+
+[node name="StatusRule" type="HSeparator" parent="MarginContainer/ScrollContainer/ContentRoot/StatusSection"]
+layout_mode = 2
+theme_override_constants/separation = 4
+theme_override_styles/separator = SubResource("StyleBoxLine_rule")
 
 [node name="StatusHeader" type="Label" parent="MarginContainer/ScrollContainer/ContentRoot/StatusSection"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.72, 0.76, 0.84, 1)
+theme_override_colors/font_color = Color(0.78, 0.8, 0.86, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
 theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 17
-text = "STATUS"
+theme_override_font_sizes/font_size = 18
+text = "STAVY"
 
 [node name="StatusEffectsList" type="VBoxContainer" parent="MarginContainer/ScrollContainer/ContentRoot/StatusSection"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/separation = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6

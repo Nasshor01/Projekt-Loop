@@ -1472,8 +1472,10 @@ func get_intent_entries() -> Array:
 		if typeof(item) != TYPE_DICTIONARY:
 			continue
 		entries.append({
+			"id": str(item.get("id", "")),
 			"short_text": str(item.get("short_text", "")),
 			"text": str(item.get("text", "")),
+			"countdown": int(item.get("countdown", 0)),
 		})
 		if entries.size() >= 2:
 			break
@@ -1574,10 +1576,7 @@ func get_status_counters_list() -> PackedStringArray:
 		counters.append(TranslationHelper.tr_format("enemy.counter.rage", {"current": berserker_frustration, "max": BERSERKER_RAGE_TURNS_REQUIRED}))
 	if is_permanently_enraged:
 		counters.append(tr("enemy.counter.enraged"))
-	if ritual_stacks > 0:
-		counters.append(TranslationHelper.tr_format("enemy.counter.ritual", {"value": ritual_stacks}))
-	if pack_attack_bonus > 0:
-		counters.append(TranslationHelper.tr_format("enemy.counter.pack", {"value": pack_attack_bonus}))
+	# Ritual and pack are full sentences in get_enemy_ability_entries, not a bare "+1" chip.
 	if has_meta("mage_turn_count"):
 		var turn_count = int(get_meta("mage_turn_count"))
 		if turn_count > 0:
@@ -1995,11 +1994,63 @@ func get_enemy_ability_entries() -> Array:
 		return [{"title": "", "text": tr("enemy.spiderling.bite.text")}]
 	if unit_data and unit_data.unit_id == "raised_skeleton":
 		return [{"title": "", "text": tr("enemy.skeleton.raised.text")}]
-	var raw := _get_passives_text().strip_edges()
-	var none_text := tr("enemy.passive.none")
-	if raw.is_empty() or raw == none_text or raw == "None" or raw == "Žádné":
-		return []
-	return [{"title": "", "text": raw}]
+	var rows := _legacy_ability_entries()
+	rows.append_array(_tribe_ability_entries())
+	return rows
+
+func _tribe_ability_entries() -> Array:
+	var rows: Array = []
+	var ai_path := unit_data.ai_script.resource_path if is_instance_valid(unit_data) and is_instance_valid(unit_data.ai_script) else ""
+	if "ScoutAI" in ai_path:
+		rows.append(_stack_ability("enemy.scout.ritual", ritual_stacks))
+	elif "SkeletonAI" in ai_path:
+		rows.append(_stack_ability("enemy.skeleton.ritual", ritual_stacks))
+	if _is_goblin_unit():
+		rows.append(_stack_ability("enemy.goblin.pack", pack_attack_bonus))
+	return rows
+
+func _stack_ability(key_prefix: String, stacks: int) -> Dictionary:
+	var sentence := tr(key_prefix + ".text")
+	if stacks > 0:
+		sentence += " " + TranslationHelper.tr_format("enemy.stack.now", {"value": stacks})
+	return {"title": tr(key_prefix + ".title"), "text": sentence}
+
+func _is_goblin_unit() -> bool:
+	if unit_data == null:
+		return false
+	var uid := String(unit_data.unit_id)
+	return uid == "goblin" or uid.begins_with("goblin")
+
+func _legacy_ability_entries() -> Array:
+	var ai_path := unit_data.ai_script.resource_path if is_instance_valid(unit_data) and is_instance_valid(unit_data.ai_script) else ""
+	var keys: PackedStringArray = PackedStringArray()
+	if ai_path.contains("BossAI"):
+		keys = PackedStringArray(["enemy.boss.phases", "enemy.boss.barrier", "enemy.boss.aura", "enemy.boss.dash", "enemy.boss.hellfire"])
+	elif ai_path.contains("DarkBeastAI"):
+		keys = PackedStringArray(["enemy.beast.pounce", "enemy.beast.bleed", "enemy.beast.howl"])
+	elif ai_path.contains("AssassinAI"):
+		keys = PackedStringArray(["enemy.assassin.dodge", "enemy.assassin.double", "enemy.assassin.shadow", "enemy.assassin.flank", "enemy.assassin.disengage"])
+	elif ai_path.contains("BerserkerAI"):
+		keys = PackedStringArray(["enemy.berserker.rage", "enemy.berserker.rush", "enemy.berserker.tremor"])
+	elif ai_path.contains("ArcherAI"):
+		keys = PackedStringArray(["enemy.archer.aim", "enemy.archer.cover", "enemy.archer.escape"])
+	elif ai_path.contains("MageAI"):
+		keys = PackedStringArray(["enemy.mage.rotation", "enemy.mage.meteor", "enemy.mage.teleport"])
+	elif ai_path.contains("HealerAI"):
+		keys = PackedStringArray(["enemy.healer.heal", "enemy.healer.nova", "enemy.healer.protect"])
+	elif ai_path.contains("DruidAI"):
+		keys = PackedStringArray(["enemy.druid.summon", "enemy.druid.entangle", "enemy.druid.grasp"])
+	elif ai_path.contains("MonkAI"):
+		keys = PackedStringArray(["enemy.monk.blessing", "enemy.monk.warcry", "enemy.monk.meditate"])
+	elif ai_path.contains("FighterAI"):
+		keys = PackedStringArray(["enemy.fighter.combo"])
+	var rows: Array = []
+	for key in keys:
+		rows.append({"title": tr(key + ".title"), "text": tr(key + ".text")})
+	return rows
+
+func get_intent_icon(intent_id: String) -> Texture2D:
+	return _get_intent_icon_for_id(intent_id)
 
 func _get_passives_text() -> String:
 	var ai_path = unit_data.ai_script.resource_path if is_instance_valid(unit_data.ai_script) else ""

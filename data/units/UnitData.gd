@@ -23,14 +23,47 @@ enum UnitType {
 	OTHER       # Ostatní/nespecifikované
 }
 
+# Rasa / frakce. Nesmí se jmenovat faction — to už je PLAYER / ENEMY / NEUTRAL.
+# Nové hodnoty jen na konec, ať se nerozbijí indexy v .tres.
+enum UnitFaction {
+	GOBLIN,
+	ORC,
+	HUMAN,
+	DWARF,
+	ELF,
+	UNDEAD,
+	SPIRIT_GHOST,
+	SPIRIT_SUMMON,
+	BEAST,
+	DARK_BEAST,
+	CONSTRUCT,
+	DEMON,
+	FALLEN_ANGEL,
+	DRAGON,
+	SLIME
+}
+
+enum Elemental {
+	NONE,
+	FIRE,
+	ICE,
+	STORM,
+	EARTH,
+	CRYSTAL,
+	POISON,
+	DARK
+}
+
 @export var unit_id: String = "unique_unit_id"
 @export var unit_name: String = "Název Jednotky"
 @export_multiline var description: String = "Popis jednotky."
 
 @export var faction: Faction = Faction.PLAYER
 
-# Typ jednotky pro systém efektivity poškození
+# Typ jednotky pro systém efektivity poškození. Holy +5 čte jen tohle (UNDEAD / DEMON).
 @export var unit_type: UnitType = UnitType.OTHER
+@export var unit_faction: UnitFaction = UnitFaction.HUMAN
+@export var elemental: Elemental = Elemental.NONE
 
 @export var max_health: int = 10
 @export var attack_damage: int = 2

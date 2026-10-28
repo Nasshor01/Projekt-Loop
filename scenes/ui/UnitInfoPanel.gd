@@ -3,19 +3,22 @@
 # Panel se AUTOMATICKY roztáhne podle obsahu; scroll jen když už není kam růst.
 extends PanelContainer
 
-const PANEL_WIDTH := 260.0
-const PANEL_MARGIN_V := 20.0 # top+bottom content margins
+const PANEL_WIDTH := 340.0
+const FONT_BODY := 20
+const FONT_TITLE := 22
+const PANEL_MARGIN_V := 28.0 # card padding above and below the content
+const CONTENT_PAD := 32.0 # left+right margin plus border
 const VIEWPORT_MARGIN := 12.0
 const TOP_SAFE_MARGIN := 90.0
 ## Keep clear of draw/discard piles anchored on the far-right edge.
 const RIGHT_PILE_SAFE_MARGIN := 88.0
 ## Mezera mezi spodkem panelu a hoverem karty, která do něj horizontálně zasahuje.
 const HAND_CLEAR_GAP := 8.0
-const STATUS_ICON_SIZE := 16
-const CHIP_FONT_SIZE := 20
+const STATUS_ICON_SIZE := 20
+const CHIP_FONT_SIZE := 24
 const MIN_PANEL_HEIGHT := 80.0
 
-const COLOR_MUTED := Color(0.72, 0.76, 0.84, 1)
+const COLOR_MUTED := Color(0.9, 0.88, 0.8, 1)
 const COLOR_CHIP_BG := Color(0.14, 0.16, 0.22, 0.95)
 const COLOR_CHIP_ALERT_BG := Color(0.28, 0.14, 0.12, 0.95)
 const COLOR_CHIP_ALERT_FG := Color(1.0, 0.72, 0.55, 1)
@@ -25,6 +28,10 @@ const COLOR_CHIP_ALERT_FG := Color(1.0, 0.72, 0.55, 1)
 @onready var name_label: Label = %NameLabel
 @onready var class_label: Label = %ClassLabel
 @onready var hp_brief_label: Label = %HpBriefLabel
+@onready var stats_label: Label = %StatsLine
+@onready var header_rule: HSeparator = %HeaderRule
+@onready var kit_rule: HSeparator = %KitRule
+@onready var intent_list: VBoxContainer = %IntentList
 @onready var vitals_row: HBoxContainer = %VitalsRow
 @onready var hp_slot: HBoxContainer = %HPSlot
 @onready var hp_label: Label = %HPLabel
@@ -44,7 +51,7 @@ const COLOR_CHIP_ALERT_FG := Color(1.0, 0.72, 0.55, 1)
 @onready var passives_flow: VBoxContainer = %PassivesFlow
 @onready var alerts_section: VBoxContainer = %AlertsSection
 @onready var alerts_header: Label = %AlertsHeader
-@onready var alerts_flow: HFlowContainer = %AlertsFlow
+@onready var alerts_flow: VBoxContainer = %AlertsFlow
 @onready var status_section: VBoxContainer = %StatusSection
 @onready var status_header: Label = %StatusHeader
 @onready var status_effects_list: VBoxContainer = %StatusEffectsList
@@ -61,6 +68,7 @@ var _pins_cached: bool = false
 
 func _ready() -> void:
 	custom_minimum_size = Vector2(PANEL_WIDTH, 0)
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	if scroll_container:
 		scroll_container.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -88,7 +96,7 @@ func _cache_layout_pins() -> void:
 
 func _apply_section_headers() -> void:
 	if who_header:
-		who_header.text = tr("ui.unit_info.section.who")
+		who_header.visible = false
 	if intent_header:
 		intent_header.text = tr("ui.unit_info.section.intent")
 	if passives_header:
@@ -117,25 +125,15 @@ func update_stats(unit_node: Node) -> void:
 	var is_enemy: bool = data.faction == UnitData.Faction.ENEMY
 	name_label.text = data.get_localized_name()
 	_set_who_blurb(data)
+	_fill_hp_brief(unit_node, data)
+	_fill_stats_line(unit_node, data)
 
-	# --- Header: class + brief HP (enemy) ---
+	# --- Header: class. HP and the stats line sit beside / under the name. ---
+	class_label.visible = false
 	if is_enemy:
-		class_label.visible = true
-		if unit_node.has_method("get_enemy_class_name_only"):
-			class_label.text = unit_node.get_enemy_class_name_only()
-		elif unit_node.has_method("get_enemy_class_display"):
-			class_label.text = unit_node.get_enemy_class_display()
-		else:
-			class_label.text = tr("ui.unit_info.class_unknown")
-		hp_brief_label.visible = true
-		hp_brief_label.text = TranslationHelper.tr_format(
-			"ui.unit_info.hp_brief",
-			{"current": unit_node.current_health, "max": data.max_health}
-		)
 		hp_slot.visible = false
 	else:
 		class_label.visible = false
-		hp_brief_label.visible = false
 
 	# --- Vitals: player HP (coop other) / Block / Energy / Attack ---
 	var is_other_coop_unit := false
@@ -161,13 +159,10 @@ func update_stats(unit_node: Node) -> void:
 		attack_slot.visible = false
 	else:
 		energy_slot.visible = false
-		attack_slot.visible = true
-		var atk_value: int = data.attack_damage
-		if unit_node is Unit and unit_node.has_method("get_telegraphed_attack_damage"):
-			atk_value = unit_node.get_telegraphed_attack_damage()
-		attack_label.text = TranslationHelper.tr_format("ui.unit_info.atk_brief", {"value": atk_value})
-		if unit_node is Unit and unit_node.get_bonus_attack_damage() > 0:
-			attack_label.tooltip_text = TranslationHelper.tr_format(
+		attack_slot.visible = false
+		if stats_label and unit_node is Unit and unit_node.get_bonus_attack_damage() > 0:
+			var atk_value: int = unit_node.get_telegraphed_attack_damage() if unit_node.has_method("get_telegraphed_attack_damage") else data.attack_damage
+			stats_label.tooltip_text = TranslationHelper.tr_format(
 				"ui.unit_info.atk_bonus_tooltip",
 				{
 					"total": atk_value,
@@ -175,8 +170,8 @@ func update_stats(unit_node: Node) -> void:
 					"bonus": unit_node.get_bonus_attack_damage(),
 				}
 			)
-		else:
-			attack_label.tooltip_text = ""
+		elif stats_label:
+			stats_label.tooltip_text = ""
 
 	# Block: u nepřítele jen když > 0 (HP bar už je na gridu)
 	if unit_node.current_block > 0:
@@ -207,6 +202,7 @@ func update_stats(unit_node: Node) -> void:
 
 	_update_enemy_details(unit_node, data)
 	_update_status_display(unit_node)
+	_sync_rules()
 	_queue_fit_panel_height()
 
 func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
@@ -215,23 +211,7 @@ func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
 		return
 	enemy_section.visible = true
 
-	var intent_pair := _resolve_intent_texts(unit_node)
-	var short_txt: String = intent_pair.short_text
-	var detail_txt: String = intent_pair.detail_text
-
-	if short_txt.is_empty() and detail_txt.is_empty():
-		intent_title_label.text = tr("ui.unit_info.intent_unknown")
-		intent_detail_label.visible = false
-	elif short_txt.is_empty():
-		intent_title_label.text = detail_txt
-		intent_detail_label.visible = false
-	elif detail_txt.is_empty() or detail_txt.to_upper() == short_txt.to_upper():
-		intent_title_label.text = short_txt
-		intent_detail_label.visible = false
-	else:
-		intent_title_label.text = short_txt
-		intent_detail_label.text = detail_txt
-		intent_detail_label.visible = true
+	_fill_intent_rows(unit_node)
 	intent_box.visible = true
 
 	_clear_container(passives_flow)
@@ -248,7 +228,8 @@ func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
 		for ability in abilities:
 			if typeof(ability) != TYPE_DICTIONARY:
 				continue
-			passives_flow.add_child(_make_ability_row(str(ability.get("title", "")), str(ability.get("text", ""))))
+			var named := _split_named_sentence(str(ability.get("title", "")), str(ability.get("text", "")))
+			passives_flow.add_child(_make_ability_row(named.title, named.text))
 
 	# Alerts / counters — jen když něco je
 	_clear_container(alerts_flow)
@@ -260,7 +241,265 @@ func _update_enemy_details(unit_node: Node, data: UnitData) -> void:
 	else:
 		alerts_section.visible = true
 		for alert_text in alerts:
-			alerts_flow.add_child(_make_chip(alert_text, COLOR_CHIP_ALERT_BG, COLOR_CHIP_ALERT_FG))
+			alerts_flow.add_child(_make_note(alert_text))
+	_sync_rules()
+
+func _fill_hp_brief(unit_node: Node, data: UnitData) -> void:
+	if hp_brief_label == null or data == null:
+		return
+	var current := 0
+	var max_hp := data.max_health
+	if unit_node != null and is_instance_valid(unit_node):
+		current = int(unit_node.current_health)
+		if data.faction == UnitData.Faction.PLAYER and unit_node.has_method("_is_local_player") and unit_node._is_local_player():
+			max_hp = PlayerData.max_hp
+	else:
+		current = PlayerData.current_hp
+		max_hp = PlayerData.max_hp
+	hp_brief_label.visible = true
+	hp_brief_label.text = TranslationHelper.tr_format(
+		"ui.unit_info.hp_header",
+		{"current": current, "max": max_hp}
+	)
+
+func _fill_stats_line(unit_node: Node, data: UnitData) -> void:
+	if stats_label == null or data == null:
+		return
+	var atk := data.attack_damage
+	if unit_node is Unit and unit_node.has_method("get_telegraphed_attack_damage"):
+		atk = unit_node.get_telegraphed_attack_damage()
+	var move := data.movement_range
+	if unit_node != null and unit_node.has_method("get_current_movement_range"):
+		move = unit_node.get_current_movement_range()
+	stats_label.visible = true
+	stats_label.text = TranslationHelper.tr_format(
+		"ui.unit_info.stats_line",
+		{
+			"atk": atk,
+			"move": move,
+			"range": data.attack_range,
+		}
+	)
+
+func _sync_rules() -> void:
+	if header_rule:
+		header_rule.visible = enemy_section != null and enemy_section.visible
+	if kit_rule:
+		kit_rule.visible = passives_section != null and passives_section.visible
+
+func _fill_intent_rows(unit_node: Node) -> void:
+	if intent_list:
+		_clear_container(intent_list)
+	var entries := _collect_intent_entries(unit_node)
+	if entries.is_empty():
+		if intent_title_label:
+			intent_title_label.visible = true
+			intent_title_label.text = tr("ui.unit_info.intent_unknown")
+		if intent_detail_label:
+			intent_detail_label.visible = false
+		return
+	if intent_title_label:
+		intent_title_label.visible = false
+	if intent_detail_label:
+		intent_detail_label.visible = false
+	for entry in entries:
+		if typeof(entry) != TYPE_DICTIONARY or intent_list == null:
+			continue
+		intent_list.add_child(_make_intent_row(unit_node, entry))
+
+func _make_intent_row(unit_node: Node, entry: Dictionary) -> Control:
+	var presented := _present_intent(unit_node, entry)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.mouse_filter = Control.MOUSE_FILTER_STOP
+	row.tooltip_text = presented.sentence
+
+	var icon_rect := TextureRect.new()
+	icon_rect.custom_minimum_size = Vector2(20, 20)
+	icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if unit_node.has_method("get_intent_icon"):
+		icon_rect.texture = unit_node.get_intent_icon(str(presented.id))
+	row.add_child(icon_rect)
+
+	var text_col := VBoxContainer.new()
+	text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_col.add_theme_constant_override("separation", 1)
+	text_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var title_label := Label.new()
+	_style_info_label(title_label, FONT_TITLE, Color(1, 0.92, 0.55, 1))
+	title_label.text = presented.title
+	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	text_col.add_child(title_label)
+
+	if not str(presented.sentence).is_empty():
+		var sentence_label := Label.new()
+		_style_info_label(sentence_label, FONT_BODY, COLOR_MUTED)
+		sentence_label.text = presented.sentence
+		sentence_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		text_col.add_child(sentence_label)
+	if not str(presented.again).is_empty():
+		var again_label := Label.new()
+		_style_info_label(again_label, FONT_BODY, Color(0.95, 0.78, 0.42, 1))
+		again_label.text = presented.again
+		again_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		text_col.add_child(again_label)
+	row.add_child(text_col)
+	return row
+
+func _present_intent(unit_node: Node, entry: Dictionary) -> Dictionary:
+	var intent_id := str(entry.get("id", "")).strip_edges()
+	var short_txt := str(entry.get("short_text", "")).strip_edges()
+	var detail_txt := _strip_intent_detail_prefix(str(entry.get("text", "")).strip_edges())
+	var countdown := int(entry.get("countdown", 0))
+	var title := ""
+	var sentence := ""
+	var again := ""
+	for sep in [":", " — ", " – "]:
+		var idx := detail_txt.find(sep)
+		if idx > 0:
+			title = detail_txt.substr(0, idx).strip_edges()
+			sentence = _capitalize_sentence(detail_txt.substr(idx + sep.length()).strip_edges())
+			break
+	if title.is_empty():
+		title = _intent_title(intent_id, short_txt)
+	if sentence.is_empty() or _is_bare_intent_name(sentence, short_txt, title):
+		sentence = _generic_intent_sentence(unit_node, intent_id, short_txt, detail_txt)
+	if countdown > 0 and not _sentence_has_countdown(sentence):
+		again = TranslationHelper.tr_format("ui.unit_info.intent_again", {"value": countdown})
+	if title.is_empty():
+		title = sentence
+		sentence = ""
+	return {"id": intent_id, "title": title, "sentence": sentence, "again": again}
+
+func _intent_title(intent_id: String, short_txt: String) -> String:
+	if not _is_bare_intent_name(short_txt, "", "") and not _is_number_token(short_txt):
+		return short_txt
+	match intent_id:
+		"move":
+			return tr("MOVE")
+		"heal":
+			return tr("ui.unit_info.intent_name.heal")
+		"buff", "block", "defend":
+			return tr("ui.unit_info.intent_name.block")
+		"attack", "slam", "pierce", "gust", "windup", "bite", "aiming", "rush", "meteor":
+			return tr("ATTACK")
+		_:
+			if _is_number_token(short_txt):
+				return tr("ATTACK")
+			return short_txt if not short_txt.is_empty() else tr("ATTACK")
+
+func _generic_intent_sentence(unit_node: Node, intent_id: String, short_txt: String, detail_txt: String) -> String:
+	if intent_id == "block" or intent_id == "defend":
+		return _block_intent_sentence(short_txt, detail_txt)
+	if not _is_bare_intent_name(detail_txt, short_txt, "") and not _is_number_token(detail_txt) and detail_txt.length() > 3:
+		return _capitalize_sentence(detail_txt)
+	match intent_id:
+		"move":
+			return tr("ui.unit_info.intent.move")
+		"heal":
+			return tr("ui.unit_info.intent.heal")
+		"buff":
+			return tr("ui.unit_info.intent.buff")
+		"block", "defend":
+			return _block_intent_sentence(short_txt, detail_txt)
+		_:
+			var amount := _intent_damage_amount(unit_node, short_txt)
+			if amount > 0:
+				return TranslationHelper.tr_format("ui.unit_info.intent.attack", {"value": amount})
+			return tr("ui.unit_info.intent.attack_plain")
+
+func _block_intent_sentence(short_txt: String, detail_txt: String) -> String:
+	var source := short_txt if short_txt.is_valid_int() else detail_txt
+	var digits := ""
+	for i in source.length():
+		if source[i].is_valid_int():
+			digits += source[i]
+		elif not digits.is_empty():
+			break
+	if digits.is_valid_int() and int(digits) > 0:
+		return TranslationHelper.tr_format("ui.unit_info.intent.block", {"value": int(digits)})
+	return tr("ui.unit_info.intent.block_plain")
+
+func _intent_damage_amount(unit_node: Node, short_txt: String) -> int:
+	if _is_number_token(short_txt):
+		return int(short_txt.trim_prefix("+").trim_prefix("-"))
+	if unit_node is Unit and unit_node.has_method("get_telegraphed_attack_damage"):
+		return unit_node.get_telegraphed_attack_damage()
+	return 0
+
+func _is_bare_intent_name(text: String, short_txt: String, title: String) -> bool:
+	var raw := text.strip_edges()
+	if raw.is_empty() or _is_number_token(raw):
+		return true
+	var folded := raw.to_lower()
+	var bare := [
+		"attack", "útok", "utok", "move", "pohyb", "heal", "léčení", "leceni",
+		"buff", "block", "blok", "defend", "obrana",
+		tr("ATTACK").to_lower(), tr("MOVE").to_lower(),
+	]
+	if folded in bare:
+		return true
+	if not short_txt.is_empty() and folded == short_txt.strip_edges().to_lower():
+		return true
+	if not title.is_empty() and folded == title.strip_edges().to_lower():
+		return true
+	return false
+
+func _sentence_has_countdown(sentence: String) -> bool:
+	var folded := sentence.to_lower()
+	return folded.contains("tah") or folded.contains("turn") or folded.contains("again")
+
+func _is_number_token(text: String) -> bool:
+	var raw := text.strip_edges().trim_prefix("+").trim_prefix("-")
+	return raw.is_valid_int()
+
+func _capitalize_sentence(text: String) -> String:
+	var raw := text.strip_edges()
+	if raw.is_empty():
+		return ""
+	return raw.substr(0, 1).to_upper() + raw.substr(1)
+
+func _split_named_sentence(title: String, body: String) -> Dictionary:
+	var heading := title.strip_edges()
+	var sentence := body.strip_edges()
+	if heading.is_empty():
+		for sep in [":", " — ", " – "]:
+			var idx := sentence.find(sep)
+			if idx > 0:
+				heading = sentence.substr(0, idx).strip_edges()
+				sentence = _capitalize_sentence(sentence.substr(idx + sep.length()))
+				break
+	else:
+		sentence = _capitalize_sentence(sentence)
+	return {"title": heading, "text": sentence}
+
+func _status_headline(status_id: String, status_data: Dictionary) -> String:
+	var key := "status.name." + status_id.to_lower()
+	var name := tr(key)
+	if name == key:
+		name = status_id.replace("_", " ").capitalize()
+	var amount := absi(int(status_data.get("value", 0)))
+	if amount > 0:
+		return "%s %d" % [name, amount]
+	return name
+
+func _strip_repeated_name(headline: String, sentence: String) -> String:
+	var raw := sentence.strip_edges()
+	if raw.is_empty():
+		return ""
+	var name := headline.strip_edges()
+	var space := name.find(" ")
+	if space > 0:
+		name = name.substr(0, space)
+	for sep in [":", " — ", " – "]:
+		var prefix: String = name + str(sep)
+		if raw.to_lower().begins_with(prefix.to_lower()):
+			return _capitalize_sentence(raw.substr(prefix.length()))
+	return raw
 
 ## Resolves up to 2 intents for the panel.
 ## Preferred Unit API: get_intent_entries() -> Array of {short_text, text} (max 2 used).
@@ -349,15 +588,11 @@ func _update_status_display(unit_node: Node) -> void:
 		var status_data = unit_node.active_statuses[status_id]
 		status_effects_list.add_child(_create_status_row(status_id, status_data))
 
-func _create_status_row(status_id: String, status_data: Dictionary) -> VBoxContainer:
-	var wrap := VBoxContainer.new()
-	wrap.add_theme_constant_override("separation", 1)
-	wrap.mouse_filter = Control.MOUSE_FILTER_STOP
-	wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-
+func _create_status_row(status_id: String, status_data: Dictionary) -> HBoxContainer:
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 4)
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 8)
+	row.mouse_filter = Control.MOUSE_FILTER_STOP
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var icon_rect := TextureRect.new()
 	icon_rect.custom_minimum_size = Vector2(STATUS_ICON_SIZE, STATUS_ICON_SIZE)
@@ -365,64 +600,87 @@ func _create_status_row(status_id: String, status_data: Dictionary) -> VBoxConta
 	icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon_rect.texture = _get_status_icon(status_id)
 	icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	icon_rect.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	row.add_child(icon_rect)
 
 	var info := _get_status_display_info(status_id, status_data)
+	var headline := _status_headline(status_id, status_data)
+	var text_col := VBoxContainer.new()
+	text_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	text_col.add_theme_constant_override("separation", 1)
+	text_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	var label := Label.new()
-	_style_info_label(label, 20, info.color)
+	_style_info_label(label, FONT_TITLE, info.color)
 	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	label.text = info.text
-	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(label)
-	wrap.add_child(row)
+	label.text = headline
+	text_col.add_child(label)
 
 	var sentence := _status_sentence(status_id, status_data)
-	if not sentence.is_empty() and sentence != info.text:
+	sentence = _strip_repeated_name(headline, sentence)
+	if sentence.is_empty():
+		var dur := int(status_data.get("duration", 0))
+		if dur > 0:
+			sentence = TranslationHelper.tr_format("ui.unit_info.status_turns", {"duration": dur})
+	if not sentence.is_empty() and sentence != headline:
 		var sentence_label := Label.new()
-		_style_info_label(sentence_label, 16, COLOR_MUTED)
+		_style_info_label(sentence_label, FONT_BODY, COLOR_MUTED)
 		sentence_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		sentence_label.text = sentence
-		sentence_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		wrap.add_child(sentence_label)
+		text_col.add_child(sentence_label)
+	row.add_child(text_col)
 	var tip: String = sentence if not sentence.is_empty() else str(info.text)
-	wrap.tooltip_text = tip
-	return wrap
+	row.tooltip_text = tip
+	return row
 
-func _set_who_blurb(data: UnitData) -> void:
+func _set_who_blurb(_data: UnitData) -> void:
 	if who_header:
-		who_header.visible = true
-		who_header.text = tr("ui.unit_info.section.who")
-	if who_description == null or data == null:
-		return
-	var text := data.get_localized_description().strip_edges()
-	if text.is_empty() or text == data.description or text == "Popis jednotky." or text == "Unit description.":
+		who_header.visible = false
+	if who_description:
 		who_description.visible = false
 		who_description.text = ""
-		return
-	who_description.visible = true
-	who_description.text = text
 
 func _make_ability_row(title: String, sentence: String) -> Control:
 	var body := sentence.strip_edges()
 	var heading := title.strip_edges()
+	var row := HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_theme_constant_override("separation", 6)
+	row.mouse_filter = Control.MOUSE_FILTER_STOP
+	row.tooltip_text = body if heading.is_empty() else "%s\n%s" % [heading, body]
+
+	var bullet := Label.new()
+	_style_info_label(bullet, FONT_TITLE, Color(0.95, 0.78, 0.42, 1))
+	bullet.text = "•"
+	row.add_child(bullet)
+
 	var box := VBoxContainer.new()
 	box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	box.mouse_filter = Control.MOUSE_FILTER_STOP
-	box.tooltip_text = body if heading.is_empty() else "%s\n%s" % [heading, body]
+	box.add_theme_constant_override("separation", 1)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if not heading.is_empty():
 		var title_label := Label.new()
-		_style_info_label(title_label, 18, Color(1, 0.92, 0.55, 1))
+		_style_info_label(title_label, FONT_TITLE, Color(0.96, 0.93, 0.84, 1))
 		title_label.text = heading
 		title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		box.add_child(title_label)
 	if not body.is_empty():
 		var text_label := Label.new()
-		_style_info_label(text_label, 17, COLOR_MUTED)
+		_style_info_label(text_label, FONT_BODY, COLOR_MUTED)
 		text_label.text = body
 		text_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		box.add_child(text_label)
-	return box
+	row.add_child(box)
+	return row
+
+func _make_note(text: String) -> Label:
+	var label := Label.new()
+	_style_info_label(label, FONT_BODY, Color(1.0, 0.78, 0.55, 1))
+	label.text = text
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return label
 
 func _style_info_label(label: Label, font_size: int, color: Color) -> void:
 	if name_label:
@@ -431,6 +689,9 @@ func _style_info_label(label: Label, font_size: int, color: Color) -> void:
 			label.add_theme_font_override("font", font)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 1))
+	label.add_theme_constant_override("outline_size", 3)
+	label.add_theme_constant_override("line_spacing", 4)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _status_sentence(status_id: String, status_data: Dictionary) -> String:
@@ -572,7 +833,8 @@ func update_from_player_data() -> void:
 	name_label.text = unit_data.get_localized_name()
 	_set_who_blurb(unit_data)
 	class_label.visible = false
-	hp_brief_label.visible = false
+	_fill_hp_brief(null, unit_data)
+	_fill_stats_line(null, unit_data)
 	hp_slot.visible = false
 	block_slot.visible = true
 	block_label.text = TranslationHelper.tr_format("ui.unit_info.block", {"value": 0})
@@ -585,6 +847,7 @@ func update_from_player_data() -> void:
 	attack_slot.visible = false
 	vitals_row.visible = true
 	enemy_section.visible = false
+	_sync_rules()
 	status_section.visible = false
 	_clear_container(status_effects_list)
 	_clear_container(passives_flow)
@@ -607,12 +870,17 @@ func _build_fingerprint(unit_node: Node) -> String:
 	parts.append(str(unit_node.current_block))
 	parts.append(str(unit_node.retained_block))
 	parts.append(str(unit_node.carried_block))
-	var intent_pair := _resolve_intent_texts(unit_node)
-	parts.append(intent_pair.short_text)
-	parts.append(intent_pair.detail_text)
+	for entry in _collect_intent_entries(unit_node):
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		parts.append(str(entry.get("id", "")))
+		parts.append(str(entry.get("short_text", "")))
+		parts.append(str(entry.get("text", "")))
+		parts.append(str(entry.get("countdown", 0)))
 	if unit_node is Unit:
 		parts.append(str(unit_node.active_statuses))
 		parts.append(str(unit_node.get_bonus_attack_damage()))
+		parts.append(str(unit_node.get_current_movement_range()))
 	if unit_node.has_method("get_enemy_ability_entries"):
 		for ability in unit_node.get_enemy_ability_entries():
 			if typeof(ability) == TYPE_DICTIONARY:
@@ -640,7 +908,7 @@ func _fit_panel_height() -> void:
 	if not _pins_cached:
 		_cache_layout_pins()
 
-	var content_width := PANEL_WIDTH - 24.0
+	var content_width := _content_width()
 	_set_wrap_width(content_root, content_width)
 	content_root.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 
@@ -691,7 +959,29 @@ func _apply_anchored_height(height: float, bottom_offset: float) -> void:
 
 	custom_minimum_size = Vector2(PANEL_WIDTH, height)
 
+func _content_width() -> float:
+	var panel_w := PANEL_WIDTH
+	if not (anchor_right >= 0.99 and anchor_left >= 0.99):
+		panel_w = _pinned_offset_right - _pinned_offset_left
+	if panel_w < 200.0:
+		panel_w = PANEL_WIDTH
+	return maxf(160.0, panel_w - CONTENT_PAD)
+
 func _set_wrap_width(node: Node, width: float) -> void:
+	if node is HBoxContainer:
+		var box := node as HBoxContainer
+		var reserved := 0.0
+		var text_children: Array[Node] = []
+		for child in box.get_children():
+			if child is TextureRect or (child is Label and (child as Label).autowrap_mode == TextServer.AUTOWRAP_OFF):
+				reserved += maxf((child as Control).custom_minimum_size.x, 16.0)
+			else:
+				text_children.append(child)
+		var gaps := maxi(box.get_child_count() - 1, 0) * box.get_theme_constant("separation")
+		var inner := maxf(80.0, width - reserved - float(gaps))
+		for child in text_children:
+			_set_wrap_width(child, inner)
+		return
 	if node is Label:
 		var label := node as Label
 		if label.autowrap_mode != TextServer.AUTOWRAP_OFF:
@@ -699,8 +989,6 @@ func _set_wrap_width(node: Node, width: float) -> void:
 	elif node is RichTextLabel:
 		var rtl := node as RichTextLabel
 		rtl.custom_minimum_size.x = width
-	elif node is HFlowContainer:
-		(node as HFlowContainer).custom_minimum_size.x = width
 	for child in node.get_children():
 		_set_wrap_width(child, width)
 
